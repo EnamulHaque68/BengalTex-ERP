@@ -1,0 +1,6 @@
+@BengalTex.ERP.Api_HostAddress = http://localhost:5132
+
+GET {{BengalTex.ERP.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

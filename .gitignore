@@ -1,0 +1,43 @@
+# .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+*.swp
+
+# User secrets / local config
+**/appsettings.Development.json
+**/appsettings.Local.json
+secrets.json
+
+# Build outputs
+artifacts/
+publish/
+*.pdb
+*.dll
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+coverage*
+
+# Angular
+client/**/node_modules/
+client/**/dist/
+client/**/.angular/
+client/**/.nx/
+client/**/coverage/
+client/**/npm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
