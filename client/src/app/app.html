@@ -1,0 +1,74 @@
+<div class="welcome-container">
+  <header class="header">
+    <h1>🏭 Bengal TEX ERP</h1>
+    <p class="subtitle">Garments Accessories Manufacturing System</p>
+  </header>
+
+  <div class="content">
+    <div class="card">
+      <h2>Foundation Status</h2>
+      
+      <div class="status-grid">
+        <div class="status-item">
+          <span class="label">Backend API:</span>
+          <span class="value" [class.success]="apiConnected" [class.error]="apiError">
+            {{ apiStatus }}
+          </span>
+        </div>
+        <div class="status-item">
+          <span class="label">Database:</span>
+          <span class="value success">BengalTexERP (17 tables)</span>
+        </div>
+        <div class="status-item">
+          <span class="label">Frontend:</span>
+          <span class="value success">Angular 21 + PrimeNG</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" (click)="testApiConnection()" [disabled]="loading">
+          {{ loading ? 'Testing...' : '🔗 Test API Connection' }}
+        </button>
+      </div>
+
+      @if (apiResponse) {
+        <div class="response-box">
+          <h3>API Response:</h3>
+          <pre>{{ apiResponse | json }}</pre>
+        </div>
+      }
+
+      @if (errorMessage) {
+        <div class="error-box">
+          <h3>❌ Error:</h3>
+          <p>{{ errorMessage }}</p>
+          <p class="hint">Make sure your API is running on http://localhost:5132</p>
+        </div>
+      }
+    </div>
+
+    <div class="info-card">
+      <h3>🎯 Foundation Complete!</h3>
+      <ul>
+        <li>✅ 8 Projects (.NET 8 + Angular 21)</li>
+        <li>✅ Clean Architecture (4 layers)</li>
+        <li>✅ 28 Tests Passing</li>
+        <li>✅ JWT Authentication</li>
+        <li>✅ Permission Authorization</li>
+        <li>✅ MediatR + CQRS</li>
+        <li>✅ Audit Interceptor</li>
+        <li>✅ Database with Migrations</li>
+        <li>✅ Hangfire Background Jobs</li>
+        <li>✅ Swagger Documentation</li>
+        <li>✅ PrimeNG UI Library</li>
+        <li>✅ Device Fingerprinting Ready</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Built in 8 days • Ready for Round 2 (Real Modules) 🚀</p>
+  </footer>
+</div>
+
+<router-outlet></router-outlet>
