@@ -180,6 +180,30 @@ public static class Permissions
         public const string ManageNumberingSeries = "Settings.ManageNumberingSeries";
     }
 
+    public static class Currencies
+    {
+        public const string View = "Currencies.View";
+        public const string Create = "Currencies.Create";
+        public const string Edit = "Currencies.Edit";
+        public const string Delete = "Currencies.Delete";
+    }
+
+    public static class UnitsOfMeasure
+    {
+        public const string View = "UnitsOfMeasure.View";
+        public const string Create = "UnitsOfMeasure.Create";
+        public const string Edit = "UnitsOfMeasure.Edit";
+        public const string Delete = "UnitsOfMeasure.Delete";
+    }
+
+    public static class Warehouses
+    {
+        public const string View = "Warehouses.View";
+        public const string Create = "Warehouses.Create";
+        public const string Edit = "Warehouses.Edit";
+        public const string Delete = "Warehouses.Delete";
+    }
+
     public static class AuditLog
     {
         public const string View = "AuditLog.View";

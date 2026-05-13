@@ -12,7 +12,10 @@ const routes: Routes = [
       { path: 'company', loadChildren: () => import('./modules/company/company.module').then(m => m.CompanyModule) },
       { path: 'factories', loadChildren: () => import('./modules/factory/factory.module').then(m => m.FactoryModule) },
       { path: 'users', loadChildren: () => import('./modules/user/user.module').then(m => m.UserModule) },
-      { path: 'roles', loadChildren: () => import('./modules/role/role.module').then(m => m.RoleModule) }
+      { path: 'roles', loadChildren: () => import('./modules/role/role.module').then(m => m.RoleModule) },
+      { path: 'currencies', loadChildren: () => import('./modules/currency/currency.module').then(m => m.CurrencyModule) },
+      { path: 'units-of-measure', loadChildren: () => import('./modules/unit-of-measure/unit-of-measure.module').then(m => m.UnitOfMeasureModule) },
+      { path: 'warehouses', loadChildren: () => import('./modules/warehouse/warehouse.module').then(m => m.WarehouseModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
