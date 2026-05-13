@@ -23,39 +23,46 @@ public class NumberingService : INumberingService
         var year = now.Year;
         var month = now.Month;
 
-        // Use a serializable lock via UPDLOCK to prevent concurrent number issuance.
-        // EF Core 8: use FromSqlInterpolated for hint; or just rely on a transaction.
-        await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct);
+        // Manual transactions are incompatible with retrying execution strategies
+        // (EnableRetryOnFailure is on in DI). Wrap the whole serializable section
+        // in ExecuteAsync so EF Core can retry the entire unit on transient failures.
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        var series = await _db.NumberingSeries
-            .Where(s => s.Code == seriesCode && s.FactoryId == factoryId)
-            .FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException(
-                $"Numbering series '{seriesCode}' (factory={factoryId}) not configured.");
-
-        // Reset logic
-        var shouldReset = series.ResetCycle switch
+        return await strategy.ExecuteAsync(async () =>
         {
-            ResetCycle.Yearly => series.CurrentYear != year,
-            ResetCycle.Monthly => series.CurrentYear != year || series.CurrentMonth != month,
-            _ => false
-        };
+            await using var tx = await _db.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, ct);
 
-        if (shouldReset)
-        {
-            series.CurrentNumber = 0;
-            series.CurrentYear = year;
-            series.CurrentMonth = month;
-        }
+            var series = await _db.NumberingSeries
+                .Where(s => s.Code == seriesCode && s.FactoryId == factoryId)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new InvalidOperationException(
+                    $"Numbering series '{seriesCode}' (factory={factoryId}) not configured.");
 
-        series.CurrentNumber += 1;
-        await _db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+            // Reset logic
+            var shouldReset = series.ResetCycle switch
+            {
+                ResetCycle.Yearly  => series.CurrentYear != year,
+                ResetCycle.Monthly => series.CurrentYear != year || series.CurrentMonth != month,
+                _                  => false
+            };
 
-        var parts = new List<string> { series.Prefix };
-        if (series.IncludeYear) parts.Add(year.ToString("D4"));
-        if (series.IncludeMonth) parts.Add(month.ToString("D2"));
-        parts.Add(series.CurrentNumber.ToString().PadLeft(series.PaddingLength, '0'));
-        return string.Join(series.Separator, parts);
+            if (shouldReset)
+            {
+                series.CurrentNumber = 0;
+                series.CurrentYear = year;
+                series.CurrentMonth = month;
+            }
+
+            series.CurrentNumber += 1;
+            await _db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+
+            var parts = new List<string> { series.Prefix };
+            if (series.IncludeYear) parts.Add(year.ToString("D4"));
+            if (series.IncludeMonth) parts.Add(month.ToString("D2"));
+            parts.Add(series.CurrentNumber.ToString().PadLeft(series.PaddingLength, '0'));
+            return string.Join(series.Separator, parts);
+        });
     }
 }

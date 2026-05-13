@@ -15,7 +15,8 @@ const routes: Routes = [
       { path: 'roles', loadChildren: () => import('./modules/role/role.module').then(m => m.RoleModule) },
       { path: 'currencies', loadChildren: () => import('./modules/currency/currency.module').then(m => m.CurrencyModule) },
       { path: 'units-of-measure', loadChildren: () => import('./modules/unit-of-measure/unit-of-measure.module').then(m => m.UnitOfMeasureModule) },
-      { path: 'warehouses', loadChildren: () => import('./modules/warehouse/warehouse.module').then(m => m.WarehouseModule) }
+      { path: 'warehouses', loadChildren: () => import('./modules/warehouse/warehouse.module').then(m => m.WarehouseModule) },
+      { path: 'customers', loadChildren: () => import('./modules/customer/customer.module').then(m => m.CustomerModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
