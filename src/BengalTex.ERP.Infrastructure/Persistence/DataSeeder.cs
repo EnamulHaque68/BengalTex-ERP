@@ -134,11 +134,39 @@ public class DataSeeder : IDataSeeder
         }
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Marks an entity's soft-delete fields as cleared. Used to revive seeded rows
+    /// that were soft-deleted in admin UIs — keeps SQL unique constraints from
+    /// blocking re-seed since the row was never physically removed.
+    /// </summary>
+    private static void Restore<T>(T entity) where T : Domain.Common.ISoftDeletable
+    {
+        entity.IsDeleted = false;
+        entity.DeletedAt = null;
+        entity.DeletedBy = null;
+    }
+
     // ─── Company ──────────────────────────────────────────────────────────────
 
     private async Task SeedCompanyAsync(CancellationToken ct)
     {
-        if (await _db.Companies.AnyAsync(ct)) return;
+        // IgnoreQueryFilters so we also see soft-deleted rows — SQL unique constraints
+        // ignore IsDeleted, so we must compare against ALL physical rows.
+        var existing = await _db.Companies
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(ct);
+
+        if (existing is not null)
+        {
+            if (existing.IsDeleted)
+            {
+                Restore(existing);
+                await _db.SaveChangesAsync(ct);
+            }
+            return;
+        }
 
         _db.Companies.Add(new Company
         {
@@ -158,10 +186,24 @@ public class DataSeeder : IDataSeeder
 
     private async Task SeedFactoryAsync(CancellationToken ct)
     {
-        if (await _db.Factories.AnyAsync(f => f.Code == "HQ", ct)) return;
+        var existing = await _db.Factories
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(f => f.Code == "HQ", ct);
 
-        var company = await _db.Companies.FirstOrDefaultAsync(ct);
-        if (company is null) return; // Defensive — SeedCompanyAsync should have created one
+        if (existing is not null)
+        {
+            if (existing.IsDeleted)
+            {
+                Restore(existing);
+                await _db.SaveChangesAsync(ct);
+            }
+            return;
+        }
+
+        var company = await _db.Companies
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(ct);
+        if (company is null) return;
 
         _db.Factories.Add(new Factory
         {
@@ -193,8 +235,14 @@ public class DataSeeder : IDataSeeder
 
         foreach (var c in currencies)
         {
-            if (!await _db.Currencies.AnyAsync(x => x.Code == c.Code, ct))
+            var existing = await _db.Currencies
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Code == c.Code, ct);
+
+            if (existing is null)
                 _db.Currencies.Add(c);
+            else if (existing.IsDeleted)
+                Restore(existing);
         }
         await _db.SaveChangesAsync(ct);
     }
@@ -214,16 +262,22 @@ public class DataSeeder : IDataSeeder
 
         foreach (var u in baseUnits)
         {
-            if (!await _db.UnitsOfMeasure.AnyAsync(x => x.Code == u.Code, ct))
+            var existing = await _db.UnitsOfMeasure
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Code == u.Code, ct);
+
+            if (existing is null)
                 _db.UnitsOfMeasure.Add(u);
+            else if (existing.IsDeleted)
+                Restore(existing);
         }
         await _db.SaveChangesAsync(ct);
 
-        // Resolve base IDs for pass 2 FK assignment
-        var pcsId = (await _db.UnitsOfMeasure.SingleAsync(u => u.Code == "PCS", ct)).Id;
-        var kgId  = (await _db.UnitsOfMeasure.SingleAsync(u => u.Code == "KG",  ct)).Id;
-        var mtrId = (await _db.UnitsOfMeasure.SingleAsync(u => u.Code == "MTR", ct)).Id;
-        var ltrId = (await _db.UnitsOfMeasure.SingleAsync(u => u.Code == "LTR", ct)).Id;
+        // Resolve base IDs for pass 2 FK assignment (include possibly-restored rows)
+        var pcsId = (await _db.UnitsOfMeasure.IgnoreQueryFilters().SingleAsync(u => u.Code == "PCS", ct)).Id;
+        var kgId  = (await _db.UnitsOfMeasure.IgnoreQueryFilters().SingleAsync(u => u.Code == "KG",  ct)).Id;
+        var mtrId = (await _db.UnitsOfMeasure.IgnoreQueryFilters().SingleAsync(u => u.Code == "MTR", ct)).Id;
+        var ltrId = (await _db.UnitsOfMeasure.IgnoreQueryFilters().SingleAsync(u => u.Code == "LTR", ct)).Id;
 
         // Pass 2 — derived units (1 of this = ConversionFactor base units)
         var derivatives = new[]
@@ -238,8 +292,14 @@ public class DataSeeder : IDataSeeder
 
         foreach (var u in derivatives)
         {
-            if (!await _db.UnitsOfMeasure.AnyAsync(x => x.Code == u.Code, ct))
+            var existing = await _db.UnitsOfMeasure
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Code == u.Code, ct);
+
+            if (existing is null)
                 _db.UnitsOfMeasure.Add(u);
+            else if (existing.IsDeleted)
+                Restore(existing);
         }
         await _db.SaveChangesAsync(ct);
     }
@@ -248,8 +308,10 @@ public class DataSeeder : IDataSeeder
 
     private async Task SeedWarehousesAsync(CancellationToken ct)
     {
-        var factory = await _db.Factories.FirstOrDefaultAsync(f => f.Code == "HQ", ct);
-        if (factory is null) return; // Defensive — SeedFactoryAsync should have created one
+        var factory = await _db.Factories
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(f => f.Code == "HQ", ct);
+        if (factory is null) return;
 
         var warehouses = new[]
         {
@@ -262,8 +324,14 @@ public class DataSeeder : IDataSeeder
 
         foreach (var w in warehouses)
         {
-            if (!await _db.Warehouses.AnyAsync(x => x.FactoryId == w.FactoryId && x.Code == w.Code, ct))
+            var existing = await _db.Warehouses
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.FactoryId == w.FactoryId && x.Code == w.Code, ct);
+
+            if (existing is null)
                 _db.Warehouses.Add(w);
+            else if (existing.IsDeleted)
+                Restore(existing);
         }
         await _db.SaveChangesAsync(ct);
     }
@@ -277,6 +345,7 @@ public class DataSeeder : IDataSeeder
 
         // Resolve HQ Factory for FactoryId assignment
         var hqFactoryId = (await _db.Factories
+            .IgnoreQueryFilters()
             .Where(f => f.Code == "HQ")
             .Select(f => (int?)f.Id)
             .FirstOrDefaultAsync(ct));

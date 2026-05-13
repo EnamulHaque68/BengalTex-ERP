@@ -1,0 +1,198 @@
+<div class="page-shell">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Roles &amp; Permissions</h2>
+      <p class="page-subtitle">Define roles and grant access to features</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Add Role" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <p-card styleClass="table-card">
+    <p-table [value]="roles" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Members</th>
+          <th>Permissions</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.name }}</td>
+          <td class="muted">{{ r.description || '—' }}</td>
+          <td>
+            <span class="type-badge" [class.system]="r.isSystemRole" [class.custom]="!r.isSystemRole">
+              {{ r.isSystemRole ? 'System' : 'Custom' }}
+            </span>
+          </td>
+          <td>
+            <span class="metric-badge">
+              <i class="pi pi-users"></i> {{ r.memberCount }}
+            </span>
+          </td>
+          <td>
+            <span class="metric-badge">
+              <i class="pi pi-shield"></i> {{ r.permissionCount }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil"
+                        severity="secondary"
+                        [text]="true" size="small"
+                        (click)="openEdit(r)"
+                        [pTooltip]="r.isSystemRole ? 'View (system role)' : 'Edit'" />
+              <p-button icon="pi pi-shield"
+                        severity="secondary"
+                        [text]="true" size="small"
+                        (click)="openPermissions(r)"
+                        pTooltip="Manage permissions" />
+              <p-button icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true" size="small"
+                        [disabled]="r.isSystemRole"
+                        (click)="confirmDelete(r)"
+                        [pTooltip]="r.isSystemRole ? 'System role can\'t be deleted' : 'Delete'" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="empty-row">
+            <i class="pi pi-shield"></i>
+            <span>No roles defined.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+</div>
+
+<!-- ===== Create / Edit Role Dialog ===== -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Role' : (editingIsSystem ? 'View Role (system)' : 'Edit Role')"
+  [modal]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="saveRole()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="field">
+      <label>Role Name *</label>
+      <input pInputText formControlName="name" placeholder="e.g., WarehouseStaff" class="w-full" />
+      <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">
+        Required. Letters, digits, spaces, underscore, hyphen only.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <input pInputText formControlName="description" placeholder="Brief role description" class="w-full" />
+      <small class="muted">Optional. Up to 500 characters.</small>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Close" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button
+        *ngIf="!editingIsSystem"
+        type="submit"
+        [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+        icon="pi pi-save"
+        [loading]="dialogSaving"
+        [disabled]="form.invalid || dialogSaving"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- ===== Permissions Picker Dialog ===== -->
+<p-dialog
+  [(visible)]="permsDialogVisible"
+  [header]="permsRole ? 'Permissions: ' + permsRole.name : 'Permissions'"
+  [modal]="true"
+  [style]="{ width: '760px' }"
+  [draggable]="false"
+>
+  <div *ngIf="permsRole">
+    <div class="alert alert-error" *ngIf="permsDialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ permsDialogError }}
+    </div>
+
+    <p class="hint">
+      Total selected: <strong>{{ selectedPermissions.size }}</strong>.
+      Click a category header to toggle all permissions in that group.
+    </p>
+
+    <div class="perm-groups">
+      <div *ngFor="let g of permissionGroups" class="perm-group">
+        <div class="perm-group-header" (click)="toggleAllInGroup(g)">
+          <input type="checkbox"
+                 [checked]="isAllSelectedInGroup(g)"
+                 [indeterminate]="!isAllSelectedInGroup(g) && isAnySelectedInGroup(g)"
+                 (click)="$event.stopPropagation()"
+                 (change)="toggleAllInGroup(g)" />
+          <span class="group-name">{{ g.category }}</span>
+          <span class="group-count">{{ selectedCountInGroup(g) }} / {{ g.permissions.length }}</span>
+        </div>
+        <div class="perm-items">
+          <label *ngFor="let p of g.permissions" class="perm-item">
+            <input type="checkbox"
+                   [checked]="selectedPermissions.has(p.key)"
+                   (change)="togglePermission(p.key)" />
+            <span>{{ p.action }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="permsDialogVisible = false" [disabled]="permsDialogSaving" />
+      <p-button label="Save Permissions" icon="pi pi-save"
+                [loading]="permsDialogSaving" (click)="savePermissions()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- ===== Delete Confirm ===== -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Role"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingRole">
+    <p>Delete role <strong>{{ deletingRole.name }}</strong>? This cannot be undone.</p>
+    <p class="muted" *ngIf="deletingRole.memberCount > 0">
+      ⚠ This role has {{ deletingRole.memberCount }} member(s) — backend will reject the delete.
+    </p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
