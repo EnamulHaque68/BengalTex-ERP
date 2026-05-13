@@ -2,11 +2,15 @@ using System.Security.Claims;
 using System.Text;
 using BengalTex.ERP.Api.Authentication;
 using BengalTex.ERP.Api.Authorization;
+using BengalTex.ERP.Api.Hubs;
 using BengalTex.ERP.Api.Middleware;
 using BengalTex.ERP.Api.Services;
 using BengalTex.ERP.Application;
+using BengalTex.ERP.Application.Auth;
 using BengalTex.ERP.Application.Common.Interfaces;
+using BengalTex.ERP.Application.Common.Settings;
 using BengalTex.ERP.Infrastructure;
+using BengalTex.ERP.Infrastructure.Services;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,6 +32,7 @@ builder.Host.UseSerilog((ctx, lc) => lc
 // CONFIGURATION BINDING
 // ============================================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Application"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -40,7 +45,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // ============================================
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();   // Application.Auth.IJwtService → Api.Authentication.JwtService
+builder.Services.AddScoped<ISessionBroadcaster, SessionBroadcaster>(); // SignalR-backed
 builder.Services.AddMemoryCache();
 
 // ============================================
@@ -48,8 +54,16 @@ builder.Services.AddMemoryCache();
 // ============================================
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 
+// AddIdentity registers cookie auth and sets it as DefaultAuthenticate/ChallengeScheme.
+// We override that here so unauthenticated API calls return 401 JSON via JwtBearer
+// instead of being redirected (302) to /Account/Login by the cookie scheme.
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(options =>
+    {
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
@@ -67,7 +81,27 @@ builder.Services
             NameClaimType = ClaimTypes.NameIdentifier,
             RoleClaimType = ClaimTypes.Role
         };
+
+        // SignalR connects via WebSocket — browsers cannot set custom headers there,
+        // so the access token is passed as ?access_token=... on the negotiate request.
+        // Pull it out for any /hubs/* path so [Authorize] on the hub still works.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
+
+// SignalR for real-time session events
+builder.Services.AddSignalR();
 
 // ============================================
 // AUTHORIZATION (Permission-based)
@@ -201,10 +235,30 @@ if (app.Environment.IsDevelopment())
 
 // 9. Routes
 app.MapControllers();
+app.MapHub<SessionHub>("/hubs/session");
 
 // 10. Health check endpoint
 app.MapGet("/", () => "Bengal TEX ERP API is running!");
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", time = DateTimeOffset.UtcNow }));
+
+// ============================================
+// DATABASE SEEDER (idempotent — safe to run every startup in Dev)
+// ============================================
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+    await seeder.SeedAsync();
+}
+
+// ============================================
+// HANGFIRE RECURRING JOBS
+// ============================================
+// Outbox processor — drains transactional outbox every 30 seconds
+RecurringJob.AddOrUpdate<OutboxProcessor>(
+    OutboxProcessor.RecurringJobId,
+    x => x.ProcessAsync(CancellationToken.None),
+    "*/30 * * * * *"); // 6-field cron: every 30 seconds
 
 // ============================================
 // RUN

@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Auth;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
@@ -19,6 +20,34 @@ public static class DependencyInjection
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<AuditInterceptor>();
+
+        // Device fingerprint settings + service
+        services.Configure<DeviceFingerprintSettings>(config.GetSection("DeviceFingerprint"));
+        services.AddScoped<IDeviceFingerprintService, DeviceFingerprintService>();
+
+        // File storage (local disk; swap for S3/Blob in production)
+        services.Configure<FileStorageSettings>(config.GetSection("FileStorage"));
+        services.AddScoped<IFileStorage, LocalFileStorage>();
+
+        // SMS gateway (DevLogger stub; swap for SslWireless / Twilio in production)
+        services.Configure<SmsSettings>(config.GetSection("Sms"));
+        services.AddScoped<ISmsSender, DevSmsSender>();
+
+        // Email gateway (DevLogger stub; swap for SMTP / SendGrid in production)
+        services.Configure<EmailSettings>(config.GetSection("Email"));
+        services.AddScoped<IEmailSender, DevEmailSender>();
+
+        // Auth services
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<ISessionEnforcementService, SessionEnforcementService>();
+        services.AddScoped<ISuspiciousActivityDetector, SuspiciousActivityDetector>();
+        services.AddScoped<IGeoFenceService, GeoFenceService>();
+
+        // Seeder
+        services.AddScoped<IDataSeeder, DataSeeder>();
+
+        // Outbox processor (Hangfire recurring job — class activated by IServiceProvider, no interface needed)
+        services.AddScoped<OutboxProcessor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {

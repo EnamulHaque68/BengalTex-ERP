@@ -1,8 +1,2 @@
-namespace BengalTex.ERP.Api.Authentication;
-
-public record JwtTokenResult(
-    string AccessToken,
-    string RefreshToken,
-    string SessionId,
-    DateTimeOffset AccessTokenExpiresAt,
-    DateTimeOffset RefreshTokenExpiresAt);
+// Moved to BengalTex.ERP.Application.Auth.JwtTokenResult (inside IJwtService.cs)
+// This file kept for backwards reference only.

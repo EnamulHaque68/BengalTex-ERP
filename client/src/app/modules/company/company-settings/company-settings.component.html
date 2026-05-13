@@ -1,0 +1,137 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Company Profile</h2>
+      <p class="page-subtitle">{{ companyExists ? 'Update your company information' : 'Set up your company profile to get started' }}</p>
+    </div>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div *ngIf="loading" class="skeleton-wrapper">
+    <p-skeleton height="2.5rem" styleClass="mb-3" />
+    <p-skeleton height="2.5rem" styleClass="mb-3" />
+    <p-skeleton height="2.5rem" />
+  </div>
+
+  <!-- Form -->
+  <p-card *ngIf="!loading" styleClass="form-card">
+    <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+      <!-- Success / Error -->
+      <div class="alert alert-success" *ngIf="successMessage">
+        <i class="pi pi-check-circle"></i>{{ successMessage }}
+      </div>
+      <div class="alert alert-error" *ngIf="errorMessage">
+        <i class="pi pi-exclamation-circle"></i>{{ errorMessage }}
+      </div>
+
+      <!-- Section: Identity -->
+      <p class="section-label">Company Identity</p>
+      <div class="form-grid">
+
+        <div class="field">
+          <label>Company Name *</label>
+          <input pInputText formControlName="name" placeholder="Bengal TEX Ltd." class="w-full" />
+          <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Required, max 200 chars.</small>
+        </div>
+
+        <div class="field">
+          <label>Short Name *</label>
+          <input pInputText formControlName="shortName" placeholder="BTX" class="w-full" />
+          <small class="p-error" *ngIf="form.get('shortName')?.invalid && form.get('shortName')?.touched">Required, max 50 chars.</small>
+        </div>
+
+        <div class="field">
+          <label>Registration Number</label>
+          <input pInputText formControlName="registrationNumber" placeholder="RJSC-..." class="w-full" />
+        </div>
+
+        <div class="field">
+          <label>VAT / Tax Number</label>
+          <input pInputText formControlName="taxNumber" placeholder="BIN number" class="w-full" />
+        </div>
+
+      </div>
+
+      <!-- Section: Address -->
+      <p class="section-label">Address</p>
+      <div class="form-grid">
+
+        <div class="field col-span-2">
+          <label>Address Line 1 *</label>
+          <input pInputText formControlName="addressLine1" placeholder="House, Road, Area" class="w-full" />
+          <small class="p-error" *ngIf="form.get('addressLine1')?.invalid && form.get('addressLine1')?.touched">Required.</small>
+        </div>
+
+        <div class="field col-span-2">
+          <label>Address Line 2</label>
+          <input pInputText formControlName="addressLine2" placeholder="Optional" class="w-full" />
+        </div>
+
+        <div class="field">
+          <label>City *</label>
+          <input pInputText formControlName="city" placeholder="Dhaka" class="w-full" />
+          <small class="p-error" *ngIf="form.get('city')?.invalid && form.get('city')?.touched">Required.</small>
+        </div>
+
+        <div class="field">
+          <label>District *</label>
+          <input pInputText formControlName="district" placeholder="Dhaka" class="w-full" />
+          <small class="p-error" *ngIf="form.get('district')?.invalid && form.get('district')?.touched">Required.</small>
+        </div>
+
+        <div class="field">
+          <label>Postal Code</label>
+          <input pInputText formControlName="postalCode" placeholder="1212" class="w-full" />
+        </div>
+
+        <div class="field">
+          <label>Country *</label>
+          <input pInputText formControlName="country" class="w-full" />
+        </div>
+
+      </div>
+
+      <!-- Section: Contact -->
+      <p class="section-label">Contact</p>
+      <div class="form-grid">
+
+        <div class="field">
+          <label>Phone</label>
+          <input pInputText formControlName="phone" placeholder="+880 ..." class="w-full" />
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input pInputText formControlName="email" placeholder="info@bengaltex.com" class="w-full" />
+          <small class="p-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">Invalid email.</small>
+        </div>
+
+        <div class="field">
+          <label>Website</label>
+          <input pInputText formControlName="website" placeholder="https://bengaltex.com" class="w-full" />
+        </div>
+
+        <div class="field">
+          <label>Logo URL</label>
+          <input pInputText formControlName="logoUrl" placeholder="https://..." class="w-full" />
+        </div>
+
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <p-button
+          type="submit"
+          [label]="saving ? 'Saving...' : (companyExists ? 'Save Changes' : 'Create Profile')"
+          icon="pi pi-save"
+          [loading]="saving"
+          [disabled]="form.invalid || saving"
+        />
+      </div>
+
+    </form>
+  </p-card>
+
+</div>
