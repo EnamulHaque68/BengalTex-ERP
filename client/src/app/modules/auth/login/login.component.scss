@@ -1,0 +1,130 @@
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 1rem;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.brand {
+  text-align: center;
+  color: white;
+
+  .brand-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    backdrop-filter: blur(10px);
+
+    i {
+      font-size: 2rem;
+      color: #a78bfa;
+    }
+  }
+
+  .brand-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-tagline {
+    font-size: 0.875rem;
+    opacity: 0.7;
+    margin: 0;
+  }
+}
+
+:host ::ng-deep .login-card {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+
+  .p-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+    margin-bottom: 0;
+  }
+}
+
+.field {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+
+  i { font-size: 1rem; }
+}
+
+:host ::ng-deep .login-btn {
+  margin-top: 0.5rem;
+
+  .p-button {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: opacity 0.2s;
+
+    &:hover:not(:disabled) { opacity: 0.9; }
+  }
+}
+
+.forgot-link {
+  margin-top: 1rem;
+  text-align: center;
+
+  a {
+    color: #7c3aed;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.footer-note {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0;
+}

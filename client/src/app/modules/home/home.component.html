@@ -1,0 +1,50 @@
+<div class="home-shell">
+
+  <!-- Top Navigation Bar -->
+  <header class="top-bar">
+    <div class="brand">
+      <i class="pi pi-building"></i>
+      <span>Bengal TEX ERP</span>
+    </div>
+    <div class="user-area">
+      <span class="user-name">{{ userName }}</span>
+      <span class="user-role" *ngIf="userRoles.length">{{ userRoles[0] }}</span>
+      <p-button
+        label="Logout"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        size="small"
+        (click)="logout()"
+      />
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="welcome-card">
+      <i class="pi pi-home welcome-icon"></i>
+      <h2>Welcome, {{ userName }}!</h2>
+      <p>Select a module below to get started.</p>
+    </div>
+
+    <div class="module-grid">
+      <a routerLink="/company" class="module-card">
+        <i class="pi pi-building module-icon"></i>
+        <div class="module-info">
+          <span class="module-name">Company</span>
+          <span class="module-desc">Company profile &amp; settings</span>
+        </div>
+        <i class="pi pi-chevron-right module-arrow"></i>
+      </a>
+      <a routerLink="/factories" class="module-card">
+        <i class="pi pi-warehouse module-icon"></i>
+        <div class="module-info">
+          <span class="module-name">Factories</span>
+          <span class="module-desc">Production facilities &amp; geo-fence</span>
+        </div>
+        <i class="pi pi-chevron-right module-arrow"></i>
+      </a>
+    </div>
+  </main>
+
+</div>

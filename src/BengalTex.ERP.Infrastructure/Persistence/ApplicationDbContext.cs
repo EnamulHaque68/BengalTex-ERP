@@ -1,6 +1,7 @@
 using System.Reflection;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Domain.Common;
+using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Infrastructure.Identity;
 using BengalTex.ERP.Infrastructure.Persistence.CrossCutting;
 using MediatR;
@@ -37,9 +38,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<SuspiciousLoginAttempt> SuspiciousLoginAttempts => Set<SuspiciousLoginAttempt>();
     public DbSet<DeviceChangeRequest> DeviceChangeRequests => Set<DeviceChangeRequest>();
 
-    // Future business DbSets will be added per-module:
-    // public DbSet<Customer> Customers => Set<Customer>();
-    // public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+    // Business DbSets
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<Factory> Factories => Set<Factory>();
+    public DbSet<Currency> Currencies => Set<Currency>();
+    public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

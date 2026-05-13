@@ -1,5 +1,10 @@
 namespace BengalTex.ERP.Application.Common.Interfaces;
 
+/// <summary>
+/// Owns the user session lifecycle: start (with single-session enforcement),
+/// validate, and end. Kept separate from IIdentityService so that auth concerns
+/// (credentials, password, user info) stay decoupled from session storage.
+/// </summary>
 public interface ISessionEnforcementService
 {
     /// <summary>
@@ -15,4 +20,9 @@ public interface ISessionEnforcementService
     /// If not, the session has been superseded.
     /// </summary>
     Task<bool> IsCurrentSessionAsync(Guid userId, string sessionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Ends the current session (logout). Clears stored refresh token + session id.
+    /// </summary>
+    Task ClearSessionAsync(Guid userId, CancellationToken ct = default);
 }

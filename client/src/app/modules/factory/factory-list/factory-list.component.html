@@ -1,0 +1,197 @@
+<div class="page-shell">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Factories</h2>
+      <p class="page-subtitle">Manage production facilities</p>
+    </div>
+    <div class="header-actions">
+      <p-togglebutton
+        [(ngModel)]="includeInactive"
+        onLabel="All" offLabel="Active only"
+        onIcon="pi pi-eye" offIcon="pi pi-eye-slash"
+        (onChange)="loadFactories()"
+        styleClass="toggle-inactive"
+      />
+      <p-button label="Add Factory" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="factories"
+      [loading]="loading"
+      [paginator]="factories.length > 10"
+      [rows]="10"
+      styleClass="p-datatable-sm"
+      [rowHover]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
+          <th>Code</th>
+          <th>City</th>
+          <th>Phone</th>
+          <th>Geo-Fence</th>
+          <th>Status</th>
+          <th style="width:100px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-f>
+        <tr>
+          <td class="fw-600">{{ f.name }}</td>
+          <td><span class="code-badge">{{ f.code }}</span></td>
+          <td>{{ f.city }}</td>
+          <td>{{ f.phone || '—' }}</td>
+          <td>
+            <i class="pi" [class.pi-map-marker]="f.hasGeoFence" [class.pi-ban]="!f.hasGeoFence"
+               [class.geo-on]="f.hasGeoFence" [class.geo-off]="!f.hasGeoFence"></i>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="f.isActive" [class.inactive]="!f.isActive">
+              {{ f.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(f.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="confirmDelete(f)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-building"></i>
+            <span>No factories found. Click "Add Factory" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Factory' : 'Edit Factory'"
+  [modal]="true"
+  [style]="{ width: '580px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="saveFactory()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="dialog-grid">
+
+      <div class="field">
+        <label>Factory Name *</label>
+        <input pInputText formControlName="name" placeholder="Main Factory" class="w-full" />
+        <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Required.</small>
+      </div>
+
+      <div class="field">
+        <label>Code * <small>(uppercase)</small></label>
+        <input pInputText formControlName="code" placeholder="MAIN" class="w-full"
+               (input)="form.get('code')?.setValue($any($event.target).value.toUpperCase(), {emitEvent: false})" />
+        <small class="p-error" *ngIf="form.get('code')?.invalid && form.get('code')?.touched">
+          Required. A–Z, 0–9, -, _ only.
+        </small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Address Line 1 *</label>
+        <input pInputText formControlName="addressLine1" placeholder="House, Road, Area" class="w-full" />
+        <small class="p-error" *ngIf="form.get('addressLine1')?.invalid && form.get('addressLine1')?.touched">Required.</small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Address Line 2</label>
+        <input pInputText formControlName="addressLine2" placeholder="Optional" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>City *</label>
+        <input pInputText formControlName="city" placeholder="Narayanganj" class="w-full" />
+        <small class="p-error" *ngIf="form.get('city')?.invalid && form.get('city')?.touched">Required.</small>
+      </div>
+
+      <div class="field">
+        <label>District</label>
+        <input pInputText formControlName="district" placeholder="Narayanganj" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Postal Code</label>
+        <input pInputText formControlName="postalCode" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <input pInputText formControlName="phone" placeholder="+880 ..." class="w-full" />
+      </div>
+
+      <!-- Geo-fence section -->
+      <div class="field col-span-2 geo-section">
+        <p class="geo-label"><i class="pi pi-map-marker"></i> Geo-Fence (optional — for attendance)</p>
+        <div class="geo-grid">
+          <div class="field">
+            <label>Latitude</label>
+            <p-inputNumber formControlName="geoFenceLat" [minFractionDigits]="6" [maxFractionDigits]="8" placeholder="23.810332" class="w-full" />
+          </div>
+          <div class="field">
+            <label>Longitude</label>
+            <p-inputNumber formControlName="geoFenceLng" [minFractionDigits]="6" [maxFractionDigits]="8" placeholder="90.412518" class="w-full" />
+          </div>
+          <div class="field">
+            <label>Radius (meters)</label>
+            <p-inputNumber formControlName="geoFenceRadiusMeters" placeholder="100" class="w-full" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isActive" />
+          <span>Active</span>
+        </label>
+      </div>
+
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button
+        type="submit"
+        [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+        icon="pi pi-save"
+        [loading]="dialogSaving"
+        [disabled]="form.invalid || dialogSaving"
+      />
+    </div>
+
+  </form>
+</p-dialog>
+
+<!-- Delete Confirmation -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Confirm Delete"
+  [modal]="true"
+  [style]="{ width: '380px' }"
+>
+  <p>Delete factory <strong>{{ deletingFactory?.name }}</strong>? This is a soft delete and can be recovered.</p>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleting" />
+    <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+  </div>
+</p-dialog>
