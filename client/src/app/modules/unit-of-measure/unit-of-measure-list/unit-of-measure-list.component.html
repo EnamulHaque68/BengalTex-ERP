@@ -1,0 +1,178 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Units of Measure</h2>
+      <p class="page-subtitle">Define units and conversion factors</p>
+    </div>
+    <div class="header-actions">
+      <p-togglebutton
+        [(ngModel)]="includeInactive"
+        onLabel="All" offLabel="Active only"
+        onIcon="pi pi-eye" offIcon="pi pi-eye-slash"
+        (onChange)="load()"
+      />
+      <p-button label="Add Unit" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="units" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Symbol</th>
+          <th>Type</th>
+          <th>Base Unit</th>
+          <th>Conversion</th>
+          <th>Status</th>
+          <th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-u>
+        <tr>
+          <td><span class="code-badge">{{ u.code }}</span></td>
+          <td class="fw-600">{{ u.name }}</td>
+          <td>{{ u.symbol }}</td>
+          <td><span class="type-chip" [attr.data-type]="u.unitType">{{ u.unitType }}</span></td>
+          <td>
+            <span *ngIf="u.baseUnitCode" class="code-badge">{{ u.baseUnitCode }}</span>
+            <span *ngIf="!u.baseUnitCode" class="base-self">— self</span>
+          </td>
+          <td>
+            <span *ngIf="u.baseUnitCode">1 {{ u.code }} = {{ u.conversionFactor }} {{ u.baseUnitCode }}</span>
+            <span *ngIf="!u.baseUnitCode" class="muted">—</span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="u.isActive" [class.inactive]="!u.isActive">
+              {{ u.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(u.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(u)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-box"></i>
+            <span>No units. Click "Add Unit" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Unit' : 'Edit Unit'"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code *</label>
+        <input pInputText formControlName="code"
+               placeholder="PCS" class="w-full"
+               (input)="form.get('code')?.setValue($any($event.target).value.toUpperCase(), {emitEvent: false})" />
+        <small class="p-error" *ngIf="form.get('code')?.invalid && form.get('code')?.touched">
+          Uppercase letters / digits only.
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Symbol *</label>
+        <input pInputText formControlName="symbol" placeholder="pcs" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="Pieces" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Unit Type *</label>
+        <p-select formControlName="unitType"
+                    [options]="unitTypes" appendTo="body" class="w-full" styleClass="w-full" />
+        <small class="muted" *ngIf="dialogMode === 'edit'">Cannot be changed after creation.</small>
+      </div>
+
+      <div class="field">
+        <label>Base Unit</label>
+        <p-select formControlName="baseUnitId"
+                    [options]="baseUnitOptions"
+                    optionLabel="code"
+                    optionValue="id"
+                    [showClear]="true"
+                    placeholder="(none — this is a base)"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+        <small class="muted" *ngIf="dialogMode === 'edit'">Cannot be changed after creation.</small>
+      </div>
+
+      <div class="field col-span-2" *ngIf="form.get('baseUnitId')?.value">
+        <label>Conversion Factor</label>
+        <p-inputNumber formControlName="conversionFactor"
+                       [minFractionDigits]="2" [maxFractionDigits]="6"
+                       placeholder="12" class="w-full" />
+        <small class="muted">How many base units equal 1 of this unit (e.g., 1 DZN = 12 PCS).</small>
+      </div>
+
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isActive" />
+          <span>Active</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Unit"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingUnit">
+    <p>Delete <strong>{{ deletingUnit.name }} ({{ deletingUnit.code }})</strong>? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
