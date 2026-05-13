@@ -42,6 +42,8 @@ public static class DependencyInjection
         services.AddScoped<ISessionEnforcementService, SessionEnforcementService>();
         services.AddScoped<ISuspiciousActivityDetector, SuspiciousActivityDetector>();
         services.AddScoped<IGeoFenceService, GeoFenceService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IRoleManagementService, RoleManagementService>();
 
         // Seeder
         services.AddScoped<IDataSeeder, DataSeeder>();

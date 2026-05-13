@@ -1,0 +1,293 @@
+<div class="page-shell">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Users</h2>
+      <p class="page-subtitle">Manage user accounts and roles</p>
+    </div>
+    <div class="header-actions">
+      <span class="p-input-icon-left search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search name, email, username..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-button label="Add User" icon="pi pi-user-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <!-- Users table -->
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="users"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Roles</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-u>
+        <tr>
+          <td class="fw-600">{{ u.fullName }}</td>
+          <td><span class="code-badge">{{ u.userName }}</span></td>
+          <td>{{ u.email }}</td>
+          <td>
+            <span *ngFor="let r of u.roles" class="role-chip">{{ r }}</span>
+            <span *ngIf="!u.roles?.length" class="muted">—</span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="u.isActive" [class.inactive]="!u.isActive">
+              {{ u.isActive ? 'Active' : 'Inactive' }}
+            </span>
+            <span *ngIf="u.isLockedOut" class="status-badge locked" pTooltip="Account locked due to failed attempts">
+              <i class="pi pi-lock"></i> Locked
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(u.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-id-card" severity="secondary" [text]="true" size="small"
+                        (click)="openRolesDialog(u)" pTooltip="Manage roles" />
+              <p-button icon="pi pi-key" severity="secondary" [text]="true" size="small"
+                        (click)="openResetPassword(u)" pTooltip="Reset password" />
+              <p-button [icon]="u.isActive ? 'pi pi-ban' : 'pi pi-check'"
+                        [severity]="u.isActive ? 'danger' : 'success'"
+                        [text]="true" size="small"
+                        (click)="confirmToggleActive(u)"
+                        [pTooltip]="u.isActive ? 'Deactivate' : 'Activate'" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="empty-row">
+            <i class="pi pi-users"></i>
+            <span>No users found.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+</div>
+
+<!-- ===== Create / Edit Dialog ===== -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add User' : 'Edit User'"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="saveUser()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="dialog-grid">
+
+      <div class="field">
+        <label>Full Name *</label>
+        <input pInputText formControlName="fullName" placeholder="John Doe" class="w-full" />
+        <small class="p-error" *ngIf="form.get('fullName')?.invalid && form.get('fullName')?.touched">Required.</small>
+      </div>
+
+      <div class="field">
+        <label>Username *</label>
+        <input pInputText formControlName="userName" placeholder="johndoe" class="w-full" />
+        <small class="p-error" *ngIf="form.get('userName')?.invalid && form.get('userName')?.touched">
+          Required. Letters, digits, underscore, dot, hyphen only.
+        </small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Email *</label>
+        <input pInputText type="email" formControlName="email" placeholder="user@bengaltex.com" class="w-full" />
+        <small class="p-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Valid email required.
+        </small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Factory ID</label>
+        <p-inputNumber formControlName="factoryId" [showButtons]="false" placeholder="(optional)" class="w-full" />
+        <small class="muted">Leave empty if user isn't tied to a specific factory.</small>
+      </div>
+
+      <!-- Password fields (CREATE mode only) -->
+      <ng-container *ngIf="dialogMode === 'create'">
+        <div class="field col-span-2 password-section">
+          <p class="section-label"><i class="pi pi-key"></i> Set Initial Password</p>
+        </div>
+
+        <div class="field">
+          <label>Password *</label>
+          <p-password formControlName="password" [feedback]="true" [toggleMask]="true"
+                      placeholder="Min 8, 1 upper, 1 digit" styleClass="w-full" inputStyleClass="w-full" />
+          <small class="p-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+            Min 8 chars, 1 uppercase, 1 digit.
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Confirm Password *</label>
+          <p-password formControlName="confirmPassword" [feedback]="false" [toggleMask]="true"
+                      placeholder="Re-enter password" styleClass="w-full" inputStyleClass="w-full" />
+        </div>
+
+        <div class="field col-span-2">
+          <label>Roles</label>
+          <div class="role-checkboxes">
+            <label *ngFor="let r of allRoles" class="role-check">
+              <input type="checkbox"
+                     [checked]="isRoleSelectedInForm(r.name)"
+                     (change)="toggleFormRole(r.name, $any($event.target).checked)" />
+              <span>{{ r.name }}</span>
+              <small *ngIf="r.isSystemRole" class="muted">(system)</small>
+            </label>
+          </div>
+          <small class="muted">Roles can also be changed later via the "Manage roles" action.</small>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button
+        type="submit"
+        [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+        icon="pi pi-save"
+        [loading]="dialogSaving"
+        [disabled]="form.invalid || dialogSaving"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- ===== Manage Roles Dialog ===== -->
+<p-dialog
+  [(visible)]="rolesDialogVisible"
+  header="Manage Roles"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+>
+  <div *ngIf="rolesEditingUser">
+    <p class="hint">User: <strong>{{ rolesEditingUser.fullName }}</strong> (<code>{{ rolesEditingUser.userName }}</code>)</p>
+
+    <div class="alert alert-error" *ngIf="rolesDialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ rolesDialogError }}
+    </div>
+
+    <div class="role-checkboxes">
+      <label *ngFor="let r of allRoles" class="role-check">
+        <input type="checkbox"
+               [checked]="selectedRoles.includes(r.name)"
+               (change)="toggleRoleSelection(r.name)" />
+        <span>{{ r.name }}</span>
+        <small *ngIf="r.isSystemRole" class="muted">(system)</small>
+      </label>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="rolesDialogVisible = false" [disabled]="rolesDialogSaving" />
+      <p-button label="Save Roles" icon="pi pi-save"
+                [loading]="rolesDialogSaving" (click)="saveRoles()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- ===== Reset Password Dialog ===== -->
+<p-dialog
+  [(visible)]="resetPwDialogVisible"
+  header="Reset User Password"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="resetPwForm" (ngSubmit)="saveResetPassword()" autocomplete="off"
+        *ngIf="resetPwUser">
+
+    <p class="hint">Resetting password for <strong>{{ resetPwUser.fullName }}</strong></p>
+
+    <div class="alert alert-error" *ngIf="resetPwError">
+      <i class="pi pi-exclamation-circle"></i>{{ resetPwError }}
+    </div>
+
+    <div class="field">
+      <label>New Password</label>
+      <p-password formControlName="newPassword" [feedback]="true" [toggleMask]="true"
+                  placeholder="Min 8, 1 upper, 1 digit" styleClass="w-full" inputStyleClass="w-full" />
+      <small class="p-error" *ngIf="resetPwForm.get('newPassword')?.invalid && resetPwForm.get('newPassword')?.touched">
+        Min 8 chars, 1 uppercase, 1 digit.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Confirm Password</label>
+      <p-password formControlName="confirmPassword" [feedback]="false" [toggleMask]="true"
+                  placeholder="Re-enter new password" styleClass="w-full" inputStyleClass="w-full" />
+      <small class="p-error" *ngIf="resetPwForm.errors?.['passwordsMismatch'] && resetPwForm.get('confirmPassword')?.touched">
+        Passwords do not match.
+      </small>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="resetPwDialogVisible = false" [disabled]="resetPwSaving" />
+      <p-button type="submit" label="Reset" icon="pi pi-key"
+                [loading]="resetPwSaving" [disabled]="resetPwForm.invalid || resetPwSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- ===== Toggle Active Confirm ===== -->
+<p-dialog
+  [(visible)]="toggleDialogVisible"
+  [header]="toggleUser?.isActive ? 'Deactivate User' : 'Activate User'"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="toggleUser">
+    <p *ngIf="toggleUser.isActive">
+      Deactivate <strong>{{ toggleUser.fullName }}</strong>? They won't be able to log in and any active session will be cleared.
+    </p>
+    <p *ngIf="!toggleUser.isActive">
+      Activate <strong>{{ toggleUser.fullName }}</strong>? They'll be able to log in again.
+    </p>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="toggleDialogVisible = false" [disabled]="toggleSaving" />
+      <p-button [label]="toggleUser.isActive ? 'Deactivate' : 'Activate'"
+                [icon]="toggleUser.isActive ? 'pi pi-ban' : 'pi pi-check'"
+                [severity]="toggleUser.isActive ? 'danger' : 'success'"
+                [loading]="toggleSaving"
+                (click)="doToggleActive()" />
+    </div>
+  </div>
+</p-dialog>

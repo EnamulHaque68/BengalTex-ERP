@@ -10,7 +10,9 @@ const routes: Routes = [
     children: [
       { path: '', loadChildren: () => import('./modules/home/home.module').then(m => m.HomeModule) },
       { path: 'company', loadChildren: () => import('./modules/company/company.module').then(m => m.CompanyModule) },
-      { path: 'factories', loadChildren: () => import('./modules/factory/factory.module').then(m => m.FactoryModule) }
+      { path: 'factories', loadChildren: () => import('./modules/factory/factory.module').then(m => m.FactoryModule) },
+      { path: 'users', loadChildren: () => import('./modules/user/user.module').then(m => m.UserModule) },
+      { path: 'roles', loadChildren: () => import('./modules/role/role.module').then(m => m.RoleModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
