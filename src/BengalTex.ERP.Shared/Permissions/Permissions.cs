@@ -59,6 +59,14 @@ public static class Permissions
         public const string Delete = "Suppliers.Delete";
     }
 
+    public static class ProductCategories
+    {
+        public const string View = "ProductCategories.View";
+        public const string Create = "ProductCategories.Create";
+        public const string Edit = "ProductCategories.Edit";
+        public const string Delete = "ProductCategories.Delete";
+    }
+
     public static class Products
     {
         public const string View = "Products.View";

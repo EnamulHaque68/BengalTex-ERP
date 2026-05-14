@@ -27,72 +27,113 @@
       <p>Select a module below to get started.</p>
     </div>
 
-    <div class="module-grid">
-      <a routerLink="/company" class="module-card">
-        <i class="pi pi-building module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Company</span>
-          <span class="module-desc">Company profile &amp; settings</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/factories" class="module-card">
-        <i class="pi pi-warehouse module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Factories</span>
-          <span class="module-desc">Production facilities &amp; geo-fence</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/users" class="module-card">
-        <i class="pi pi-users module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Users</span>
-          <span class="module-desc">User accounts &amp; role assignment</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/roles" class="module-card">
-        <i class="pi pi-shield module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Roles &amp; Permissions</span>
-          <span class="module-desc">Define roles &amp; grant access</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/currencies" class="module-card">
-        <i class="pi pi-dollar module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Currencies</span>
-          <span class="module-desc">Currencies &amp; exchange rates</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/units-of-measure" class="module-card">
-        <i class="pi pi-box module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Units of Measure</span>
-          <span class="module-desc">Units &amp; conversion factors</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/warehouses" class="module-card">
-        <i class="pi pi-warehouse module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Warehouses</span>
-          <span class="module-desc">Storage locations per factory</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-      <a routerLink="/customers" class="module-card">
-        <i class="pi pi-id-card module-icon"></i>
-        <div class="module-info">
-          <span class="module-name">Customers</span>
-          <span class="module-desc">Buyers, credit limits &amp; compliance</span>
-        </div>
-        <i class="pi pi-chevron-right module-arrow"></i>
-      </a>
-    </div>
+    <section class="module-section">
+      <h3 class="section-heading">Administration</h3>
+      <div class="module-grid">
+        <a routerLink="/company" class="module-card">
+          <i class="pi pi-building module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Company</span>
+            <span class="module-desc">Company profile &amp; settings</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/factories" class="module-card">
+          <i class="pi pi-cog module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Factories</span>
+            <span class="module-desc">Production facilities &amp; geo-fence</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/users" class="module-card">
+          <i class="pi pi-users module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Users</span>
+            <span class="module-desc">User accounts &amp; role assignment</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/roles" class="module-card">
+          <i class="pi pi-shield module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Roles &amp; Permissions</span>
+            <span class="module-desc">Define roles &amp; grant access</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+      </div>
+    </section>
+
+    <section class="module-section">
+      <h3 class="section-heading">Master Data</h3>
+      <div class="module-grid">
+        <a routerLink="/currencies" class="module-card">
+          <i class="pi pi-dollar module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Currencies</span>
+            <span class="module-desc">Currencies &amp; exchange rates</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/units-of-measure" class="module-card">
+          <i class="pi pi-calculator module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Units of Measure</span>
+            <span class="module-desc">Units &amp; conversion factors</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/warehouses" class="module-card">
+          <i class="pi pi-warehouse module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Warehouses</span>
+            <span class="module-desc">Storage locations per factory</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/customers" class="module-card">
+          <i class="pi pi-id-card module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Customers</span>
+            <span class="module-desc">Buyers, credit limits &amp; compliance</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/suppliers" class="module-card">
+          <i class="pi pi-truck module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Suppliers</span>
+            <span class="module-desc">Vendors, payment terms &amp; bank info</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/product-categories" class="module-card">
+          <i class="pi pi-tags module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Product Categories</span>
+            <span class="module-desc">Group products into categories</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/products" class="module-card">
+          <i class="pi pi-box module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Products</span>
+            <span class="module-desc">Garments accessories product master</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/raw-materials" class="module-card">
+          <i class="pi pi-inbox module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Raw Materials</span>
+            <span class="module-desc">Yarn, fabric, ink &amp; chemical master</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+      </div>
+    </section>
   </main>
 
 </div>

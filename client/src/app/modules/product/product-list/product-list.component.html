@@ -1,0 +1,241 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Products</h2>
+      <p class="page-subtitle">Garments accessories product master</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, name, spec..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterCategoryId"
+                  [options]="categories"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  placeholder="All categories"
+                  styleClass="cat-filter"
+                  (onChange)="load()" />
+      <p-togglebutton
+        [(ngModel)]="includeInactive"
+        onLabel="All" offLabel="Active only"
+        onIcon="pi pi-eye" offIcon="pi pi-eye-slash"
+        (onChange)="load()"
+      />
+      <p-button label="Add Product" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="products"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Unit</th>
+          <th>Sales Price</th>
+          <th>Reorder Level</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td><span class="code-badge">{{ p.code }}</span></td>
+          <td class="fw-600">{{ p.name }}</td>
+          <td>{{ p.productCategoryName }}</td>
+          <td><span class="unit-badge">{{ p.unitOfMeasureCode }}</span></td>
+          <td class="num">{{ formatCurrency(p.salesPrice) }}</td>
+          <td class="num">{{ p.reorderLevel }}</td>
+          <td>
+            <span class="type-chip" [class.stock]="p.isStockItem" [class.order]="!p.isStockItem">
+              {{ p.isStockItem ? 'Stock' : 'Order-based' }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="p.isActive" [class.inactive]="!p.isActive">
+              {{ p.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(p.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(p)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-box"></i>
+            <span>No products. Click "Add Product" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Product' : 'Edit Product'"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <p class="section-label">Basic Info</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(leave empty to auto-generate)</small></label>
+        <input pInputText formControlName="code"
+               placeholder="BTX/PROD/YYYY/00001" class="w-full"
+               (input)="form.get('code')?.setValue($any($event.target).value.toUpperCase(), {emitEvent: false})" />
+      </div>
+
+      <div class="field">
+        <label>Unit of Measure *</label>
+        <p-select formControlName="unitOfMeasureId"
+                    [options]="units"
+                    optionLabel="code"
+                    optionValue="id"
+                    placeholder="Select unit"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="Woven Main Label - Cotton" class="w-full" />
+        <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Required.</small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Category *</label>
+        <p-select formControlName="productCategoryId"
+                    [options]="categories"
+                    optionLabel="name"
+                    optionValue="id"
+                    placeholder="Select category"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Specification</label>
+        <textarea pInputTextarea rows="2" formControlName="specification"
+                  placeholder="100% cotton, 2x4cm, satin finish..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Attributes</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Size</label>
+        <input pInputText formControlName="size" placeholder="2x4cm" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Color</label>
+        <input pInputText formControlName="color" placeholder="White" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Material</label>
+        <input pInputText formControlName="material" placeholder="Cotton / Satin / Polyester" class="w-full" />
+      </div>
+    </div>
+
+    <p class="section-label">Pricing &amp; Stock</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Sales Price (BDT)</label>
+        <p-inputNumber formControlName="salesPrice" mode="currency" currency="BDT" locale="en-BD"
+                       [minFractionDigits]="2" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Reorder Level</label>
+        <p-inputNumber formControlName="reorderLevel" [min]="0" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isStockItem" />
+          <span>Stock item <small>(off = made-to-order only)</small></span>
+        </label>
+      </div>
+      <div class="field col-span-2">
+        <label>Image URL</label>
+        <input pInputText formControlName="imageUrl" placeholder="https://..." class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" placeholder="Internal notes..." class="w-full"></textarea>
+      </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isActive" />
+          <span>Active</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Product"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingProduct">
+    <p>Delete <strong>{{ deletingProduct.name }} ({{ deletingProduct.code }})</strong>? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

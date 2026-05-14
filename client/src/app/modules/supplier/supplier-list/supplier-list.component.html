@@ -1,0 +1,277 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Suppliers</h2>
+      <p class="page-subtitle">Manage vendor / supplier master data</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, name, phone, email..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-togglebutton
+        [(ngModel)]="includeInactive"
+        onLabel="All" offLabel="Active only"
+        onIcon="pi pi-eye" offIcon="pi pi-eye-slash"
+        (onChange)="load()"
+      />
+      <p-button label="Add Supplier" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="suppliers"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Phone</th>
+          <th>City</th>
+          <th>Payment Terms</th>
+          <th>Rating</th>
+          <th>Status</th>
+          <th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td class="fw-600">{{ s.name }}</td>
+          <td>{{ s.contactPerson || '—' }}</td>
+          <td>{{ s.phone || '—' }}</td>
+          <td>{{ s.city }}</td>
+          <td>
+            <span *ngIf="s.paymentTermsDays > 0">{{ s.paymentTermsDays }} days</span>
+            <span *ngIf="s.paymentTermsDays === 0" class="muted">Advance</span>
+          </td>
+          <td>
+            <span class="rating-display">
+              <i *ngFor="let st of stars" class="pi"
+                 [class.pi-star-fill]="st <= s.rating"
+                 [class.pi-star]="st > s.rating"></i>
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="s.isActive" [class.inactive]="!s.isActive">
+              {{ s.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(s.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(s)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-truck"></i>
+            <span>No suppliers. Click "Add Supplier" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Supplier' : 'Edit Supplier'"
+  [modal]="true"
+  [style]="{ width: '760px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <!-- Basic Info -->
+    <p class="section-label">Basic Info</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(leave empty to auto-generate)</small></label>
+        <input pInputText formControlName="code"
+               placeholder="BTX/SUPP/YYYY/00001" class="w-full"
+               (input)="form.get('code')?.setValue($any($event.target).value.toUpperCase(), {emitEvent: false})" />
+      </div>
+
+      <div class="field">
+        <label>Supplier Rating</label>
+        <div class="star-picker">
+          <i *ngFor="let st of stars" class="pi star-clickable"
+             [class.pi-star-fill]="st <= (form.get('rating')?.value || 0)"
+             [class.pi-star]="st > (form.get('rating')?.value || 0)"
+             (click)="setRating(st)"></i>
+          <span class="rating-label">{{ form.get('rating')?.value || 0 }}/5</span>
+        </div>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="XYZ Yarn Mills" class="w-full" />
+        <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Required.</small>
+      </div>
+
+      <div class="field">
+        <label>Contact Person</label>
+        <input pInputText formControlName="contactPerson" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <input pInputText formControlName="phone" placeholder="+880 ..." class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input pInputText type="email" formControlName="email" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Website</label>
+        <input pInputText formControlName="website" class="w-full" />
+      </div>
+    </div>
+
+    <!-- Address -->
+    <p class="section-label">Address</p>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Address Line 1 *</label>
+        <input pInputText formControlName="addressLine1" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Address Line 2</label>
+        <input pInputText formControlName="addressLine2" placeholder="Optional" class="w-full" />
+      </div>
+      <div class="field">
+        <label>City *</label>
+        <input pInputText formControlName="city" class="w-full" />
+      </div>
+      <div class="field">
+        <label>District</label>
+        <input pInputText formControlName="district" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Postal Code</label>
+        <input pInputText formControlName="postalCode" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Country *</label>
+        <input pInputText formControlName="country" class="w-full" />
+      </div>
+    </div>
+
+    <!-- Tax / Compliance -->
+    <p class="section-label">Tax / Compliance (optional)</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>BIN Number</label>
+        <input pInputText formControlName="binNumber" class="w-full" />
+      </div>
+      <div class="field">
+        <label>VAT Number</label>
+        <input pInputText formControlName="vatNumber" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>TIN Number</label>
+        <input pInputText formControlName="tinNumber" class="w-full" />
+      </div>
+    </div>
+
+    <!-- Bank & Terms -->
+    <p class="section-label">Bank Details &amp; Payment Terms</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Payment Terms (days)</label>
+        <p-inputNumber formControlName="paymentTermsDays" [showButtons]="true" [min]="0" [max]="365" class="w-full" />
+        <small class="muted">0 = advance payment.</small>
+      </div>
+      <div class="field">
+        <label>Bank Name</label>
+        <input pInputText formControlName="bankName" placeholder="Dutch Bangla Bank" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Account Number</label>
+        <input pInputText formControlName="bankAccountNumber" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Branch</label>
+        <input pInputText formControlName="bankBranch" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Account Holder Name</label>
+        <input pInputText formControlName="bankAccountHolderName" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" placeholder="Internal notes..." class="w-full"></textarea>
+      </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isActive" />
+          <span>Active</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Supplier"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingSupplier">
+    <p>Delete <strong>{{ deletingSupplier.name }} ({{ deletingSupplier.code }})</strong>? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

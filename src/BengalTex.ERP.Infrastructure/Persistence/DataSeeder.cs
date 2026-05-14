@@ -36,6 +36,7 @@ public class DataSeeder : IDataSeeder
         await SeedCurrenciesAsync(ct);
         await SeedUnitsOfMeasureAsync(ct);
         await SeedWarehousesAsync(ct);
+        await SeedProductCategoriesAsync(ct);
         await SeedSuperAdminAsync(ct);
         await SeedNumberingSeriesAsync(ct);
     }
@@ -336,6 +337,32 @@ public class DataSeeder : IDataSeeder
         await _db.SaveChangesAsync(ct);
     }
 
+    // ─── Product Categories ───────────────────────────────────────────────────
+
+    private async Task SeedProductCategoriesAsync(CancellationToken ct)
+    {
+        var categories = new[]
+        {
+            new ProductCategory { Code = "WLBL", Name = "Woven Labels",  Description = "Woven garment labels", IsActive = true },
+            new ProductCategory { Code = "TAG",  Name = "Hand Tags",     Description = "Hang tags and price tags", IsActive = true },
+            new ProductCategory { Code = "STKR", Name = "Stickers",      Description = "Barcode and poly bag stickers", IsActive = true },
+            new ProductCategory { Code = "PKG",  Name = "Packaging",     Description = "Poly bags, cartons and packaging", IsActive = true },
+        };
+
+        foreach (var c in categories)
+        {
+            var existing = await _db.ProductCategories
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Code == c.Code, ct);
+
+            if (existing is null)
+                _db.ProductCategories.Add(c);
+            else if (existing.IsDeleted)
+                Restore(existing);
+        }
+        await _db.SaveChangesAsync(ct);
+    }
+
     // ─── Super Admin User ─────────────────────────────────────────────────────
 
     private async Task SeedSuperAdminAsync(CancellationToken ct)
@@ -396,6 +423,8 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "PAY", Description = "Payment",            Prefix = "BTX/PAY", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "CUST", Description = "Customer Code",     Prefix = "BTX/CUST", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SUPP", Description = "Supplier Code",     Prefix = "BTX/SUPP", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "PROD", Description = "Product Code",      Prefix = "BTX/PROD", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "RM",   Description = "Raw Material Code", Prefix = "BTX/RM",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

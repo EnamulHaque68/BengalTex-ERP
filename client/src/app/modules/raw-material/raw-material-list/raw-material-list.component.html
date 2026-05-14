@@ -1,0 +1,227 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Raw Materials</h2>
+      <p class="page-subtitle">Yarn, fabric, ink, chemical &amp; packaging material master</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, name, spec..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterCategory"
+                  [options]="categories"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All categories"
+                  styleClass="cat-filter"
+                  (onChange)="load()" />
+      <p-togglebutton
+        [(ngModel)]="includeInactive"
+        onLabel="All" offLabel="Active only"
+        onIcon="pi pi-eye" offIcon="pi pi-eye-slash"
+        (onChange)="load()"
+      />
+      <p-button label="Add Raw Material" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="materials"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Unit</th>
+          <th>Min Stock</th>
+          <th>Standard Cost</th>
+          <th>Preferred Supplier</th>
+          <th>Status</th>
+          <th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-m>
+        <tr>
+          <td><span class="code-badge">{{ m.code }}</span></td>
+          <td class="fw-600">{{ m.name }}</td>
+          <td><span class="cat-chip">{{ categoryLabel(m.category) }}</span></td>
+          <td><span class="unit-badge">{{ m.unitOfMeasureCode }}</span></td>
+          <td class="num">{{ m.minimumStockLevel }}</td>
+          <td class="num">{{ formatCurrency(m.standardCost) }}</td>
+          <td>{{ m.preferredSupplierName || '—' }}</td>
+          <td>
+            <span class="status-badge" [class.active]="m.isActive" [class.inactive]="!m.isActive">
+              {{ m.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(m.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(m)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-inbox"></i>
+            <span>No raw materials. Click "Add Raw Material" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Raw Material' : 'Edit Raw Material'"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <p class="section-label">Basic Info</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(leave empty to auto-generate)</small></label>
+        <input pInputText formControlName="code"
+               placeholder="BTX/RM/YYYY/00001" class="w-full"
+               (input)="form.get('code')?.setValue($any($event.target).value.toUpperCase(), {emitEvent: false})" />
+      </div>
+
+      <div class="field">
+        <label>Unit of Measure *</label>
+        <p-select formControlName="unitOfMeasureId"
+                    [options]="units"
+                    optionLabel="code"
+                    optionValue="id"
+                    placeholder="Select unit"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="30/1 Combed Cotton Yarn" class="w-full" />
+        <small class="p-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Required.</small>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Category *</label>
+        <p-select formControlName="category"
+                    [options]="categories"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select category"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Specification</label>
+        <textarea pInputTextarea rows="2" formControlName="specification"
+                  placeholder="Count, blend, finish, GSM..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Stock &amp; Costing</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Minimum Stock Level</label>
+        <p-inputNumber formControlName="minimumStockLevel" [min]="0"
+                       [minFractionDigits]="0" [maxFractionDigits]="4" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Opening Stock</label>
+        <p-inputNumber formControlName="openingStock" [min]="0"
+                       [minFractionDigits]="0" [maxFractionDigits]="4" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Standard Cost (BDT)</label>
+        <p-inputNumber formControlName="standardCost" mode="currency" currency="BDT" locale="en-BD"
+                       [minFractionDigits]="2" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Preferred Supplier</label>
+        <p-select formControlName="preferredSupplierId"
+                    [options]="suppliers"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="true"
+                    placeholder="Select supplier"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" placeholder="Internal notes..." class="w-full"></textarea>
+      </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isActive" />
+          <span>Active</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Raw Material"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingMaterial">
+    <p>Delete <strong>{{ deletingMaterial.name }} ({{ deletingMaterial.code }})</strong>? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
