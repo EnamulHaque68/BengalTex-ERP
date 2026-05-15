@@ -1,7 +1,9 @@
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.GoodsReceipt.Dtos;
 using BengalTex.ERP.Application.GoodsReceipt.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
+using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +14,10 @@ namespace BengalTex.ERP.Application.GoodsReceipt.Commands;
 /// Posts a draft GRN. Atomic in one SaveChanges:
 ///   1. Re-validate no line over-receives the remaining ordered quantity.
 ///   2. Increment <see cref="Domain.Entities.PurchaseOrderLine.ReceivedQuantity"/> per line.
-///   3. Recompute parent PO status — all lines complete → Received; some &gt; 0 → PartiallyReceived.
-///   4. Mark GRN as Posted with PostedAt/By.
+///   3. Post a <see cref="StockMovement"/> per line (type = GrnReceipt) via <see cref="IStockService"/>,
+///      which also upserts the <see cref="StockOnHand"/> snapshot.
+///   4. Recompute parent PO status — all lines complete → Received; some &gt; 0 → PartiallyReceived.
+///   5. Mark GRN as Posted with PostedAt/By.
 /// Once Posted, the GRN is immutable.
 /// </summary>
 public sealed record PostGoodsReceiptCommand(long Id) : IRequest<ApiResponse<GoodsReceiptDto>>;
@@ -24,6 +28,7 @@ internal sealed class PostGoodsReceiptCommandHandler
     private readonly IRepository<Domain.Entities.GoodsReceiptNote, long> _repo;
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IStockService _stock;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
@@ -31,12 +36,14 @@ internal sealed class PostGoodsReceiptCommandHandler
         IRepository<Domain.Entities.GoodsReceiptNote, long> repo,
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IUnitOfWork uow,
+        IStockService stock,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
         _repo = repo;
         _poRepo = poRepo;
         _uow = uow;
+        _stock = stock;
         _currentUser = currentUser;
         _mediator = mediator;
     }
@@ -67,7 +74,8 @@ internal sealed class PostGoodsReceiptCommandHandler
                 "PO is not in a receivable state — cannot post receipt.");
         }
 
-        // Re-validate over-receipt against current PO line state, then apply increments
+        // Re-validate over-receipt against current PO line state, apply increments,
+        // and post one StockMovement per line via IStockService.
         foreach (var grnLine in grn.Lines)
         {
             var poLine = po.Lines.FirstOrDefault(pl => pl.Id == grnLine.PurchaseOrderLineId);
@@ -82,6 +90,18 @@ internal sealed class PostGoodsReceiptCommandHandler
                     $"({remaining:0.####} remaining).");
 
             poLine.ReceivedQuantity += grnLine.ReceivedQuantity;
+
+            await _stock.PostMovementAsync(
+                rawMaterialId: poLine.RawMaterialId,
+                warehouseId: grn.ReceivingWarehouseId,
+                signedQuantity: grnLine.ReceivedQuantity,         // inbound, positive
+                movementType: StockMovementType.GrnReceipt,
+                referenceType: "GRN",
+                referenceId: grn.Id,
+                referenceCode: grn.Code,
+                movementDate: grn.ReceiveDate,
+                notes: grnLine.LineNotes,
+                ct: cancellationToken);
         }
 
         // Recompute PO status

@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<INumberingService, NumberingService>();
+        services.AddScoped<IStockService, StockService>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
             {

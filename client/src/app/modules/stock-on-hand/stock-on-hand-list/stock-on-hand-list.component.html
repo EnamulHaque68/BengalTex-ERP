@@ -1,0 +1,99 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock On Hand</h2>
+      <p class="page-subtitle">Current raw-material inventory per warehouse</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search material..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterWarehouseId"
+                  [options]="warehouses"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All warehouses"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterRawMaterialId"
+                  [options]="rawMaterials"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All materials"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-togglebutton
+        [(ngModel)]="belowMinimumOnly"
+        onLabel="Below min only" offLabel="All items"
+        onIcon="pi pi-exclamation-triangle" offIcon="pi pi-list"
+        (onChange)="load()"
+      />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="rows"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Material Code</th>
+          <th>Material Name</th>
+          <th>Unit</th>
+          <th>Warehouse</th>
+          <th>Quantity</th>
+          <th>Min Stock</th>
+          <th>Status</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr [class.row-below-min]="r.belowMinimum">
+          <td><span class="code-badge">{{ r.rawMaterialCode }}</span></td>
+          <td class="fw-600">{{ r.rawMaterialName }}</td>
+          <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
+          <td><span class="wh-badge">{{ r.warehouseCode }}</span> {{ r.warehouseName }}</td>
+          <td class="num qty" [class.qty-low]="r.belowMinimum">{{ r.quantity | number:'1.0-4' }}</td>
+          <td class="num muted">{{ r.minimumStockLevel | number:'1.0-4' }}</td>
+          <td>
+            <span class="status-badge below-min" *ngIf="r.belowMinimum">
+              <i class="pi pi-exclamation-triangle"></i> Below min
+            </span>
+            <span class="status-badge ok" *ngIf="!r.belowMinimum">OK</span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-database"></i>
+            <span>No stock on hand. Stock builds up via GRN postings or opening-stock adjustments.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
