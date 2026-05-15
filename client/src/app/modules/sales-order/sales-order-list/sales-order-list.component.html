@@ -1,0 +1,275 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Sales Orders</h2>
+      <p class="page-subtitle">Customer orders &mdash; products committed for delivery</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, customer..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterCustomerId"
+                  [options]="customers"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All customers"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="Add SO" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="sos"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Customer</th>
+          <th>Order Date</th>
+          <th>Required Delivery</th>
+          <th>Lines</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td class="fw-600">{{ s.customerName }}</td>
+          <td class="num">{{ formatDate(s.orderDate) }}</td>
+          <td class="num">{{ formatDate(s.requiredDeliveryDate) }}</td>
+          <td class="num">{{ s.lineCount }}</td>
+          <td class="num">{{ formatCurrency(s.totalAmount) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="s.status === 'Draft'"
+                  [class.confirmed]="s.status === 'Confirmed'"
+                  [class.cancelled]="s.status === 'Cancelled'">
+              {{ s.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="s.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(s)"
+                        [pTooltip]="s.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="s.status === 'Draft'"
+                        [loading]="rowActionId === s.id"
+                        (click)="confirm(s)" pTooltip="Confirm" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="canCancel(s)"
+                        [loading]="rowActionId === s.id"
+                        (click)="cancel(s)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(s)"
+                        (click)="confirmDelete(s)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-shopping-bag"></i>
+            <span>No sales orders. Click "Add SO" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Sales Order' : (dialogMode === 'edit' ? 'Edit Sales Order' : 'View Sales Order')"
+  [modal]="true"
+  [style]="{ width: '940px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only draft sales orders can be edited.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Customer *</label>
+        <p-select formControlName="customerId"
+                    [options]="customers"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select customer"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Order Date *</label>
+        <input pInputText type="date" formControlName="orderDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Required Delivery</label>
+        <input pInputText type="date" formControlName="requiredDeliveryDate" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Customer PO Ref <small>(buyer's order number)</small></label>
+        <input pInputText formControlName="customerPoRef" placeholder="e.g. H&M-2026-1234" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Delivery Address <small>(if different from customer's HQ)</small></label>
+        <textarea pInputTextarea rows="2" formControlName="deliveryAddress"
+                  placeholder="House #, Road, Area, City..." class="w-full"></textarea>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Internal notes..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Order Lines</p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="rm-col">Product</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">Quantity</th>
+            <th class="num-col">Unit Price</th>
+            <th class="num-col">Line Total</th>
+            <th class="act-col" *ngIf="dialogMode !== 'view'"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="productId"
+                          [options]="products"
+                          optionLabel="name"
+                          optionValue="id"
+                          [filter]="true"
+                          filterBy="code,name"
+                          placeholder="Select product"
+                          appendTo="body" styleClass="w-full"
+                          (onChange)="onLineProductChange(lineCtrl, $event)" />
+            </td>
+            <td class="unit-cell">{{ lineUomCode(lineCtrl) }}</td>
+            <td>
+              <p-inputNumber formControlName="quantity" [min]="0"
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <p-inputNumber formControlName="unitPrice" [min]="0"
+                             [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td class="act-col" *ngIf="dialogMode !== 'view'">
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="removeLine(i)" pTooltip="Remove line" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td [attr.colspan]="dialogMode !== 'view' ? 6 : 5" class="empty-lines">
+              No lines yet. Click "Add Line" below.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="total-label">Total Amount</td>
+            <td class="num total-val">{{ formatCurrency(totalAmount()) }}</td>
+            <td *ngIf="dialogMode !== 'view'"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <p-button label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
+                *ngIf="dialogMode !== 'view'" (click)="addLine()" />
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Sales Order"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingSo">
+    <p>Delete <strong>{{ deletingSo.code }}</strong> ({{ deletingSo.customerName }})?
+       This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

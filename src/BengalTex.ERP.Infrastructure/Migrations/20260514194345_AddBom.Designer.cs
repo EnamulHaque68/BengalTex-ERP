@@ -4,6 +4,7 @@ using BengalTex.ERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BengalTex.ERP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514194345_AddBom")]
+    partial class AddBom
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -594,152 +597,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("Factories", (string)null);
                 });
 
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptLine", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("GoodsReceiptNoteId")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LineNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("PurchaseOrderLineId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("ReceivedQuantity")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GoodsReceiptNoteId");
-
-                    b.HasIndex("PurchaseOrderLineId");
-
-                    b.ToTable("GoodsReceiptLines", (string)null);
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTimeOffset?>("PostedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("PostedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<long>("PurchaseOrderId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateOnly>("ReceiveDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("ReceivingWarehouseId")
-                        .HasColumnType("int");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("SupplierDeliveryRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.HasIndex("ReceiveDate");
-
-                    b.HasIndex("ReceivingWarehouseId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("GoodsReceiptNotes", (string)null);
-                });
-
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -907,159 +764,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("ProductCategories", (string)null);
                 });
 
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset?>("ApprovedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("DeliveryWarehouseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly?>("ExpectedDeliveryDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateOnly>("OrderDate")
-                        .HasColumnType("date");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("SupplierId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("DeliveryWarehouseId");
-
-                    b.HasIndex("OrderDate");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("SupplierId");
-
-                    b.ToTable("PurchaseOrders", (string)null);
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrderLine", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LineNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("PurchaseOrderId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int>("RawMaterialId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ReceivedQuantity")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.HasIndex("RawMaterialId");
-
-                    b.ToTable("PurchaseOrderLines", (string)null);
-                });
-
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.RawMaterial", b =>
                 {
                     b.Property<int>("Id")
@@ -1155,158 +859,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("UnitOfMeasureId");
 
                     b.ToTable("RawMaterials", (string)null);
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrder", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ConfirmedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CustomerPoRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DeliveryAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateOnly>("OrderDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("RequiredDeliveryDate")
-                        .HasColumnType("date");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("OrderDate");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("SalesOrders", (string)null);
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrderLine", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LineNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<long>("SalesOrderId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("SalesOrderId");
-
-                    b.ToTable("SalesOrderLines", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Supplier", b =>
@@ -2629,44 +2181,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptLine", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", "GoodsReceiptNote")
-                        .WithMany("Lines")
-                        .HasForeignKey("GoodsReceiptNoteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseOrderLine", "PurchaseOrderLine")
-                        .WithMany()
-                        .HasForeignKey("PurchaseOrderLineId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("GoodsReceiptNote");
-
-                    b.Navigation("PurchaseOrderLine");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany()
-                        .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "ReceivingWarehouse")
-                        .WithMany()
-                        .HasForeignKey("ReceivingWarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PurchaseOrder");
-
-                    b.Navigation("ReceivingWarehouse");
-                });
-
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Product", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.ProductCategory", "ProductCategory")
@@ -2686,43 +2200,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("UnitOfMeasure");
                 });
 
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "DeliveryWarehouse")
-                        .WithMany()
-                        .HasForeignKey("DeliveryWarehouseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("BengalTex.ERP.Domain.Entities.Supplier", "Supplier")
-                        .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("DeliveryWarehouse");
-
-                    b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrderLine", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("Lines")
-                        .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
-                        .WithMany()
-                        .HasForeignKey("RawMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PurchaseOrder");
-
-                    b.Navigation("RawMaterial");
-                });
-
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.RawMaterial", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Supplier", "PreferredSupplier")
@@ -2739,36 +2216,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("PreferredSupplier");
 
                     b.Navigation("UnitOfMeasure");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrder", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrderLine", b =>
-                {
-                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrder", "SalesOrder")
-                        .WithMany("Lines")
-                        .HasForeignKey("SalesOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("SalesOrder");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.UnitOfMeasure", b =>
@@ -2873,24 +2320,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Factories");
                 });
 
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", b =>
-                {
-                    b.Navigation("Lines");
-                });
-
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductCategory", b =>
                 {
                     b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrder", b =>
-                {
-                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Infrastructure.Identity.ApplicationUser", b =>
