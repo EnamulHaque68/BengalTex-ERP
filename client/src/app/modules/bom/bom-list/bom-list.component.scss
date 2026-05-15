@@ -1,0 +1,242 @@
+.page-shell { padding: 1.5rem 2rem; }
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .page-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .page-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+
+    i {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
+    input { padding-left: 2.25rem; min-width: 200px; }
+  }
+}
+
+:host ::ng-deep .filter-select { min-width: 190px; }
+:host ::ng-deep .filter-select-sm { min-width: 150px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+
+.fw-600 { font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: #9ca3af; }
+
+.code-badge {
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.status-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.draft    { background: #fef3c7; color: #92400e; }
+  &.approved { background: #d1fae5; color: #065f46; }
+  &.archived { background: #f3f4f6; color: #6b7280; }
+}
+
+.active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  i { font-size: 0.65rem; }
+}
+
+.row-actions { display: flex; gap: 0.05rem; }
+
+.empty-row {
+  text-align: center;
+  padding: 3rem !important;
+  color: #9ca3af;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { font-size: 0.9rem; }
+}
+
+// ─── Dialog ────────────────────────────────────────────────────────────────
+
+.section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7c3aed;
+  margin: 1rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px dashed #e5e7eb;
+}
+.section-label:first-of-type { margin-top: 0; }
+
+.dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+.col-span-2 { grid-column: span 2; }
+
+.field {
+  label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.35rem;
+    small { color: #9ca3af; font-weight: 400; }
+  }
+  .hint { display: block; font-size: 0.72rem; color: #9ca3af; margin-top: 0.25rem; }
+}
+
+// ─── Line grid ─────────────────────────────────────────────────────────────
+
+.lines-wrap { padding-top: 0.25rem; }
+
+.line-grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.5rem;
+
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+
+  .num-col, .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .unit-col, .unit-cell { text-align: center; }
+  .act-col { width: 42px; text-align: center; }
+  .rm-col { min-width: 220px; }
+
+  .unit-cell {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: #3730a3;
+    font-weight: 600;
+  }
+
+  tfoot td {
+    border-bottom: none;
+    border-top: 2px solid #e5e7eb;
+    padding-top: 0.6rem;
+  }
+
+  .total-label {
+    text-align: right;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.85rem;
+  }
+
+  .total-val {
+    font-weight: 800;
+    color: #6d28d9;
+    font-size: 0.95rem;
+  }
+}
+
+:host ::ng-deep .line-grid .grid-num { width: 100%; text-align: right; }
+:host ::ng-deep .line-grid .p-inputnumber { width: 100%; }
+
+.empty-lines {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  padding: 1.25rem !important;
+}
+
+// ─── Shared bits ───────────────────────────────────────────────────────────
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  i { flex-shrink: 0; }
+
+  &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+  &.alert-info  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+}
+
+.page-alert {
+  position: relative;
+
+  .alert-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    &:hover { opacity: 1; }
+  }
+}

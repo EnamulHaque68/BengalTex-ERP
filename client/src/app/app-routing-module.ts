@@ -20,7 +20,11 @@ const routes: Routes = [
       { path: 'suppliers', loadChildren: () => import('./modules/supplier/supplier.module').then(m => m.SupplierModule) },
       { path: 'product-categories', loadChildren: () => import('./modules/product-category/product-category.module').then(m => m.ProductCategoryModule) },
       { path: 'products', loadChildren: () => import('./modules/product/product.module').then(m => m.ProductModule) },
-      { path: 'raw-materials', loadChildren: () => import('./modules/raw-material/raw-material.module').then(m => m.RawMaterialModule) }
+      { path: 'raw-materials', loadChildren: () => import('./modules/raw-material/raw-material.module').then(m => m.RawMaterialModule) },
+      { path: 'boms', loadChildren: () => import('./modules/bom/bom.module').then(m => m.BomModule) },
+      { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-order/purchase-order.module').then(m => m.PurchaseOrderModule) },
+      { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
+      { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

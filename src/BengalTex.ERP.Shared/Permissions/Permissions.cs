@@ -112,6 +112,15 @@ public static class Permissions
         public const string Approve = "PurchaseOrders.Approve";
     }
 
+    public static class GoodsReceipts
+    {
+        public const string View = "GoodsReceipts.View";
+        public const string Create = "GoodsReceipts.Create";
+        public const string Edit = "GoodsReceipts.Edit";
+        public const string Delete = "GoodsReceipts.Delete";
+        public const string Post = "GoodsReceipts.Post";
+    }
+
     public static class Production
     {
         public const string View = "Production.View";
