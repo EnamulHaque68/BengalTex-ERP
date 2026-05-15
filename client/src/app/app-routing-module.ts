@@ -24,7 +24,10 @@ const routes: Routes = [
       { path: 'boms', loadChildren: () => import('./modules/bom/bom.module').then(m => m.BomModule) },
       { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-order/purchase-order.module').then(m => m.PurchaseOrderModule) },
       { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
-      { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) }
+      { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) },
+      { path: 'stock-on-hand', loadChildren: () => import('./modules/stock-on-hand/stock-on-hand.module').then(m => m.StockOnHandModule) },
+      { path: 'stock-movements', loadChildren: () => import('./modules/stock-movements/stock-movements.module').then(m => m.StockMovementsModule) },
+      { path: 'stock-adjustments', loadChildren: () => import('./modules/stock-adjustment/stock-adjustment.module').then(m => m.StockAdjustmentModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

@@ -57,6 +57,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
+    public DbSet<StockOnHand> StockOnHand => Set<StockOnHand>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
+    public DbSet<StockAdjustmentLine> StockAdjustmentLines => Set<StockAdjustmentLine>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -1,0 +1,247 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock Adjustments</h2>
+      <p class="page-subtitle">Manual stock corrections &mdash; opening stock, stock-take variance, damage write-off</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, reason..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterWarehouseId"
+                  [options]="warehouses"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All warehouses"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="Add Adjustment" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="adjustments"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Date</th>
+          <th>Warehouse</th>
+          <th>Reason</th>
+          <th>Lines</th>
+          <th>Status</th>
+          <th style="width:150px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-a>
+        <tr>
+          <td><span class="code-badge">{{ a.code }}</span></td>
+          <td class="num">{{ a.adjustmentDate }}</td>
+          <td class="fw-600">{{ a.warehouseName }}</td>
+          <td class="reason-cell">{{ a.reason }}</td>
+          <td class="num">{{ a.lineCount }}</td>
+          <td>
+            <span class="status-badge" [class.draft]="a.status === 'Draft'" [class.posted]="a.status === 'Posted'">
+              {{ a.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="a.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(a)"
+                        [pTooltip]="a.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="a.status === 'Draft'"
+                        [loading]="rowActionId === a.id"
+                        (click)="post(a)" pTooltip="Post (commit to stock)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="a.status === 'Draft'"
+                        (click)="confirmDelete(a)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-wrench"></i>
+            <span>No stock adjustments. Click "Add Adjustment" for opening stock or variance correction.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Stock Adjustment' : (dialogMode === 'edit' ? 'Edit Stock Adjustment' : 'View Stock Adjustment')"
+  [modal]="true"
+  [style]="{ width: '940px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — posted adjustments are immutable.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Adjustment Date *</label>
+        <input pInputText type="date" formControlName="adjustmentDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Warehouse *</label>
+        <p-select formControlName="warehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select warehouse"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Reason *</label>
+        <input pInputText formControlName="reason"
+               placeholder="e.g. Year-end stock-take variance, damaged goods write-off" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Detail / supporting info..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Adjustment Lines</p>
+    <small class="hint">Use <strong>positive</strong> qty to add stock, <strong>negative</strong> to remove. Lines with zero qty are skipped on save.</small>
+
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="rm-col">Raw Material</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">Signed Qty (+ in / − out)</th>
+            <th>Line Notes</th>
+            <th class="act-col" *ngIf="dialogMode !== 'view'"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="rawMaterialId"
+                          [options]="rawMaterials"
+                          optionLabel="name"
+                          optionValue="id"
+                          [filter]="true"
+                          filterBy="code,name"
+                          placeholder="Select material"
+                          appendTo="body" styleClass="w-full" />
+            </td>
+            <td class="unit-cell">{{ lineUomCode(lineCtrl) }}</td>
+            <td>
+              <p-inputNumber formControlName="signedQuantity"
+                             [minFractionDigits]="0" [maxFractionDigits]="4"
+                             inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+            <td class="act-col" *ngIf="dialogMode !== 'view'">
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="removeLine(i)" pTooltip="Remove line" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td [attr.colspan]="dialogMode !== 'view' ? 5 : 4" class="empty-lines">
+              No lines yet. Click "Add Line" below.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p-button label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
+                *ngIf="dialogMode !== 'view'" (click)="addLine()" />
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Stock Adjustment"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingAdj">
+    <p>Delete draft <strong>{{ deletingAdj.code }}</strong>? This is a soft delete — only draft adjustments can be removed.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
