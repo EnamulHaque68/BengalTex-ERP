@@ -325,6 +325,14 @@ export class SalesOrderListComponent implements OnInit {
     this.runRowAction(so, this.soService.cancel.bind(this.soService));
   }
 
+  close(so: SalesOrderListItemDto): void {
+    this.runRowAction(so, this.soService.close.bind(this.soService));
+  }
+
+  canClose(so: SalesOrderListItemDto): boolean {
+    return so.status === 'PartiallyDispatched' || so.status === 'Dispatched' || so.status === 'Delivered';
+  }
+
   private runRowAction(so: SalesOrderListItemDto, fn: (id: number) => any): void {
     if (this.rowActionId) return;
     this.rowActionId = so.id;

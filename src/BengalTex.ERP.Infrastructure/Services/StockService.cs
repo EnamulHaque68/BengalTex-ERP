@@ -66,6 +66,14 @@ public sealed class StockService : IStockService
         return row?.Quantity ?? 0m;
     }
 
+    public async Task<decimal> GetProductOnHandAsync(
+        int productId, int warehouseId, CancellationToken ct = default)
+    {
+        var row = await _onHandRepo.Query()
+            .FirstOrDefaultAsync(s => s.ProductId == productId && s.WarehouseId == warehouseId, ct);
+        return row?.Quantity ?? 0m;
+    }
+
     private async Task PostInternalAsync(
         int? rawMaterialId, int? productId, int warehouseId, decimal signedQuantity,
         StockMovementType movementType, string? referenceType, long? referenceId,

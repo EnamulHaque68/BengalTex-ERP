@@ -4,9 +4,10 @@ namespace BengalTex.ERP.Domain.Entities;
 
 /// <summary>
 /// Sales Order — a customer commitment to buy finished products. Lifecycle:
-/// Draft → Confirmed; cancellable from either state. Downstream production /
-/// dispatch / delivery transitions are deferred to a future Delivery Note
-/// module (mirroring how GRN handled receiving for purchase orders).
+/// Draft → Confirmed → (PartiallyDispatched | Dispatched) → Closed; cancellable
+/// from Draft or Confirmed. Dispatch transitions are driven by Delivery Note
+/// postings (mirroring how GRN drives PO receipt transitions). Closure is a
+/// manual decision (separates dispatch from final settlement, allows short-ship).
 /// Transactional (long key) — unbounded volume.
 /// </summary>
 public class SalesOrder : BaseTransactionalEntity
@@ -49,6 +50,9 @@ public class SalesOrderLine : BaseTransactionalEntity
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
 
+    /// <summary>Quantity dispatched so far — updated by Delivery Note postings. Starts at 0.</summary>
+    public decimal DispatchedQuantity { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }
@@ -58,5 +62,9 @@ public enum SalesOrderStatus
 {
     Draft = 1,
     Confirmed = 2,
-    Cancelled = 3
+    Cancelled = 3,
+    PartiallyDispatched = 4,    // DN-driven (some lines have DispatchedQuantity > 0 but not all complete)
+    Dispatched = 5,             // DN-driven (all lines fully dispatched)
+    Delivered = 6,              // future — customer-confirmed receipt (manual flag)
+    Closed = 7                  // manual final settlement
 }

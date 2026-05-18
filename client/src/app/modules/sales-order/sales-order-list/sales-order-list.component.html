@@ -80,8 +80,10 @@
             <span class="status-badge"
                   [class.draft]="s.status === 'Draft'"
                   [class.confirmed]="s.status === 'Confirmed'"
+                  [class.dispatched]="s.status === 'PartiallyDispatched' || s.status === 'Dispatched' || s.status === 'Delivered'"
+                  [class.closed]="s.status === 'Closed'"
                   [class.cancelled]="s.status === 'Cancelled'">
-              {{ s.status }}
+              {{ s.status === 'PartiallyDispatched' ? 'Partial' : s.status }}
             </span>
           </td>
           <td>
@@ -94,6 +96,10 @@
                         *ngIf="s.status === 'Draft'"
                         [loading]="rowActionId === s.id"
                         (click)="confirm(s)" pTooltip="Confirm" />
+              <p-button icon="pi pi-check-square" severity="contrast" [text]="true" size="small"
+                        *ngIf="canClose(s)"
+                        [loading]="rowActionId === s.id"
+                        (click)="close(s)" pTooltip="Close SO" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(s)"
                         [loading]="rowActionId === s.id"

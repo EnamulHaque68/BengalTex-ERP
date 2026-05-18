@@ -121,6 +121,15 @@ public static class Permissions
         public const string Post = "GoodsReceipts.Post";
     }
 
+    public static class DeliveryNotes
+    {
+        public const string View = "DeliveryNotes.View";
+        public const string Create = "DeliveryNotes.Create";
+        public const string Edit = "DeliveryNotes.Edit";
+        public const string Delete = "DeliveryNotes.Delete";
+        public const string Post = "DeliveryNotes.Post";
+    }
+
     public static class Production
     {
         public const string View = "Production.View";

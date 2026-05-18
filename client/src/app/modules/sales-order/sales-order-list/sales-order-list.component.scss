@@ -69,9 +69,11 @@
   font-size: 0.75rem;
   font-weight: 600;
 
-  &.draft     { background: #fef3c7; color: #92400e; }
-  &.confirmed { background: #d1fae5; color: #065f46; }
-  &.cancelled { background: #fee2e2; color: #991b1b; }
+  &.draft      { background: #fef3c7; color: #92400e; }
+  &.confirmed  { background: #d1fae5; color: #065f46; }
+  &.dispatched { background: #dbeafe; color: #1e40af; }
+  &.closed     { background: #e5e7eb; color: #374151; }
+  &.cancelled  { background: #fee2e2; color: #991b1b; }
 }
 
 .row-actions { display: flex; gap: 0.05rem; }

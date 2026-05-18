@@ -498,6 +498,160 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNote", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly>("DispatchDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("DispatchWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DriverContact")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PostedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<long>("SalesOrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("VehicleNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("DispatchDate");
+
+                    b.HasIndex("DispatchWarehouseId");
+
+                    b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("DeliveryNotes", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNoteLine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("DeliveryNoteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("DispatchedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LineNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<long>("SalesOrderLineId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryNoteId");
+
+                    b.HasIndex("SalesOrderLineId");
+
+                    b.ToTable("DeliveryNoteLines", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Factory", b =>
                 {
                     b.Property<int>("Id")
@@ -1367,6 +1521,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("DispatchedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -3031,6 +3189,44 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("RawMaterial");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNote", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "DispatchWarehouse")
+                        .WithMany()
+                        .HasForeignKey("DispatchWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrder", "SalesOrder")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DispatchWarehouse");
+
+                    b.Navigation("SalesOrder");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNoteLine", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.DeliveryNote", "DeliveryNote")
+                        .WithMany("Lines")
+                        .HasForeignKey("DeliveryNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrderLine", "SalesOrderLine")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryNote");
+
+                    b.Navigation("SalesOrderLine");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Factory", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Company", "Company")
@@ -3399,6 +3595,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Factories");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNote", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", b =>
