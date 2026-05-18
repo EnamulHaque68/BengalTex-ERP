@@ -907,6 +907,110 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("ProductCategories", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionOrder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly?>("ActualEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("ActualStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("BomId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CompletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("IssueWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateOnly?>("PlannedEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("PlannedStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("ReceiveWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BomId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IssueWarehouseId");
+
+                    b.HasIndex("PlannedStartDate");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ReceiveWarehouseId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ProductionOrders", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.Property<long>("Id")
@@ -1497,7 +1601,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int>("RawMaterialId")
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RawMaterialId")
                         .HasColumnType("int");
 
                     b.Property<string>("ReferenceCode")
@@ -1535,11 +1642,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("ProductId", "WarehouseId");
+
                     b.HasIndex("RawMaterialId", "WarehouseId");
 
                     b.HasIndex("ReferenceType", "ReferenceId");
 
-                    b.ToTable("StockMovements", (string)null);
+                    b.ToTable("StockMovements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockMovement_OneItemType", "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockOnHand", b =>
@@ -1571,11 +1683,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<int>("RawMaterialId")
+                    b.Property<int?>("RawMaterialId")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
@@ -1591,12 +1706,20 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("ProductId", "WarehouseId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_StockOnHand_ProductWarehouse")
+                        .HasFilter("[ProductId] IS NOT NULL AND [IsDeleted] = 0");
+
                     b.HasIndex("RawMaterialId", "WarehouseId")
                         .IsUnique()
                         .HasDatabaseName("UX_StockOnHand_RawMaterialWarehouse")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("[RawMaterialId] IS NOT NULL AND [IsDeleted] = 0");
 
-                    b.ToTable("StockOnHand", (string)null);
+                    b.ToTable("StockOnHand", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockOnHand_OneItemType", "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Supplier", b =>
@@ -2976,6 +3099,41 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("UnitOfMeasure");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionOrder", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Bom", "Bom")
+                        .WithMany()
+                        .HasForeignKey("BomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "IssueWarehouse")
+                        .WithMany()
+                        .HasForeignKey("IssueWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "ReceiveWarehouse")
+                        .WithMany()
+                        .HasForeignKey("ReceiveWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Bom");
+
+                    b.Navigation("IssueWarehouse");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ReceiveWarehouse");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "DeliveryWarehouse")
@@ -3093,17 +3251,23 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockMovement", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
                         .WithMany()
                         .HasForeignKey("RawMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Product");
 
                     b.Navigation("RawMaterial");
 
@@ -3112,17 +3276,23 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockOnHand", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
                         .WithMany()
                         .HasForeignKey("RawMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Product");
 
                     b.Navigation("RawMaterial");
 

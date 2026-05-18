@@ -1,0 +1,126 @@
+using BengalTex.ERP.Application.Common.Interfaces;
+using BengalTex.ERP.Application.Production.Dtos;
+using BengalTex.ERP.Application.Production.Queries;
+using BengalTex.ERP.Application.Services;
+using BengalTex.ERP.Domain.Common;
+using BengalTex.ERP.Domain.Entities;
+using BengalTex.ERP.Shared.Common;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace BengalTex.ERP.Application.Production.Commands;
+
+/// <summary>
+/// Completes an in-progress production. Atomic in one SaveChanges:
+///   1. Stock validation — for each BOM line, scaled consumption ≤ current StockOnHand
+///      in the issue warehouse. Any short → <c>Fail</c> with details.
+///   2. Post a <see cref="StockMovementType.ProductionIssue"/> movement per BOM line
+///      (RM out of the issue warehouse, negative qty) via <see cref="IStockService"/>.
+///   3. Post a <see cref="StockMovementType.ProductionReceipt"/> movement for the
+///      output Product (into the receive warehouse, positive qty).
+///   4. Set status Completed + ActualEndDate + CompletedAt/By.
+/// </summary>
+public sealed record CompleteProductionOrderCommand(long Id) : IRequest<ApiResponse<ProductionOrderDto>>;
+
+internal sealed class CompleteProductionOrderCommandHandler
+    : IRequestHandler<CompleteProductionOrderCommand, ApiResponse<ProductionOrderDto>>
+{
+    private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
+    private readonly IUnitOfWork _uow;
+    private readonly IStockService _stock;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IMediator _mediator;
+
+    public CompleteProductionOrderCommandHandler(
+        IRepository<Domain.Entities.ProductionOrder, long> repo,
+        IUnitOfWork uow,
+        IStockService stock,
+        ICurrentUserService currentUser,
+        IMediator mediator)
+    {
+        _repo = repo;
+        _uow = uow;
+        _stock = stock;
+        _currentUser = currentUser;
+        _mediator = mediator;
+    }
+
+    public async Task<ApiResponse<ProductionOrderDto>> Handle(
+        CompleteProductionOrderCommand cmd, CancellationToken cancellationToken)
+    {
+        var po = await _repo.Query()
+            .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial)
+            .FirstOrDefaultAsync(p => p.Id == cmd.Id, cancellationToken);
+
+        if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
+        if (po.Status != ProductionOrderStatus.InProgress)
+            return ApiResponse<ProductionOrderDto>.Fail("Only in-progress production orders can be completed.");
+        if (po.Bom.Lines.Count == 0)
+            return ApiResponse<ProductionOrderDto>.Fail("Cannot complete a production whose BOM has no lines.");
+        if (po.Bom.OutputQuantity <= 0)
+            return ApiResponse<ProductionOrderDto>.Fail("BOM output quantity must be greater than zero.");
+
+        var scale = po.Quantity / po.Bom.OutputQuantity;
+
+        // ── Phase 1: stock-availability pre-check (block on any shortage) ────────
+        var shortages = new List<string>();
+        foreach (var bomLine in po.Bom.Lines)
+        {
+            var requiredQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
+            var available = await _stock.GetRawMaterialOnHandAsync(
+                bomLine.RawMaterialId, po.IssueWarehouseId, cancellationToken);
+            if (available < requiredQty)
+            {
+                shortages.Add(
+                    $"{bomLine.RawMaterial.Name}: need {requiredQty:0.####}, have {available:0.####}");
+            }
+        }
+        if (shortages.Count > 0)
+        {
+            return ApiResponse<ProductionOrderDto>.Fail(
+                "Insufficient stock in issue warehouse — " + string.Join("; ", shortages));
+        }
+
+        // ── Phase 2: post RM-out movements per BOM line ──────────────────────────
+        var movementDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        foreach (var bomLine in po.Bom.Lines)
+        {
+            var consumedQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
+            await _stock.PostRawMaterialMovementAsync(
+                rawMaterialId: bomLine.RawMaterialId,
+                warehouseId: po.IssueWarehouseId,
+                signedQuantity: -consumedQty,         // outbound
+                movementType: StockMovementType.ProductionIssue,
+                referenceType: "ProductionOrder",
+                referenceId: po.Id,
+                referenceCode: po.Code,
+                movementDate: movementDate,
+                notes: null,
+                ct: cancellationToken);
+        }
+
+        // ── Phase 3: post finished-goods movement ────────────────────────────────
+        await _stock.PostProductMovementAsync(
+            productId: po.ProductId,
+            warehouseId: po.ReceiveWarehouseId,
+            signedQuantity: po.Quantity,              // inbound
+            movementType: StockMovementType.ProductionReceipt,
+            referenceType: "ProductionOrder",
+            referenceId: po.Id,
+            referenceCode: po.Code,
+            movementDate: movementDate,
+            notes: null,
+            ct: cancellationToken);
+
+        // ── Phase 4: mark order completed ────────────────────────────────────────
+        po.Status = ProductionOrderStatus.Completed;
+        po.ActualEndDate = movementDate;
+        po.CompletedAt = DateTimeOffset.UtcNow;
+        po.CompletedBy = _currentUser.UserName;
+        _repo.Update(po);
+
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return await _mediator.Send(new GetProductionOrderByIdQuery(po.Id), cancellationToken);
+    }
+}

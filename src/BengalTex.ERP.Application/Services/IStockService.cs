@@ -5,11 +5,11 @@ namespace BengalTex.ERP.Application.Services;
 public interface IStockService
 {
     /// <summary>
-    /// Posts a single stock movement and upserts the corresponding StockOnHand row.
-    /// Does NOT call SaveChanges — the caller's commit ties this together with its
-    /// source-document update so the whole thing is one atomic transaction.
+    /// Posts a single RawMaterial stock movement and upserts the corresponding
+    /// <c>StockOnHand</c> row. Does NOT call <c>SaveChanges</c> — the caller's commit
+    /// ties this together with its source-document update so the whole thing is atomic.
     /// </summary>
-    Task PostMovementAsync(
+    Task PostRawMaterialMovementAsync(
         int rawMaterialId,
         int warehouseId,
         decimal signedQuantity,
@@ -19,5 +19,32 @@ public interface IStockService
         string? referenceCode,
         DateOnly movementDate,
         string? notes,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Posts a single Product stock movement (production receipt, sales dispatch, etc.)
+    /// and upserts the corresponding <c>StockOnHand</c> row. Same atomicity contract as
+    /// <see cref="PostRawMaterialMovementAsync"/>.
+    /// </summary>
+    Task PostProductMovementAsync(
+        int productId,
+        int warehouseId,
+        decimal signedQuantity,
+        StockMovementType movementType,
+        string? referenceType,
+        long? referenceId,
+        string? referenceCode,
+        DateOnly movementDate,
+        string? notes,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Current StockOnHand quantity for the given (RawMaterial × Warehouse). Returns 0
+    /// if no row exists yet. Use this for pre-flight stock-availability checks (e.g.
+    /// Production Complete validation).
+    /// </summary>
+    Task<decimal> GetRawMaterialOnHandAsync(
+        int rawMaterialId,
+        int warehouseId,
         CancellationToken ct = default);
 }

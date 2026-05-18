@@ -16,6 +16,8 @@ export class StockService {
     parameters: PagedQueryParameters,
     warehouseId?: number,
     rawMaterialId?: number,
+    productId?: number,
+    itemType?: string,
     belowMinimumOnly = false
   ): Observable<ApiResponse<PagedResult<StockOnHandDto>>> {
     let params = new HttpParams().set('belowMinimumOnly', belowMinimumOnly.toString());
@@ -26,6 +28,8 @@ export class StockService {
     if (parameters.sortDirection) params = params.set('SortDirection', parameters.sortDirection);
     if (warehouseId) params = params.set('warehouseId', warehouseId.toString());
     if (rawMaterialId) params = params.set('rawMaterialId', rawMaterialId.toString());
+    if (productId) params = params.set('productId', productId.toString());
+    if (itemType) params = params.set('itemType', itemType);
     return this.http.get<ApiResponse<PagedResult<StockOnHandDto>>>(`${this.base}/on-hand`, { params });
   }
 
@@ -33,6 +37,8 @@ export class StockService {
     parameters: PagedQueryParameters,
     warehouseId?: number,
     rawMaterialId?: number,
+    productId?: number,
+    itemType?: string,
     movementType?: string,
     referenceType?: string,
     referenceId?: number
@@ -45,6 +51,8 @@ export class StockService {
     if (parameters.sortDirection) params = params.set('SortDirection', parameters.sortDirection);
     if (warehouseId) params = params.set('warehouseId', warehouseId.toString());
     if (rawMaterialId) params = params.set('rawMaterialId', rawMaterialId.toString());
+    if (productId) params = params.set('productId', productId.toString());
+    if (itemType) params = params.set('itemType', itemType);
     if (movementType) params = params.set('movementType', movementType);
     if (referenceType) params = params.set('referenceType', referenceType);
     if (referenceId) params = params.set('referenceId', referenceId.toString());

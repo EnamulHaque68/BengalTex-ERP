@@ -60,7 +60,7 @@ internal sealed class PostStockAdjustmentCommandHandler
                 ? StockMovementType.AdjustmentIn
                 : StockMovementType.AdjustmentOut;
 
-            await _stock.PostMovementAsync(
+            await _stock.PostRawMaterialMovementAsync(
                 line.RawMaterialId,
                 adj.WarehouseId,
                 line.SignedQuantity,

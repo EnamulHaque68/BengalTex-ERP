@@ -17,19 +17,26 @@ export const STOCK_ADJUSTMENT_STATUSES: { label: string; value: string }[] = [
   { label: 'Posted', value: 'Posted' }
 ];
 
+export const STOCK_ITEM_TYPES: { label: string; value: string }[] = [
+  { label: 'Raw Material', value: 'RawMaterial' },
+  { label: 'Product', value: 'Product' }
+];
+
 // ─── Stock On Hand ────────────────────────────────────────────────────────
 
 export interface StockOnHandDto {
-  rawMaterialId: number;
-  rawMaterialCode: string;
-  rawMaterialName: string;
+  itemType: string;                    // "RawMaterial" | "Product"
+  rawMaterialId: number | null;
+  productId: number | null;
+  itemCode: string;
+  itemName: string;
   unitOfMeasureCode: string;
   warehouseId: number;
   warehouseCode: string;
   warehouseName: string;
   quantity: number;
-  minimumStockLevel: number;
-  belowMinimum: boolean;
+  minimumStockLevel: number;           // 0 for Product rows
+  belowMinimum: boolean;               // false for Product rows
 }
 
 // ─── Stock Movement ───────────────────────────────────────────────────────
@@ -37,13 +44,15 @@ export interface StockOnHandDto {
 export interface StockMovementDto {
   id: number;
   code: string;
-  rawMaterialId: number;
-  rawMaterialCode: string;
-  rawMaterialName: string;
+  itemType: string;                    // "RawMaterial" | "Product"
+  rawMaterialId: number | null;
+  productId: number | null;
+  itemCode: string;
+  itemName: string;
   unitOfMeasureCode: string;
   warehouseId: number;
   warehouseCode: string;
-  signedQuantity: number;             // + in, − out
+  signedQuantity: number;              // + in, − out
   movementType: string;
   referenceType: string | null;
   referenceId: number | null;

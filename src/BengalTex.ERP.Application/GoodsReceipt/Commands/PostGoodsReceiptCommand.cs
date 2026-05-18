@@ -91,7 +91,7 @@ internal sealed class PostGoodsReceiptCommandHandler
 
             poLine.ReceivedQuantity += grnLine.ReceivedQuantity;
 
-            await _stock.PostMovementAsync(
+            await _stock.PostRawMaterialMovementAsync(
                 rawMaterialId: poLine.RawMaterialId,
                 warehouseId: grn.ReceivingWarehouseId,
                 signedQuantity: grnLine.ReceivedQuantity,         // inbound, positive

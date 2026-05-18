@@ -3,7 +3,7 @@ import { StockService } from '../../../services/stock.service';
 import { WarehouseService } from '../../../services/warehouse.service';
 import { RawMaterialService } from '../../../services/raw-material.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { MOVEMENT_TYPES, StockMovementDto } from '../../../models/inventory.models';
+import { MOVEMENT_TYPES, STOCK_ITEM_TYPES, StockMovementDto } from '../../../models/inventory.models';
 import { WarehouseDto } from '../../../models/master-data.models';
 import { RawMaterialListItemDto } from '../../../models/raw-material.models';
 
@@ -20,12 +20,14 @@ export class StockMovementListComponent implements OnInit {
   totalCount = 0;
   filterWarehouseId: number | null = null;
   filterRawMaterialId: number | null = null;
+  filterItemType: string | null = null;
   filterMovementType: string | null = null;
 
   parameters: PagedQueryParameters = { page: 1, pageSize: 25, search: '' };
   searchTimer: any = null;
 
   readonly movementTypes = MOVEMENT_TYPES;
+  readonly itemTypes = STOCK_ITEM_TYPES;
   warehouses: WarehouseDto[] = [];
   rawMaterials: RawMaterialListItemDto[] = [];
 
@@ -67,6 +69,8 @@ export class StockMovementListComponent implements OnInit {
       this.parameters,
       this.filterWarehouseId ?? undefined,
       this.filterRawMaterialId ?? undefined,
+      undefined,                              // productId filter — not wired in this page yet
+      this.filterItemType ?? undefined,
       this.filterMovementType ?? undefined
     ).subscribe({
       next: (res) => {
