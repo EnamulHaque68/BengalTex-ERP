@@ -29,7 +29,9 @@ const routes: Routes = [
       { path: 'stock-movements', loadChildren: () => import('./modules/stock-movements/stock-movements.module').then(m => m.StockMovementsModule) },
       { path: 'stock-adjustments', loadChildren: () => import('./modules/stock-adjustment/stock-adjustment.module').then(m => m.StockAdjustmentModule) },
       { path: 'production-orders', loadChildren: () => import('./modules/production-order/production-order.module').then(m => m.ProductionOrderModule) },
-      { path: 'delivery-notes', loadChildren: () => import('./modules/delivery-note/delivery-note.module').then(m => m.DeliveryNoteModule) }
+      { path: 'delivery-notes', loadChildren: () => import('./modules/delivery-note/delivery-note.module').then(m => m.DeliveryNoteModule) },
+      { path: 'customer-invoices', loadChildren: () => import('./modules/customer-invoice/customer-invoice.module').then(m => m.CustomerInvoiceModule) },
+      { path: 'receipts', loadChildren: () => import('./modules/receipt/receipt.module').then(m => m.ReceiptModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
