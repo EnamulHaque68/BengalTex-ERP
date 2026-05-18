@@ -47,4 +47,14 @@ public interface IStockService
         int rawMaterialId,
         int warehouseId,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Current StockOnHand quantity for the given (Product × Warehouse). Returns 0 if
+    /// no row exists yet. Use this for pre-flight stock-availability checks (e.g.
+    /// Delivery Note Post validation).
+    /// </summary>
+    Task<decimal> GetProductOnHandAsync(
+        int productId,
+        int warehouseId,
+        CancellationToken ct = default);
 }

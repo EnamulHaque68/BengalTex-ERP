@@ -3,6 +3,10 @@
 export const SO_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
   { label: 'Confirmed', value: 'Confirmed' },
+  { label: 'Partially Dispatched', value: 'PartiallyDispatched' },
+  { label: 'Dispatched', value: 'Dispatched' },
+  { label: 'Delivered', value: 'Delivered' },
+  { label: 'Closed', value: 'Closed' },
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
@@ -15,6 +19,7 @@ export interface SalesOrderLineDto {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  dispatchedQuantity?: number;            // populated once DNs start posting against this SO
   sortOrder: number;
   lineNotes: string | null;
 }

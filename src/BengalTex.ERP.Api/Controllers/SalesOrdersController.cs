@@ -83,6 +83,14 @@ public class SalesOrdersController : ControllerBase
         var result = await _mediator.Send(new CancelSalesOrderCommand(id), ct);
         return Ok(result);
     }
+
+    [HttpPost("{id:long}/close")]
+    [HasPermission(Permissions.SalesOrders.Edit)]
+    public async Task<IActionResult> Close(long id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new CloseSalesOrderCommand(id), ct);
+        return Ok(result);
+    }
 }
 
 public record CreateSalesOrderRequest(

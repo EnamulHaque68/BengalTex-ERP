@@ -56,4 +56,8 @@ export class SalesOrderService {
   cancel(id: number): Observable<ApiResponse<SalesOrderDto>> {
     return this.http.post<ApiResponse<SalesOrderDto>>(`${this.base}/${id}/cancel`, {});
   }
+
+  close(id: number): Observable<ApiResponse<SalesOrderDto>> {
+    return this.http.post<ApiResponse<SalesOrderDto>>(`${this.base}/${id}/close`, {});
+  }
 }

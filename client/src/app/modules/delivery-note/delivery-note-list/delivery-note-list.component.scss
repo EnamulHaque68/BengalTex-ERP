@@ -45,8 +45,8 @@
   }
 }
 
-:host ::ng-deep .filter-select { min-width: 190px; }
-:host ::ng-deep .filter-select-sm { min-width: 160px; }
+:host ::ng-deep .filter-select { min-width: 210px; }
+:host ::ng-deep .filter-select-sm { min-width: 150px; }
 :host ::ng-deep .table-card .p-card-body { padding: 0; }
 
 .fw-600 { font-weight: 600; }
@@ -61,6 +61,18 @@
   font-size: 0.72rem;
   font-weight: 700;
   font-family: monospace;
+
+  &.alt { background: #dbeafe; color: #1e40af; }
+}
+
+.wh-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
 }
 
 .status-badge {
@@ -69,11 +81,8 @@
   font-size: 0.75rem;
   font-weight: 600;
 
-  &.draft      { background: #fef3c7; color: #92400e; }
-  &.confirmed  { background: #d1fae5; color: #065f46; }
-  &.dispatched { background: #dbeafe; color: #1e40af; }
-  &.closed     { background: #e5e7eb; color: #374151; }
-  &.cancelled  { background: #fee2e2; color: #991b1b; }
+  &.draft  { background: #fef3c7; color: #92400e; }
+  &.posted { background: #d1fae5; color: #065f46; }
 }
 
 .row-actions { display: flex; gap: 0.05rem; }
@@ -117,6 +126,7 @@
     margin-bottom: 0.35rem;
     small { color: #9ca3af; font-weight: 400; }
   }
+  .hint { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
 }
 
 // ─── Line grid ─────────────────────────────────────────────────────────────
@@ -147,8 +157,14 @@
 
   .num-col, .num { text-align: right; font-variant-numeric: tabular-nums; }
   .unit-col, .unit-cell { text-align: center; }
-  .act-col { width: 42px; text-align: center; }
-  .rm-col { min-width: 240px; }
+  .rm-col { min-width: 220px; }
+  .receive-col { width: 130px; }
+
+  .rm-cell {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #111827;
+  }
 
   .unit-cell {
     font-family: monospace;
@@ -157,34 +173,29 @@
     font-weight: 600;
   }
 
-  tfoot td {
-    border-bottom: none;
-    border-top: 2px solid #e5e7eb;
-    padding-top: 0.6rem;
-  }
-
-  .total-label {
-    text-align: right;
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.85rem;
-  }
-
-  .total-val {
-    font-weight: 800;
-    color: #6d28d9;
-    font-size: 0.95rem;
+  .remaining {
+    font-weight: 700;
+    color: #7c3aed;
   }
 }
 
 :host ::ng-deep .line-grid .grid-num { width: 100%; text-align: right; }
 :host ::ng-deep .line-grid .p-inputnumber { width: 100%; }
 
+.line-notes-input { width: 100%; font-size: 0.8rem; }
+
 .empty-lines {
   text-align: center;
   color: #9ca3af;
   font-size: 0.85rem;
   padding: 1.25rem !important;
+}
+
+.grid-hint {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
 }
 
 // ─── Shared bits ───────────────────────────────────────────────────────────

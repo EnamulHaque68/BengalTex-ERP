@@ -28,7 +28,8 @@ const routes: Routes = [
       { path: 'stock-on-hand', loadChildren: () => import('./modules/stock-on-hand/stock-on-hand.module').then(m => m.StockOnHandModule) },
       { path: 'stock-movements', loadChildren: () => import('./modules/stock-movements/stock-movements.module').then(m => m.StockMovementsModule) },
       { path: 'stock-adjustments', loadChildren: () => import('./modules/stock-adjustment/stock-adjustment.module').then(m => m.StockAdjustmentModule) },
-      { path: 'production-orders', loadChildren: () => import('./modules/production-order/production-order.module').then(m => m.ProductionOrderModule) }
+      { path: 'production-orders', loadChildren: () => import('./modules/production-order/production-order.module').then(m => m.ProductionOrderModule) },
+      { path: 'delivery-notes', loadChildren: () => import('./modules/delivery-note/delivery-note.module').then(m => m.DeliveryNoteModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
