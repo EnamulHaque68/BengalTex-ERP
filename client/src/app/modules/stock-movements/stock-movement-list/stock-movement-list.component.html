@@ -3,7 +3,7 @@
   <div class="page-header">
     <div>
       <h2 class="page-title">Stock Movements</h2>
-      <p class="page-subtitle">Append-only audit log of every stock change</p>
+      <p class="page-subtitle">Append-only audit log of every stock change &mdash; raw materials &amp; products</p>
     </div>
     <div class="header-actions">
       <span class="search-wrap">
@@ -11,10 +11,18 @@
         <input
           pInputText
           type="text"
-          placeholder="Search code, material, ref..."
+          placeholder="Search code, item, ref..."
           (input)="onSearchChange($any($event.target).value)"
         />
       </span>
+      <p-select [(ngModel)]="filterItemType"
+                  [options]="itemTypes"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All item types"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
       <p-select [(ngModel)]="filterWarehouseId"
                   [options]="warehouses"
                   optionLabel="name"
@@ -40,8 +48,8 @@
                   optionLabel="label"
                   optionValue="value"
                   [showClear]="true"
-                  placeholder="All types"
-                  styleClass="filter-select-sm"
+                  placeholder="All movement types"
+                  styleClass="filter-select"
                   (onChange)="load()" />
     </div>
   </div>
@@ -63,11 +71,12 @@
         <tr>
           <th>Code</th>
           <th>Date</th>
-          <th>Material</th>
+          <th>Type</th>
+          <th>Item</th>
           <th>Unit</th>
           <th>Warehouse</th>
           <th>Quantity</th>
-          <th>Type</th>
+          <th>Movement</th>
           <th>Reference</th>
           <th>Notes</th>
         </tr>
@@ -78,8 +87,13 @@
           <td><span class="code-badge">{{ m.code }}</span></td>
           <td class="num">{{ m.movementDate }}</td>
           <td>
-            <span class="rm-code">{{ m.rawMaterialCode }}</span>
-            <span class="fw-600">{{ m.rawMaterialName }}</span>
+            <span class="type-badge" [class.type-rm]="m.itemType === 'RawMaterial'" [class.type-prod]="m.itemType === 'Product'">
+              {{ m.itemType === 'RawMaterial' ? 'RM' : 'Product' }}
+            </span>
+          </td>
+          <td>
+            <span class="rm-code">{{ m.itemCode }}</span>
+            <span class="fw-600">{{ m.itemName }}</span>
           </td>
           <td class="unit-cell">{{ m.unitOfMeasureCode }}</td>
           <td><span class="wh-badge">{{ m.warehouseCode }}</span></td>
@@ -87,7 +101,7 @@
             <span class="qty-sign" *ngIf="m.signedQuantity > 0">+</span>{{ m.signedQuantity | number:'1.0-4' }}
           </td>
           <td>
-            <span class="type-badge"
+            <span class="mvt-badge"
                   [class.in]="m.signedQuantity > 0"
                   [class.out]="m.signedQuantity < 0">
               {{ movementTypeLabel(m.movementType) }}
@@ -103,9 +117,9 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="empty-row">
+          <td colspan="10" class="empty-row">
             <i class="pi pi-history"></i>
-            <span>No stock movements yet. They get created automatically when GRNs / Adjustments are posted.</span>
+            <span>No stock movements yet. Created automatically when GRNs / Adjustments / Productions post.</span>
           </td>
         </tr>
       </ng-template>

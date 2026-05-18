@@ -110,7 +110,7 @@
   .qty-sign { margin-right: 0.05rem; }
 }
 
-.type-badge {
+.mvt-badge {
   display: inline-block;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
@@ -119,6 +119,18 @@
 
   &.in  { background: #d1fae5; color: #065f46; }
   &.out { background: #fee2e2; color: #991b1b; }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+
+  &.type-rm   { background: #fef3c7; color: #92400e; }
+  &.type-prod { background: #dbeafe; color: #1e40af; }
 }
 
 .notes-cell {

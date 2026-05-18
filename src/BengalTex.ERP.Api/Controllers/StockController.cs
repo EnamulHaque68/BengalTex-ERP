@@ -27,11 +27,13 @@ public class StockController : ControllerBase
         [FromQuery] PagedQueryParameters parameters,
         [FromQuery] int? warehouseId = null,
         [FromQuery] int? rawMaterialId = null,
+        [FromQuery] int? productId = null,
+        [FromQuery] string? itemType = null,
         [FromQuery] bool belowMinimumOnly = false,
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetStockOnHandQuery(parameters, warehouseId, rawMaterialId, belowMinimumOnly), ct);
+            new GetStockOnHandQuery(parameters, warehouseId, rawMaterialId, productId, itemType, belowMinimumOnly), ct);
         return Ok(result);
     }
 
@@ -41,13 +43,15 @@ public class StockController : ControllerBase
         [FromQuery] PagedQueryParameters parameters,
         [FromQuery] int? warehouseId = null,
         [FromQuery] int? rawMaterialId = null,
+        [FromQuery] int? productId = null,
+        [FromQuery] string? itemType = null,
         [FromQuery] string? movementType = null,
         [FromQuery] string? referenceType = null,
         [FromQuery] long? referenceId = null,
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(
-            new GetStockMovementsQuery(parameters, warehouseId, rawMaterialId, movementType, referenceType, referenceId), ct);
+            new GetStockMovementsQuery(parameters, warehouseId, rawMaterialId, productId, itemType, movementType, referenceType, referenceId), ct);
         return Ok(result);
     }
 }

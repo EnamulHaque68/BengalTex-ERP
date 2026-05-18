@@ -3,7 +3,7 @@
   <div class="page-header">
     <div>
       <h2 class="page-title">Stock On Hand</h2>
-      <p class="page-subtitle">Current raw-material inventory per warehouse</p>
+      <p class="page-subtitle">Current inventory per warehouse — raw materials &amp; finished products</p>
     </div>
     <div class="header-actions">
       <span class="search-wrap">
@@ -11,10 +11,18 @@
         <input
           pInputText
           type="text"
-          placeholder="Search material..."
+          placeholder="Search item..."
           (input)="onSearchChange($any($event.target).value)"
         />
       </span>
+      <p-select [(ngModel)]="filterItemType"
+                  [options]="itemTypes"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All item types"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
       <p-select [(ngModel)]="filterWarehouseId"
                   [options]="warehouses"
                   optionLabel="name"
@@ -59,8 +67,9 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>Material Code</th>
-          <th>Material Name</th>
+          <th>Type</th>
+          <th>Item Code</th>
+          <th>Item Name</th>
           <th>Unit</th>
           <th>Warehouse</th>
           <th>Quantity</th>
@@ -71,26 +80,32 @@
 
       <ng-template pTemplate="body" let-r>
         <tr [class.row-below-min]="r.belowMinimum">
-          <td><span class="code-badge">{{ r.rawMaterialCode }}</span></td>
-          <td class="fw-600">{{ r.rawMaterialName }}</td>
+          <td>
+            <span class="type-badge" [class.type-rm]="r.itemType === 'RawMaterial'" [class.type-prod]="r.itemType === 'Product'">
+              {{ r.itemType === 'RawMaterial' ? 'RM' : 'Product' }}
+            </span>
+          </td>
+          <td><span class="code-badge">{{ r.itemCode }}</span></td>
+          <td class="fw-600">{{ r.itemName }}</td>
           <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
           <td><span class="wh-badge">{{ r.warehouseCode }}</span> {{ r.warehouseName }}</td>
-          <td class="num qty" [class.qty-low]="r.belowMinimum">{{ r.quantity | number:'1.0-4' }}</td>
-          <td class="num muted">{{ r.minimumStockLevel | number:'1.0-4' }}</td>
+          <td class="num qty" [class.qty-low]="r.belowMinimum" [class.qty-neg]="r.quantity < 0">{{ r.quantity | number:'1.0-4' }}</td>
+          <td class="num muted">{{ r.itemType === 'RawMaterial' ? (r.minimumStockLevel | number:'1.0-4') : '—' }}</td>
           <td>
             <span class="status-badge below-min" *ngIf="r.belowMinimum">
               <i class="pi pi-exclamation-triangle"></i> Below min
             </span>
-            <span class="status-badge ok" *ngIf="!r.belowMinimum">OK</span>
+            <span class="status-badge ok" *ngIf="!r.belowMinimum && r.itemType === 'RawMaterial'">OK</span>
+            <span class="muted" *ngIf="r.itemType === 'Product'">—</span>
           </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="empty-row">
+          <td colspan="8" class="empty-row">
             <i class="pi pi-database"></i>
-            <span>No stock on hand. Stock builds up via GRN postings or opening-stock adjustments.</span>
+            <span>No stock on hand. Builds up via GRN postings, opening-stock adjustments, or production receipts.</span>
           </td>
         </tr>
       </ng-template>

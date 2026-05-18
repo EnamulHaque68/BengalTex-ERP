@@ -46,6 +46,7 @@
 }
 
 :host ::ng-deep .filter-select { min-width: 190px; }
+:host ::ng-deep .filter-select-sm { min-width: 140px; }
 :host ::ng-deep .table-card .p-card-body { padding: 0; }
 
 .fw-600 { font-weight: 600; }
@@ -84,6 +85,19 @@
   font-weight: 700;
 
   &.qty-low { color: #dc2626; }
+  &.qty-neg { color: #b91c1c; background: #fee2e2; padding: 0 0.3rem; border-radius: 4px; }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+
+  &.type-rm   { background: #fef3c7; color: #92400e; }
+  &.type-prod { background: #dbeafe; color: #1e40af; }
 }
 
 .status-badge {

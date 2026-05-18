@@ -8,19 +8,31 @@ public class StockOnHandConfiguration : IEntityTypeConfiguration<StockOnHand>
 {
     public void Configure(EntityTypeBuilder<StockOnHand> builder)
     {
-        builder.ToTable("StockOnHand");
+        builder.ToTable("StockOnHand", t => t.HasCheckConstraint(
+            "CK_StockOnHand_OneItemType",
+            "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)"));
 
         builder.Property(s => s.Quantity).HasPrecision(18, 4);
 
-        // Exactly one snapshot row per (RawMaterialId, WarehouseId), ignoring soft-deleted rows
+        // Two filtered unique indexes — exactly one snapshot row per (RM, Warehouse) and per (Product, Warehouse)
         builder.HasIndex(s => new { s.RawMaterialId, s.WarehouseId })
             .IsUnique()
-            .HasFilter("[IsDeleted] = 0")
+            .HasFilter("[RawMaterialId] IS NOT NULL AND [IsDeleted] = 0")
             .HasDatabaseName("UX_StockOnHand_RawMaterialWarehouse");
+
+        builder.HasIndex(s => new { s.ProductId, s.WarehouseId })
+            .IsUnique()
+            .HasFilter("[ProductId] IS NOT NULL AND [IsDeleted] = 0")
+            .HasDatabaseName("UX_StockOnHand_ProductWarehouse");
 
         builder.HasOne(s => s.RawMaterial)
             .WithMany()
             .HasForeignKey(s => s.RawMaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.Product)
+            .WithMany()
+            .HasForeignKey(s => s.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.Warehouse)
@@ -36,7 +48,9 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
 {
     public void Configure(EntityTypeBuilder<StockMovement> builder)
     {
-        builder.ToTable("StockMovements");
+        builder.ToTable("StockMovements", t => t.HasCheckConstraint(
+            "CK_StockMovement_OneItemType",
+            "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)"));
 
         builder.Property(s => s.Code).IsRequired().HasMaxLength(50);
         builder.Property(s => s.SignedQuantity).HasPrecision(18, 4);
@@ -50,6 +64,7 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
 
         builder.HasIndex(s => s.Code).IsUnique();
         builder.HasIndex(s => new { s.RawMaterialId, s.WarehouseId });
+        builder.HasIndex(s => new { s.ProductId, s.WarehouseId });
         builder.HasIndex(s => s.MovementType);
         builder.HasIndex(s => s.MovementDate);
         builder.HasIndex(s => new { s.ReferenceType, s.ReferenceId });
@@ -57,6 +72,11 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
         builder.HasOne(s => s.RawMaterial)
             .WithMany()
             .HasForeignKey(s => s.RawMaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.Product)
+            .WithMany()
+            .HasForeignKey(s => s.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.Warehouse)

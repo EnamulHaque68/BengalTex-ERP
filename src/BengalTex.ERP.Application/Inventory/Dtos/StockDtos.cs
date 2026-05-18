@@ -1,28 +1,37 @@
 namespace BengalTex.ERP.Application.Inventory.Dtos;
 
+/// <summary>
+/// Generic stock snapshot row — covers both RawMaterial and Product (polymorphic).
+/// <see cref="ItemType"/> is either "RawMaterial" or "Product"; the matching id field
+/// (RawMaterialId / ProductId) is non-null.
+/// </summary>
 public record StockOnHandDto(
-    int RawMaterialId,
-    string RawMaterialCode,
-    string RawMaterialName,
+    string ItemType,                     // "RawMaterial" | "Product"
+    int? RawMaterialId,
+    int? ProductId,
+    string ItemCode,                     // resolved code (RM or Product)
+    string ItemName,                     // resolved name
     string UnitOfMeasureCode,
     int WarehouseId,
     string WarehouseCode,
     string WarehouseName,
     decimal Quantity,
-    decimal MinimumStockLevel,
-    bool BelowMinimum);                  // computed: Quantity < MinimumStockLevel
+    decimal MinimumStockLevel,           // 0 for Product rows (no min-stock concept on Product)
+    bool BelowMinimum);                  // false for Product rows
 
 public record StockMovementDto(
     long Id,
     string Code,
-    int RawMaterialId,
-    string RawMaterialCode,
-    string RawMaterialName,
+    string ItemType,                     // "RawMaterial" | "Product"
+    int? RawMaterialId,
+    int? ProductId,
+    string ItemCode,
+    string ItemName,
     string UnitOfMeasureCode,
     int WarehouseId,
     string WarehouseCode,
     decimal SignedQuantity,              // + in, − out
-    string MovementType,                 // enum as string
+    string MovementType,
     string? ReferenceType,
     long? ReferenceId,
     string? ReferenceCode,

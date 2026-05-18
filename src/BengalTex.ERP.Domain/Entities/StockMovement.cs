@@ -4,18 +4,28 @@ namespace BengalTex.ERP.Domain.Entities;
 
 /// <summary>
 /// Append-only audit record of a single stock change. Sums of <see cref="SignedQuantity"/>
-/// over all movements for a (RawMaterialId, WarehouseId) pair equal that pair's
+/// over all movements for an (item, WarehouseId) pair equal that pair's
 /// <see cref="StockOnHand.Quantity"/>. Transactional (long key) — high volume.
 ///
-/// Every inbound (GRN receipt, adjustment-in, opening stock) and outbound (adjustment-out,
-/// future issue/dispatch) writes a row here. Movements are never updated or deleted.
+/// Polymorphic item: exactly one of <see cref="RawMaterialId"/> / <see cref="ProductId"/>
+/// is set per row, enforced by a DB check constraint. RawMaterial movements come from
+/// GRN / Adjustment / Production-Issue; Product movements come from Production-Receipt
+/// / Sales-Dispatch (future Delivery Note).
+///
+/// Every inbound (GRN, adjustment-in, opening stock, production-receipt) and outbound
+/// (adjustment-out, production-issue, future sales-dispatch) writes a row here.
+/// Movements are never updated or deleted.
 /// </summary>
 public class StockMovement : BaseTransactionalEntity
 {
     public string Code { get; set; } = string.Empty;
 
-    public int RawMaterialId { get; set; }
-    public RawMaterial RawMaterial { get; set; } = null!;
+    // ── Polymorphic item — exactly one of these is non-null (DB check constraint) ──
+    public int? RawMaterialId { get; set; }
+    public RawMaterial? RawMaterial { get; set; }
+
+    public int? ProductId { get; set; }
+    public Product? Product { get; set; }
 
     public int WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
@@ -25,7 +35,7 @@ public class StockMovement : BaseTransactionalEntity
 
     public StockMovementType MovementType { get; set; }
 
-    /// <summary>Source document kind, e.g. "GRN", "Adjustment", "Production".</summary>
+    /// <summary>Source document kind, e.g. "GRN", "Adjustment", "ProductionOrder".</summary>
     public string? ReferenceType { get; set; }
 
     /// <summary>Source document long id (nullable for opening stock with no source doc).</summary>
@@ -45,8 +55,8 @@ public enum StockMovementType
     GrnReceipt = 2,         // inbound, from a posted GRN
     AdjustmentIn = 3,       // inbound, manual stock-take + adjustment
     AdjustmentOut = 4,      // outbound, manual write-off / correction
-    ProductionIssue = 5,    // outbound, raw material consumed by Production (future)
-    ProductionReceipt = 6,  // inbound, finished goods from Production (future)
+    ProductionIssue = 5,    // outbound, raw material consumed by Production
+    ProductionReceipt = 6,  // inbound, finished goods from Production
     SalesDispatch = 7,      // outbound, dispatched to customer via DN (future)
     TransferIn = 8,         // inbound side of inter-warehouse transfer (future)
     TransferOut = 9         // outbound side of inter-warehouse transfer (future)

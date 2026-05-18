@@ -3,7 +3,7 @@ import { StockService } from '../../../services/stock.service';
 import { WarehouseService } from '../../../services/warehouse.service';
 import { RawMaterialService } from '../../../services/raw-material.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { StockOnHandDto } from '../../../models/inventory.models';
+import { STOCK_ITEM_TYPES, StockOnHandDto } from '../../../models/inventory.models';
 import { WarehouseDto } from '../../../models/master-data.models';
 import { RawMaterialListItemDto } from '../../../models/raw-material.models';
 
@@ -20,11 +20,13 @@ export class StockOnHandListComponent implements OnInit {
   totalCount = 0;
   filterWarehouseId: number | null = null;
   filterRawMaterialId: number | null = null;
+  filterItemType: string | null = null;
   belowMinimumOnly = false;
 
   parameters: PagedQueryParameters = { page: 1, pageSize: 25, search: '' };
   searchTimer: any = null;
 
+  readonly itemTypes = STOCK_ITEM_TYPES;
   warehouses: WarehouseDto[] = [];
   rawMaterials: RawMaterialListItemDto[] = [];
 
@@ -66,6 +68,8 @@ export class StockOnHandListComponent implements OnInit {
       this.parameters,
       this.filterWarehouseId ?? undefined,
       this.filterRawMaterialId ?? undefined,
+      undefined,                              // productId filter — not wired in this page yet
+      this.filterItemType ?? undefined,
       this.belowMinimumOnly
     ).subscribe({
       next: (res) => {

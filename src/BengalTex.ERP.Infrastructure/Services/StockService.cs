@@ -6,10 +6,11 @@ using Microsoft.EntityFrameworkCore;
 namespace BengalTex.ERP.Infrastructure.Services;
 
 /// <summary>
-/// Posts stock movements and keeps the StockOnHand snapshot in sync. Movement codes
-/// auto-generate from the "MV" numbering series. Caller is responsible for the
-/// SaveChanges call — this lets a single business operation (e.g. GRN Post, Stock
-/// Adjustment Post) tie the document update and the movement(s) into one transaction.
+/// Posts stock movements (RawMaterial or Product) and keeps the StockOnHand snapshot
+/// in sync. Movement codes auto-generate from the "MV" numbering series. Caller is
+/// responsible for the SaveChanges call — this lets a single business operation
+/// (GRN Post, Adjustment Post, Production Complete) tie the document update and the
+/// movement(s) into one transaction.
 /// </summary>
 public sealed class StockService : IStockService
 {
@@ -27,20 +28,49 @@ public sealed class StockService : IStockService
         _numbering = numbering;
     }
 
-    public async Task PostMovementAsync(
-        int rawMaterialId,
-        int warehouseId,
-        decimal signedQuantity,
-        StockMovementType movementType,
-        string? referenceType,
-        long? referenceId,
-        string? referenceCode,
-        DateOnly movementDate,
-        string? notes,
+    public Task PostRawMaterialMovementAsync(
+        int rawMaterialId, int warehouseId, decimal signedQuantity,
+        StockMovementType movementType, string? referenceType, long? referenceId,
+        string? referenceCode, DateOnly movementDate, string? notes,
         CancellationToken ct = default)
     {
         if (rawMaterialId <= 0)
             throw new ArgumentException("Raw material id is required.", nameof(rawMaterialId));
+
+        return PostInternalAsync(
+            rawMaterialId: rawMaterialId, productId: null,
+            warehouseId, signedQuantity, movementType,
+            referenceType, referenceId, referenceCode, movementDate, notes, ct);
+    }
+
+    public Task PostProductMovementAsync(
+        int productId, int warehouseId, decimal signedQuantity,
+        StockMovementType movementType, string? referenceType, long? referenceId,
+        string? referenceCode, DateOnly movementDate, string? notes,
+        CancellationToken ct = default)
+    {
+        if (productId <= 0)
+            throw new ArgumentException("Product id is required.", nameof(productId));
+
+        return PostInternalAsync(
+            rawMaterialId: null, productId: productId,
+            warehouseId, signedQuantity, movementType,
+            referenceType, referenceId, referenceCode, movementDate, notes, ct);
+    }
+
+    public async Task<decimal> GetRawMaterialOnHandAsync(
+        int rawMaterialId, int warehouseId, CancellationToken ct = default)
+    {
+        var row = await _onHandRepo.Query()
+            .FirstOrDefaultAsync(s => s.RawMaterialId == rawMaterialId && s.WarehouseId == warehouseId, ct);
+        return row?.Quantity ?? 0m;
+    }
+
+    private async Task PostInternalAsync(
+        int? rawMaterialId, int? productId, int warehouseId, decimal signedQuantity,
+        StockMovementType movementType, string? referenceType, long? referenceId,
+        string? referenceCode, DateOnly movementDate, string? notes, CancellationToken ct)
+    {
         if (warehouseId <= 0)
             throw new ArgumentException("Warehouse id is required.", nameof(warehouseId));
         if (signedQuantity == 0m)
@@ -52,6 +82,7 @@ public sealed class StockService : IStockService
         {
             Code = code,
             RawMaterialId = rawMaterialId,
+            ProductId = productId,
             WarehouseId = warehouseId,
             SignedQuantity = signedQuantity,
             MovementType = movementType,
@@ -63,14 +94,19 @@ public sealed class StockService : IStockService
         };
         await _movementRepo.AddAsync(movement, ct);
 
-        // Upsert the StockOnHand snapshot for this (RM × Warehouse)
-        var onHand = await _onHandRepo.Query()
-            .FirstOrDefaultAsync(s => s.RawMaterialId == rawMaterialId && s.WarehouseId == warehouseId, ct);
+        // Upsert the StockOnHand snapshot for this (item × warehouse)
+        var onHand = rawMaterialId.HasValue
+            ? await _onHandRepo.Query()
+                .FirstOrDefaultAsync(s => s.RawMaterialId == rawMaterialId && s.WarehouseId == warehouseId, ct)
+            : await _onHandRepo.Query()
+                .FirstOrDefaultAsync(s => s.ProductId == productId && s.WarehouseId == warehouseId, ct);
+
         if (onHand is null)
         {
             onHand = new StockOnHand
             {
                 RawMaterialId = rawMaterialId,
+                ProductId = productId,
                 WarehouseId = warehouseId,
                 Quantity = signedQuantity
             };

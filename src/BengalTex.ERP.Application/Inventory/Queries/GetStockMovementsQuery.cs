@@ -11,6 +11,8 @@ public sealed record GetStockMovementsQuery(
     PagedQueryParameters Parameters,
     int? WarehouseId = null,
     int? RawMaterialId = null,
+    int? ProductId = null,
+    string? ItemType = null,             // "RawMaterial" or "Product"
     string? MovementType = null,
     string? ReferenceType = null,
     long? ReferenceId = null
@@ -32,6 +34,14 @@ internal sealed class GetStockMovementsQueryHandler
             query = query.Where(m => m.WarehouseId == request.WarehouseId.Value);
         if (request.RawMaterialId.HasValue)
             query = query.Where(m => m.RawMaterialId == request.RawMaterialId.Value);
+        if (request.ProductId.HasValue)
+            query = query.Where(m => m.ProductId == request.ProductId.Value);
+
+        if (string.Equals(request.ItemType, "RawMaterial", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(m => m.RawMaterialId != null);
+        else if (string.Equals(request.ItemType, "Product", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(m => m.ProductId != null);
+
         if (!string.IsNullOrEmpty(request.MovementType)
             && Enum.TryParse<Domain.Entities.StockMovementType>(request.MovementType, out var mt))
         {
@@ -47,8 +57,8 @@ internal sealed class GetStockMovementsQueryHandler
         {
             query = query.Where(m =>
                 m.Code.Contains(search) ||
-                m.RawMaterial.Code.Contains(search) ||
-                m.RawMaterial.Name.Contains(search) ||
+                (m.RawMaterial != null && (m.RawMaterial.Code.Contains(search) || m.RawMaterial.Name.Contains(search))) ||
+                (m.Product != null && (m.Product.Code.Contains(search) || m.Product.Name.Contains(search))) ||
                 (m.ReferenceCode != null && m.ReferenceCode.Contains(search)));
         }
 
@@ -67,8 +77,12 @@ internal sealed class GetStockMovementsQueryHandler
             .Take(request.Parameters.PageSize)
             .Select(m => new StockMovementDto(
                 m.Id, m.Code,
-                m.RawMaterialId, m.RawMaterial.Code, m.RawMaterial.Name,
-                m.RawMaterial.UnitOfMeasure.Code,
+                m.RawMaterialId != null ? "RawMaterial" : "Product",
+                m.RawMaterialId,
+                m.ProductId,
+                m.RawMaterialId != null ? m.RawMaterial!.Code : m.Product!.Code,
+                m.RawMaterialId != null ? m.RawMaterial!.Name : m.Product!.Name,
+                m.RawMaterialId != null ? m.RawMaterial!.UnitOfMeasure.Code : m.Product!.UnitOfMeasure.Code,
                 m.WarehouseId, m.Warehouse.Code,
                 m.SignedQuantity,
                 m.MovementType.ToString(),

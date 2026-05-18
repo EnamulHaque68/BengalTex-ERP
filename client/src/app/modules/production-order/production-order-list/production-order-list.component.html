@@ -1,0 +1,290 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Production Orders</h2>
+      <p class="page-subtitle">Manufacturing runs &mdash; BOM-driven, consumes raw materials, produces finished goods</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, product..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterProductId"
+                  [options]="products"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All products"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="Add Production" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="pos"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Product</th>
+          <th>BOM v.</th>
+          <th>Quantity</th>
+          <th>Planned Start</th>
+          <th>Actual End</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td><span class="code-badge">{{ p.code }}</span></td>
+          <td class="fw-600">{{ p.productName }}</td>
+          <td class="num">v{{ p.bomVersion }}</td>
+          <td class="num">{{ p.quantity | number:'1.0-4' }}</td>
+          <td class="num">{{ formatDate(p.plannedStartDate) }}</td>
+          <td class="num">{{ formatDate(p.actualEndDate) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="p.status === 'Draft'"
+                  [class.in-progress]="p.status === 'InProgress'"
+                  [class.completed]="p.status === 'Completed'"
+                  [class.cancelled]="p.status === 'Cancelled'">
+              {{ p.status === 'InProgress' ? 'In Progress' : p.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="p.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(p)"
+                        [pTooltip]="p.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-play" severity="info" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'"
+                        [loading]="rowActionId === p.id"
+                        (click)="start(p)" pTooltip="Start production" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="p.status === 'InProgress'"
+                        [loading]="rowActionId === p.id"
+                        (click)="complete(p)" pTooltip="Complete (posts stock movements)" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="canCancel(p)"
+                        [loading]="rowActionId === p.id"
+                        (click)="cancel(p)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(p)"
+                        (click)="confirmDelete(p)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-cog"></i>
+            <span>No production orders. Click "Add Production" to plan a manufacturing run.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Production Order' : (dialogMode === 'edit' ? 'Edit Production Order' : 'View Production Order')"
+  [modal]="true"
+  [style]="{ width: '960px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only draft production orders can be edited.
+    </div>
+
+    <p class="section-label">Order</p>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Product *</label>
+        <p-select formControlName="productId"
+                    [options]="products"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select product"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onProductChange($event)" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>BOM Version *</label>
+        <p-select formControlName="bomId"
+                    [options]="bomsForSelectedProduct"
+                    optionLabel="displayLabel"
+                    optionValue="id"
+                    placeholder="Select BOM (Active version is pre-selected)"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+        <small class="hint" *ngIf="loadedDetail">
+          BOM output batch: <strong>{{ loadedDetail.bomOutputQuantity | number:'1.0-4' }}</strong>
+          {{ loadedDetail.productUnitOfMeasureCode }} per recipe
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Quantity *</label>
+        <p-inputNumber formControlName="quantity" [min]="0"
+                       [minFractionDigits]="0" [maxFractionDigits]="4" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Issue Warehouse * <small>(RM source)</small></label>
+        <p-select formControlName="issueWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select warehouse"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Receive Warehouse * <small>(FG destination)</small></label>
+        <p-select formControlName="receiveWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select warehouse"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Planned Start Date</label>
+        <input pInputText type="date" formControlName="plannedStartDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Planned End Date</label>
+        <input pInputText type="date" formControlName="plannedEndDate" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Shift, operator, special instructions..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <!-- Planned consumption preview (only in edit/view, server-computed) -->
+    <ng-container *ngIf="loadedDetail && loadedDetail.plannedLines.length > 0">
+      <p class="section-label">Planned RM Consumption <small>(scaled to Quantity × BOM line × wastage)</small></p>
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="rm-col">Raw Material</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">BOM Qty</th>
+            <th class="num-col">Wastage %</th>
+            <th class="num-col">Scaled Qty</th>
+            <th class="num-col">On Hand (Issue WH)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of loadedDetail.plannedLines" [class.row-short]="!l.sufficient">
+            <td>
+              <span class="rm-code">{{ l.rawMaterialCode }}</span>
+              <span class="fw-600">{{ l.rawMaterialName }}</span>
+            </td>
+            <td class="unit-cell">{{ l.unitOfMeasureCode }}</td>
+            <td class="num">{{ l.bomLineQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ l.wastagePercent | number:'1.0-2' }}</td>
+            <td class="num fw-600">{{ l.scaledQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ l.currentOnHand | number:'1.0-4' }}</td>
+            <td>
+              <span class="suff-badge ok" *ngIf="l.sufficient"><i class="pi pi-check"></i> OK</span>
+              <span class="suff-badge short" *ngIf="!l.sufficient">
+                <i class="pi pi-exclamation-triangle"></i> Short
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Production Order"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingPo">
+    <p>Delete <strong>{{ deletingPo.code }}</strong> ({{ deletingPo.productName }})? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
