@@ -1,0 +1,156 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">AR Ageing</h2>
+      <p class="page-subtitle">Customer outstanding broken into past-due buckets &mdash; collections priority view</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="asOfDate" class="date-input" (change)="load()" />
+      <p-select [(ngModel)]="filterCustomerId"
+                [options]="customers"
+                optionLabel="name"
+                optionValue="id"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="code,name"
+                placeholder="All customers"
+                styleClass="filter-select"
+                (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Total Outstanding</span>
+        <span class="tile-value due">{{ formatCurrency(report.totalOutstanding) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Current</span>
+        <span class="tile-value current">{{ formatCurrency(report.totalCurrent) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">1-30 days</span>
+        <span class="tile-value warn1">{{ formatCurrency(report.total1To30) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">31-60 days</span>
+        <span class="tile-value warn2">{{ formatCurrency(report.total31To60) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">61-90 days</span>
+        <span class="tile-value warn3">{{ formatCurrency(report.total61To90) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">90+ days</span>
+        <span class="tile-value warn4">{{ formatCurrency(report.total90Plus) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Customers / Invoices</span>
+        <span class="tile-value muted">{{ report.customerCount }} / {{ report.invoiceCount }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.customers || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.customers?.length || 0) > 25"
+      [rows]="25"
+      [rowsPerPageOptions]="[25, 50, 100]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:40px"></th>
+          <th>Customer</th>
+          <th class="num-col">Current</th>
+          <th class="num-col">1-30</th>
+          <th class="num-col">31-60</th>
+          <th class="num-col">61-90</th>
+          <th class="num-col">90+</th>
+          <th class="num-col">Total Outstanding</th>
+          <th class="num-col">Invoices</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-c>
+        <tr>
+          <td>
+            <button class="expand-toggle" type="button" (click)="toggleExpand(c.customerId)" [pTooltip]="isExpanded(c.customerId) ? 'Collapse' : 'Expand invoices'">
+              <i class="pi" [class.pi-chevron-down]="isExpanded(c.customerId)" [class.pi-chevron-right]="!isExpanded(c.customerId)"></i>
+            </button>
+          </td>
+          <td>
+            <div class="cust-cell">
+              <span class="code-badge">{{ c.customerCode }}</span>
+              <span class="fw-600">{{ c.customerName }}</span>
+            </div>
+          </td>
+          <td class="num">{{ formatCurrency(c.current) }}</td>
+          <td class="num">{{ formatCurrency(c.days1To30) }}</td>
+          <td class="num">{{ formatCurrency(c.days31To60) }}</td>
+          <td class="num">{{ formatCurrency(c.days61To90) }}</td>
+          <td class="num">{{ formatCurrency(c.days90Plus) }}</td>
+          <td class="num fw-700">{{ formatCurrency(c.totalOutstanding) }}</td>
+          <td class="num">{{ c.invoiceCount }}</td>
+        </tr>
+        <tr *ngIf="isExpanded(c.customerId)">
+          <td colspan="9" class="detail-shell">
+            <table class="detail-grid">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>SO</th>
+                  <th>Invoice Date</th>
+                  <th>Due Date</th>
+                  <th>Days Past</th>
+                  <th>Bucket</th>
+                  <th class="num">Total</th>
+                  <th class="num">Paid</th>
+                  <th class="num">Outstanding</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of c.invoices">
+                  <td><span class="code-badge">{{ inv.invoiceCode }}</span></td>
+                  <td><span class="code-badge alt">{{ inv.salesOrderCode }}</span></td>
+                  <td>{{ inv.invoiceDate }}</td>
+                  <td>{{ inv.dueDate }}</td>
+                  <td>{{ inv.daysPastDue > 0 ? inv.daysPastDue + 'd' : '—' }}</td>
+                  <td><span class="bucket-badge" [class]="bucketClass(inv.bucket)">{{ inv.bucket }}</span></td>
+                  <td class="num">{{ formatCurrency(inv.totalAmount) }}</td>
+                  <td class="num">{{ formatCurrency(inv.amountPaid) }}</td>
+                  <td class="num fw-700">{{ formatCurrency(inv.amountDue) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-check-circle"></i>
+            <span>No outstanding receivables. Everything paid up!</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    As of: <strong>{{ report.asOfDate }}</strong>
+  </p>
+</div>

@@ -1,0 +1,111 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock Summary</h2>
+      <p class="page-subtitle">Aggregated quantity per item across warehouses &mdash; current snapshot</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="filterItemType"
+                [options]="itemTypes"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All items"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <p-select [(ngModel)]="filterWarehouseId"
+                [options]="warehouses"
+                optionLabel="name"
+                optionValue="id"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="code,name"
+                placeholder="All warehouses"
+                styleClass="filter-select"
+                (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary"
+                (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Total Rows</span>
+        <span class="tile-value">{{ report.rowCount }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Raw Material Qty</span>
+        <span class="tile-value rm">{{ formatNumber(report.totalRawMaterialQuantity) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Product Qty</span>
+        <span class="tile-value product">{{ formatNumber(report.totalProductQuantity) }}</span>
+      </div>
+      <div class="summary-tile" *ngIf="report.warehouseName">
+        <span class="tile-label">Warehouse</span>
+        <span class="tile-value muted">{{ report.warehouseName }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.rows || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.rows?.length || 0) > 50"
+      [rows]="50"
+      [rowsPerPageOptions]="[50, 100, 250]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Type</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>UoM</th>
+          <th class="num-col">Total Qty</th>
+          <th class="num-col">Warehouses</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>
+            <span class="type-badge"
+                  [class.rm]="r.itemType === 'RawMaterial'"
+                  [class.product]="r.itemType === 'Product'">
+              {{ r.itemType === 'RawMaterial' ? 'RM' : 'Product' }}
+            </span>
+          </td>
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-600">{{ r.name }}</td>
+          <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
+          <td class="num fw-700">{{ formatNumber(r.totalQuantity) }}</td>
+          <td class="num">{{ r.warehouseCount }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="empty-row">
+            <i class="pi pi-box"></i>
+            <span>No stock found for the selected filters.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Generated: {{ report.generatedAt | date:'medium' }}
+  </p>
+</div>
