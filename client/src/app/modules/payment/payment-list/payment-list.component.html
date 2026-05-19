@@ -1,0 +1,228 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Payments</h2>
+      <p class="page-subtitle">Payments made to suppliers against invoices &mdash; reduces outstanding</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, invoice, supplier..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterSupplierId"
+                  [options]="suppliers"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All suppliers"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterPaymentMethod"
+                  [options]="paymentMethods"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All methods"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="Add Payment" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="payments"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Invoice</th>
+          <th>Supplier</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Reference</th>
+          <th style="width:100px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td><span class="code-badge">{{ p.code }}</span></td>
+          <td><span class="code-badge alt">{{ p.supplierInvoiceCode }}</span></td>
+          <td class="fw-600">{{ p.supplierName }}</td>
+          <td class="num">{{ p.paymentDate }}</td>
+          <td class="num amount">{{ formatCurrency(p.amount) }}</td>
+          <td><span class="method-badge">{{ paymentMethodLabel(p.paymentMethod) }}</span></td>
+          <td>{{ p.referenceNumber || '—' }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                        (click)="openView(p)" pTooltip="View" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(p)" pTooltip="Delete (reverses invoice)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-money-bill"></i>
+            <span>No payments yet. Click "Add Payment" to record a supplier payment.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  header="Add Payment"
+  [modal]="true"
+  [style]="{ width: '640px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Supplier Invoice *</label>
+        <p-select formControlName="supplierInvoiceId"
+                    [options]="payableInvoices"
+                    optionLabel="displayLabel"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,supplierName"
+                    placeholder="Select an Approved / Partially-Paid invoice"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onInvoiceChange($event)" />
+        <div class="outstanding-hint" *ngIf="selectedInvoice">
+          <div><span class="label">Supplier:</span> <strong>{{ selectedInvoice.supplierName }}</strong></div>
+          <div><span class="label">Invoice Total:</span> {{ formatCurrency(selectedInvoice.totalAmount) }}</div>
+          <div class="outstanding-line"><span class="label">Outstanding:</span>
+            <strong class="outstanding-amount">{{ formatCurrency(selectedInvoice.amountDue) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Payment Date *</label>
+        <input pInputText type="date" formControlName="paymentDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Amount (BDT) *</label>
+        <p-inputNumber formControlName="amount" [min]="0" mode="currency" currency="BDT" locale="en-BD"
+                       [minFractionDigits]="2" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Payment Method *</label>
+        <p-select formControlName="paymentMethod"
+                    [options]="paymentMethods"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Reference Number <small>(cheque #, txn ID)</small></label>
+        <input pInputText formControlName="referenceNumber" placeholder="e.g. CHQ-12345 / bKash trxId" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Bank name, branch, payee name..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : 'Post Payment'"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- View dialog -->
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="View Payment"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+>
+  <div *ngIf="viewingPayment; else loadingView" class="view-grid">
+    <div><span class="vlabel">Code</span><span class="vval"><span class="code-badge">{{ viewingPayment.code }}</span></span></div>
+    <div><span class="vlabel">Invoice</span><span class="vval"><span class="code-badge alt">{{ viewingPayment.supplierInvoiceCode }}</span></span></div>
+    <div><span class="vlabel">Supplier</span><span class="vval fw-600">{{ viewingPayment.supplierName }}</span></div>
+    <div><span class="vlabel">Date</span><span class="vval">{{ viewingPayment.paymentDate }}</span></div>
+    <div><span class="vlabel">Amount</span><span class="vval amount">{{ formatCurrency(viewingPayment.amount) }}</span></div>
+    <div><span class="vlabel">Method</span><span class="vval"><span class="method-badge">{{ paymentMethodLabel(viewingPayment.paymentMethod) }}</span></span></div>
+    <div><span class="vlabel">Reference</span><span class="vval">{{ viewingPayment.referenceNumber || '—' }}</span></div>
+    <div><span class="vlabel">Notes</span><span class="vval">{{ viewingPayment.notes || '—' }}</span></div>
+  </div>
+  <ng-template #loadingView>
+    <div class="loading-view">Loading…</div>
+  </ng-template>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewDialogVisible = false" />
+  </div>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Payment"
+  [modal]="true"
+  [style]="{ width: '440px' }"
+>
+  <div *ngIf="deletingPay">
+    <p>Delete <strong>{{ deletingPay.code }}</strong> ({{ formatCurrency(deletingPay.amount) }} via {{ paymentMethodLabel(deletingPay.paymentMethod) }})?</p>
+    <p class="warn-note"><i class="pi pi-exclamation-triangle"></i> The invoice <strong>{{ deletingPay.supplierInvoiceCode }}</strong> will be credited by this amount and its status recomputed.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete + Reverse" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
