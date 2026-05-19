@@ -31,7 +31,25 @@ public class CustomerInvoice : BaseTransactionalEntity
 
     public CustomerInvoiceStatus Status { get; set; } = CustomerInvoiceStatus.Draft;
 
-    /// <summary>Sum of line totals — written on Save, locked at Issue.</summary>
+    /// <summary>
+    /// VAT rate as a decimal fraction (0.15 = 15%). Default 0.15 for Bangladesh standard
+    /// rate; set to 0 for VAT-exempt customers. Existing pre-Phase-12 rows backfilled to 0.
+    /// </summary>
+    public decimal VatRate { get; set; }
+
+    /// <summary>
+    /// Sum of (line.Quantity × line.UnitPrice) — net of VAT. Computed on Save. Pre-VAT
+    /// equivalent of the old TotalAmount field.
+    /// </summary>
+    public decimal SubtotalAmount { get; set; }
+
+    /// <summary>VAT charged on this invoice. Computed as SubtotalAmount × VatRate on Save.</summary>
+    public decimal VatAmount { get; set; }
+
+    /// <summary>
+    /// Gross — what the customer owes (SubtotalAmount + VatAmount). Locked at Issue.
+    /// AmountPaid is measured against this.
+    /// </summary>
     public decimal TotalAmount { get; set; }
 
     /// <summary>Running sum of all non-deleted <see cref="Receipt"/>s applied. Updated atomically.</summary>
@@ -43,6 +61,12 @@ public class CustomerInvoice : BaseTransactionalEntity
     public string? Notes { get; set; }
 
     public ICollection<CustomerInvoiceLine> Lines { get; set; } = new List<CustomerInvoiceLine>();
+
+    /// <summary>
+    /// 1-to-1 VAT challan auto-created on Issue when <see cref="VatAmount"/> &gt; 0.
+    /// Null until issued. Soft-deleted automatically if invoice is cancelled.
+    /// </summary>
+    public VatChallan? VatChallan { get; set; }
 }
 
 /// <summary>

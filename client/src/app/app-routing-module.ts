@@ -35,7 +35,8 @@ const routes: Routes = [
       { path: 'supplier-invoices', loadChildren: () => import('./modules/supplier-invoice/supplier-invoice.module').then(m => m.SupplierInvoiceModule) },
       { path: 'payments', loadChildren: () => import('./modules/payment/payment.module').then(m => m.PaymentModule) },
       { path: 'reports', loadChildren: () => import('./modules/reports/reports.module').then(m => m.ReportsModule) },
-      { path: 'stock-transfers', loadChildren: () => import('./modules/stock-transfer/stock-transfer.module').then(m => m.StockTransferModule) }
+      { path: 'stock-transfers', loadChildren: () => import('./modules/stock-transfer/stock-transfer.module').then(m => m.StockTransferModule) },
+      { path: 'vat-challans', loadChildren: () => import('./modules/vat-challan/vat-challan.module').then(m => m.VatChallanModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

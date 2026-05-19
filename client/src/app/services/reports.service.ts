@@ -8,7 +8,8 @@ import {
   ArAgeingReportDto,
   DashboardKpisDto,
   SalesSummaryReportDto,
-  StockSummaryReportDto
+  StockSummaryReportDto,
+  VatSummaryReportDto
 } from '../models/reports.models';
 
 @Injectable({ providedIn: 'root' })
@@ -48,5 +49,12 @@ export class ReportsService {
 
   getDashboardKpis(): Observable<ApiResponse<DashboardKpisDto>> {
     return this.http.get<ApiResponse<DashboardKpisDto>>(`${this.base}/dashboard-kpis`);
+  }
+
+  getVatSummary(fromDate?: string, toDate?: string): Observable<ApiResponse<VatSummaryReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    return this.http.get<ApiResponse<VatSummaryReportDto>>(`${this.base}/vat-summary`, { params });
   }
 }

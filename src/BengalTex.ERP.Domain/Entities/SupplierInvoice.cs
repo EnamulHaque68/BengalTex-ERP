@@ -36,7 +36,25 @@ public class SupplierInvoice : BaseTransactionalEntity
 
     public SupplierInvoiceStatus Status { get; set; } = SupplierInvoiceStatus.Draft;
 
-    /// <summary>Sum of line totals — written on Save, locked at Approve.</summary>
+    /// <summary>
+    /// VAT rate as a decimal fraction (0.15 = 15%). Default 0.15 for Bangladesh standard
+    /// rate; set to 0 for VAT-exempt invoices. Existing pre-Phase-12 rows backfilled to 0.
+    /// </summary>
+    public decimal VatRate { get; set; }
+
+    /// <summary>
+    /// Sum of (line.Quantity × line.UnitPrice) — net of VAT. Computed on Save. Pre-VAT
+    /// equivalent of the old TotalAmount field.
+    /// </summary>
+    public decimal SubtotalAmount { get; set; }
+
+    /// <summary>VAT charged on this invoice. Computed as SubtotalAmount × VatRate on Save.</summary>
+    public decimal VatAmount { get; set; }
+
+    /// <summary>
+    /// Gross — what the supplier is owed (SubtotalAmount + VatAmount). Locked at Approve.
+    /// AmountPaid is measured against this; receipt/payment overpayment checks compare to this.
+    /// </summary>
     public decimal TotalAmount { get; set; }
 
     /// <summary>Running sum of all non-deleted <see cref="Payment"/>s. Updated atomically.</summary>

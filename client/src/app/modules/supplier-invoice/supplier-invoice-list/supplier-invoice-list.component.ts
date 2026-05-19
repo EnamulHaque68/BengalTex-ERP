@@ -79,11 +79,28 @@ export class SupplierInvoiceListComponent implements OnInit {
     this.form = this.fb.group({
       purchaseOrderId: [null as number | null, Validators.required],
       supplierInvoiceNumber: ['', Validators.maxLength(100)],
+      vatRatePercent: [15, [Validators.required, Validators.min(0), Validators.max(100)]],
       invoiceDate: [this.todayIso(), Validators.required],
       dueDate: [null as string | null],
       notes: ['', Validators.maxLength(2000)],
       lines: this.fb.array([])
     });
+  }
+
+  get vatRateDecimal(): number {
+    return (Number(this.form.get('vatRatePercent')?.value) || 0) / 100;
+  }
+
+  subtotalAmount(): number {
+    return this.lines.controls.reduce((sum, l) => sum + this.lineTotal(l), 0);
+  }
+
+  vatAmount(): number {
+    return Math.round(this.subtotalAmount() * this.vatRateDecimal * 10000) / 10000;
+  }
+
+  grandTotalAmount(): number {
+    return this.subtotalAmount() + this.vatAmount();
   }
 
   get lines(): FormArray {
@@ -217,6 +234,7 @@ export class SupplierInvoiceListComponent implements OnInit {
     this.form.reset({
       purchaseOrderId: null,
       supplierInvoiceNumber: '',
+      vatRatePercent: 15,
       invoiceDate: this.todayIso(),
       dueDate: null,
       notes: ''
@@ -242,6 +260,7 @@ export class SupplierInvoiceListComponent implements OnInit {
             this.form.patchValue({
               purchaseOrderId: s.purchaseOrderId,
               supplierInvoiceNumber: s.supplierInvoiceNumber ?? '',
+              vatRatePercent: Math.round((s.vatRate || 0) * 10000) / 100,
               invoiceDate: s.invoiceDate,
               dueDate: s.dueDate,
               notes: s.notes ?? ''
@@ -284,6 +303,7 @@ export class SupplierInvoiceListComponent implements OnInit {
       this.invService.create({
         purchaseOrderId: v.purchaseOrderId,
         supplierInvoiceNumber: (v.supplierInvoiceNumber as string)?.trim() || null,
+        vatRate: this.vatRateDecimal,
         invoiceDate: v.invoiceDate,
         dueDate: v.dueDate || null,
         notes: (v.notes as string)?.trim() || null,
@@ -295,6 +315,7 @@ export class SupplierInvoiceListComponent implements OnInit {
     } else if (this.editingId) {
       this.invService.update(this.editingId, {
         supplierInvoiceNumber: (v.supplierInvoiceNumber as string)?.trim() || null,
+        vatRate: this.vatRateDecimal,
         invoiceDate: v.invoiceDate,
         dueDate: v.dueDate || v.invoiceDate,
         notes: (v.notes as string)?.trim() || null,
@@ -415,10 +436,6 @@ export class SupplierInvoiceListComponent implements OnInit {
     const qty = Number(line.get('quantity')?.value) || 0;
     const price = Number(line.get('unitPrice')?.value) || 0;
     return qty * price;
-  }
-
-  totalAmount(): number {
-    return this.lines.controls.reduce((sum, l) => sum + this.lineTotal(l), 0);
   }
 
   meta(line: AbstractControl) {

@@ -74,6 +74,7 @@ internal sealed class GetSupplierInvoicesQueryHandler
                 s.SupplierInvoiceNumber,
                 s.InvoiceDate, s.DueDate,
                 s.Status.ToString(),
+                s.VatRate, s.SubtotalAmount, s.VatAmount,
                 s.TotalAmount, s.AmountPaid, s.TotalAmount - s.AmountPaid,
                 s.Lines.Count))
             .ToListAsync(cancellationToken);

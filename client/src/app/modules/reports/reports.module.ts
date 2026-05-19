@@ -14,13 +14,15 @@ import { StockSummaryComponent } from './stock-summary/stock-summary.component';
 import { ArAgeingComponent } from './ar-ageing/ar-ageing.component';
 import { ApAgeingComponent } from './ap-ageing/ap-ageing.component';
 import { SalesSummaryComponent } from './sales-summary/sales-summary.component';
+import { VatSummaryComponent } from './vat-summary/vat-summary.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
   { path: 'stock-summary', component: StockSummaryComponent },
   { path: 'ar-ageing', component: ArAgeingComponent },
   { path: 'ap-ageing', component: ApAgeingComponent },
-  { path: 'sales-summary', component: SalesSummaryComponent }
+  { path: 'sales-summary', component: SalesSummaryComponent },
+  { path: 'vat-summary', component: VatSummaryComponent }
 ];
 
 @NgModule({
@@ -28,7 +30,8 @@ const routes: Routes = [
     StockSummaryComponent,
     ArAgeingComponent,
     ApAgeingComponent,
-    SalesSummaryComponent
+    SalesSummaryComponent,
+    VatSummaryComponent
   ],
   imports: [
     CommonModule, FormsModule,

@@ -15,6 +15,9 @@ public class SupplierInvoiceConfiguration : IEntityTypeConfiguration<SupplierInv
         builder.Property(s => s.SupplierInvoiceNumber).HasMaxLength(100);
         builder.Property(s => s.ApprovedBy).HasMaxLength(100);
         builder.Property(s => s.Notes).HasMaxLength(2000);
+        builder.Property(s => s.VatRate).HasPrecision(7, 4);
+        builder.Property(s => s.SubtotalAmount).HasPrecision(18, 4);
+        builder.Property(s => s.VatAmount).HasPrecision(18, 4);
         builder.Property(s => s.TotalAmount).HasPrecision(18, 4);
         builder.Property(s => s.AmountPaid).HasPrecision(18, 4);
 

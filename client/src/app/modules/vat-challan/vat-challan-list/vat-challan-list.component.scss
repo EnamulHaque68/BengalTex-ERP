@@ -1,0 +1,94 @@
+.page-shell { padding: 1.5rem 2rem; }
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+    input { padding-left: 2.25rem; min-width: 220px; }
+  }
+}
+
+:host ::ng-deep .filter-select { min-width: 180px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+
+.date-input { width: 140px; }
+
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.num    { text-align: right; font-variant-numeric: tabular-nums; }
+.num-col{ text-align: right; }
+.vat    { color: #b45309; font-weight: 600; }
+
+.code-badge {
+  background: #ecfccb;
+  color: #3f6212;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
+
+  &.alt { background: #ede9fe; color: #6d28d9; }
+}
+
+.empty-row {
+  text-align: center;
+  padding: 3rem !important;
+  color: #9ca3af;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { font-size: 0.9rem; }
+}
+
+.view-grid {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0;
+
+  > div { display: contents; }
+  > .divider { grid-column: span 2; border-top: 1px dashed #e5e7eb; margin: 0.4rem 0; }
+
+  .vlabel { color: #6b7280; font-size: 0.8rem; font-weight: 500; padding: 0.25rem 0; }
+  .vval {
+    color: #111827;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+
+    &.vat { color: #b45309; font-weight: 600; }
+    &.grand { color: #3f6212; font-weight: 800; font-size: 1.05rem; }
+  }
+}
+
+.loading-view { color: #9ca3af; font-size: 0.85rem; padding: 1rem; text-align: center; }
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+@media print {
+  .page-header .header-actions { display: none !important; }
+  .dialog-footer { display: none !important; }
+}

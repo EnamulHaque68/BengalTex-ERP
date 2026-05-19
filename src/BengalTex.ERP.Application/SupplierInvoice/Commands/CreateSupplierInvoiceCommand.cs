@@ -26,6 +26,7 @@ public sealed record SupplierInvoiceLineInput(
 public sealed record CreateSupplierInvoiceCommand(
     long PurchaseOrderId,
     string? SupplierInvoiceNumber,
+    decimal VatRate,                 // 0.0 to 1.0 (e.g. 0.15 for Bangladesh 15%)
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
@@ -37,6 +38,8 @@ public sealed class CreateSupplierInvoiceCommandValidator : AbstractValidator<Cr
     public CreateSupplierInvoiceCommandValidator()
     {
         RuleFor(x => x.PurchaseOrderId).GreaterThan(0);
+        RuleFor(x => x.VatRate).InclusiveBetween(0m, 1m)
+            .WithMessage("VAT rate must be between 0 (exempt) and 1 (100%).");
         RuleFor(x => x.InvoiceDate).NotEmpty();
         RuleFor(x => x.SupplierInvoiceNumber).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
@@ -109,7 +112,9 @@ internal sealed class CreateSupplierInvoiceCommandHandler
         var code = await _numbering.NextAsync("SINV", null, cancellationToken);
 
         var dueDate = cmd.DueDate ?? cmd.InvoiceDate.AddDays(supplier.PaymentTermsDays);
-        var total = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        var subtotal = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        var vatAmount = Math.Round(subtotal * cmd.VatRate, 4, MidpointRounding.AwayFromZero);
+        var total = subtotal + vatAmount;
 
         var entity = new Domain.Entities.SupplierInvoice
         {
@@ -121,6 +126,9 @@ internal sealed class CreateSupplierInvoiceCommandHandler
             InvoiceDate = cmd.InvoiceDate,
             DueDate = dueDate,
             Status = Domain.Entities.SupplierInvoiceStatus.Draft,
+            VatRate = cmd.VatRate,
+            SubtotalAmount = subtotal,
+            VatAmount = vatAmount,
             TotalAmount = total,
             AmountPaid = 0m,
             Notes = cmd.Notes,

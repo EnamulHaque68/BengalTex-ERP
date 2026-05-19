@@ -1,0 +1,91 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">VAT Summary</h2>
+      <p class="page-subtitle">Output VAT (collected from customers) vs Input VAT (paid to suppliers) &mdash; monthly NBR liability view</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <span class="date-sep">to</span>
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Output VAT (sales)</span>
+        <span class="tile-value out">{{ formatCurrency(report.outputVatAmount) }}</span>
+        <span class="tile-sub">{{ report.customerInvoiceCount }} invoice{{ report.customerInvoiceCount === 1 ? '' : 's' }} · net {{ formatCurrency(report.outputVatNet) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Input VAT (purchases)</span>
+        <span class="tile-value in">{{ formatCurrency(report.inputVatAmount) }}</span>
+        <span class="tile-sub">{{ report.supplierInvoiceCount }} invoice{{ report.supplierInvoiceCount === 1 ? '' : 's' }} · net {{ formatCurrency(report.inputVatNet) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Net VAT Liability</span>
+        <span class="tile-value" [class.payable]="report.netVatLiability > 0" [class.refundable]="report.netVatLiability < 0">
+          {{ formatCurrency(report.netVatLiability) }}
+        </span>
+        <span class="tile-sub" *ngIf="report.netVatLiability > 0">Owe NBR for this period</span>
+        <span class="tile-sub" *ngIf="report.netVatLiability < 0">Credit carries forward</span>
+        <span class="tile-sub" *ngIf="report.netVatLiability === 0">Balanced</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.months || []"
+      [loading]="loading"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Month</th>
+          <th class="num-col">Output Net</th>
+          <th class="num-col">Output VAT</th>
+          <th class="num-col">Input Net</th>
+          <th class="num-col">Input VAT</th>
+          <th class="num-col">Net Liability</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-m>
+        <tr>
+          <td class="fw-600">{{ m.monthLabel }}</td>
+          <td class="num">{{ formatCurrency(m.outputVatNet) }}</td>
+          <td class="num out">{{ formatCurrency(m.outputVatAmount) }}</td>
+          <td class="num">{{ formatCurrency(m.inputVatNet) }}</td>
+          <td class="num in">{{ formatCurrency(m.inputVatAmount) }}</td>
+          <td class="num fw-700" [class.payable]="m.netVatLiability > 0" [class.refundable]="m.netVatLiability < 0">
+            {{ formatCurrency(m.netVatLiability) }}
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="empty-row">
+            <i class="pi pi-receipt"></i>
+            <span>No VAT activity in the selected period.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Range: <strong>{{ report.fromDate }}</strong> to <strong>{{ report.toDate }}</strong>
+  </p>
+</div>

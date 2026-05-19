@@ -49,7 +49,10 @@ internal sealed class ApproveSupplierInvoiceCommandHandler
         if (inv.Lines.Count == 0)
             return ApiResponse<SupplierInvoiceDto>.Fail("Cannot approve an invoice with no lines.");
 
-        inv.TotalAmount = inv.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        // Recompute subtotal/VAT/total defensively (already kept in sync by Create/Update)
+        inv.SubtotalAmount = inv.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        inv.VatAmount = Math.Round(inv.SubtotalAmount * inv.VatRate, 4, MidpointRounding.AwayFromZero);
+        inv.TotalAmount = inv.SubtotalAmount + inv.VatAmount;
 
         inv.Status = Domain.Entities.SupplierInvoiceStatus.Approved;
         inv.ApprovedAt = DateTimeOffset.UtcNow;
