@@ -1,0 +1,210 @@
+// ─── Shared report styles ─────────────────────────────────────────────────
+
+.page-shell { padding: 1.5rem 2rem; }
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .page-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .page-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+}
+
+:host ::ng-deep .filter-select    { min-width: 190px; }
+:host ::ng-deep .filter-select-sm { min-width: 150px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.num    { text-align: right; font-variant-numeric: tabular-nums; }
+.num-col{ text-align: right; }
+.muted  { color: #9ca3af; }
+
+.code-badge {
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.unit-cell {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #3730a3;
+  font-weight: 600;
+  text-align: center;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 3rem !important;
+  color: #9ca3af;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { font-size: 0.9rem; }
+}
+
+// ─── Summary tiles row ────────────────────────────────────────────────────
+
+:host ::ng-deep .summary-card { margin-bottom: 1rem; }
+:host ::ng-deep .summary-card .p-card-body { padding: 1rem 1.25rem; }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.summary-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #e5e7eb;
+
+  .tile-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .tile-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+
+    &.rm       { color: #b45309; }
+    &.product  { color: #1d4ed8; }
+    &.due      { color: #b91c1c; }
+    &.paid     { color: #065f46; }
+    &.current  { color: #065f46; }
+    &.warn1    { color: #d97706; }
+    &.warn2    { color: #ea580c; }
+    &.warn3    { color: #dc2626; }
+    &.warn4    { color: #991b1b; }
+  }
+}
+
+// ─── Item / bucket badges ────────────────────────────────────────────────
+
+.type-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  &.rm      { background: #fef3c7; color: #92400e; }
+  &.product { background: #dbeafe; color: #1e40af; }
+}
+
+.bucket-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  &.current  { background: #d1fae5; color: #065f46; }
+  &.b1-30    { background: #fef3c7; color: #92400e; }
+  &.b31-60   { background: #fed7aa; color: #9a3412; }
+  &.b61-90   { background: #fecaca; color: #b91c1c; }
+  &.b90plus  { background: #fee2e2; color: #7f1d1d; }
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  i { flex-shrink: 0; }
+
+  &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+}
+
+.generated-at {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  text-align: right;
+  margin: 0.5rem 0 0;
+  font-style: italic;
+}
+
+// ─── Expandable detail rows ───────────────────────────────────────────────
+
+.detail-shell {
+  background: #f9fafb;
+  padding: 0.75rem 1.25rem;
+
+  .detail-grid {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #6b7280;
+      padding: 0.3rem 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+  }
+}
+
+.expand-toggle {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #6b7280;
+  font-size: 1rem;
+
+  &:hover { color: #111827; }
+}
+
+// ─── Print styles ─────────────────────────────────────────────────────────
+
+@media print {
+  .page-header .header-actions { display: none !important; }
+  .generated-at { display: block; }
+}

@@ -1,0 +1,13 @@
+@use '../report-shared' as *;
+
+.date-input { width: 150px; }
+.date-sep   { color: #6b7280; font-size: 0.85rem; }
+
+.cust-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paid-amt { color: #065f46; font-weight: 600; }
+.due-amt  { color: #b91c1c; font-weight: 700; }

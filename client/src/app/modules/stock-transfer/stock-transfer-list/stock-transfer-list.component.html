@@ -1,0 +1,280 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock Transfers</h2>
+      <p class="page-subtitle">Move RM &amp; Products between warehouses &mdash; posting writes paired Out + In movements</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, warehouse..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterSourceWarehouseId"
+                  [options]="warehouses"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="From any"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterDestinationWarehouseId"
+                  [options]="warehouses"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="To any"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="New Transfer" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="transfers"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Transfer Date</th>
+          <th class="num-col">Lines</th>
+          <th class="num-col">Total Qty</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-t>
+        <tr>
+          <td><span class="code-badge">{{ t.code }}</span></td>
+          <td class="fw-600">{{ t.sourceWarehouseName }}</td>
+          <td class="fw-600">
+            <i class="pi pi-arrow-right arrow-sep"></i>
+            {{ t.destinationWarehouseName }}
+          </td>
+          <td class="num">{{ t.transferDate }}</td>
+          <td class="num">{{ t.lineCount }}</td>
+          <td class="num fw-700">{{ formatNumber(t.totalQuantity) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="t.status === 'Draft'"
+                  [class.posted]="t.status === 'Posted'">
+              {{ t.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="t.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(t)"
+                        [pTooltip]="t.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="t.status === 'Draft'"
+                        [loading]="rowActionId === t.id"
+                        (click)="post(t)" pTooltip="Post (move stock)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(t)"
+                        (click)="confirmDelete(t)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-arrow-right-arrow-left"></i>
+            <span>No stock transfers yet. Click "New Transfer" to move stock between warehouses.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'New Stock Transfer' : (dialogMode === 'edit' ? 'Edit Stock Transfer' : 'View Stock Transfer')"
+  [modal]="true"
+  [style]="{ width: '900px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — posted transfers are immutable.
+    </div>
+
+    <div class="alert alert-warn" *ngIf="warehousesMatch()">
+      <i class="pi pi-exclamation-triangle"></i>Source and destination warehouses must differ.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>From Warehouse *</label>
+        <p-select formControlName="sourceWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select source"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>To Warehouse *</label>
+        <p-select formControlName="destinationWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Select destination"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Transfer Date *</label>
+        <input pInputText type="date" formControlName="transferDate" class="w-full" />
+      </div>
+
+      <div class="field"></div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Reason for transfer, vehicle / handler info..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="section-label-row">
+      <p class="section-label">Transfer Lines</p>
+      <p-button *ngIf="dialogMode !== 'view'"
+                label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
+                (click)="addLine()" />
+    </div>
+
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="prod-col">Item (Raw Material or Product)</th>
+            <th class="unit-col">UoM</th>
+            <th class="num-col">Quantity</th>
+            <th>Line Notes</th>
+            <th style="width:40px" *ngIf="dialogMode !== 'view'"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td class="prod-cell">
+              <p-select formControlName="itemKey"
+                          [options]="itemOptions"
+                          optionLabel="displayLabel"
+                          optionValue="itemKey"
+                          [filter]="true"
+                          filterBy="code,name,displayLabel"
+                          placeholder="Pick a raw material or product"
+                          appendTo="body" styleClass="w-full"
+                          (onChange)="onLineItemChange(i)" />
+            </td>
+            <td class="unit-cell">{{ meta(lineCtrl).uomCode || '—' }}</td>
+            <td>
+              <p-inputNumber formControlName="quantity" [min]="0"
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+            <td *ngIf="dialogMode !== 'view'">
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="removeLine(i)" pTooltip="Remove line" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td [attr.colspan]="dialogMode === 'view' ? 4 : 5" class="empty-lines">
+              No lines. Click "Add Line" to add an item.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="total-label">Total Quantity</td>
+            <td class="num total-val">{{ formatNumber(totalQuantity()) }}</td>
+            <td></td>
+            <td *ngIf="dialogMode !== 'view'"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Save Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving || warehousesMatch() || lines.length === 0" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Stock Transfer"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingTxfr">
+    <p>Delete draft <strong>{{ deletingTxfr.code }}</strong> ({{ deletingTxfr.sourceWarehouseName }} → {{ deletingTxfr.destinationWarehouseName }})? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

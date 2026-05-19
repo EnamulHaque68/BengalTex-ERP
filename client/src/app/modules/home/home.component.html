@@ -27,6 +27,36 @@
       <p>Select a module below to get started.</p>
     </div>
 
+    <!-- KPI tiles — only visible when user has Dashboard.ViewOwner permission -->
+    <section class="kpi-section" *ngIf="kpis">
+      <div class="kpi-grid">
+        <a routerLink="/stock-on-hand" class="kpi-tile stock">
+          <span class="kpi-icon"><i class="pi pi-box"></i></span>
+          <span class="kpi-label">Stock Items</span>
+          <span class="kpi-value">{{ kpis.stockItemCount }}</span>
+          <span class="kpi-sub">distinct items in stock</span>
+        </a>
+        <a routerLink="/reports/ar-ageing" class="kpi-tile ar">
+          <span class="kpi-icon"><i class="pi pi-money-bill"></i></span>
+          <span class="kpi-label">Outstanding AR</span>
+          <span class="kpi-value">{{ formatCurrency(kpis.outstandingArAmount) }}</span>
+          <span class="kpi-sub">{{ kpis.outstandingArInvoiceCount }} customer invoice{{ kpis.outstandingArInvoiceCount === 1 ? '' : 's' }}</span>
+        </a>
+        <a routerLink="/reports/ap-ageing" class="kpi-tile ap">
+          <span class="kpi-icon"><i class="pi pi-credit-card"></i></span>
+          <span class="kpi-label">Outstanding AP</span>
+          <span class="kpi-value">{{ formatCurrency(kpis.outstandingApAmount) }}</span>
+          <span class="kpi-sub">{{ kpis.outstandingApInvoiceCount }} supplier invoice{{ kpis.outstandingApInvoiceCount === 1 ? '' : 's' }}</span>
+        </a>
+        <a routerLink="/reports/sales-summary" class="kpi-tile sales">
+          <span class="kpi-icon"><i class="pi pi-chart-line"></i></span>
+          <span class="kpi-label">This Month Sales</span>
+          <span class="kpi-value">{{ formatCurrency(kpis.thisMonthSalesAmount) }}</span>
+          <span class="kpi-sub">{{ kpis.thisMonthSalesInvoiceCount }} invoice{{ kpis.thisMonthSalesInvoiceCount === 1 ? '' : 's' }} this month</span>
+        </a>
+      </div>
+    </section>
+
     <section class="module-section">
       <h3 class="section-heading">Administration</h3>
       <div class="module-grid">
@@ -228,6 +258,14 @@
           </div>
           <i class="pi pi-chevron-right module-arrow"></i>
         </a>
+        <a routerLink="/stock-transfers" class="module-card">
+          <i class="pi pi-arrow-right-arrow-left module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Stock Transfers</span>
+            <span class="module-desc">Move RM &amp; Products between warehouses</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
       </div>
     </section>
 
@@ -269,6 +307,44 @@
           <div class="module-info">
             <span class="module-name">Payments</span>
             <span class="module-desc">Record supplier payments against invoices</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+      </div>
+    </section>
+
+    <section class="module-section">
+      <h3 class="section-heading">Reports &amp; Dashboards</h3>
+      <div class="module-grid">
+        <a routerLink="/reports/stock-summary" class="module-card">
+          <i class="pi pi-box module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Stock Summary</span>
+            <span class="module-desc">Current quantities by item across warehouses</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/reports/ar-ageing" class="module-card">
+          <i class="pi pi-clock module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">AR Ageing</span>
+            <span class="module-desc">Customer outstanding by past-due bucket</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/reports/ap-ageing" class="module-card">
+          <i class="pi pi-history module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">AP Ageing</span>
+            <span class="module-desc">Supplier outstanding by past-due bucket</span>
+          </div>
+          <i class="pi pi-chevron-right module-arrow"></i>
+        </a>
+        <a routerLink="/reports/sales-summary" class="module-card">
+          <i class="pi pi-chart-line module-icon"></i>
+          <div class="module-info">
+            <span class="module-name">Sales Summary</span>
+            <span class="module-desc">Per-customer SO / DN / Invoice rollup in date range</span>
           </div>
           <i class="pi pi-chevron-right module-arrow"></i>
         </a>

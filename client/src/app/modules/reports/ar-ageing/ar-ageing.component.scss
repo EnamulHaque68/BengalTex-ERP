@@ -1,0 +1,11 @@
+@use '../report-shared' as *;
+
+.date-input { width: 150px; }
+
+.cust-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-badge.alt { background: #dbeafe; color: #1e40af; }

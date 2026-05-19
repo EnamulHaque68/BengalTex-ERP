@@ -1,0 +1,118 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Sales Summary</h2>
+      <p class="page-subtitle">Per-customer activity rollup in a date range &mdash; SO, dispatches, invoices &amp; collections</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <span class="date-sep">to</span>
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <p-select [(ngModel)]="filterCustomerId"
+                [options]="customers"
+                optionLabel="name"
+                optionValue="id"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="code,name"
+                placeholder="All customers"
+                styleClass="filter-select"
+                (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Customers</span>
+        <span class="tile-value">{{ report.customerCount }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">SO ({{ report.salesOrderCount }})</span>
+        <span class="tile-value">{{ formatCurrency(report.salesOrderTotal) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Dispatched ({{ report.deliveryNoteCount }})</span>
+        <span class="tile-value">{{ formatCurrency(report.deliveryNoteValue) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Invoiced ({{ report.invoiceCount }})</span>
+        <span class="tile-value">{{ formatCurrency(report.invoicedTotal) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Collected</span>
+        <span class="tile-value paid">{{ formatCurrency(report.amountCollected) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Outstanding</span>
+        <span class="tile-value due">{{ formatCurrency(report.amountOutstanding) }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.rows || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.rows?.length || 0) > 25"
+      [rows]="25"
+      [rowsPerPageOptions]="[25, 50, 100]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Customer</th>
+          <th class="num-col">SO #</th>
+          <th class="num-col">SO Total</th>
+          <th class="num-col">DN #</th>
+          <th class="num-col">Dispatched Value</th>
+          <th class="num-col">Inv #</th>
+          <th class="num-col">Invoiced</th>
+          <th class="num-col">Collected</th>
+          <th class="num-col">Outstanding</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>
+            <div class="cust-cell">
+              <span class="code-badge">{{ r.customerCode }}</span>
+              <span class="fw-600">{{ r.customerName }}</span>
+            </div>
+          </td>
+          <td class="num">{{ r.salesOrderCount }}</td>
+          <td class="num">{{ formatCurrency(r.salesOrderTotal) }}</td>
+          <td class="num">{{ r.deliveryNoteCount }}</td>
+          <td class="num">{{ formatCurrency(r.deliveryNoteValue) }}</td>
+          <td class="num">{{ r.invoiceCount }}</td>
+          <td class="num fw-600">{{ formatCurrency(r.invoicedTotal) }}</td>
+          <td class="num paid-amt">{{ formatCurrency(r.amountCollected) }}</td>
+          <td class="num due-amt">{{ formatCurrency(r.amountOutstanding) }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-chart-line"></i>
+            <span>No sales activity in the selected period.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Range: <strong>{{ report.fromDate }}</strong> to <strong>{{ report.toDate }}</strong>
+  </p>
+</div>
