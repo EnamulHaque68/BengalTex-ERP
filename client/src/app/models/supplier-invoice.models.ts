@@ -33,7 +33,10 @@ export interface SupplierInvoiceDto {
   invoiceDate: string;                  // DateOnly
   dueDate: string;
   status: string;
-  totalAmount: number;
+  vatRate: number;
+  subtotalAmount: number;
+  vatAmount: number;
+  totalAmount: number;                  // gross
   amountPaid: number;
   amountDue: number;
   approvedAt: string | null;
@@ -53,6 +56,9 @@ export interface SupplierInvoiceListItemDto {
   invoiceDate: string;
   dueDate: string;
   status: string;
+  vatRate: number;
+  subtotalAmount: number;
+  vatAmount: number;
   totalAmount: number;
   amountPaid: number;
   amountDue: number;
@@ -69,6 +75,7 @@ export interface SupplierInvoiceLineInput {
 export interface CreateSupplierInvoiceRequest {
   purchaseOrderId: number;
   supplierInvoiceNumber: string | null;
+  vatRate: number;
   invoiceDate: string;
   dueDate: string | null;
   notes: string | null;
@@ -77,6 +84,7 @@ export interface CreateSupplierInvoiceRequest {
 
 export interface UpdateSupplierInvoiceRequest {
   supplierInvoiceNumber: string | null;
+  vatRate: number;
   invoiceDate: string;
   dueDate: string;
   notes: string | null;

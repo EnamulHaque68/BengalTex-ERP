@@ -570,9 +570,21 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(7, 4)
+                        .HasColumnType("decimal(7,4)");
 
                     b.HasKey("Id");
 
@@ -2555,6 +2567,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
 
@@ -2565,6 +2581,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(7, 4)
+                        .HasColumnType("decimal(7,4)");
 
                     b.HasKey("Id");
 
@@ -2726,6 +2750,83 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("UnitType");
 
                     b.ToTable("UnitsOfMeasure", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.VatChallan", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly>("ChallanDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("CustomerInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChallanDate");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CustomerInvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_VatChallans_CustomerInvoice")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("VatChallans", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Warehouse", b =>
@@ -4273,6 +4374,17 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("BaseUnit");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.VatChallan", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CustomerInvoice", "CustomerInvoice")
+                        .WithOne("VatChallan")
+                        .HasForeignKey("BengalTex.ERP.Domain.Entities.VatChallan", "CustomerInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CustomerInvoice");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Warehouse", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Factory", "Factory")
@@ -4368,6 +4480,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>
                 {
                     b.Navigation("Lines");
+
+                    b.Navigation("VatChallan");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNote", b =>

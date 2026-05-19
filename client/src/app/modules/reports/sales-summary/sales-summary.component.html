@@ -44,7 +44,15 @@
         <span class="tile-value">{{ formatCurrency(report.deliveryNoteValue) }}</span>
       </div>
       <div class="summary-tile">
-        <span class="tile-label">Invoiced ({{ report.invoiceCount }})</span>
+        <span class="tile-label">Invoiced Net ({{ report.invoiceCount }})</span>
+        <span class="tile-value">{{ formatCurrency(report.invoicedNet) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">VAT Collected</span>
+        <span class="tile-value warn1">{{ formatCurrency(report.vatCollected) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Invoiced Gross</span>
         <span class="tile-value">{{ formatCurrency(report.invoicedTotal) }}</span>
       </div>
       <div class="summary-tile">
@@ -76,7 +84,9 @@
           <th class="num-col">DN #</th>
           <th class="num-col">Dispatched Value</th>
           <th class="num-col">Inv #</th>
-          <th class="num-col">Invoiced</th>
+          <th class="num-col">Net</th>
+          <th class="num-col">VAT</th>
+          <th class="num-col">Invoiced (Gross)</th>
           <th class="num-col">Collected</th>
           <th class="num-col">Outstanding</th>
         </tr>
@@ -95,6 +105,8 @@
           <td class="num">{{ r.deliveryNoteCount }}</td>
           <td class="num">{{ formatCurrency(r.deliveryNoteValue) }}</td>
           <td class="num">{{ r.invoiceCount }}</td>
+          <td class="num">{{ formatCurrency(r.invoicedNet) }}</td>
+          <td class="num vat-amt">{{ formatCurrency(r.vatCollected) }}</td>
           <td class="num fw-600">{{ formatCurrency(r.invoicedTotal) }}</td>
           <td class="num paid-amt">{{ formatCurrency(r.amountCollected) }}</td>
           <td class="num due-amt">{{ formatCurrency(r.amountOutstanding) }}</td>
@@ -103,7 +115,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="empty-row">
+          <td colspan="11" class="empty-row">
             <i class="pi pi-chart-line"></i>
             <span>No sales activity in the selected period.</span>
           </td>

@@ -43,6 +43,7 @@ internal sealed class GetSupplierInvoiceByIdQueryHandler
             inv.SupplierInvoiceNumber,
             inv.InvoiceDate, inv.DueDate,
             inv.Status.ToString(),
+            inv.VatRate, inv.SubtotalAmount, inv.VatAmount,
             inv.TotalAmount, inv.AmountPaid, inv.TotalAmount - inv.AmountPaid,
             inv.ApprovedAt, inv.ApprovedBy, inv.Notes,
             lines);

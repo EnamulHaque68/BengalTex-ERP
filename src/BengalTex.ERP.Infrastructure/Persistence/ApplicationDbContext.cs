@@ -72,6 +72,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
     public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
     public DbSet<StockTransferLine> StockTransferLines => Set<StockTransferLine>();
+    public DbSet<VatChallan> VatChallans => Set<VatChallan>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

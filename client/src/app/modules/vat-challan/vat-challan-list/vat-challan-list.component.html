@@ -1,0 +1,108 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">VAT Challans</h2>
+      <p class="page-subtitle">Mushok 6.3 challans auto-generated when a VAT-able customer invoice is issued</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, invoice, customer..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterCustomerId"
+                  [options]="customers"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All customers"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" placeholder="From" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" placeholder="To" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="challans"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Challan #</th>
+          <th>Invoice</th>
+          <th>Customer</th>
+          <th>Challan Date</th>
+          <th class="num-col">Subtotal</th>
+          <th class="num-col">VAT</th>
+          <th class="num-col">Total</th>
+          <th style="width:80px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-c>
+        <tr>
+          <td><span class="code-badge">{{ c.code }}</span></td>
+          <td><span class="code-badge alt">{{ c.customerInvoiceCode }}</span></td>
+          <td class="fw-600">{{ c.customerName }}</td>
+          <td class="num">{{ c.challanDate }}</td>
+          <td class="num">{{ formatCurrency(c.subtotalAmount) }}</td>
+          <td class="num vat">{{ formatCurrency(c.vatAmount) }}</td>
+          <td class="num fw-700">{{ formatCurrency(c.totalAmount) }}</td>
+          <td>
+            <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                      (click)="openView(c)" pTooltip="View" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-receipt"></i>
+            <span>No VAT challans yet. Challans are auto-issued when a VAT-able customer invoice is issued.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="VAT Challan (Mushok 6.3)"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+>
+  <div *ngIf="viewingChallan; else loadingView" class="view-grid">
+    <div><span class="vlabel">Challan #</span><span class="vval"><span class="code-badge">{{ viewingChallan.code }}</span></span></div>
+    <div><span class="vlabel">Invoice</span><span class="vval"><span class="code-badge alt">{{ viewingChallan.customerInvoiceCode }}</span></span></div>
+    <div><span class="vlabel">Customer</span><span class="vval fw-600">{{ viewingChallan.customerName }}</span></div>
+    <div><span class="vlabel">Date</span><span class="vval">{{ viewingChallan.challanDate }}</span></div>
+    <div class="divider"></div>
+    <div><span class="vlabel">Subtotal</span><span class="vval">{{ formatCurrency(viewingChallan.subtotalAmount) }}</span></div>
+    <div><span class="vlabel">VAT</span><span class="vval vat">{{ formatCurrency(viewingChallan.vatAmount) }}</span></div>
+    <div><span class="vlabel">Total</span><span class="vval grand">{{ formatCurrency(viewingChallan.totalAmount) }}</span></div>
+    <div *ngIf="viewingChallan.notes"><span class="vlabel">Notes</span><span class="vval">{{ viewingChallan.notes }}</span></div>
+  </div>
+  <ng-template #loadingView>
+    <div class="loading-view">Loading…</div>
+  </ng-template>
+
+  <div class="dialog-footer">
+    <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewDialogVisible = false" />
+  </div>
+</p-dialog>

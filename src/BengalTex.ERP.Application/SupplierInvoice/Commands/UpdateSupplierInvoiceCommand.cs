@@ -11,6 +11,7 @@ namespace BengalTex.ERP.Application.SupplierInvoice.Commands;
 public sealed record UpdateSupplierInvoiceCommand(
     long Id,
     string? SupplierInvoiceNumber,
+    decimal VatRate,
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string? Notes,
@@ -23,6 +24,8 @@ public sealed class UpdateSupplierInvoiceCommandValidator : AbstractValidator<Up
     {
         RuleFor(x => x.Id).GreaterThan(0);
         RuleFor(x => x.SupplierInvoiceNumber).MaximumLength(100);
+        RuleFor(x => x.VatRate).InclusiveBetween(0m, 1m)
+            .WithMessage("VAT rate must be between 0 (exempt) and 1 (100%).");
         RuleFor(x => x.InvoiceDate).NotEmpty();
         RuleFor(x => x.DueDate).NotEmpty();
         RuleFor(x => x.Notes).MaximumLength(2000);
@@ -83,6 +86,7 @@ internal sealed class UpdateSupplierInvoiceCommandHandler
         inv.InvoiceDate = cmd.InvoiceDate;
         inv.DueDate = cmd.DueDate;
         inv.Notes = cmd.Notes;
+        inv.VatRate = cmd.VatRate;
 
         inv.Lines.Clear();
         var sortOrder = 0;
@@ -98,7 +102,9 @@ internal sealed class UpdateSupplierInvoiceCommandHandler
             });
         }
 
-        inv.TotalAmount = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        inv.SubtotalAmount = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        inv.VatAmount = Math.Round(inv.SubtotalAmount * inv.VatRate, 4, MidpointRounding.AwayFromZero);
+        inv.TotalAmount = inv.SubtotalAmount + inv.VatAmount;
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(cancellationToken);

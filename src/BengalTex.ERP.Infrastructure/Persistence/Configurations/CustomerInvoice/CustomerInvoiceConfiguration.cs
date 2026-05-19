@@ -14,6 +14,9 @@ public class CustomerInvoiceConfiguration : IEntityTypeConfiguration<CustomerInv
         builder.Property(c => c.Code).IsRequired().HasMaxLength(50);
         builder.Property(c => c.IssuedBy).HasMaxLength(100);
         builder.Property(c => c.Notes).HasMaxLength(2000);
+        builder.Property(c => c.VatRate).HasPrecision(7, 4);
+        builder.Property(c => c.SubtotalAmount).HasPrecision(18, 4);
+        builder.Property(c => c.VatAmount).HasPrecision(18, 4);
         builder.Property(c => c.TotalAmount).HasPrecision(18, 4);
         builder.Property(c => c.AmountPaid).HasPrecision(18, 4);
 

@@ -11,12 +11,16 @@ public record CustomerInvoiceDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,                       // enum as string
-    decimal TotalAmount,
+    decimal VatRate,                     // 0.15 = 15%
+    decimal SubtotalAmount,              // sum of line totals, net of VAT
+    decimal VatAmount,                   // SubtotalAmount × VatRate
+    decimal TotalAmount,                 // SubtotalAmount + VatAmount (gross — what's owed)
     decimal AmountPaid,
     decimal AmountDue,                   // TotalAmount − AmountPaid
     DateTimeOffset? IssuedAt,
     string? IssuedBy,
     string? Notes,
+    string? VatChallanCode,              // populated when challan auto-issued
     IReadOnlyList<CustomerInvoiceLineDto> Lines);
 
 public record CustomerInvoiceLineDto(
@@ -41,6 +45,9 @@ public record CustomerInvoiceListItemDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
+    decimal VatRate,
+    decimal SubtotalAmount,
+    decimal VatAmount,
     decimal TotalAmount,
     decimal AmountPaid,
     decimal AmountDue,

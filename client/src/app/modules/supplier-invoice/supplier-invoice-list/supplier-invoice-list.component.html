@@ -178,6 +178,14 @@
         <input pInputText type="date" formControlName="dueDate" class="w-full" />
       </div>
 
+      <div class="field">
+        <label>VAT Rate (%) * <small>0 for exempt</small></label>
+        <p-inputNumber formControlName="vatRatePercent" [min]="0" [max]="100" suffix="%"
+                       [minFractionDigits]="0" [maxFractionDigits]="2" class="w-full" />
+      </div>
+
+      <div class="field"></div>
+
       <div class="field col-span-2">
         <label>Notes</label>
         <textarea pInputTextarea rows="2" formControlName="notes"
@@ -228,8 +236,18 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" class="total-label">Total Amount</td>
-            <td class="num total-val">{{ formatCurrency(totalAmount()) }}</td>
+            <td colspan="4" class="total-label">Subtotal</td>
+            <td class="num subtotal-val">{{ formatCurrency(subtotalAmount()) }}</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="total-label">VAT ({{ form.get('vatRatePercent')?.value || 0 }}%)</td>
+            <td class="num vat-val">{{ formatCurrency(vatAmount()) }}</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="total-label grand-label">Total (incl. VAT)</td>
+            <td class="num total-val">{{ formatCurrency(grandTotalAmount()) }}</td>
             <td></td>
           </tr>
         </tfoot>

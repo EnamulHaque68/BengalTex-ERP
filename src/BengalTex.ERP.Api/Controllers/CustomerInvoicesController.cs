@@ -45,7 +45,7 @@ public class CustomerInvoicesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateCustomerInvoiceRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new CreateCustomerInvoiceCommand(
-            request.SalesOrderId, request.InvoiceDate, request.DueDate, request.Notes, request.Lines
+            request.SalesOrderId, request.VatRate, request.InvoiceDate, request.DueDate, request.Notes, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -55,7 +55,7 @@ public class CustomerInvoicesController : ControllerBase
     public async Task<IActionResult> Update(long id, [FromBody] UpdateCustomerInvoiceRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new UpdateCustomerInvoiceCommand(
-            id, request.InvoiceDate, request.DueDate, request.Notes, request.Lines
+            id, request.VatRate, request.InvoiceDate, request.DueDate, request.Notes, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -87,12 +87,14 @@ public class CustomerInvoicesController : ControllerBase
 
 public record CreateCustomerInvoiceRequest(
     long SalesOrderId,
+    decimal VatRate,
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
     IReadOnlyList<CustomerInvoiceLineInput> Lines);
 
 public record UpdateCustomerInvoiceRequest(
+    decimal VatRate,
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string? Notes,

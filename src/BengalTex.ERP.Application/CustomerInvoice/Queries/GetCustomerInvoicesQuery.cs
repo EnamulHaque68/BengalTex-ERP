@@ -72,6 +72,7 @@ internal sealed class GetCustomerInvoicesQueryHandler
                 c.SalesOrderId, c.SalesOrder.Code,
                 c.InvoiceDate, c.DueDate,
                 c.Status.ToString(),
+                c.VatRate, c.SubtotalAmount, c.VatAmount,
                 c.TotalAmount, c.AmountPaid, c.TotalAmount - c.AmountPaid,
                 c.Lines.Count))
             .ToListAsync(cancellationToken);

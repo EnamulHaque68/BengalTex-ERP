@@ -1,0 +1,33 @@
+@use '../report-shared' as *;
+
+.date-input { width: 150px; }
+.date-sep   { color: #6b7280; font-size: 0.85rem; }
+
+.tile-value {
+  &.out         { color: #1d4ed8; }
+  &.in          { color: #b45309; }
+  &.payable     { color: #b91c1c; }
+  &.refundable  { color: #065f46; }
+}
+
+.tile-sub {
+  grid-area: sub;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 0.15rem;
+}
+
+.summary-tile {
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "label"
+    "value"
+    "sub";
+}
+
+.num {
+  &.out         { color: #1d4ed8; font-weight: 600; }
+  &.in          { color: #b45309; font-weight: 600; }
+  &.payable     { color: #b91c1c; }
+  &.refundable  { color: #065f46; }
+}

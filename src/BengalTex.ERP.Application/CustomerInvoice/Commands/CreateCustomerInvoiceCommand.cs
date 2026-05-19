@@ -25,6 +25,7 @@ public sealed record CustomerInvoiceLineInput(
 /// </summary>
 public sealed record CreateCustomerInvoiceCommand(
     long SalesOrderId,
+    decimal VatRate,                 // 0.0 to 1.0 (e.g. 0.15 for Bangladesh 15% standard)
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
@@ -36,6 +37,8 @@ public sealed class CreateCustomerInvoiceCommandValidator : AbstractValidator<Cr
     public CreateCustomerInvoiceCommandValidator()
     {
         RuleFor(x => x.SalesOrderId).GreaterThan(0);
+        RuleFor(x => x.VatRate).InclusiveBetween(0m, 1m)
+            .WithMessage("VAT rate must be between 0 (exempt) and 1 (100%).");
         RuleFor(x => x.InvoiceDate).NotEmpty();
         RuleFor(x => x.Notes).MaximumLength(2000);
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A customer invoice must have at least one line.");
@@ -109,7 +112,9 @@ internal sealed class CreateCustomerInvoiceCommandHandler
         var code = await _numbering.NextAsync("INV", null, cancellationToken);
 
         var dueDate = cmd.DueDate ?? cmd.InvoiceDate.AddDays(customer.CreditPeriodDays);
-        var total = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        var subtotal = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);
+        var vatAmount = Math.Round(subtotal * cmd.VatRate, 4, MidpointRounding.AwayFromZero);
+        var total = subtotal + vatAmount;
 
         var entity = new Domain.Entities.CustomerInvoice
         {
@@ -119,6 +124,9 @@ internal sealed class CreateCustomerInvoiceCommandHandler
             InvoiceDate = cmd.InvoiceDate,
             DueDate = dueDate,
             Status = Domain.Entities.CustomerInvoiceStatus.Draft,
+            VatRate = cmd.VatRate,
+            SubtotalAmount = subtotal,
+            VatAmount = vatAmount,
             TotalAmount = total,
             AmountPaid = 0m,
             Notes = cmd.Notes,

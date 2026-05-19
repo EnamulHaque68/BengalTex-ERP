@@ -68,4 +68,15 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(new GetDashboardKpisQuery(), ct);
         return Ok(result);
     }
+
+    [HttpGet("vat-summary")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetVatSummary(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetVatSummaryReportQuery(fromDate, toDate), ct);
+        return Ok(result);
+    }
 }

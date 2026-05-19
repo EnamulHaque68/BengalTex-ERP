@@ -115,6 +115,8 @@ internal sealed class GetSalesSummaryReportQueryHandler
             {
                 CustomerId = g.Key,
                 Count = g.Count(),
+                InvoicedNet = g.Sum(x => x.SubtotalAmount),
+                VatCollected = g.Sum(x => x.VatAmount),
                 InvoicedTotal = g.Sum(x => x.TotalAmount),
                 AmountPaid = g.Sum(x => x.AmountPaid),
                 AmountDue = g.Sum(x => x.TotalAmount - x.AmountPaid)
@@ -146,7 +148,10 @@ internal sealed class GetSalesSummaryReportQueryHandler
                     c.Id, c.Code, c.Name,
                     so?.Count ?? 0, so?.Total ?? 0m,
                     dn?.Count ?? 0, dn?.Value ?? 0m,
-                    inv?.Count ?? 0, inv?.InvoicedTotal ?? 0m,
+                    inv?.Count ?? 0,
+                    inv?.InvoicedNet ?? 0m,
+                    inv?.VatCollected ?? 0m,
+                    inv?.InvoicedTotal ?? 0m,
                     inv?.AmountPaid ?? 0m, inv?.AmountDue ?? 0m);
             })
             .OrderByDescending(r => r.InvoicedTotal)
@@ -168,6 +173,8 @@ internal sealed class GetSalesSummaryReportQueryHandler
             DeliveryNoteCount:  rows.Sum(r => r.DeliveryNoteCount),
             DeliveryNoteValue:  rows.Sum(r => r.DeliveryNoteValue),
             InvoiceCount:       rows.Sum(r => r.InvoiceCount),
+            InvoicedNet:        rows.Sum(r => r.InvoicedNet),
+            VatCollected:       rows.Sum(r => r.VatCollected),
             InvoicedTotal:      rows.Sum(r => r.InvoicedTotal),
             AmountCollected:    rows.Sum(r => r.AmountCollected),
             AmountOutstanding:  rows.Sum(r => r.AmountOutstanding),

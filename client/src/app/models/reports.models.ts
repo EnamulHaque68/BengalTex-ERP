@@ -118,7 +118,9 @@ export interface SalesSummaryRowDto {
   deliveryNoteCount: number;
   deliveryNoteValue: number;
   invoiceCount: number;
-  invoicedTotal: number;
+  invoicedNet: number;                  // Phase 12
+  vatCollected: number;                 // Phase 12
+  invoicedTotal: number;                // gross
   amountCollected: number;
   amountOutstanding: number;
 }
@@ -134,10 +136,40 @@ export interface SalesSummaryReportDto {
   deliveryNoteCount: number;
   deliveryNoteValue: number;
   invoiceCount: number;
+  invoicedNet: number;
+  vatCollected: number;
   invoicedTotal: number;
   amountCollected: number;
   amountOutstanding: number;
   rows: SalesSummaryRowDto[];
+}
+
+// ─── VAT Summary ──────────────────────────────────────────────────────────
+
+export interface VatSummaryMonthDto {
+  year: number;
+  month: number;
+  monthLabel: string;
+  outputVatNet: number;
+  outputVatAmount: number;
+  inputVatNet: number;
+  inputVatAmount: number;
+  netVatLiability: number;
+}
+
+export interface VatSummaryReportDto {
+  fromDate: string;
+  toDate: string;
+  customerInvoiceCount: number;
+  outputVatNet: number;
+  outputVatAmount: number;
+  outputVatGross: number;
+  supplierInvoiceCount: number;
+  inputVatNet: number;
+  inputVatAmount: number;
+  inputVatGross: number;
+  netVatLiability: number;              // OutputVat − InputVat (positive = owe NBR)
+  months: VatSummaryMonthDto[];
 }
 
 // ─── Dashboard KPIs ───────────────────────────────────────────────────────

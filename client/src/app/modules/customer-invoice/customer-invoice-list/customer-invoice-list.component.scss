@@ -180,10 +180,17 @@
     font-size: 0.85rem;
   }
 
+  .grand-label {
+    font-size: 0.95rem;
+    color: #111827;
+  }
+
+  .subtotal-val { color: #374151; font-weight: 600; font-size: 0.85rem; }
+  .vat-val      { color: #b45309; font-weight: 600; font-size: 0.85rem; }
   .total-val {
     font-weight: 800;
     color: #6d28d9;
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 }
 

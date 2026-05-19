@@ -32,12 +32,16 @@ export interface CustomerInvoiceDto {
   invoiceDate: string;                  // DateOnly
   dueDate: string;
   status: string;
-  totalAmount: number;
+  vatRate: number;                      // 0.15 = 15%
+  subtotalAmount: number;               // net of VAT
+  vatAmount: number;
+  totalAmount: number;                  // gross
   amountPaid: number;
   amountDue: number;
   issuedAt: string | null;
   issuedBy: string | null;
   notes: string | null;
+  vatChallanCode: string | null;        // populated when auto-issued
   lines: CustomerInvoiceLineDto[];
 }
 
@@ -51,6 +55,9 @@ export interface CustomerInvoiceListItemDto {
   invoiceDate: string;
   dueDate: string;
   status: string;
+  vatRate: number;
+  subtotalAmount: number;
+  vatAmount: number;
   totalAmount: number;
   amountPaid: number;
   amountDue: number;
@@ -66,6 +73,7 @@ export interface CustomerInvoiceLineInput {
 
 export interface CreateCustomerInvoiceRequest {
   salesOrderId: number;
+  vatRate: number;
   invoiceDate: string;
   dueDate: string | null;
   notes: string | null;
@@ -73,6 +81,7 @@ export interface CreateCustomerInvoiceRequest {
 }
 
 export interface UpdateCustomerInvoiceRequest {
+  vatRate: number;
   invoiceDate: string;
   dueDate: string;
   notes: string | null;

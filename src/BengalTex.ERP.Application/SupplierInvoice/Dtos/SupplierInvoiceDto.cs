@@ -12,7 +12,10 @@ public record SupplierInvoiceDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
-    decimal TotalAmount,
+    decimal VatRate,                     // 0.15 = 15%
+    decimal SubtotalAmount,              // net of VAT
+    decimal VatAmount,
+    decimal TotalAmount,                 // SubtotalAmount + VatAmount (gross — what we owe)
     decimal AmountPaid,
     decimal AmountDue,                   // TotalAmount − AmountPaid
     DateTimeOffset? ApprovedAt,
@@ -43,6 +46,9 @@ public record SupplierInvoiceListItemDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
+    decimal VatRate,
+    decimal SubtotalAmount,
+    decimal VatAmount,
     decimal TotalAmount,
     decimal AmountPaid,
     decimal AmountDue,

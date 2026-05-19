@@ -45,7 +45,7 @@ public class SupplierInvoicesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateSupplierInvoiceRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new CreateSupplierInvoiceCommand(
-            request.PurchaseOrderId, request.SupplierInvoiceNumber, request.InvoiceDate,
+            request.PurchaseOrderId, request.SupplierInvoiceNumber, request.VatRate, request.InvoiceDate,
             request.DueDate, request.Notes, request.Lines
         ), ct);
         return Ok(result);
@@ -56,7 +56,7 @@ public class SupplierInvoicesController : ControllerBase
     public async Task<IActionResult> Update(long id, [FromBody] UpdateSupplierInvoiceRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new UpdateSupplierInvoiceCommand(
-            id, request.SupplierInvoiceNumber, request.InvoiceDate,
+            id, request.SupplierInvoiceNumber, request.VatRate, request.InvoiceDate,
             request.DueDate, request.Notes, request.Lines
         ), ct);
         return Ok(result);
@@ -90,6 +90,7 @@ public class SupplierInvoicesController : ControllerBase
 public record CreateSupplierInvoiceRequest(
     long PurchaseOrderId,
     string? SupplierInvoiceNumber,
+    decimal VatRate,
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
@@ -97,6 +98,7 @@ public record CreateSupplierInvoiceRequest(
 
 public record UpdateSupplierInvoiceRequest(
     string? SupplierInvoiceNumber,
+    decimal VatRate,
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string? Notes,
