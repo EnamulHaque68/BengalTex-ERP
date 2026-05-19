@@ -430,6 +430,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "ADJ",  Description = "Stock Adjustment",  Prefix = "BTX/ADJ",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "DN",   Description = "Delivery Note",     Prefix = "BTX/DN",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "RCT",  Description = "Receipt",           Prefix = "BTX/RCT",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "SINV", Description = "Supplier Invoice",  Prefix = "BTX/SINV", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

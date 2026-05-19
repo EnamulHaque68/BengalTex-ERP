@@ -1,0 +1,271 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Supplier Invoices</h2>
+      <p class="page-subtitle">Bills received from suppliers against purchase orders &mdash; track payables &amp; payment status</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search code, supplier, PO..."
+          (input)="onSearchChange($any($event.target).value)"
+        />
+      </span>
+      <p-select [(ngModel)]="filterSupplierId"
+                  [options]="suppliers"
+                  optionLabel="name"
+                  optionValue="id"
+                  [showClear]="true"
+                  [filter]="true"
+                  filterBy="code,name"
+                  placeholder="All suppliers"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="Add Invoice" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="invoices"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>PO</th>
+          <th>Supplier</th>
+          <th>Vendor Inv #</th>
+          <th>Invoice Date</th>
+          <th>Due Date</th>
+          <th>Total</th>
+          <th>Paid</th>
+          <th>Outstanding</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td><span class="code-badge alt">{{ s.purchaseOrderCode }}</span></td>
+          <td class="fw-600">{{ s.supplierName }}</td>
+          <td class="muted">{{ s.supplierInvoiceNumber || '—' }}</td>
+          <td class="num">{{ s.invoiceDate }}</td>
+          <td class="num">{{ s.dueDate }}</td>
+          <td class="num">{{ formatCurrency(s.totalAmount) }}</td>
+          <td class="num paid">{{ formatCurrency(s.amountPaid) }}</td>
+          <td class="num outstanding" [class.zero]="s.amountDue === 0">{{ formatCurrency(s.amountDue) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="s.status === 'Draft'"
+                  [class.approved]="s.status === 'Approved'"
+                  [class.partial]="s.status === 'PartiallyPaid'"
+                  [class.paid]="s.status === 'Paid'"
+                  [class.cancelled]="s.status === 'Cancelled'">
+              {{ s.status === 'PartiallyPaid' ? 'Partial' : s.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="s.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(s)"
+                        [pTooltip]="s.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="s.status === 'Draft'"
+                        [loading]="rowActionId === s.id"
+                        (click)="approve(s)" pTooltip="Approve" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="canCancel(s)"
+                        [loading]="rowActionId === s.id"
+                        (click)="cancel(s)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(s)"
+                        (click)="confirmDelete(s)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="11" class="empty-row">
+            <i class="pi pi-file-edit"></i>
+            <span>No supplier invoices. Click "Add Invoice" to record one against a PO.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'Add Supplier Invoice' : (dialogMode === 'edit' ? 'Edit Supplier Invoice' : 'View Supplier Invoice')"
+  [modal]="true"
+  [style]="{ width: '960px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only draft invoices can be edited.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Purchase Order *</label>
+        <p-select formControlName="purchaseOrderId"
+                    [options]="invoiceablePos"
+                    optionLabel="displayLabel"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,supplierName"
+                    placeholder="Select an Approved / Received / Closed PO"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onPoChange($event)" />
+        <small class="hint" *ngIf="selectedPo">
+          Supplier: <strong>{{ selectedPo.supplierName }}</strong>
+          &middot; PO Total: <strong>{{ formatCurrency(selectedPo.totalAmount) }}</strong>
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Vendor Invoice # <small>(supplier's own bill number)</small></label>
+        <input pInputText formControlName="supplierInvoiceNumber" placeholder="e.g. INV-12345" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Invoice Date *</label>
+        <input pInputText type="date" formControlName="invoiceDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Due Date <small *ngIf="dialogMode === 'create'">(auto from Supplier.PaymentTermsDays if blank)</small></label>
+        <input pInputText type="date" formControlName="dueDate" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Payment instructions, vendor reference..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Invoice Lines</p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="prod-col">Raw Material</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">Quantity</th>
+            <th class="num-col">Unit Price</th>
+            <th class="num-col">Line Total</th>
+            <th>Line Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td class="prod-cell">{{ meta(lineCtrl).rawMaterialDisplay }}</td>
+            <td class="unit-cell">{{ meta(lineCtrl).uomCode }}</td>
+            <td>
+              <p-inputNumber formControlName="quantity" [min]="0"
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <p-inputNumber formControlName="unitPrice" [min]="0"
+                             [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td colspan="6" class="empty-lines">
+              <ng-container *ngIf="!form.get('purchaseOrderId')?.value">
+                Select a Purchase Order to load its lines.
+              </ng-container>
+              <ng-container *ngIf="form.get('purchaseOrderId')?.value">
+                PO has no lines.
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="total-label">Total Amount</td>
+            <td class="num total-val">{{ formatCurrency(totalAmount()) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Supplier Invoice"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingInv">
+    <p>Delete <strong>{{ deletingInv.code }}</strong> ({{ deletingInv.supplierName }})? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

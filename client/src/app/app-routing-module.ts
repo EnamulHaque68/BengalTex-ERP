@@ -31,7 +31,9 @@ const routes: Routes = [
       { path: 'production-orders', loadChildren: () => import('./modules/production-order/production-order.module').then(m => m.ProductionOrderModule) },
       { path: 'delivery-notes', loadChildren: () => import('./modules/delivery-note/delivery-note.module').then(m => m.DeliveryNoteModule) },
       { path: 'customer-invoices', loadChildren: () => import('./modules/customer-invoice/customer-invoice.module').then(m => m.CustomerInvoiceModule) },
-      { path: 'receipts', loadChildren: () => import('./modules/receipt/receipt.module').then(m => m.ReceiptModule) }
+      { path: 'receipts', loadChildren: () => import('./modules/receipt/receipt.module').then(m => m.ReceiptModule) },
+      { path: 'supplier-invoices', loadChildren: () => import('./modules/supplier-invoice/supplier-invoice.module').then(m => m.SupplierInvoiceModule) },
+      { path: 'payments', loadChildren: () => import('./modules/payment/payment.module').then(m => m.PaymentModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
