@@ -57,4 +57,21 @@ public interface IStockService
         int productId,
         int warehouseId,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Total StockOnHand quantity for a RawMaterial summed across ALL warehouses.
+    /// Used as the denominator for global weighted-average-cost recomputation on GRN Post.
+    /// </summary>
+    Task<decimal> GetRawMaterialTotalOnHandAsync(
+        int rawMaterialId,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Total StockOnHand quantity for a Product summed across ALL warehouses.
+    /// Used as the denominator for global weighted-average-cost recomputation on
+    /// Production Complete.
+    /// </summary>
+    Task<decimal> GetProductTotalOnHandAsync(
+        int productId,
+        CancellationToken ct = default);
 }

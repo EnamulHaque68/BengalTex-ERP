@@ -21,7 +21,15 @@ public class RawMaterial : BaseEntity
 
     public decimal MinimumStockLevel { get; set; }   // reorder trigger
     public decimal OpeningStock { get; set; }
-    public decimal StandardCost { get; set; }        // per-unit cost in base currency
+    public decimal StandardCost { get; set; }        // per-unit planning cost (manually set)
+
+    /// <summary>
+    /// Running weighted-average actual cost per unit, in base currency. System-maintained:
+    /// recomputed on every GRN Post from the PO line price. Global across all warehouses
+    /// (transfers don't change it). 0 until the first receipt. Used for inventory valuation
+    /// and as the consumption cost when this RM is issued to production.
+    /// </summary>
+    public decimal WeightedAverageCost { get; set; }
 
     // Optional preferred supplier — speeds up purchase requisitions
     public int? PreferredSupplierId { get; set; }

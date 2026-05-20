@@ -20,6 +20,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<ProductEntity>
 
         builder.Property(p => p.SalesPrice).HasPrecision(18, 4);
         builder.Property(p => p.ReorderLevel).HasPrecision(18, 4);
+        builder.Property(p => p.WeightedAverageCost).HasPrecision(18, 4);
 
         builder.Property(p => p.ImageUrl).HasMaxLength(500);
         builder.Property(p => p.Notes).HasMaxLength(2000);

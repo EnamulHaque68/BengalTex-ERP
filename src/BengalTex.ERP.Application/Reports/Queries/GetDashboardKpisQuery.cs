@@ -46,6 +46,15 @@ internal sealed class GetDashboardKpisQueryHandler
             .Distinct()
             .CountAsync(cancellationToken);
 
+        // Total inventory valuation = Σ (qty × weighted-avg cost) for RM + Product
+        var rmStockValue = await _stockRepo.Query()
+            .Where(s => s.RawMaterialId != null)
+            .SumAsync(s => (decimal?)(s.Quantity * s.RawMaterial!.WeightedAverageCost), cancellationToken) ?? 0m;
+        var productStockValue = await _stockRepo.Query()
+            .Where(s => s.ProductId != null)
+            .SumAsync(s => (decimal?)(s.Quantity * s.Product!.WeightedAverageCost), cancellationToken) ?? 0m;
+        var totalStockValue = rmStockValue + productStockValue;
+
         var arOutstandingAgg = await _arRepo.Query()
             .Where(i => (i.Status == Domain.Entities.CustomerInvoiceStatus.Issued
                       || i.Status == Domain.Entities.CustomerInvoiceStatus.PartiallyPaid)
@@ -85,6 +94,7 @@ internal sealed class GetDashboardKpisQueryHandler
         var dto = new DashboardKpisDto(
             GeneratedAt: DateTimeOffset.UtcNow,
             StockItemCount: stockItemCount,
+            TotalStockValue: totalStockValue,
             OutstandingArAmount: arOutstandingAgg?.Sum ?? 0m,
             OutstandingArInvoiceCount: arOutstandingAgg?.Count ?? 0,
             OutstandingApAmount: apOutstandingAgg?.Sum ?? 0m,

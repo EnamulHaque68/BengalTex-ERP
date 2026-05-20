@@ -24,7 +24,7 @@ internal sealed class GetRawMaterialByIdQueryHandler
                 r.Id, r.Code, r.Name, r.Specification,
                 r.Category.ToString(),
                 r.UnitOfMeasureId, r.UnitOfMeasure.Code,
-                r.MinimumStockLevel, r.OpeningStock, r.StandardCost,
+                r.MinimumStockLevel, r.OpeningStock, r.StandardCost, r.WeightedAverageCost,
                 r.PreferredSupplierId,
                 r.PreferredSupplier != null ? r.PreferredSupplier.Name : null,
                 r.Notes, r.IsActive))

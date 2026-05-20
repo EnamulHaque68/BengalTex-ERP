@@ -9,6 +9,8 @@ export interface StockSummaryRowDto {
   unitOfMeasureCode: string;
   totalQuantity: number;
   warehouseCount: number;
+  unitCost: number;                  // weighted-average cost per unit (Phase 14)
+  value: number;                     // totalQuantity × unitCost
 }
 
 export interface StockSummaryReportDto {
@@ -19,6 +21,7 @@ export interface StockSummaryReportDto {
   rowCount: number;
   totalRawMaterialQuantity: number;
   totalProductQuantity: number;
+  totalInventoryValue: number;       // Σ value across all rows (Phase 14)
   rows: StockSummaryRowDto[];
 }
 
@@ -177,6 +180,7 @@ export interface VatSummaryReportDto {
 export interface DashboardKpisDto {
   generatedAt: string;
   stockItemCount: number;
+  totalStockValue: number;           // Σ (qty × WAC) across RM + Product (Phase 14)
   outstandingArAmount: number;
   outstandingArInvoiceCount: number;
   outstandingApAmount: number;

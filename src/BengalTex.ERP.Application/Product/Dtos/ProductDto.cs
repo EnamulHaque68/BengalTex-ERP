@@ -14,6 +14,7 @@ public record ProductDto(
     string? Material,
     decimal SalesPrice,
     decimal ReorderLevel,
+    decimal WeightedAverageCost,     // system-maintained production cost (Phase 14)
     bool IsStockItem,
     string? ImageUrl,
     string? Notes,
@@ -27,5 +28,6 @@ public record ProductListItemDto(
     string UnitOfMeasureCode,
     decimal SalesPrice,
     decimal ReorderLevel,
+    decimal WeightedAverageCost,
     bool IsStockItem,
     bool IsActive);

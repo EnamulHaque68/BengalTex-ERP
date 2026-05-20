@@ -58,7 +58,7 @@ internal sealed class GetProductsQueryHandler
                 p.Id, p.Code, p.Name,
                 p.ProductCategory.Name,
                 p.UnitOfMeasure.Code,
-                p.SalesPrice, p.ReorderLevel, p.IsStockItem, p.IsActive))
+                p.SalesPrice, p.ReorderLevel, p.WeightedAverageCost, p.IsStockItem, p.IsActive))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<ProductListItemDto>.Create(

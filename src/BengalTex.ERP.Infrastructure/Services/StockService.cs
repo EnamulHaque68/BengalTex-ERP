@@ -74,6 +74,22 @@ public sealed class StockService : IStockService
         return row?.Quantity ?? 0m;
     }
 
+    public async Task<decimal> GetRawMaterialTotalOnHandAsync(
+        int rawMaterialId, CancellationToken ct = default)
+    {
+        return await _onHandRepo.Query()
+            .Where(s => s.RawMaterialId == rawMaterialId)
+            .SumAsync(s => (decimal?)s.Quantity, ct) ?? 0m;
+    }
+
+    public async Task<decimal> GetProductTotalOnHandAsync(
+        int productId, CancellationToken ct = default)
+    {
+        return await _onHandRepo.Query()
+            .Where(s => s.ProductId == productId)
+            .SumAsync(s => (decimal?)s.Quantity, ct) ?? 0m;
+    }
+
     private async Task PostInternalAsync(
         int? rawMaterialId, int? productId, int warehouseId, decimal signedQuantity,
         StockMovementType movementType, string? referenceType, long? referenceId,

@@ -25,7 +25,7 @@ internal sealed class GetProductByIdQueryHandler
                 p.ProductCategoryId, p.ProductCategory.Name,
                 p.UnitOfMeasureId, p.UnitOfMeasure.Code,
                 p.Size, p.Color, p.Material,
-                p.SalesPrice, p.ReorderLevel, p.IsStockItem,
+                p.SalesPrice, p.ReorderLevel, p.WeightedAverageCost, p.IsStockItem,
                 p.ImageUrl, p.Notes, p.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
 

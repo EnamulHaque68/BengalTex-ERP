@@ -21,6 +21,7 @@ public class RawMaterialConfiguration : IEntityTypeConfiguration<RawMaterialEnti
         builder.Property(r => r.MinimumStockLevel).HasPrecision(18, 4);
         builder.Property(r => r.OpeningStock).HasPrecision(18, 4);
         builder.Property(r => r.StandardCost).HasPrecision(18, 4);
+        builder.Property(r => r.WeightedAverageCost).HasPrecision(18, 4);
 
         builder.Property(r => r.Notes).HasMaxLength(2000);
 

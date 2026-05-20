@@ -30,11 +30,11 @@
     <!-- KPI tiles — only visible when user has Dashboard.ViewOwner permission -->
     <section class="kpi-section" *ngIf="kpis">
       <div class="kpi-grid">
-        <a routerLink="/stock-on-hand" class="kpi-tile stock">
+        <a routerLink="/reports/stock-summary" class="kpi-tile stock">
           <span class="kpi-icon"><i class="pi pi-box"></i></span>
-          <span class="kpi-label">Stock Items</span>
-          <span class="kpi-value">{{ kpis.stockItemCount }}</span>
-          <span class="kpi-sub">distinct items in stock</span>
+          <span class="kpi-label">Inventory Value</span>
+          <span class="kpi-value">{{ formatCurrency(kpis.totalStockValue) }}</span>
+          <span class="kpi-sub">{{ kpis.stockItemCount }} distinct item{{ kpis.stockItemCount === 1 ? '' : 's' }} in stock</span>
         </a>
         <a routerLink="/reports/ar-ageing" class="kpi-tile ar">
           <span class="kpi-icon"><i class="pi pi-money-bill"></i></span>

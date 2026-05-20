@@ -8,6 +8,7 @@ public record StockSummaryReportDto(
     int RowCount,
     decimal TotalRawMaterialQuantity,
     decimal TotalProductQuantity,
+    decimal TotalInventoryValue,       // Σ (qty × weighted-avg cost) across all rows
     IReadOnlyList<StockSummaryRowDto> Rows);
 
 public record StockSummaryRowDto(
@@ -18,4 +19,6 @@ public record StockSummaryRowDto(
     string Name,
     string UnitOfMeasureCode,
     decimal TotalQuantity,             // summed across all warehouses (or in selected warehouse only)
-    int WarehouseCount);               // how many warehouses currently hold this item
+    int WarehouseCount,                // how many warehouses currently hold this item
+    decimal UnitCost,                  // weighted-average cost per unit
+    decimal Value);                    // TotalQuantity × UnitCost

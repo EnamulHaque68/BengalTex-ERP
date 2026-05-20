@@ -60,7 +60,8 @@ internal sealed class GetStockSummaryReportQueryHandler
                     Id = s.RawMaterialId!.Value,
                     Code = s.RawMaterial!.Code,
                     Name = s.RawMaterial!.Name,
-                    UomCode = s.RawMaterial!.UnitOfMeasure.Code
+                    UomCode = s.RawMaterial!.UnitOfMeasure.Code,
+                    UnitCost = s.RawMaterial!.WeightedAverageCost
                 })
                 .Select(g => new StockSummaryRowDto(
                     "RawMaterial",
@@ -70,7 +71,9 @@ internal sealed class GetStockSummaryReportQueryHandler
                     g.Key.Name,
                     g.Key.UomCode,
                     g.Sum(x => x.Quantity),
-                    g.Select(x => x.WarehouseId).Distinct().Count()))
+                    g.Select(x => x.WarehouseId).Distinct().Count(),
+                    g.Key.UnitCost,
+                    g.Sum(x => x.Quantity) * g.Key.UnitCost))
                 .ToListAsync(cancellationToken);
 
             rows.AddRange(rmRows);
@@ -89,7 +92,8 @@ internal sealed class GetStockSummaryReportQueryHandler
                     Id = s.ProductId!.Value,
                     Code = s.Product!.Code,
                     Name = s.Product!.Name,
-                    UomCode = s.Product!.UnitOfMeasure.Code
+                    UomCode = s.Product!.UnitOfMeasure.Code,
+                    UnitCost = s.Product!.WeightedAverageCost
                 })
                 .Select(g => new StockSummaryRowDto(
                     "Product",
@@ -99,7 +103,9 @@ internal sealed class GetStockSummaryReportQueryHandler
                     g.Key.Name,
                     g.Key.UomCode,
                     g.Sum(x => x.Quantity),
-                    g.Select(x => x.WarehouseId).Distinct().Count()))
+                    g.Select(x => x.WarehouseId).Distinct().Count(),
+                    g.Key.UnitCost,
+                    g.Sum(x => x.Quantity) * g.Key.UnitCost))
                 .ToListAsync(cancellationToken);
 
             rows.AddRange(productRows);
@@ -119,6 +125,7 @@ internal sealed class GetStockSummaryReportQueryHandler
             RowCount: ordered.Count,
             TotalRawMaterialQuantity: totalRmQty,
             TotalProductQuantity: totalProductQty,
+            TotalInventoryValue: ordered.Sum(r => r.Value),
             Rows: ordered);
 
         return ApiResponse<StockSummaryReportDto>.Ok(dto);

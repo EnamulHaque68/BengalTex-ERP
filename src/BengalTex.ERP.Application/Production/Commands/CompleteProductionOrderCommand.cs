@@ -50,6 +50,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     {
         var po = await _repo.Query()
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial)
+            .Include(p => p.Product)
             .FirstOrDefaultAsync(p => p.Id == cmd.Id, cancellationToken);
 
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
@@ -81,11 +82,13 @@ internal sealed class CompleteProductionOrderCommandHandler
                 "Insufficient stock in issue warehouse — " + string.Join("; ", shortages));
         }
 
-        // ── Phase 2: post RM-out movements per BOM line ──────────────────────────
+        // ── Phase 2: post RM-out movements per BOM line + accumulate consumed cost ──
         var movementDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var totalRmCost = 0m;
         foreach (var bomLine in po.Bom.Lines)
         {
             var consumedQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
+            totalRmCost += consumedQty * bomLine.RawMaterial.WeightedAverageCost;
             await _stock.PostRawMaterialMovementAsync(
                 rawMaterialId: bomLine.RawMaterialId,
                 warehouseId: po.IssueWarehouseId,
@@ -99,7 +102,21 @@ internal sealed class CompleteProductionOrderCommandHandler
                 ct: cancellationToken);
         }
 
-        // ── Phase 3: post finished-goods movement ────────────────────────────────
+        // ── Phase 3: recompute Product WAC, then post finished-goods movement ────
+        // FG unit cost = total RM cost consumed ÷ produced qty. Weighted-average it into
+        // the Product's existing stock value (qtyBefore captured before the receipt).
+        if (po.Quantity > 0m)
+        {
+            var fgUnitCost = totalRmCost / po.Quantity;
+            var productQtyBefore = await _stock.GetProductTotalOnHandAsync(po.ProductId, cancellationToken);
+            var denom = productQtyBefore + po.Quantity;
+            if (denom > 0m)
+            {
+                po.Product.WeightedAverageCost =
+                    (productQtyBefore * po.Product.WeightedAverageCost + po.Quantity * fgUnitCost) / denom;
+            }
+        }
+
         await _stock.PostProductMovementAsync(
             productId: po.ProductId,
             warehouseId: po.ReceiveWarehouseId,

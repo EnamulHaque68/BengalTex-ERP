@@ -109,7 +109,7 @@ internal sealed class CreateRawMaterialCommandHandler
             entity.Id, entity.Code, entity.Name, entity.Specification,
             entity.Category.ToString(),
             entity.UnitOfMeasureId, uom.Code,
-            entity.MinimumStockLevel, entity.OpeningStock, entity.StandardCost,
+            entity.MinimumStockLevel, entity.OpeningStock, entity.StandardCost, entity.WeightedAverageCost,
             entity.PreferredSupplierId, supplier?.Name,
             entity.Notes, entity.IsActive);
 

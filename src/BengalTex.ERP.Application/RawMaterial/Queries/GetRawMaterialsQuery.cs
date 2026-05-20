@@ -61,7 +61,7 @@ internal sealed class GetRawMaterialsQueryHandler
                 r.Id, r.Code, r.Name,
                 r.Category.ToString(),
                 r.UnitOfMeasure.Code,
-                r.MinimumStockLevel, r.StandardCost,
+                r.MinimumStockLevel, r.StandardCost, r.WeightedAverageCost,
                 r.PreferredSupplier != null ? r.PreferredSupplier.Name : null,
                 r.IsActive))
             .ToListAsync(cancellationToken);

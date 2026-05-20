@@ -81,6 +81,12 @@ export class StockSummaryComponent implements OnInit {
     return new Intl.NumberFormat('en-BD', { maximumFractionDigits: 4 }).format(n || 0);
   }
 
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-BD', {
+      style: 'currency', currency: 'BDT', maximumFractionDigits: 2
+    }).format(amount || 0);
+  }
+
   print(): void {
     window.print();
   }
