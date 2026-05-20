@@ -77,6 +77,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<CustomerReturnNoteLine> CustomerReturnNoteLines => Set<CustomerReturnNoteLine>();
     public DbSet<SupplierReturnNote> SupplierReturnNotes => Set<SupplierReturnNote>();
     public DbSet<SupplierReturnNoteLine> SupplierReturnNoteLines => Set<SupplierReturnNoteLine>();
+    public DbSet<QcInspection> QcInspections => Set<QcInspection>();
+    public DbSet<QcInspectionLine> QcInspectionLines => Set<QcInspectionLine>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
