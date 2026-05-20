@@ -91,6 +91,17 @@ internal sealed class PostGoodsReceiptCommandHandler
 
             poLine.ReceivedQuantity += grnLine.ReceivedQuantity;
 
+            // ── Weighted-average cost recompute (before the movement updates StockOnHand) ──
+            // newWAC = (qtyBefore × oldWAC + receivedQty × poLinePrice) / (qtyBefore + receivedQty)
+            var qtyBefore = await _stock.GetRawMaterialTotalOnHandAsync(poLine.RawMaterialId, cancellationToken);
+            var receivedCost = poLine.UnitPrice;
+            var denom = qtyBefore + grnLine.ReceivedQuantity;
+            if (denom > 0m)
+            {
+                poLine.RawMaterial.WeightedAverageCost =
+                    (qtyBefore * poLine.RawMaterial.WeightedAverageCost + grnLine.ReceivedQuantity * receivedCost) / denom;
+            }
+
             await _stock.PostRawMaterialMovementAsync(
                 rawMaterialId: poLine.RawMaterialId,
                 warehouseId: grn.ReceivingWarehouseId,

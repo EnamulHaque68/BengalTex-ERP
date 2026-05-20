@@ -37,6 +37,7 @@ export interface ProductDto {
   material: string | null;
   salesPrice: number;
   reorderLevel: number;
+  weightedAverageCost: number;        // system-maintained production cost (Phase 14)
   isStockItem: boolean;
   imageUrl: string | null;
   notes: string | null;
@@ -51,6 +52,7 @@ export interface ProductListItemDto {
   unitOfMeasureCode: string;
   salesPrice: number;
   reorderLevel: number;
+  weightedAverageCost: number;
   isStockItem: boolean;
   isActive: boolean;
 }

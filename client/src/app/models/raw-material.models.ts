@@ -23,6 +23,7 @@ export interface RawMaterialDto {
   minimumStockLevel: number;
   openingStock: number;
   standardCost: number;
+  weightedAverageCost: number;        // system-maintained actual cost (Phase 14)
   preferredSupplierId: number | null;
   preferredSupplierName: string | null;
   notes: string | null;
@@ -37,6 +38,7 @@ export interface RawMaterialListItemDto {
   unitOfMeasureCode: string;
   minimumStockLevel: number;
   standardCost: number;
+  weightedAverageCost: number;
   preferredSupplierName: string | null;
   isActive: boolean;
 }

@@ -49,6 +49,10 @@
         <span class="tile-label">Product Qty</span>
         <span class="tile-value product">{{ formatNumber(report.totalProductQuantity) }}</span>
       </div>
+      <div class="summary-tile">
+        <span class="tile-label">Inventory Value</span>
+        <span class="tile-value value">{{ formatCurrency(report.totalInventoryValue) }}</span>
+      </div>
       <div class="summary-tile" *ngIf="report.warehouseName">
         <span class="tile-label">Warehouse</span>
         <span class="tile-value muted">{{ report.warehouseName }}</span>
@@ -74,6 +78,8 @@
           <th>UoM</th>
           <th class="num-col">Total Qty</th>
           <th class="num-col">Warehouses</th>
+          <th class="num-col">Unit Cost</th>
+          <th class="num-col">Value</th>
         </tr>
       </ng-template>
 
@@ -91,12 +97,14 @@
           <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
           <td class="num fw-700">{{ formatNumber(r.totalQuantity) }}</td>
           <td class="num">{{ r.warehouseCount }}</td>
+          <td class="num">{{ formatCurrency(r.unitCost) }}</td>
+          <td class="num value-cell">{{ formatCurrency(r.value) }}</td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="6" class="empty-row">
+          <td colspan="8" class="empty-row">
             <i class="pi pi-box"></i>
             <span>No stock found for the selected filters.</span>
           </td>

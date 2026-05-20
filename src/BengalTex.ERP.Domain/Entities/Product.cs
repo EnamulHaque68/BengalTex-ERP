@@ -30,6 +30,15 @@ public class Product : BaseEntity
     public decimal SalesPrice { get; set; }
     public decimal ReorderLevel { get; set; }
 
+    /// <summary>
+    /// Running weighted-average production cost per unit, in base currency.
+    /// System-maintained: recomputed on every Production Complete from the cost of RM
+    /// consumed (Σ consumedQty × RM WeightedAverageCost ÷ produced qty). Global across
+    /// warehouses. 0 until the first production receipt. Used for finished-goods
+    /// inventory valuation.
+    /// </summary>
+    public decimal WeightedAverageCost { get; set; }
+
     /// <summary>True = kept in stock; False = made-to-order only.</summary>
     public bool IsStockItem { get; set; } = true;
 

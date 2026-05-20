@@ -114,7 +114,7 @@ internal sealed class CreateProductCommandHandler
             entity.ProductCategoryId, category.Name,
             entity.UnitOfMeasureId, uom.Code,
             entity.Size, entity.Color, entity.Material,
-            entity.SalesPrice, entity.ReorderLevel, entity.IsStockItem,
+            entity.SalesPrice, entity.ReorderLevel, entity.WeightedAverageCost, entity.IsStockItem,
             entity.ImageUrl, entity.Notes, entity.IsActive);
 
         return ApiResponse<ProductDto>.Ok(dto, "Product created.");

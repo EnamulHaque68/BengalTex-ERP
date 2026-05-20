@@ -11,6 +11,7 @@ public record RawMaterialDto(
     decimal MinimumStockLevel,
     decimal OpeningStock,
     decimal StandardCost,
+    decimal WeightedAverageCost,     // system-maintained actual cost (Phase 14)
     int? PreferredSupplierId,
     string? PreferredSupplierName,
     string? Notes,
@@ -24,5 +25,6 @@ public record RawMaterialListItemDto(
     string UnitOfMeasureCode,
     decimal MinimumStockLevel,
     decimal StandardCost,
+    decimal WeightedAverageCost,
     string? PreferredSupplierName,
     bool IsActive);

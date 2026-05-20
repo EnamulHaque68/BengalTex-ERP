@@ -1394,6 +1394,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("UnitOfMeasureId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("WeightedAverageCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -1807,6 +1811,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<int>("UnitOfMeasureId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("WeightedAverageCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 

@@ -54,6 +54,7 @@
           <th>Unit</th>
           <th>Min Stock</th>
           <th>Standard Cost</th>
+          <th>Avg Cost</th>
           <th>Preferred Supplier</th>
           <th>Status</th>
           <th style="width:110px">Actions</th>
@@ -68,6 +69,7 @@
           <td><span class="unit-badge">{{ m.unitOfMeasureCode }}</span></td>
           <td class="num">{{ m.minimumStockLevel }}</td>
           <td class="num">{{ formatCurrency(m.standardCost) }}</td>
+          <td class="num">{{ formatCurrency(m.weightedAverageCost) }}</td>
           <td>{{ m.preferredSupplierName || '—' }}</td>
           <td>
             <span class="status-badge" [class.active]="m.isActive" [class.inactive]="!m.isActive">
@@ -87,7 +89,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="empty-row">
+          <td colspan="10" class="empty-row">
             <i class="pi pi-inbox"></i>
             <span>No raw materials. Click "Add Raw Material" to create one.</span>
           </td>
