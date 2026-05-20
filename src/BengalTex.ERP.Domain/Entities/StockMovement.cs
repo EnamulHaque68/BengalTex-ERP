@@ -61,5 +61,7 @@ public enum StockMovementType
     TransferIn = 8,         // inbound side of inter-warehouse transfer
     TransferOut = 9,        // outbound side of inter-warehouse transfer
     ReturnIn = 10,          // inbound — customer returns Product to us (CRN post)
-    ReturnOut = 11          // outbound — we return RawMaterial to supplier (SRN post)
+    ReturnOut = 11,         // outbound — we return RawMaterial to supplier (SRN post)
+    QcRejectOut = 12,       // outbound from source wh — QC-rejected qty leaving usable stock
+    QcRejectIn = 13         // inbound to quarantine wh — QC-rejected qty segregated
 }

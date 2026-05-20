@@ -170,6 +170,15 @@ public static class Permissions
         public const string Post = "Returns.Post";
     }
 
+    public static class Qc
+    {
+        public const string View = "Qc.View";
+        public const string Create = "Qc.Create";
+        public const string Edit = "Qc.Edit";
+        public const string Delete = "Qc.Delete";
+        public const string Post = "Qc.Post";
+    }
+
     public static class Employees
     {
         public const string View = "Employees.View";

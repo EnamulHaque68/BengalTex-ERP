@@ -38,7 +38,8 @@ const routes: Routes = [
       { path: 'stock-transfers', loadChildren: () => import('./modules/stock-transfer/stock-transfer.module').then(m => m.StockTransferModule) },
       { path: 'vat-challans', loadChildren: () => import('./modules/vat-challan/vat-challan.module').then(m => m.VatChallanModule) },
       { path: 'customer-returns', loadChildren: () => import('./modules/customer-return-note/customer-return-note.module').then(m => m.CustomerReturnNoteModule) },
-      { path: 'supplier-returns', loadChildren: () => import('./modules/supplier-return-note/supplier-return-note.module').then(m => m.SupplierReturnNoteModule) }
+      { path: 'supplier-returns', loadChildren: () => import('./modules/supplier-return-note/supplier-return-note.module').then(m => m.SupplierReturnNoteModule) },
+      { path: 'qc-inspections', loadChildren: () => import('./modules/qc-inspection/qc-inspection.module').then(m => m.QcInspectionModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
