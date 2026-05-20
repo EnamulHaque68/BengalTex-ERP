@@ -5,6 +5,8 @@ public interface ICurrentUserService
     string? UserId { get; }
     string? UserName { get; }
     int? FactoryId { get; }     // Active factory context (multi-factory)
+    string? IpAddress { get; }  // Origin of the current request (audit trail)
+    string? UserAgent { get; }  // Client user-agent (audit trail)
     bool IsAuthenticated { get; }
     bool IsInRole(string role);
     bool HasPermission(string permission);
