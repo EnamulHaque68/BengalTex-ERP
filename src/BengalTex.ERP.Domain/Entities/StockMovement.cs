@@ -63,5 +63,8 @@ public enum StockMovementType
     ReturnIn = 10,          // inbound — customer returns Product to us (CRN post)
     ReturnOut = 11,         // outbound — we return RawMaterial to supplier (SRN post)
     QcRejectOut = 12,       // outbound from source wh — QC-rejected qty leaving usable stock
-    QcRejectIn = 13         // inbound to quarantine wh — QC-rejected qty segregated
+    QcRejectIn = 13,        // inbound to quarantine wh — QC-rejected qty segregated
+    Scrap = 14,             // outbound write-off — quarantined stock scrapped (disposition)
+    QuarantineReleaseOut = 15, // outbound from quarantine wh — released back to usable stock
+    QuarantineReleaseIn = 16   // inbound to destination wh — released quarantined stock
 }

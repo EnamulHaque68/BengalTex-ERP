@@ -39,7 +39,8 @@ const routes: Routes = [
       { path: 'vat-challans', loadChildren: () => import('./modules/vat-challan/vat-challan.module').then(m => m.VatChallanModule) },
       { path: 'customer-returns', loadChildren: () => import('./modules/customer-return-note/customer-return-note.module').then(m => m.CustomerReturnNoteModule) },
       { path: 'supplier-returns', loadChildren: () => import('./modules/supplier-return-note/supplier-return-note.module').then(m => m.SupplierReturnNoteModule) },
-      { path: 'qc-inspections', loadChildren: () => import('./modules/qc-inspection/qc-inspection.module').then(m => m.QcInspectionModule) }
+      { path: 'qc-inspections', loadChildren: () => import('./modules/qc-inspection/qc-inspection.module').then(m => m.QcInspectionModule) },
+      { path: 'quarantine-dispositions', loadChildren: () => import('./modules/quarantine-disposition/quarantine-disposition.module').then(m => m.QuarantineDispositionModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
