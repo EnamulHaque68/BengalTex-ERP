@@ -29,6 +29,18 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public string? IpAddress =>
+        _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+    public string? UserAgent
+    {
+        get
+        {
+            var ua = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
+            return string.IsNullOrWhiteSpace(ua) ? null : ua;
+        }
+    }
+
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 
     public bool IsInRole(string role) => User?.IsInRole(role) ?? false;

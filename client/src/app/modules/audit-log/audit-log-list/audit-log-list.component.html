@@ -1,0 +1,132 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Audit Log</h2>
+      <p class="page-subtitle">Granular change history &mdash; who changed what, when (newest first)</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search entity, key, user..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterEntityType"
+                [options]="entityTypes"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                [filter]="true"
+                placeholder="All entities"
+                styleClass="filter-select"
+                (onChange)="load()" />
+      <p-select [(ngModel)]="filterAction"
+                [options]="actions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All actions"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <input pInputText type="text" placeholder="User..." class="user-input"
+             [(ngModel)]="filterUserName" (input)="onUserChange()" />
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="entries"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Timestamp</th>
+          <th>Action</th>
+          <th>Entity</th>
+          <th>Key</th>
+          <th>User</th>
+          <th>IP</th>
+          <th>Changed Fields</th>
+          <th style="width:70px">Detail</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td class="num">{{ e.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+          <td><span class="action-badge" [class]="actionClass(e.action)">{{ e.action }}</span></td>
+          <td class="fw-600">{{ shortType(e.entityType) }}</td>
+          <td><span class="key-badge">{{ e.entityKey }}</span></td>
+          <td>{{ e.userName || '—' }}</td>
+          <td class="muted">{{ e.ipAddress || '—' }}</td>
+          <td class="muted cols">{{ e.affectedColumns || '—' }}</td>
+          <td>
+            <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                      (click)="openView(e)" pTooltip="View old → new diff" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-history"></i>
+            <span>No audit entries match the filters.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="Change Detail"
+  [modal]="true"
+  [style]="{ width: '760px' }"
+>
+  <div *ngIf="viewing" class="detail">
+    <div class="detail-head">
+      <div><span class="dlabel">Entity</span><span class="dval fw-600">{{ shortType(viewing.entityType) }}</span></div>
+      <div><span class="dlabel">Key</span><span class="dval"><span class="key-badge">{{ viewing.entityKey }}</span></span></div>
+      <div><span class="dlabel">Action</span><span class="dval"><span class="action-badge" [class]="actionClass(viewing.action)">{{ viewing.action }}</span></span></div>
+      <div><span class="dlabel">User</span><span class="dval">{{ viewing.userName || '—' }}</span></div>
+      <div><span class="dlabel">When</span><span class="dval">{{ viewing.timestamp | date:'medium' }}</span></div>
+      <div><span class="dlabel">IP</span><span class="dval muted">{{ viewing.ipAddress || '—' }}</span></div>
+    </div>
+
+    <table class="diff-grid">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Old Value</th>
+          <th>New Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of diffRows" [class.changed]="r.changed">
+          <td class="field-cell">{{ r.field }}</td>
+          <td class="old-cell">{{ r.oldValue }}</td>
+          <td class="new-cell">{{ r.newValue }}</td>
+        </tr>
+        <tr *ngIf="diffRows.length === 0">
+          <td colspan="3" class="empty-diff">No field snapshot recorded for this entry.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewDialogVisible = false" />
+  </div>
+</p-dialog>

@@ -1,0 +1,127 @@
+.page-shell { padding: 1.5rem 2rem; }
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+    input { padding-left: 2.25rem; min-width: 200px; }
+  }
+}
+
+:host ::ng-deep .filter-select { min-width: 170px; }
+:host ::ng-deep .filter-select-sm { min-width: 130px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+
+.user-input { width: 120px; }
+.date-input { width: 140px; }
+
+.fw-600 { font-weight: 600; }
+.num    { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.muted  { color: #9ca3af; }
+.cols   { font-size: 0.78rem; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.key-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.action-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &.insert { background: #d1fae5; color: #065f46; }
+  &.update { background: #dbeafe; color: #1e40af; }
+  &.delete { background: #fee2e2; color: #991b1b; }
+}
+
+.empty-row {
+  text-align: center;
+  padding: 3rem !important;
+  color: #9ca3af;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { font-size: 0.9rem; }
+}
+
+// ─── Detail dialog ──────────────────────────────────────────────────────────
+
+.detail-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem 1rem;
+  padding: 0.25rem 0 1rem;
+  border-bottom: 1px dashed #e5e7eb;
+  margin-bottom: 1rem;
+
+  > div { display: flex; flex-direction: column; gap: 0.15rem; }
+  .dlabel { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; font-weight: 600; }
+  .dval { font-size: 0.85rem; color: #111827; }
+}
+
+.diff-grid {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.82rem;
+    vertical-align: top;
+    word-break: break-word;
+  }
+
+  .field-cell { font-weight: 600; color: #374151; width: 28%; }
+  .old-cell   { color: #6b7280; width: 36%; }
+  .new-cell   { color: #111827; width: 36%; }
+
+  tr.changed {
+    background: #fffbeb;
+    .new-cell { color: #b45309; font-weight: 600; }
+  }
+
+  .empty-diff { text-align: center; color: #9ca3af; padding: 1rem !important; }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
