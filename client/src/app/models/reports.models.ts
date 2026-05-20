@@ -177,6 +177,34 @@ export interface VatSummaryReportDto {
 
 // ─── Dashboard KPIs ───────────────────────────────────────────────────────
 
+// ─── Margin (COGS) Report ─────────────────────────────────────────────────
+
+export interface MarginReportRowDto {
+  productId: number;
+  productCode: string;
+  productName: string;
+  unitOfMeasureCode: string;
+  quantitySold: number;
+  revenue: number;
+  cogs: number;
+  unitCost: number;
+  margin: number;
+  marginPercent: number;
+}
+
+export interface MarginReportDto {
+  fromDate: string;
+  toDate: string;
+  customerId: number | null;
+  customerName: string | null;
+  productCount: number;
+  totalRevenue: number;
+  totalCogs: number;
+  totalMargin: number;
+  overallMarginPercent: number;
+  rows: MarginReportRowDto[];
+}
+
 export interface DashboardKpisDto {
   generatedAt: string;
   stockItemCount: number;

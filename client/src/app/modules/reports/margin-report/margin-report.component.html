@@ -1,0 +1,114 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Margin Report</h2>
+      <p class="page-subtitle">Per-product gross margin &mdash; Revenue vs COGS (qty &times; weighted-avg cost) in a date range</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <span class="date-sep">to</span>
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <p-select [(ngModel)]="filterCustomerId"
+                [options]="customers"
+                optionLabel="name"
+                optionValue="id"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="code,name"
+                placeholder="All customers"
+                styleClass="filter-select"
+                (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Revenue (net)</span>
+        <span class="tile-value">{{ formatCurrency(report.totalRevenue) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">COGS</span>
+        <span class="tile-value warn1">{{ formatCurrency(report.totalCogs) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Gross Margin</span>
+        <span class="tile-value" [class.paid]="report.totalMargin >= 0" [class.due]="report.totalMargin < 0">
+          {{ formatCurrency(report.totalMargin) }}
+        </span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Overall Margin %</span>
+        <span class="tile-value" [class]="marginClass(report.overallMarginPercent)">
+          {{ report.overallMarginPercent }}%
+        </span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Products</span>
+        <span class="tile-value muted">{{ report.productCount }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.rows || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.rows?.length || 0) > 50"
+      [rows]="50"
+      [rowsPerPageOptions]="[50, 100, 250]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Product</th>
+          <th>UoM</th>
+          <th class="num-col">Qty Sold</th>
+          <th class="num-col">Unit Cost</th>
+          <th class="num-col">Revenue</th>
+          <th class="num-col">COGS</th>
+          <th class="num-col">Margin</th>
+          <th class="num-col">Margin %</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td><span class="code-badge">{{ r.productCode }}</span></td>
+          <td class="fw-600">{{ r.productName }}</td>
+          <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
+          <td class="num">{{ formatNumber(r.quantitySold) }}</td>
+          <td class="num">{{ formatCurrency(r.unitCost) }}</td>
+          <td class="num">{{ formatCurrency(r.revenue) }}</td>
+          <td class="num cogs">{{ formatCurrency(r.cogs) }}</td>
+          <td class="num fw-700" [class.paid]="r.margin >= 0" [class.due]="r.margin < 0">{{ formatCurrency(r.margin) }}</td>
+          <td class="num fw-700" [class]="marginClass(r.marginPercent)">{{ r.marginPercent }}%</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-percentage"></i>
+            <span>No invoiced sales in the selected period.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Range: <strong>{{ report.fromDate }}</strong> to <strong>{{ report.toDate }}</strong>
+    &middot; COGS uses current weighted-average cost
+  </p>
+</div>

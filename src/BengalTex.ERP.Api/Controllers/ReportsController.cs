@@ -79,4 +79,16 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(new GetVatSummaryReportQuery(fromDate, toDate), ct);
         return Ok(result);
     }
+
+    [HttpGet("margin")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetMargin(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] int? customerId = null,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetMarginReportQuery(fromDate, toDate, customerId), ct);
+        return Ok(result);
+    }
 }
