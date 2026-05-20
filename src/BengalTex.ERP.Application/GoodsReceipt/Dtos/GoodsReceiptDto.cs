@@ -26,6 +26,7 @@ public record GoodsReceiptLineDto(
     string UnitOfMeasureCode,
     decimal OrderedQuantity,             // from PO line, for context
     decimal ReceivedQuantity,            // this GRN line's quantity
+    decimal ReturnedQuantity,            // already-returned via posted SRNs (Phase 13)
     int SortOrder,
     string? LineNotes);
 

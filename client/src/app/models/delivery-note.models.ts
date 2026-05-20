@@ -14,6 +14,7 @@ export interface DeliveryNoteLineDto {
   unitOfMeasureCode: string;
   orderedQuantity: number;
   dispatchedQuantity: number;
+  returnedQuantity: number;            // already-returned via posted CRNs
   sortOrder: number;
   lineNotes: string | null;
 }

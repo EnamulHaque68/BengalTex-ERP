@@ -41,6 +41,7 @@ internal sealed class GetDeliveryNoteByIdQueryHandler
                 l.SalesOrderLine.Product.UnitOfMeasure.Code,
                 l.SalesOrderLine.Quantity,
                 l.DispatchedQuantity,
+                l.ReturnedQuantity,
                 l.SortOrder, l.LineNotes))
             .ToList();
 

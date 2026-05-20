@@ -161,6 +161,15 @@ public static class Permissions
         public const string Edit = "Payments.Edit";
     }
 
+    public static class Returns
+    {
+        public const string View = "Returns.View";
+        public const string Create = "Returns.Create";
+        public const string Edit = "Returns.Edit";
+        public const string Delete = "Returns.Delete";
+        public const string Post = "Returns.Post";
+    }
+
     public static class Employees
     {
         public const string View = "Employees.View";

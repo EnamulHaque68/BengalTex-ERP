@@ -52,6 +52,13 @@ public class GoodsReceiptLine : BaseTransactionalEntity
 
     public decimal ReceivedQuantity { get; set; }
 
+    /// <summary>
+    /// Running sum of quantity returned to the supplier against this line (via posted
+    /// <c>SupplierReturnNote</c>s). Updated atomically when an SRN is posted.
+    /// Available qty for further returns = ReceivedQuantity − ReturnedQuantity.
+    /// </summary>
+    public decimal ReturnedQuantity { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }

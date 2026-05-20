@@ -1,0 +1,258 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Supplier Returns</h2>
+      <p class="page-subtitle">Record raw material returned to suppliers &mdash; reverses RM stock + GRN received qty</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, GRN, supplier..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="New Return" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="srns"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>GRN</th>
+          <th>Supplier</th>
+          <th>Return Date</th>
+          <th>From Warehouse</th>
+          <th class="num-col">Lines</th>
+          <th class="num-col">Total Qty</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td><span class="code-badge alt">{{ s.goodsReceiptNoteCode }}</span></td>
+          <td class="fw-600">{{ s.supplierName }}</td>
+          <td class="num">{{ s.returnDate }}</td>
+          <td>{{ s.returnFromWarehouseName }}</td>
+          <td class="num">{{ s.lineCount }}</td>
+          <td class="num fw-700">{{ formatNumber(s.totalReturnedQuantity) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="s.status === 'Draft'"
+                  [class.posted]="s.status === 'Posted'">
+              {{ s.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="s.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(s)"
+                        [pTooltip]="s.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="s.status === 'Draft'"
+                        [loading]="rowActionId === s.id"
+                        (click)="post(s)" pTooltip="Post (reverse stock + GRN)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(s)"
+                        (click)="confirmDelete(s)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-undo"></i>
+            <span>No supplier returns yet. Click "New Return" to record one against a posted GRN.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'New Supplier Return' : (dialogMode === 'edit' ? 'Edit Supplier Return' : 'View Supplier Return')"
+  [modal]="true"
+  [style]="{ width: '1020px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — posted returns are immutable.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Goods Receipt Note *</label>
+        <p-select formControlName="goodsReceiptNoteId"
+                    [options]="postedGrns"
+                    optionLabel="displayLabel"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,supplierName"
+                    placeholder="Select a posted GRN"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onGrnChange($event)" />
+        <small class="hint" *ngIf="selectedGrn">
+          Supplier: <strong>{{ selectedGrn.supplierName }}</strong>
+          &middot; PO: <strong>{{ selectedGrn.purchaseOrderCode }}</strong>
+          &middot; Received: <strong>{{ selectedGrn.receiveDate }}</strong>
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Return From Warehouse *</label>
+        <p-select formControlName="returnFromWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Where stock leaves from"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Return Date *</label>
+        <input pInputText type="date" formControlName="returnDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Vehicle Number</label>
+        <input pInputText formControlName="vehicleNumber" placeholder="e.g. DHK-1234" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Reason</label>
+        <input pInputText formControlName="reason" placeholder="Defective, wrong spec, over-shipment..." class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Additional context..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Return Lines <small *ngIf="lines.length > 0">— enter qty only for the lines being returned (leave others at 0)</small></p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="prod-col">Raw Material</th>
+            <th class="unit-col">UoM</th>
+            <th class="num-col">Received</th>
+            <th class="num-col">Already Returned</th>
+            <th class="num-col">Available</th>
+            <th class="num-col">Return Qty</th>
+            <th>Line Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td class="prod-cell">{{ meta(lineCtrl).rmDisplay }}</td>
+            <td class="unit-cell">{{ meta(lineCtrl).uomCode }}</td>
+            <td class="num">{{ formatNumber(meta(lineCtrl).receivedQuantity) }}</td>
+            <td class="num muted">{{ formatNumber(meta(lineCtrl).alreadyReturnedQuantity) }}</td>
+            <td class="num avail-val">{{ formatNumber(meta(lineCtrl).availableForReturn) }}</td>
+            <td>
+              <p-inputNumber formControlName="returnedQuantity" [min]="0" [max]="meta(lineCtrl).availableForReturn"
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td colspan="7" class="empty-lines">
+              <ng-container *ngIf="!form.get('goodsReceiptNoteId')?.value">
+                Select a Goods Receipt Note to load its lines.
+              </ng-container>
+              <ng-container *ngIf="form.get('goodsReceiptNoteId')?.value">
+                GRN has no received lines.
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="total-label">Total Return Qty</td>
+            <td class="num total-val">{{ formatNumber(totalReturnedQty()) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Save Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Supplier Return"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingSrn">
+    <p>Delete draft <strong>{{ deletingSrn.code }}</strong> ({{ deletingSrn.supplierName }})? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

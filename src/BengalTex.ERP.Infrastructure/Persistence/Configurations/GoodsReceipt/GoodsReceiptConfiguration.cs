@@ -53,6 +53,7 @@ public class GoodsReceiptLineConfiguration : IEntityTypeConfiguration<GoodsRecei
         builder.ToTable("GoodsReceiptLines");
 
         builder.Property(l => l.ReceivedQuantity).HasPrecision(18, 4);
+        builder.Property(l => l.ReturnedQuantity).HasPrecision(18, 4);
         builder.Property(l => l.LineNotes).HasMaxLength(1000);
 
         builder.HasIndex(l => l.GoodsReceiptNoteId);

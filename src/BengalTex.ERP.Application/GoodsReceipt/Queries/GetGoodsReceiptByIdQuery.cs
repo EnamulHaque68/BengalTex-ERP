@@ -41,6 +41,7 @@ internal sealed class GetGoodsReceiptByIdQueryHandler
                 l.PurchaseOrderLine.RawMaterial.UnitOfMeasure.Code,
                 l.PurchaseOrderLine.Quantity,
                 l.ReceivedQuantity,
+                l.ReturnedQuantity,
                 l.SortOrder, l.LineNotes))
             .ToList();
 

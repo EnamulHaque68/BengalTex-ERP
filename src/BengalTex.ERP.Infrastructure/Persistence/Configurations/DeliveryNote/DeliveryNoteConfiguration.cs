@@ -56,6 +56,7 @@ public class DeliveryNoteLineConfiguration : IEntityTypeConfiguration<DeliveryNo
         builder.ToTable("DeliveryNoteLines");
 
         builder.Property(l => l.DispatchedQuantity).HasPrecision(18, 4);
+        builder.Property(l => l.ReturnedQuantity).HasPrecision(18, 4);
         builder.Property(l => l.LineNotes).HasMaxLength(1000);
 
         builder.HasIndex(l => l.DeliveryNoteId);
