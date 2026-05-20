@@ -60,6 +60,13 @@ public class DeliveryNoteLine : BaseTransactionalEntity
 
     public decimal DispatchedQuantity { get; set; }
 
+    /// <summary>
+    /// Running sum of quantity returned by customers against this line (via posted
+    /// <c>CustomerReturnNote</c>s). Updated atomically when a CRN is posted.
+    /// Available qty for further returns = DispatchedQuantity − ReturnedQuantity.
+    /// </summary>
+    public decimal ReturnedQuantity { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }

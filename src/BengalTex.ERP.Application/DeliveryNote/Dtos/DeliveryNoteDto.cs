@@ -28,6 +28,7 @@ public record DeliveryNoteLineDto(
     string UnitOfMeasureCode,
     decimal OrderedQuantity,             // from SO line, for context
     decimal DispatchedQuantity,          // this DN line's quantity
+    decimal ReturnedQuantity,            // already-returned via posted CRNs (Phase 13)
     int SortOrder,
     string? LineNotes);
 

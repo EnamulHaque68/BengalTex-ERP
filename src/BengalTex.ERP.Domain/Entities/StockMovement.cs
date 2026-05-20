@@ -58,6 +58,8 @@ public enum StockMovementType
     ProductionIssue = 5,    // outbound, raw material consumed by Production
     ProductionReceipt = 6,  // inbound, finished goods from Production
     SalesDispatch = 7,      // outbound, dispatched to customer via DN (future)
-    TransferIn = 8,         // inbound side of inter-warehouse transfer (future)
-    TransferOut = 9         // outbound side of inter-warehouse transfer (future)
+    TransferIn = 8,         // inbound side of inter-warehouse transfer
+    TransferOut = 9,        // outbound side of inter-warehouse transfer
+    ReturnIn = 10,          // inbound — customer returns Product to us (CRN post)
+    ReturnOut = 11          // outbound — we return RawMaterial to supplier (SRN post)
 }

@@ -98,6 +98,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Inventory.") ||
             p.StartsWith("Boms.") ||
             p.StartsWith("RawMaterials.") ||
+            p.StartsWith("Returns.") ||
             p == Permissions.Reports.ViewProduction ||
             p == Permissions.Reports.ViewInventory ||
             p == Permissions.Reports.Export ||
@@ -107,6 +108,7 @@ public class DataSeeder : IDataSeeder
         await AssignPermissionsAsync("SalesManager", all.Where(p =>
             p.StartsWith("SalesOrders.") ||
             p.StartsWith("Customers.") ||
+            p.StartsWith("Returns.") ||
             p == Permissions.Invoices.View ||
             p == Permissions.Payments.View ||
             p == Permissions.Reports.ViewSales ||
@@ -433,6 +435,8 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "SINV", Description = "Supplier Invoice",  Prefix = "BTX/SINV", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "TXFR", Description = "Stock Transfer",    Prefix = "BTX/TXFR", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "VC",   Description = "VAT Challan",       Prefix = "BTX/VC",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "CRN",  Description = "Customer Return",   Prefix = "BTX/CRN",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "SRN",  Description = "Supplier Return",   Prefix = "BTX/SRN",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

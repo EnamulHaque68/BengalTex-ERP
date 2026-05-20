@@ -14,6 +14,7 @@ export interface GoodsReceiptLineDto {
   unitOfMeasureCode: string;
   orderedQuantity: number;            // snapshot from PO line
   receivedQuantity: number;           // this GRN line's quantity
+  returnedQuantity: number;           // already-returned via posted SRNs
   sortOrder: number;
   lineNotes: string | null;
 }

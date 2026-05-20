@@ -73,6 +73,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
     public DbSet<StockTransferLine> StockTransferLines => Set<StockTransferLine>();
     public DbSet<VatChallan> VatChallans => Set<VatChallan>();
+    public DbSet<CustomerReturnNote> CustomerReturnNotes => Set<CustomerReturnNote>();
+    public DbSet<CustomerReturnNoteLine> CustomerReturnNoteLines => Set<CustomerReturnNoteLine>();
+    public DbSet<SupplierReturnNote> SupplierReturnNotes => Set<SupplierReturnNote>();
+    public DbSet<SupplierReturnNoteLine> SupplierReturnNoteLines => Set<SupplierReturnNoteLine>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
