@@ -1,0 +1,261 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Quarantine Dispositions</h2>
+      <p class="page-subtitle">Resolve quarantined stock &mdash; release back to usable or scrap (write-off)</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, warehouse..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterType"
+                  [options]="dispositionTypes"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All types"
+                  styleClass="filter-select"
+                  (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                  [options]="statuses"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                  placeholder="All statuses"
+                  styleClass="filter-select-sm"
+                  (onChange)="load()" />
+      <p-button label="New Disposition" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="dispositions"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Type</th>
+          <th>From Quarantine</th>
+          <th>Destination</th>
+          <th>Date</th>
+          <th class="num-col">Lines</th>
+          <th class="num-col">Total Qty</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-d>
+        <tr>
+          <td><span class="code-badge">{{ d.code }}</span></td>
+          <td><span class="type-badge" [class.release]="d.dispositionType === 'Release'" [class.scrap]="d.dispositionType === 'Scrap'">{{ d.dispositionType }}</span></td>
+          <td class="fw-600">{{ d.quarantineWarehouseName }}</td>
+          <td>{{ d.destinationWarehouseName || '—' }}</td>
+          <td class="num">{{ d.dispositionDate }}</td>
+          <td class="num">{{ d.lineCount }}</td>
+          <td class="num fw-700">{{ formatNumber(d.totalQuantity) }}</td>
+          <td>
+            <span class="status-badge" [class.draft]="d.status === 'Draft'" [class.posted]="d.status === 'Posted'">{{ d.status }}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="d.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(d)"
+                        [pTooltip]="d.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="d.status === 'Draft'"
+                        [loading]="rowActionId === d.id"
+                        (click)="post(d)" pTooltip="Post (apply stock movements)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(d)"
+                        (click)="confirmDelete(d)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-inbox"></i>
+            <span>No dispositions yet. Click "New Disposition" to release or scrap quarantined stock.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="dialogMode === 'create' ? 'New Quarantine Disposition' : (dialogMode === 'edit' ? 'Edit Disposition' : 'View Disposition')"
+  [modal]="true"
+  [style]="{ width: '1000px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — posted dispositions are immutable.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Disposition Type *</label>
+        <p-select formControlName="dispositionType"
+                    [options]="dispositionTypes"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Quarantine Warehouse * <small>(source)</small></label>
+        <p-select formControlName="quarantineWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Where the stock is held"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onQuarantineChange()" />
+      </div>
+
+      <div class="field" *ngIf="isRelease">
+        <label>Destination Warehouse *</label>
+        <p-select formControlName="destinationWarehouseId"
+                    [options]="warehouses"
+                    optionLabel="name"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,name"
+                    placeholder="Release back to..."
+                    appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Disposition Date *</label>
+        <input pInputText type="date" formControlName="dispositionDate" class="w-full" />
+      </div>
+
+      <div class="field" [class.col-span-2]="!isRelease">
+        <label>Reason</label>
+        <input pInputText formControlName="reason" placeholder="Rework done, scrap, salvage..." class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes"
+                  placeholder="Additional context..." class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">
+      Disposition Lines
+      <small *ngIf="lines.length > 0">— enter qty only for items being disposed (leave others at 0)</small>
+      <small *ngIf="loadingStock">— loading quarantine stock…</small>
+    </p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="prod-col">Item</th>
+            <th class="unit-col">UoM</th>
+            <th class="num-col">In Quarantine</th>
+            <th class="num-col">Dispose Qty</th>
+            <th>Line Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td class="prod-cell">{{ meta(lineCtrl).itemDisplay }}</td>
+            <td class="unit-cell">{{ meta(lineCtrl).uomCode }}</td>
+            <td class="num avail-val">{{ formatNumber(meta(lineCtrl).availableInQuarantine) }}</td>
+            <td>
+              <p-inputNumber formControlName="quantity" [min]="0" [max]="meta(lineCtrl).availableInQuarantine"
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td colspan="5" class="empty-lines">
+              <ng-container *ngIf="!form.get('quarantineWarehouseId')?.value">
+                Select a quarantine warehouse to load its stock.
+              </ng-container>
+              <ng-container *ngIf="form.get('quarantineWarehouseId')?.value && !loadingStock">
+                No stock in that warehouse.
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="total-label">Total Dispose Qty</td>
+            <td class="num total-val">{{ formatNumber(totalDisposeQty()) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Save Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving || lines.length === 0" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteDialogVisible"
+  header="Delete Disposition"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  <div *ngIf="deletingDisp">
+    <p>Delete draft <strong>{{ deletingDisp.code }}</strong> ({{ deletingDisp.dispositionType }} from {{ deletingDisp.quarantineWarehouseName }})? This is a soft delete.</p>
+
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
+                [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
