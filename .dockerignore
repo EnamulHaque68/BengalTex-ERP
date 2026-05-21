@@ -1,0 +1,21 @@
+# Build context for the API image (repo root). Keep it lean + never leak local secrets.
+.git
+.gitignore
+.vs
+.vscode
+**/bin
+**/obj
+client
+tests
+docs
+logs
+**/logs
+**/uploads
+**/node_modules
+
+# Secrets / local-only config — MUST NOT be copied into the image
+.env
+.env.*
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json

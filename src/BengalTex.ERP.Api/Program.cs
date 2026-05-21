@@ -11,11 +11,13 @@ using BengalTex.ERP.Application.Auth;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Common.Settings;
 using BengalTex.ERP.Infrastructure;
+using BengalTex.ERP.Infrastructure.Persistence;
 using BengalTex.ERP.Infrastructure.Services;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -276,11 +278,20 @@ app.MapGet("/", () => "Bengal TEX ERP API is running!");
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", time = DateTimeOffset.UtcNow }));
 
 // ============================================
-// DATABASE SEEDER (idempotent — safe to run every startup in Dev)
+// DATABASE INITIALIZATION (migrate + seed)
 // ============================================
-if (app.Environment.IsDevelopment())
+// Dev: seed only — migrations are applied manually via `dotnet ef database update`.
+// Container/Prod: set Database__InitializeOnStartup=true → apply EF migrations + seed on boot
+// (the seeder is idempotent — SuperAdmin, roles, permissions, base currency, numbering series).
+var initializeDb = app.Configuration.GetValue<bool>("Database:InitializeOnStartup");
+if (app.Environment.IsDevelopment() || initializeDb)
 {
     using var scope = app.Services.CreateScope();
+    if (initializeDb)
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync();
+    }
     var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
     await seeder.SeedAsync();
 }
