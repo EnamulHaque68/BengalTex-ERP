@@ -2,6 +2,7 @@
 
 export const PO_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
+  { label: 'Pending Approval', value: 'PendingApproval' },
   { label: 'Approved', value: 'Approved' },
   { label: 'Sent', value: 'Sent' },
   { label: 'Partially Received', value: 'PartiallyReceived' },

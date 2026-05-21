@@ -41,7 +41,8 @@ const routes: Routes = [
       { path: 'supplier-returns', loadChildren: () => import('./modules/supplier-return-note/supplier-return-note.module').then(m => m.SupplierReturnNoteModule) },
       { path: 'qc-inspections', loadChildren: () => import('./modules/qc-inspection/qc-inspection.module').then(m => m.QcInspectionModule) },
       { path: 'quarantine-dispositions', loadChildren: () => import('./modules/quarantine-disposition/quarantine-disposition.module').then(m => m.QuarantineDispositionModule) },
-      { path: 'audit-log', loadChildren: () => import('./modules/audit-log/audit-log.module').then(m => m.AuditLogModule) }
+      { path: 'audit-log', loadChildren: () => import('./modules/audit-log/audit-log.module').then(m => m.AuditLogModule) },
+      { path: 'approvals', loadChildren: () => import('./modules/approvals/approvals.module').then(m => m.ApprovalsModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

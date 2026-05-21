@@ -43,6 +43,9 @@ public class CurrentUserService : ICurrentUserService
 
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 
+    public IReadOnlyList<string> Roles =>
+        User?.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList() ?? new List<string>();
+
     public bool IsInRole(string role) => User?.IsInRole(role) ?? false;
 
     public bool HasPermission(string permission) =>

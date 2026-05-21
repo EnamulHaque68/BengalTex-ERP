@@ -325,8 +325,8 @@ export class PurchaseOrderListComponent implements OnInit {
 
   // ─── Row actions ─────────────────────────────────────────────────────────
 
-  approve(po: PurchaseOrderListItemDto): void {
-    this.runRowAction(po, this.poService.approve.bind(this.poService));
+  submitForApproval(po: PurchaseOrderListItemDto): void {
+    this.runRowAction(po, this.poService.submitForApproval.bind(this.poService));
   }
 
   send(po: PurchaseOrderListItemDto): void {

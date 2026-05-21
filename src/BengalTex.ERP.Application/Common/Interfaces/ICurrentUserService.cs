@@ -8,6 +8,7 @@ public interface ICurrentUserService
     string? IpAddress { get; }  // Origin of the current request (audit trail)
     string? UserAgent { get; }  // Client user-agent (audit trail)
     bool IsAuthenticated { get; }
+    IReadOnlyList<string> Roles { get; }   // Role names from the current principal's role claims
     bool IsInRole(string role);
     bool HasPermission(string permission);
     IReadOnlyList<string> Permissions { get; }

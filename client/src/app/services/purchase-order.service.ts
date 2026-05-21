@@ -49,8 +49,8 @@ export class PurchaseOrderService {
     return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`);
   }
 
-  approve(id: number): Observable<ApiResponse<PurchaseOrderDto>> {
-    return this.http.post<ApiResponse<PurchaseOrderDto>>(`${this.base}/${id}/approve`, {});
+  submitForApproval(id: number): Observable<ApiResponse<PurchaseOrderDto>> {
+    return this.http.post<ApiResponse<PurchaseOrderDto>>(`${this.base}/${id}/submit-for-approval`, {});
   }
 
   send(id: number): Observable<ApiResponse<PurchaseOrderDto>> {

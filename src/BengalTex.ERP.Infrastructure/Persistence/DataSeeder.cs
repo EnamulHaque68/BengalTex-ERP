@@ -83,6 +83,8 @@ public class DataSeeder : IDataSeeder
             p == Permissions.Reports.Export ||
             p == Permissions.Dashboard.ViewAccounts ||
             p == Permissions.AuditLog.View ||
+            p.StartsWith("Attachments.") ||
+            p == Permissions.Approvals.View ||
             p == Permissions.Customers.View ||
             p == Permissions.Suppliers.View));
 
@@ -100,6 +102,8 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("RawMaterials.") ||
             p.StartsWith("Returns.") ||
             p.StartsWith("Qc.") ||
+            p.StartsWith("Attachments.") ||
+            p == Permissions.Approvals.View ||
             p == Permissions.Reports.ViewProduction ||
             p == Permissions.Reports.ViewInventory ||
             p == Permissions.Reports.Export ||
@@ -110,6 +114,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("SalesOrders.") ||
             p.StartsWith("Customers.") ||
             p.StartsWith("Returns.") ||
+            p.StartsWith("Attachments.") ||
             p == Permissions.Invoices.View ||
             p == Permissions.Payments.View ||
             p == Permissions.Reports.ViewSales ||

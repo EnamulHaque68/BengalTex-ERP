@@ -1,0 +1,112 @@
+.attachments-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ap-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.ap-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+
+  .ap-file {
+    flex: 0 0 auto;
+    font-size: 0.85rem;
+  }
+  .ap-desc {
+    flex: 1 1 200px;
+    min-width: 180px;
+  }
+}
+
+.ap-loading {
+  font-size: 0.85rem;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}
+
+.ap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .ap-icon {
+    font-size: 1.2rem;
+    color: #6366f1;
+    flex-shrink: 0;
+  }
+
+  .ap-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .ap-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1d4ed8;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    &:hover { text-decoration: underline; }
+  }
+
+  .ap-sub {
+    font-size: 0.74rem;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ap-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+  }
+}
+
+.ap-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.25rem;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  border: 1px dashed #e5e7eb;
+  border-radius: 6px;
+
+  i { font-size: 1.5rem; }
+}

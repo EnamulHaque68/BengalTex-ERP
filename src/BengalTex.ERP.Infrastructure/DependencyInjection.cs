@@ -29,6 +29,9 @@ public static class DependencyInjection
         services.Configure<FileStorageSettings>(config.GetSection("FileStorage"));
         services.AddScoped<IFileStorage, LocalFileStorage>();
 
+        // Approval workflow rules (threshold + approver role per gated document type)
+        services.Configure<ApprovalSettings>(config.GetSection("Approvals"));
+
         // SMS gateway (DevLogger stub; swap for SslWireless / Twilio in production)
         services.Configure<SmsSettings>(config.GetSection("Sms"));
         services.AddScoped<ISmsSender, DevSmsSender>();
@@ -71,6 +74,8 @@ public static class DependencyInjection
         services.AddScoped<INumberingService, NumberingService>();
         services.AddScoped<IStockService, StockService>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddScoped<IApprovalService, ApprovalService>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
             {

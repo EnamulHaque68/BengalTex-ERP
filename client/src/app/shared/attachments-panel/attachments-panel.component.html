@@ -1,0 +1,45 @@
+<div class="attachments-panel">
+
+  <div class="ap-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <!-- Upload row -->
+  <div class="ap-upload" *ngIf="canManage && entityId">
+    <input #fileInput type="file" class="ap-file" (change)="onFileSelected($event)" [disabled]="uploading" />
+    <input type="text" pInputText class="ap-desc" placeholder="Description (optional)"
+           [(ngModel)]="description" [disabled]="uploading" />
+    <button pButton type="button" label="Upload" icon="pi pi-upload"
+            [disabled]="!selectedFile || uploading" [loading]="uploading"
+            (click)="upload(fileInput)"></button>
+  </div>
+
+  <div class="ap-loading" *ngIf="loading">Loading…</div>
+
+  <ul class="ap-list" *ngIf="!loading && attachments.length">
+    <li *ngFor="let a of attachments">
+      <i class="pi ap-icon" [ngClass]="iconFor(a.contentType)"></i>
+      <div class="ap-meta">
+        <span class="ap-name" (click)="download(a)" title="Download">{{ a.fileName }}</span>
+        <span class="ap-sub">
+          {{ formatSize(a.fileSizeBytes) }}
+          <span *ngIf="a.description"> · {{ a.description }}</span>
+          <span *ngIf="a.uploadedBy"> · {{ a.uploadedBy }}</span>
+        </span>
+      </div>
+      <div class="ap-actions">
+        <button pButton type="button" icon="pi pi-download" class="p-button-text p-button-sm"
+                (click)="download(a)" pTooltip="Download"></button>
+        <button *ngIf="canManage" pButton type="button" icon="pi pi-trash"
+                class="p-button-text p-button-sm p-button-danger"
+                [disabled]="deletingId === a.id" (click)="remove(a)" pTooltip="Delete"></button>
+      </div>
+    </li>
+  </ul>
+
+  <div class="ap-empty" *ngIf="!loading && !attachments.length">
+    <i class="pi pi-paperclip"></i>
+    <span>No attachments yet.</span>
+  </div>
+
+</div>
