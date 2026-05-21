@@ -75,7 +75,7 @@
           <td class="num">{{ formatDate(s.orderDate) }}</td>
           <td class="num">{{ formatDate(s.requiredDeliveryDate) }}</td>
           <td class="num">{{ s.lineCount }}</td>
-          <td class="num">{{ formatCurrency(s.totalAmount) }}</td>
+          <td class="num">{{ formatMoney(s.totalAmount, s.currencyCode) }}</td>
           <td>
             <span class="status-badge"
                   [class.draft]="s.status === 'Draft'"
@@ -166,6 +166,24 @@
         <input pInputText type="date" formControlName="requiredDeliveryDate" class="w-full" />
       </div>
 
+      <div class="field">
+        <label>Currency *</label>
+        <p-select formControlName="currencyId"
+                    [options]="currencies"
+                    optionLabel="code"
+                    optionValue="id"
+                    placeholder="Currency"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onCurrencyChange($event)" />
+      </div>
+
+      <div class="field">
+        <label>Exchange Rate <small>(→ BDT)</small> *</label>
+        <p-inputNumber formControlName="exchangeRate" [min]="0"
+                       [minFractionDigits]="2" [maxFractionDigits]="6"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+
       <div class="field col-span-2">
         <label>Customer PO Ref <small>(buyer's order number)</small></label>
         <input pInputText formControlName="customerPoRef" placeholder="e.g. H&M-2026-1234" class="w-full" />
@@ -219,7 +237,7 @@
               <p-inputNumber formControlName="unitPrice" [min]="0"
                              [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" />
             </td>
-            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td class="num fw-600">{{ formatMoney(lineTotal(lineCtrl), currentCurrencyCode) }}</td>
             <td class="act-col" *ngIf="dialogMode !== 'view'">
               <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
                         (click)="removeLine(i)" pTooltip="Remove line" />
@@ -234,7 +252,7 @@
         <tfoot>
           <tr>
             <td colspan="4" class="total-label">Total Amount</td>
-            <td class="num total-val">{{ formatCurrency(totalAmount()) }}</td>
+            <td class="num total-val">{{ formatMoney(totalAmount(), currentCurrencyCode) }}</td>
             <td *ngIf="dialogMode !== 'view'"></td>
           </tr>
         </tfoot>

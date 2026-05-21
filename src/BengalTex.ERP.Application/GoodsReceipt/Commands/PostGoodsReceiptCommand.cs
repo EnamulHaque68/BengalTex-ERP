@@ -94,7 +94,8 @@ internal sealed class PostGoodsReceiptCommandHandler
             // ── Weighted-average cost recompute (before the movement updates StockOnHand) ──
             // newWAC = (qtyBefore × oldWAC + receivedQty × poLinePrice) / (qtyBefore + receivedQty)
             var qtyBefore = await _stock.GetRawMaterialTotalOnHandAsync(poLine.RawMaterialId, cancellationToken);
-            var receivedCost = poLine.UnitPrice;
+            // WAC is held in base currency (BDT) — convert the PO-currency price via the PO's rate.
+            var receivedCost = poLine.UnitPrice * po.ExchangeRate;
             var denom = qtyBefore + grnLine.ReceivedQuantity;
             if (denom > 0m)
             {

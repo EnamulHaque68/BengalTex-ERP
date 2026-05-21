@@ -22,6 +22,8 @@ public sealed record CreatePurchaseOrderCommand(
     DateOnly? ExpectedDeliveryDate,
     int? DeliveryWarehouseId,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<PurchaseOrderLineInput> Lines
 ) : IRequest<ApiResponse<PurchaseOrderDto>>;
 
@@ -31,6 +33,8 @@ public sealed class CreatePurchaseOrderCommandValidator : AbstractValidator<Crea
     {
         RuleFor(x => x.SupplierId).GreaterThan(0);
         RuleFor(x => x.OrderDate).NotEmpty();
+        RuleFor(x => x.CurrencyId).GreaterThan(0);
+        RuleFor(x => x.ExchangeRate).GreaterThan(0);
         RuleFor(x => x.Notes).MaximumLength(2000);
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A purchase order must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
@@ -54,6 +58,7 @@ internal sealed class CreatePurchaseOrderCommandHandler
     private readonly IRepository<Domain.Entities.Supplier> _supplierRepo;
     private readonly IRepository<Domain.Entities.Warehouse> _warehouseRepo;
     private readonly IRepository<Domain.Entities.RawMaterial> _rawMaterialRepo;
+    private readonly IRepository<Domain.Entities.Currency> _currencyRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -63,6 +68,7 @@ internal sealed class CreatePurchaseOrderCommandHandler
         IRepository<Domain.Entities.Supplier> supplierRepo,
         IRepository<Domain.Entities.Warehouse> warehouseRepo,
         IRepository<Domain.Entities.RawMaterial> rawMaterialRepo,
+        IRepository<Domain.Entities.Currency> currencyRepo,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
@@ -71,6 +77,7 @@ internal sealed class CreatePurchaseOrderCommandHandler
         _supplierRepo = supplierRepo;
         _warehouseRepo = warehouseRepo;
         _rawMaterialRepo = rawMaterialRepo;
+        _currencyRepo = currencyRepo;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -81,6 +88,9 @@ internal sealed class CreatePurchaseOrderCommandHandler
     {
         var supplier = await _supplierRepo.GetByIdAsync(cmd.SupplierId, cancellationToken);
         if (supplier is null) return ApiResponse<PurchaseOrderDto>.Fail("Supplier not found.");
+
+        var currency = await _currencyRepo.GetByIdAsync(cmd.CurrencyId, cancellationToken);
+        if (currency is null) return ApiResponse<PurchaseOrderDto>.Fail("Currency not found.");
 
         if (cmd.DeliveryWarehouseId.HasValue)
         {
@@ -105,6 +115,8 @@ internal sealed class CreatePurchaseOrderCommandHandler
             ExpectedDeliveryDate = cmd.ExpectedDeliveryDate,
             DeliveryWarehouseId = cmd.DeliveryWarehouseId,
             Status = Domain.Entities.PurchaseOrderStatus.Draft,
+            CurrencyId = cmd.CurrencyId,
+            ExchangeRate = cmd.ExchangeRate,
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.PurchaseOrderLine
             {

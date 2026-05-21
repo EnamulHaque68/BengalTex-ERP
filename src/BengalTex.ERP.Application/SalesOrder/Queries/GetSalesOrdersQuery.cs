@@ -65,8 +65,10 @@ internal sealed class GetSalesOrdersQueryHandler
                 s.Id, s.Code, s.CustomerId, s.Customer.Name,
                 s.OrderDate, s.RequiredDeliveryDate,
                 s.Status.ToString(),
+                s.Currency.Code, s.ExchangeRate,
                 s.Lines.Count,
-                s.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m))
+                s.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m,
+                (s.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m) * s.ExchangeRate))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<SalesOrderListItemDto>.Create(

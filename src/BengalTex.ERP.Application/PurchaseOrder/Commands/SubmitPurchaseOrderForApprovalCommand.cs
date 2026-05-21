@@ -50,8 +50,9 @@ internal sealed class SubmitPurchaseOrderForApprovalCommandHandler
         if (po.Status != Domain.Entities.PurchaseOrderStatus.Draft)
             return ApiResponse<PurchaseOrderDto>.Fail("Only draft purchase orders can be submitted for approval.");
 
-        var amount = po.Lines.Sum(l => l.Quantity * l.UnitPrice);
-        var result = await _approval.SubmitAsync("PurchaseOrder", po.Id, po.Code, amount, cancellationToken);
+        // Threshold is in base currency (BDT) → convert the document total via its rate.
+        var baseAmount = po.Lines.Sum(l => l.Quantity * l.UnitPrice) * po.ExchangeRate;
+        var result = await _approval.SubmitAsync("PurchaseOrder", po.Id, po.Code, baseAmount, cancellationToken);
 
         if (result.AutoApproved)
         {

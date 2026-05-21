@@ -11,12 +11,17 @@ public record CustomerInvoiceDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,                       // enum as string
+    int CurrencyId,
+    string CurrencyCode,
+    string CurrencySymbol,
+    decimal ExchangeRate,                // BDT per 1 unit of currency (inherited from SO)
     decimal VatRate,                     // 0.15 = 15%
-    decimal SubtotalAmount,              // sum of line totals, net of VAT
+    decimal SubtotalAmount,              // sum of line totals, net of VAT (document currency)
     decimal VatAmount,                   // SubtotalAmount × VatRate
     decimal TotalAmount,                 // SubtotalAmount + VatAmount (gross — what's owed)
     decimal AmountPaid,
     decimal AmountDue,                   // TotalAmount − AmountPaid
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
     DateTimeOffset? IssuedAt,
     string? IssuedBy,
     string? Notes,
@@ -45,10 +50,13 @@ public record CustomerInvoiceListItemDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
+    string CurrencyCode,
+    decimal ExchangeRate,
     decimal VatRate,
     decimal SubtotalAmount,
     decimal VatAmount,
     decimal TotalAmount,
     decimal AmountPaid,
     decimal AmountDue,
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
     int LineCount);

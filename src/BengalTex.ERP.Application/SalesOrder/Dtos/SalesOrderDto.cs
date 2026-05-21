@@ -11,10 +11,15 @@ public record SalesOrderDto(
     string? CustomerPoRef,
     string? DeliveryAddress,
     string Status,                       // enum as string
+    int CurrencyId,
+    string CurrencyCode,
+    string CurrencySymbol,
+    decimal ExchangeRate,                // BDT per 1 unit of currency
     DateTimeOffset? ConfirmedAt,
     string? ConfirmedBy,
     string? Notes,
-    decimal TotalAmount,                 // Σ line totals
+    decimal TotalAmount,                 // Σ line totals, in document currency
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
     IReadOnlyList<SalesOrderLineDto> Lines);
 
 public record SalesOrderLineDto(
@@ -37,5 +42,8 @@ public record SalesOrderListItemDto(
     DateOnly OrderDate,
     DateOnly? RequiredDeliveryDate,
     string Status,
+    string CurrencyCode,
+    decimal ExchangeRate,
     int LineCount,
-    decimal TotalAmount);
+    decimal TotalAmount,                 // in document currency
+    decimal BaseTotalAmount);            // TotalAmount × ExchangeRate (BDT)

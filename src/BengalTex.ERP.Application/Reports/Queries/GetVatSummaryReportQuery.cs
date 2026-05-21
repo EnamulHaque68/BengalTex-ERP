@@ -48,9 +48,10 @@ internal sealed class GetVatSummaryReportQueryHandler
             .Select(i => new
             {
                 i.InvoiceDate,
-                i.SubtotalAmount,
-                i.VatAmount,
-                i.TotalAmount
+                // VAT is reported to NBR in base currency (BDT).
+                SubtotalAmount = i.SubtotalAmount * i.ExchangeRate,
+                VatAmount = i.VatAmount * i.ExchangeRate,
+                TotalAmount = i.TotalAmount * i.ExchangeRate
             })
             .ToListAsync(cancellationToken);
 
@@ -62,9 +63,10 @@ internal sealed class GetVatSummaryReportQueryHandler
             .Select(i => new
             {
                 i.InvoiceDate,
-                i.SubtotalAmount,
-                i.VatAmount,
-                i.TotalAmount
+                // VAT is reported to NBR in base currency (BDT).
+                SubtotalAmount = i.SubtotalAmount * i.ExchangeRate,
+                VatAmount = i.VatAmount * i.ExchangeRate,
+                TotalAmount = i.TotalAmount * i.ExchangeRate
             })
             .ToListAsync(cancellationToken);
 

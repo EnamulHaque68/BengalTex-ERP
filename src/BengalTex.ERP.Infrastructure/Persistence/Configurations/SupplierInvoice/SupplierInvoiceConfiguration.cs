@@ -37,6 +37,13 @@ public class SupplierInvoiceConfiguration : IEntityTypeConfiguration<SupplierInv
             .HasForeignKey(s => s.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Transaction currency (Phase 21)
+        builder.Property(s => s.ExchangeRate).HasPrecision(18, 6);
+        builder.HasOne(s => s.Currency)
+            .WithMany()
+            .HasForeignKey(s => s.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(s => s.PurchaseOrder)
             .WithMany()
             .HasForeignKey(s => s.PurchaseOrderId)

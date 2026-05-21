@@ -36,10 +36,15 @@ export interface PurchaseOrderDto {
   deliveryWarehouseId: number | null;
   deliveryWarehouseName: string | null;
   status: string;
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  exchangeRate: number;
   approvedAt: string | null;
   approvedBy: string | null;
   notes: string | null;
-  totalAmount: number;
+  totalAmount: number;                // document currency
+  baseTotalAmount: number;            // BDT
   lines: PurchaseOrderLineDto[];
 }
 
@@ -51,8 +56,11 @@ export interface PurchaseOrderListItemDto {
   orderDate: string;
   expectedDeliveryDate: string | null;
   status: string;
+  currencyCode: string;
+  exchangeRate: number;
   lineCount: number;
-  totalAmount: number;
+  totalAmount: number;                // document currency
+  baseTotalAmount: number;            // BDT
 }
 
 export interface PurchaseOrderLineInput {
@@ -68,6 +76,8 @@ export interface CreatePurchaseOrderRequest {
   expectedDeliveryDate: string | null;
   deliveryWarehouseId: number | null;
   notes: string | null;
+  currencyId: number;
+  exchangeRate: number;
   lines: PurchaseOrderLineInput[];
 }
 
@@ -77,5 +87,7 @@ export interface UpdatePurchaseOrderRequest {
   expectedDeliveryDate: string | null;
   deliveryWarehouseId: number | null;
   notes: string | null;
+  currencyId: number;
+  exchangeRate: number;
   lines: PurchaseOrderLineInput[];
 }

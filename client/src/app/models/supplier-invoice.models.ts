@@ -33,12 +33,17 @@ export interface SupplierInvoiceDto {
   invoiceDate: string;                  // DateOnly
   dueDate: string;
   status: string;
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  exchangeRate: number;
   vatRate: number;
   subtotalAmount: number;
   vatAmount: number;
   totalAmount: number;                  // gross
   amountPaid: number;
   amountDue: number;
+  baseTotalAmount: number;              // BDT
   approvedAt: string | null;
   approvedBy: string | null;
   notes: string | null;
@@ -56,12 +61,15 @@ export interface SupplierInvoiceListItemDto {
   invoiceDate: string;
   dueDate: string;
   status: string;
+  currencyCode: string;
+  exchangeRate: number;
   vatRate: number;
   subtotalAmount: number;
   vatAmount: number;
   totalAmount: number;
   amountPaid: number;
   amountDue: number;
+  baseTotalAmount: number;              // BDT
   lineCount: number;
 }
 

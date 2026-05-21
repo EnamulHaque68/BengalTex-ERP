@@ -32,6 +32,13 @@ public class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrderEntity
             .HasForeignKey(s => s.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Transaction currency (Phase 21)
+        builder.Property(s => s.ExchangeRate).HasPrecision(18, 6);
+        builder.HasOne(s => s.Currency)
+            .WithMany()
+            .HasForeignKey(s => s.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // One-to-many: SO → Lines
         builder.HasMany(s => s.Lines)
             .WithOne(l => l.SalesOrder)

@@ -79,9 +79,9 @@
           <td class="muted">{{ s.supplierInvoiceNumber || '—' }}</td>
           <td class="num">{{ s.invoiceDate }}</td>
           <td class="num">{{ s.dueDate }}</td>
-          <td class="num">{{ formatCurrency(s.totalAmount) }}</td>
-          <td class="num paid">{{ formatCurrency(s.amountPaid) }}</td>
-          <td class="num outstanding" [class.zero]="s.amountDue === 0">{{ formatCurrency(s.amountDue) }}</td>
+          <td class="num">{{ formatMoney(s.totalAmount, s.currencyCode) }}</td>
+          <td class="num paid">{{ formatMoney(s.amountPaid, s.currencyCode) }}</td>
+          <td class="num outstanding" [class.zero]="s.amountDue === 0">{{ formatMoney(s.amountDue, s.currencyCode) }}</td>
           <td>
             <span class="status-badge"
                   [class.draft]="s.status === 'Draft'"

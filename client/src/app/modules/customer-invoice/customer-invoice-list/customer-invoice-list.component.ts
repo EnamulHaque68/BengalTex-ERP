@@ -443,4 +443,16 @@ export class CustomerInvoiceListComponent implements OnInit {
       style: 'currency', currency: 'BDT', maximumFractionDigits: 2
     }).format(amount || 0);
   }
+
+  /** Format an amount in a given ISO currency code (falls back to plain + code). */
+  formatMoney(amount: number, code: string | null | undefined): string {
+    const c = code || 'BDT';
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: c, maximumFractionDigits: 2
+      }).format(amount || 0);
+    } catch {
+      return `${(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${c}`;
+    }
+  }
 }

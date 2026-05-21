@@ -63,7 +63,7 @@ internal sealed class GetDashboardKpisQueryHandler
             .Select(g => new
             {
                 Count = g.Count(),
-                Sum = g.Sum(x => x.TotalAmount - x.AmountPaid)
+                Sum = g.Sum(x => (x.TotalAmount - x.AmountPaid) * x.ExchangeRate)   // → BDT
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -75,7 +75,7 @@ internal sealed class GetDashboardKpisQueryHandler
             .Select(g => new
             {
                 Count = g.Count(),
-                Sum = g.Sum(x => x.TotalAmount - x.AmountPaid)
+                Sum = g.Sum(x => (x.TotalAmount - x.AmountPaid) * x.ExchangeRate)   // → BDT
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -87,7 +87,7 @@ internal sealed class GetDashboardKpisQueryHandler
             .Select(g => new
             {
                 Count = g.Count(),
-                Sum = g.Sum(x => x.TotalAmount)
+                Sum = g.Sum(x => x.TotalAmount * x.ExchangeRate)   // → BDT
             })
             .FirstOrDefaultAsync(cancellationToken);
 

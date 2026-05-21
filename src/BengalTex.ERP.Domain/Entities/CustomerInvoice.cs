@@ -31,6 +31,13 @@ public class CustomerInvoice : BaseTransactionalEntity
 
     public CustomerInvoiceStatus Status { get; set; } = CustomerInvoiceStatus.Draft;
 
+    /// <summary>Transaction currency (Phase 21). All amounts on this invoice are in this currency.</summary>
+    public int CurrencyId { get; set; }
+    public Currency Currency { get; set; } = null!;
+
+    /// <summary>BDT per 1 unit of <see cref="Currency"/>, snapshot at transaction time. 1 for BDT.</summary>
+    public decimal ExchangeRate { get; set; } = 1m;
+
     /// <summary>
     /// VAT rate as a decimal fraction (0.15 = 15%). Default 0.15 for Bangladesh standard
     /// rate; set to 0 for VAT-exempt customers. Existing pre-Phase-12 rows backfilled to 0.

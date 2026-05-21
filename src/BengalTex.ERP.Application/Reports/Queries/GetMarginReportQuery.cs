@@ -62,6 +62,7 @@ internal sealed class GetMarginReportQueryHandler
                 UomCode = l.Product.UnitOfMeasure.Code,
                 l.Quantity,
                 l.UnitPrice,
+                i.ExchangeRate,                          // revenue → BDT (WAC/COGS is already BDT)
                 Wac = l.Product.WeightedAverageCost
             })
             .ToListAsync(cancellationToken);
@@ -71,8 +72,8 @@ internal sealed class GetMarginReportQueryHandler
             .Select(g =>
             {
                 var qty = g.Sum(x => x.Quantity);
-                var revenue = g.Sum(x => x.Quantity * x.UnitPrice);
-                var cogs = g.Sum(x => x.Quantity * x.Wac);
+                var revenue = g.Sum(x => x.Quantity * x.UnitPrice * x.ExchangeRate);   // → BDT
+                var cogs = g.Sum(x => x.Quantity * x.Wac);                             // WAC already BDT
                 var margin = revenue - cogs;
                 return new MarginReportRowDto(
                     g.Key.ProductId,

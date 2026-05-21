@@ -64,8 +64,10 @@ internal sealed class GetPurchaseOrdersQueryHandler
                 p.Id, p.Code, p.SupplierId, p.Supplier.Name,
                 p.OrderDate, p.ExpectedDeliveryDate,
                 p.Status.ToString(),
+                p.Currency.Code, p.ExchangeRate,
                 p.Lines.Count,
-                p.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m))
+                p.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m,
+                (p.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m) * p.ExchangeRate))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<PurchaseOrderListItemDto>.Create(

@@ -44,7 +44,8 @@ public class SalesOrdersController : ControllerBase
     {
         var result = await _mediator.Send(new CreateSalesOrderCommand(
             request.CustomerId, request.OrderDate, request.RequiredDeliveryDate,
-            request.CustomerPoRef, request.DeliveryAddress, request.Notes, request.Lines
+            request.CustomerPoRef, request.DeliveryAddress, request.Notes,
+            request.CurrencyId, request.ExchangeRate, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -55,7 +56,8 @@ public class SalesOrdersController : ControllerBase
     {
         var result = await _mediator.Send(new UpdateSalesOrderCommand(
             id, request.CustomerId, request.OrderDate, request.RequiredDeliveryDate,
-            request.CustomerPoRef, request.DeliveryAddress, request.Notes, request.Lines
+            request.CustomerPoRef, request.DeliveryAddress, request.Notes,
+            request.CurrencyId, request.ExchangeRate, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -100,6 +102,8 @@ public record CreateSalesOrderRequest(
     string? CustomerPoRef,
     string? DeliveryAddress,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<SalesOrderLineInput> Lines);
 
 public record UpdateSalesOrderRequest(
@@ -109,4 +113,6 @@ public record UpdateSalesOrderRequest(
     string? CustomerPoRef,
     string? DeliveryAddress,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<SalesOrderLineInput> Lines);

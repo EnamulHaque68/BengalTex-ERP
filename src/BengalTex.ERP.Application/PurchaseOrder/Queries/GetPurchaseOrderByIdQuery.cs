@@ -22,6 +22,7 @@ internal sealed class GetPurchaseOrderByIdQueryHandler
             .AsNoTracking()
             .Include(p => p.Supplier)
             .Include(p => p.DeliveryWarehouse)
+            .Include(p => p.Currency)
             .Include(p => p.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
@@ -43,8 +44,9 @@ internal sealed class GetPurchaseOrderByIdQueryHandler
             po.OrderDate, po.ExpectedDeliveryDate,
             po.DeliveryWarehouseId, po.DeliveryWarehouse?.Name,
             po.Status.ToString(),
+            po.CurrencyId, po.Currency.Code, po.Currency.Symbol, po.ExchangeRate,
             po.ApprovedAt, po.ApprovedBy, po.Notes,
-            totalAmount, lines);
+            totalAmount, totalAmount * po.ExchangeRate, lines);
 
         return ApiResponse<PurchaseOrderDto>.Ok(dto);
     }

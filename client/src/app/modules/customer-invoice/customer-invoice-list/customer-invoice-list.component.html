@@ -77,9 +77,9 @@
           <td class="fw-600">{{ c.customerName }}</td>
           <td class="num">{{ c.invoiceDate }}</td>
           <td class="num">{{ c.dueDate }}</td>
-          <td class="num">{{ formatCurrency(c.totalAmount) }}</td>
-          <td class="num paid">{{ formatCurrency(c.amountPaid) }}</td>
-          <td class="num outstanding" [class.zero]="c.amountDue === 0">{{ formatCurrency(c.amountDue) }}</td>
+          <td class="num">{{ formatMoney(c.totalAmount, c.currencyCode) }}</td>
+          <td class="num paid">{{ formatMoney(c.amountPaid, c.currencyCode) }}</td>
+          <td class="num outstanding" [class.zero]="c.amountDue === 0">{{ formatMoney(c.amountDue, c.currencyCode) }}</td>
           <td>
             <span class="status-badge"
                   [class.draft]="c.status === 'Draft'"

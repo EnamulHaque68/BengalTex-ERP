@@ -52,8 +52,9 @@ internal sealed class GetApAgeingReportQueryHandler
                 SupplierName = i.Supplier.Name,
                 i.InvoiceDate,
                 i.DueDate,
-                i.TotalAmount,
-                i.AmountPaid
+                // Convert to base currency (BDT) so a mixed-currency ageing report sums correctly.
+                TotalAmount = i.TotalAmount * i.ExchangeRate,
+                AmountPaid = i.AmountPaid * i.ExchangeRate
             })
             .ToListAsync(cancellationToken);
 
