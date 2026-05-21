@@ -4,6 +4,7 @@ using BengalTex.ERP.Shared.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BengalTex.ERP.Api.Controllers;
 
@@ -23,6 +24,7 @@ public class AuthController : ControllerBase
     /// <summary>POST /api/auth/login — public endpoint, no JWT required</summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var command = new LoginCommand(
@@ -75,6 +77,7 @@ public class AuthController : ControllerBase
     /// <summary>POST /api/auth/forgot-password — public, triggers reset email</summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new ForgotPasswordCommand(request.Email), ct);
@@ -84,6 +87,7 @@ public class AuthController : ControllerBase
     /// <summary>POST /api/auth/reset-password — public, completes password reset using emailed token</summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new ResetPasswordCommand(
