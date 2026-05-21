@@ -1,0 +1,202 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Employees</h2>
+      <p class="page-subtitle">HR &mdash; workforce master (used by attendance &amp; payroll)</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, name, dept..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <label class="inactive-toggle">
+        <p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive
+      </label>
+      <p-button label="Add Employee" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="employees" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Designation</th>
+          <th>Department</th>
+          <th>Phone</th>
+          <th>Type</th>
+          <th>Basic Salary</th>
+          <th>Status</th>
+          <th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td><span class="code-badge">{{ e.code }}</span></td>
+          <td class="fw-600">{{ e.fullName }}</td>
+          <td>{{ e.designation || '—' }}</td>
+          <td>{{ e.department || '—' }}</td>
+          <td class="num">{{ e.phone || '—' }}</td>
+          <td>{{ e.employmentType }}</td>
+          <td class="num">{{ formatCurrency(e.basicSalary) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.active]="e.status === 'Active'"
+                  [class.inactive]="e.status === 'Inactive'"
+                  [class.terminated]="e.status === 'Terminated'">
+              {{ e.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(e)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        (click)="confirmDelete(e)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-users"></i>
+            <span>No employees. Click "Add Employee" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'Add Employee' : 'Edit Employee'"
+          [modal]="true" [style]="{ width: '760px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(blank = auto)</small></label>
+        <input pInputText formControlName="code" placeholder="Auto-generated" class="w-full"
+               [readonly]="dialogMode === 'edit'" />
+      </div>
+      <div class="field">
+        <label>Full Name *</label>
+        <input pInputText formControlName="fullName" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Designation</label>
+        <input pInputText formControlName="designation" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <input pInputText formControlName="department" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <input pInputText formControlName="phone" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input pInputText formControlName="email" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>National ID (NID)</label>
+        <input pInputText formControlName="nationalId" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Basic Salary (BDT) *</label>
+        <p-inputNumber formControlName="basicSalary" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Joining Date *</label>
+        <input pInputText type="date" formControlName="joiningDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Date of Birth</label>
+        <input pInputText type="date" formControlName="dateOfBirth" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Gender *</label>
+        <p-select formControlName="gender" [options]="genders" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Employment Type *</label>
+        <p-select formControlName="employmentType" [options]="employmentTypes" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field" *ngIf="dialogMode === 'edit'">
+        <label>Status</label>
+        <p-select formControlName="status" [options]="statuses" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Address</label>
+        <textarea pInputTextarea rows="2" formControlName="address" class="w-full"></textarea>
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Employee" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deletingEmployee">
+    <p>Delete <strong>{{ deletingEmployee.fullName }}</strong> ({{ deletingEmployee.code }})? This is a soft delete.</p>
+    <div class="alert alert-error" *ngIf="deleteError">
+      <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
