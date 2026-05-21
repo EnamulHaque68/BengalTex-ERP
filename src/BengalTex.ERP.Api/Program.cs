@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using BengalTex.ERP.Api.Authentication;
 using BengalTex.ERP.Api.Authorization;
 using BengalTex.ERP.Api.Hubs;
@@ -54,6 +55,16 @@ builder.Services.AddMemoryCache();
 // ============================================
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 
+// Fail fast if the signing key is missing or weak. Secrets are NOT committed to
+// appsettings.json — supply them via the Jwt__Secret environment variable in production
+// (or appsettings.Development.json, which is git-ignored, for local dev).
+if (string.IsNullOrWhiteSpace(jwtSettings.Secret) || Encoding.UTF8.GetByteCount(jwtSettings.Secret) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret is missing or too short (need at least 32 bytes). Set the 'Jwt__Secret' " +
+        "environment variable (production) or appsettings.Development.json (local dev).");
+}
+
 // AddIdentity registers cookie auth and sets it as DefaultAuthenticate/ChallengeScheme.
 // We override that here so unauthenticated API calls return 401 JSON via JwtBearer
 // instead of being redirected (302) to /Account/Login by the cookie scheme.
@@ -102,6 +113,26 @@ builder.Services
 
 // SignalR for real-time session events
 builder.Services.AddSignalR();
+
+// ============================================
+// RATE LIMITING (brute-force / credential-stuffing protection)
+// ============================================
+// Per-IP fixed window on the public auth endpoints (login / forgot- / reset-password).
+// Complements the per-account Identity lockout (5 fails → 15 min) with an IP-level cap
+// that also blunts username/email enumeration across many accounts.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 // ============================================
 // AUTHORIZATION (Permission-based)
@@ -226,6 +257,9 @@ app.UseAuthentication();
 
 // 7. Authorization (What can they do?)
 app.UseAuthorization();
+
+// 7b. Rate limiter (endpoint policies resolved after routing/auth)
+app.UseRateLimiter();
 
 // 8. Hangfire dashboard (Development only for now)
 if (app.Environment.IsDevelopment())
