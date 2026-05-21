@@ -42,7 +42,8 @@ const routes: Routes = [
       { path: 'qc-inspections', loadChildren: () => import('./modules/qc-inspection/qc-inspection.module').then(m => m.QcInspectionModule) },
       { path: 'quarantine-dispositions', loadChildren: () => import('./modules/quarantine-disposition/quarantine-disposition.module').then(m => m.QuarantineDispositionModule) },
       { path: 'audit-log', loadChildren: () => import('./modules/audit-log/audit-log.module').then(m => m.AuditLogModule) },
-      { path: 'approvals', loadChildren: () => import('./modules/approvals/approvals.module').then(m => m.ApprovalsModule) }
+      { path: 'approvals', loadChildren: () => import('./modules/approvals/approvals.module').then(m => m.ApprovalsModule) },
+      { path: 'employees', loadChildren: () => import('./modules/employee/employee.module').then(m => m.EmployeeModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
