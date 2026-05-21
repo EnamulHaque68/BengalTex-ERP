@@ -253,6 +253,18 @@ public static class Permissions
         public const string View = "AuditLog.View";
     }
 
+    public static class Attachments
+    {
+        public const string View = "Attachments.View";     // list + download
+        public const string Manage = "Attachments.Manage"; // upload + delete
+    }
+
+    public static class Approvals
+    {
+        public const string View = "Approvals.View";   // see approval requests / inbox
+        public const string Act = "Approvals.Act";      // approve / reject pending requests
+    }
+
     /// <summary>
     /// Returns all permission strings via reflection. Used for seeding and admin UI.
     /// </summary>

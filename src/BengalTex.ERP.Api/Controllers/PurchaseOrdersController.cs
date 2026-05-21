@@ -68,11 +68,11 @@ public class PurchaseOrdersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{id:long}/approve")]
+    [HttpPost("{id:long}/submit-for-approval")]
     [HasPermission(Permissions.PurchaseOrders.Approve)]
-    public async Task<IActionResult> Approve(long id, CancellationToken ct)
+    public async Task<IActionResult> SubmitForApproval(long id, CancellationToken ct)
     {
-        var result = await _mediator.Send(new ApprovePurchaseOrderCommand(id), ct);
+        var result = await _mediator.Send(new SubmitPurchaseOrderForApprovalCommand(id), ct);
         return Ok(result);
     }
 

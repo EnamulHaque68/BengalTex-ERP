@@ -1,0 +1,170 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Approvals</h2>
+      <p class="page-subtitle">Document sign-off workflow &mdash; review &amp; decide</p>
+    </div>
+    <div class="header-actions">
+      <div class="mode-toggle">
+        <button type="button" [class.active]="mode === 'inbox'" (click)="setMode('inbox')">
+          <i class="pi pi-inbox"></i> My Inbox
+        </button>
+        <button type="button" [class.active]="mode === 'all'" (click)="setMode('all')">
+          <i class="pi pi-list"></i> All
+        </button>
+      </div>
+      <p-select *ngIf="mode === 'all'"
+                [(ngModel)]="filterStatus"
+                [options]="statuses"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All statuses"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="requests" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Document</th>
+          <th>Reference</th>
+          <th>Requested By</th>
+          <th>Requested At</th>
+          <th>Level</th>
+          <th>Approver Role</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.documentType }}</td>
+          <td><span class="ref-badge">{{ r.documentReference }}</span></td>
+          <td>{{ r.requestedBy || '—' }}</td>
+          <td class="num">{{ formatDate(r.requestedAt) }}</td>
+          <td class="num">{{ r.currentLevel }} / {{ r.totalLevels }}</td>
+          <td>{{ r.currentApproverRole || '—' }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.pending]="r.status === 'Pending'"
+                  [class.approved]="r.status === 'Approved'"
+                  [class.rejected]="r.status === 'Rejected'"
+                  [class.cancelled]="r.status === 'Cancelled'">
+              {{ r.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                        (click)="openDetail(r)" pTooltip="History" />
+              <p-button icon="pi pi-check" severity="success" [text]="true" size="small"
+                        *ngIf="r.status === 'Pending'"
+                        (click)="openDecision(r, 'approve')" pTooltip="Approve" />
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        *ngIf="r.status === 'Pending'"
+                        (click)="openDecision(r, 'reject')" pTooltip="Reject" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-check-circle"></i>
+            <span>{{ mode === 'inbox' ? 'Nothing waiting for your approval.' : 'No approval requests.' }}</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Decision dialog -->
+<p-dialog
+  [(visible)]="decisionVisible"
+  [header]="decisionMode === 'approve' ? 'Approve Request' : 'Reject Request'"
+  [modal]="true"
+  [style]="{ width: '460px' }"
+  [draggable]="false"
+>
+  <div *ngIf="decisionTarget">
+    <p class="decision-line">
+      <strong>{{ decisionTarget.documentType }}</strong> &mdash;
+      <span class="ref-badge">{{ decisionTarget.documentReference }}</span>
+    </p>
+
+    <div class="alert alert-error" *ngIf="decisionError">
+      <i class="pi pi-exclamation-circle"></i>{{ decisionError }}
+    </div>
+
+    <div class="field">
+      <label>Comment <small>(optional)</small></label>
+      <textarea pInputTextarea rows="3" [(ngModel)]="decisionComment"
+                placeholder="Reason / note..." class="w-full"></textarea>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="decisionVisible = false" [disabled]="decisionSaving" />
+      <p-button [label]="decisionMode === 'approve' ? 'Approve' : 'Reject'"
+                [icon]="decisionMode === 'approve' ? 'pi pi-check' : 'pi pi-times'"
+                [severity]="decisionMode === 'approve' ? 'success' : 'danger'"
+                [loading]="decisionSaving" (click)="confirmDecision()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Detail / history dialog -->
+<p-dialog
+  [(visible)]="detailVisible"
+  header="Approval History"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+  [draggable]="false"
+>
+  <div *ngIf="detail">
+    <div class="detail-head">
+      <div><span class="dlabel">Document</span><span class="dval">{{ detail.documentType }} &middot; {{ detail.documentReference }}</span></div>
+      <div><span class="dlabel">Status</span><span class="dval">{{ detail.status }}</span></div>
+      <div><span class="dlabel">Requested By</span><span class="dval">{{ detail.requestedBy || '—' }}</span></div>
+      <div><span class="dlabel">Requested At</span><span class="dval">{{ formatDate(detail.requestedAt) }}</span></div>
+    </div>
+
+    <table class="steps-grid">
+      <thead>
+        <tr><th>Level</th><th>Approver Role</th><th>Status</th><th>Acted At</th><th>Comment</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of detail.steps">
+          <td class="num">{{ s.level }}</td>
+          <td>{{ s.approverRole }}</td>
+          <td>
+            <span class="status-badge sm"
+                  [class.pending]="s.status === 'Pending'"
+                  [class.approved]="s.status === 'Approved'"
+                  [class.rejected]="s.status === 'Rejected'"
+                  [class.cancelled]="s.status === 'Skipped'">
+              {{ s.status }}
+            </span>
+          </td>
+          <td class="num">{{ formatDate(s.actedAt) }}</td>
+          <td class="cmt">{{ s.comment || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="dialog-footer">
+      <p-button label="Close" severity="secondary" [text]="true" (click)="detailVisible = false" />
+    </div>
+  </div>
+</p-dialog>

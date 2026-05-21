@@ -14,6 +14,7 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { PurchaseOrderListComponent } from './purchase-order-list/purchase-order-list.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [{ path: '', component: PurchaseOrderListComponent }];
 
@@ -24,7 +25,7 @@ const routes: Routes = [{ path: '', component: PurchaseOrderListComponent }];
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule
+    TooltipModule, SharedModule
   ]
 })
 export class PurchaseOrderModule {}

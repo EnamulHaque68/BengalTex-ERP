@@ -63,5 +63,6 @@ public enum PurchaseOrderStatus
     PartiallyReceived = 4,   // wired in Phase 4C (GRN-driven)
     Received = 5,            // wired in Phase 4C (GRN-driven)
     Closed = 6,              // wired in Phase 4C
-    Cancelled = 7
+    Cancelled = 7,
+    PendingApproval = 8      // Phase 20 — awaiting approval-workflow sign-off (over threshold)
 }

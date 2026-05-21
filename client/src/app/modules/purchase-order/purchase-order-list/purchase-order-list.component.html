@@ -79,12 +79,13 @@
           <td>
             <span class="status-badge"
                   [class.draft]="p.status === 'Draft'"
+                  [class.pending]="p.status === 'PendingApproval'"
                   [class.approved]="p.status === 'Approved'"
                   [class.sent]="p.status === 'Sent'"
                   [class.received]="p.status === 'PartiallyReceived' || p.status === 'Received'"
                   [class.closed]="p.status === 'Closed'"
                   [class.cancelled]="p.status === 'Cancelled'">
-              {{ p.status === 'PartiallyReceived' ? 'Partial' : p.status }}
+              {{ p.status === 'PartiallyReceived' ? 'Partial' : (p.status === 'PendingApproval' ? 'Pending Approval' : p.status) }}
             </span>
           </td>
           <td>
@@ -96,7 +97,7 @@
               <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'"
                         [loading]="rowActionId === p.id"
-                        (click)="approve(p)" pTooltip="Approve" />
+                        (click)="submitForApproval(p)" pTooltip="Submit for approval" />
               <p-button icon="pi pi-send" severity="info" [text]="true" size="small"
                         *ngIf="p.status === 'Approved'"
                         [loading]="rowActionId === p.id"
@@ -250,6 +251,11 @@
       <p-button label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
                 *ngIf="dialogMode !== 'view'" (click)="addLine()" />
     </div>
+
+    <ng-container *ngIf="editingId">
+      <p class="section-label">Attachments</p>
+      <app-attachments-panel entityType="PurchaseOrder" [entityId]="editingId"></app-attachments-panel>
+    </ng-container>
 
     <div class="dialog-footer">
       <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
