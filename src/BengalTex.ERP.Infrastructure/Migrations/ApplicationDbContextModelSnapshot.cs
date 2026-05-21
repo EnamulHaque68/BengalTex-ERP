@@ -521,6 +521,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -532,6 +535,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
@@ -590,6 +597,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerId");
 
@@ -1606,6 +1615,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1614,6 +1626,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<int?>("DeliveryWarehouseId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<DateOnly?>("ExpectedDeliveryDate")
                         .HasColumnType("date");
@@ -1652,6 +1668,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("DeliveryWarehouseId");
 
@@ -2274,6 +2292,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -2290,6 +2311,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("DeliveryAddress")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -2325,6 +2350,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerId");
 
@@ -3036,6 +3063,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -3044,6 +3074,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
@@ -3102,6 +3136,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("DueDate");
 
@@ -4581,6 +4617,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -4592,6 +4634,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("SalesOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("Customer");
 
@@ -4817,6 +4861,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "DeliveryWarehouse")
                         .WithMany()
                         .HasForeignKey("DeliveryWarehouseId")
@@ -4827,6 +4877,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("DeliveryWarehouse");
 
@@ -4984,11 +5036,19 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SalesOrder", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("Customer");
                 });
@@ -5138,6 +5198,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SupplierInvoice", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseOrder", "PurchaseOrder")
                         .WithMany()
                         .HasForeignKey("PurchaseOrderId")
@@ -5149,6 +5215,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("PurchaseOrder");
 

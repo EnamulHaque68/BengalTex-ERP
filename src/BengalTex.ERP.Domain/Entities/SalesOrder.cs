@@ -28,6 +28,13 @@ public class SalesOrder : BaseTransactionalEntity
 
     public SalesOrderStatus Status { get; set; } = SalesOrderStatus.Draft;
 
+    /// <summary>Transaction currency (Phase 21). Line prices are expressed in this currency.</summary>
+    public int CurrencyId { get; set; }
+    public Currency Currency { get; set; } = null!;
+
+    /// <summary>BDT per 1 unit of <see cref="Currency"/>, snapshot at transaction time. 1 for BDT.</summary>
+    public decimal ExchangeRate { get; set; } = 1m;
+
     public DateTimeOffset? ConfirmedAt { get; set; }
     public string? ConfirmedBy { get; set; }
 

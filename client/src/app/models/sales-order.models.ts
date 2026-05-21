@@ -35,10 +35,15 @@ export interface SalesOrderDto {
   customerPoRef: string | null;
   deliveryAddress: string | null;
   status: string;
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  exchangeRate: number;
   confirmedAt: string | null;
   confirmedBy: string | null;
   notes: string | null;
-  totalAmount: number;
+  totalAmount: number;                     // document currency
+  baseTotalAmount: number;                 // BDT
   lines: SalesOrderLineDto[];
 }
 
@@ -50,8 +55,11 @@ export interface SalesOrderListItemDto {
   orderDate: string;
   requiredDeliveryDate: string | null;
   status: string;
+  currencyCode: string;
+  exchangeRate: number;
   lineCount: number;
-  totalAmount: number;
+  totalAmount: number;                     // document currency
+  baseTotalAmount: number;                 // BDT
 }
 
 export interface SalesOrderLineInput {
@@ -68,6 +76,8 @@ export interface CreateSalesOrderRequest {
   customerPoRef: string | null;
   deliveryAddress: string | null;
   notes: string | null;
+  currencyId: number;
+  exchangeRate: number;
   lines: SalesOrderLineInput[];
 }
 
@@ -78,5 +88,7 @@ export interface UpdateSalesOrderRequest {
   customerPoRef: string | null;
   deliveryAddress: string | null;
   notes: string | null;
+  currencyId: number;
+  exchangeRate: number;
   lines: SalesOrderLineInput[];
 }

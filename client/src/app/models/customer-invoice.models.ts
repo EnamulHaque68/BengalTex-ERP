@@ -32,12 +32,17 @@ export interface CustomerInvoiceDto {
   invoiceDate: string;                  // DateOnly
   dueDate: string;
   status: string;
+  currencyId: number;
+  currencyCode: string;
+  currencySymbol: string;
+  exchangeRate: number;
   vatRate: number;                      // 0.15 = 15%
-  subtotalAmount: number;               // net of VAT
+  subtotalAmount: number;               // net of VAT (document currency)
   vatAmount: number;
   totalAmount: number;                  // gross
   amountPaid: number;
   amountDue: number;
+  baseTotalAmount: number;              // BDT
   issuedAt: string | null;
   issuedBy: string | null;
   notes: string | null;
@@ -55,12 +60,15 @@ export interface CustomerInvoiceListItemDto {
   invoiceDate: string;
   dueDate: string;
   status: string;
+  currencyCode: string;
+  exchangeRate: number;
   vatRate: number;
   subtotalAmount: number;
   vatAmount: number;
   totalAmount: number;
   amountPaid: number;
   amountDue: number;
+  baseTotalAmount: number;              // BDT
   lineCount: number;
 }
 

@@ -12,12 +12,17 @@ public record SupplierInvoiceDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
+    int CurrencyId,
+    string CurrencyCode,
+    string CurrencySymbol,
+    decimal ExchangeRate,                // BDT per 1 unit of currency (inherited from PO)
     decimal VatRate,                     // 0.15 = 15%
-    decimal SubtotalAmount,              // net of VAT
+    decimal SubtotalAmount,              // net of VAT (document currency)
     decimal VatAmount,
     decimal TotalAmount,                 // SubtotalAmount + VatAmount (gross — what we owe)
     decimal AmountPaid,
     decimal AmountDue,                   // TotalAmount − AmountPaid
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
     DateTimeOffset? ApprovedAt,
     string? ApprovedBy,
     string? Notes,
@@ -46,10 +51,13 @@ public record SupplierInvoiceListItemDto(
     DateOnly InvoiceDate,
     DateOnly DueDate,
     string Status,
+    string CurrencyCode,
+    decimal ExchangeRate,
     decimal VatRate,
     decimal SubtotalAmount,
     decimal VatAmount,
     decimal TotalAmount,
     decimal AmountPaid,
     decimal AmountDue,
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
     int LineCount);

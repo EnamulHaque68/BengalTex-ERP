@@ -7,8 +7,9 @@ import { RawMaterialService } from '../../../services/raw-material.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { PO_STATUSES, PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
-import { WarehouseDto } from '../../../models/master-data.models';
+import { WarehouseDto, CurrencyDto } from '../../../models/master-data.models';
 import { RawMaterialListItemDto } from '../../../models/raw-material.models';
+import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-purchase-order-list',
@@ -33,6 +34,7 @@ export class PurchaseOrderListComponent implements OnInit {
   suppliers: SupplierListItemDto[] = [];
   warehouses: WarehouseDto[] = [];
   rawMaterials: RawMaterialListItemDto[] = [];
+  currencies: CurrencyDto[] = [];
 
   // Dialog
   dialogVisible = false;
@@ -56,6 +58,7 @@ export class PurchaseOrderListComponent implements OnInit {
     private supplierService: SupplierService,
     private warehouseService: WarehouseService,
     private rawMaterialService: RawMaterialService,
+    private currencyService: CurrencyService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -79,6 +82,8 @@ export class PurchaseOrderListComponent implements OnInit {
       orderDate: [this.todayIso(), Validators.required],
       expectedDeliveryDate: [null as string | null],
       deliveryWarehouseId: [null as number | null],
+      currencyId: [null as number | null, Validators.required],
+      exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
       notes: ['', Validators.maxLength(2000)],
       lines: this.fb.array([])
     });
@@ -143,6 +148,22 @@ export class PurchaseOrderListComponent implements OnInit {
     }).format(amount || 0);
   }
 
+  /** Format an amount in a given ISO currency code (falls back to plain + code). */
+  formatMoney(amount: number, code: string | null | undefined): string {
+    const c = code || 'BDT';
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: c, maximumFractionDigits: 2
+      }).format(amount || 0);
+    } catch {
+      return `${(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${c}`;
+    }
+  }
+
+  get currentCurrencyCode(): string {
+    return this.currencyCodeById(this.form?.get('currencyId')?.value) || 'BDT';
+  }
+
   formatDate(d: string | null): string {
     return d ? d : '—';
   }
@@ -174,6 +195,31 @@ export class PurchaseOrderListComponent implements OnInit {
         });
       }
     });
+    this.currencyService.getAll(false).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) this.currencies = res.data;
+          // default a brand-new form to the base currency once currencies arrive
+          if (this.dialogVisible && this.dialogMode === 'create' && !this.form.get('currencyId')?.value) {
+            this.form.patchValue({ currencyId: this.baseCurrencyId(), exchangeRate: 1 });
+          }
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  private baseCurrencyId(): number | null {
+    return this.currencies.find(c => c.isBaseCurrency)?.id ?? this.currencies[0]?.id ?? null;
+  }
+
+  currencyCodeById(id: number | null | undefined): string {
+    return id ? (this.currencies.find(c => c.id === id)?.code ?? '') : '';
+  }
+
+  onCurrencyChange(event: any): void {
+    const cur = this.currencies.find(c => c.id === event?.value);
+    if (cur) this.form.get('exchangeRate')?.setValue(cur.exchangeRateToBase);
   }
 
   load(): void {
@@ -227,6 +273,8 @@ export class PurchaseOrderListComponent implements OnInit {
       orderDate: this.todayIso(),
       expectedDeliveryDate: null,
       deliveryWarehouseId: null,
+      currencyId: this.baseCurrencyId(),
+      exchangeRate: 1,
       notes: ''
     });
     this.addLine();
@@ -252,6 +300,8 @@ export class PurchaseOrderListComponent implements OnInit {
               orderDate: p.orderDate,
               expectedDeliveryDate: p.expectedDeliveryDate ?? null,
               deliveryWarehouseId: p.deliveryWarehouseId ?? null,
+              currencyId: p.currencyId,
+              exchangeRate: p.exchangeRate,
               notes: p.notes ?? ''
             });
             p.lines.forEach(l => this.lines.push(
@@ -285,6 +335,8 @@ export class PurchaseOrderListComponent implements OnInit {
       orderDate: v.orderDate,
       expectedDeliveryDate: v.expectedDeliveryDate || null,
       deliveryWarehouseId: v.deliveryWarehouseId ?? null,
+      currencyId: v.currencyId,
+      exchangeRate: Number(v.exchangeRate) || 1,
       notes: (v.notes as string)?.trim() || null,
       lines
     };

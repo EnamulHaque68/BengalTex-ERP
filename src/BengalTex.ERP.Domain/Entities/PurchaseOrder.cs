@@ -24,6 +24,13 @@ public class PurchaseOrder : BaseTransactionalEntity
 
     public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.Draft;
 
+    /// <summary>Transaction currency (Phase 21). Line prices are expressed in this currency.</summary>
+    public int CurrencyId { get; set; }
+    public Currency Currency { get; set; } = null!;
+
+    /// <summary>BDT per 1 unit of <see cref="Currency"/>, snapshot at transaction time. 1 for BDT.</summary>
+    public decimal ExchangeRate { get; set; } = 1m;
+
     public DateTimeOffset? ApprovedAt { get; set; }
     public string? ApprovedBy { get; set; }
 

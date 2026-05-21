@@ -23,6 +23,8 @@ public sealed record CreateSalesOrderCommand(
     string? CustomerPoRef,
     string? DeliveryAddress,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<SalesOrderLineInput> Lines
 ) : IRequest<ApiResponse<SalesOrderDto>>;
 
@@ -32,6 +34,8 @@ public sealed class CreateSalesOrderCommandValidator : AbstractValidator<CreateS
     {
         RuleFor(x => x.CustomerId).GreaterThan(0);
         RuleFor(x => x.OrderDate).NotEmpty();
+        RuleFor(x => x.CurrencyId).GreaterThan(0);
+        RuleFor(x => x.ExchangeRate).GreaterThan(0);
         RuleFor(x => x.CustomerPoRef).MaximumLength(100);
         RuleFor(x => x.DeliveryAddress).MaximumLength(500);
         RuleFor(x => x.Notes).MaximumLength(2000);
@@ -56,6 +60,7 @@ internal sealed class CreateSalesOrderCommandHandler
     private readonly IRepository<Domain.Entities.SalesOrder, long> _repo;
     private readonly IRepository<Domain.Entities.Customer> _customerRepo;
     private readonly IRepository<Domain.Entities.Product> _productRepo;
+    private readonly IRepository<Domain.Entities.Currency> _currencyRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -64,6 +69,7 @@ internal sealed class CreateSalesOrderCommandHandler
         IRepository<Domain.Entities.SalesOrder, long> repo,
         IRepository<Domain.Entities.Customer> customerRepo,
         IRepository<Domain.Entities.Product> productRepo,
+        IRepository<Domain.Entities.Currency> currencyRepo,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
@@ -71,6 +77,7 @@ internal sealed class CreateSalesOrderCommandHandler
         _repo = repo;
         _customerRepo = customerRepo;
         _productRepo = productRepo;
+        _currencyRepo = currencyRepo;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -81,6 +88,9 @@ internal sealed class CreateSalesOrderCommandHandler
     {
         var customer = await _customerRepo.GetByIdAsync(cmd.CustomerId, cancellationToken);
         if (customer is null) return ApiResponse<SalesOrderDto>.Fail("Customer not found.");
+
+        var currency = await _currencyRepo.GetByIdAsync(cmd.CurrencyId, cancellationToken);
+        if (currency is null) return ApiResponse<SalesOrderDto>.Fail("Currency not found.");
 
         var productIds = cmd.Lines.Select(l => l.ProductId).Distinct().ToList();
         var existingCount = await _productRepo.Query()
@@ -99,6 +109,8 @@ internal sealed class CreateSalesOrderCommandHandler
             CustomerPoRef = string.IsNullOrWhiteSpace(cmd.CustomerPoRef) ? null : cmd.CustomerPoRef.Trim(),
             DeliveryAddress = string.IsNullOrWhiteSpace(cmd.DeliveryAddress) ? null : cmd.DeliveryAddress.Trim(),
             Status = Domain.Entities.SalesOrderStatus.Draft,
+            CurrencyId = cmd.CurrencyId,
+            ExchangeRate = cmd.ExchangeRate,
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.SalesOrderLine
             {

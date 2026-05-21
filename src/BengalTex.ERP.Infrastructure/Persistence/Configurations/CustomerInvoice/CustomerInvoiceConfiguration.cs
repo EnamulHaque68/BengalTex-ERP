@@ -37,6 +37,13 @@ public class CustomerInvoiceConfiguration : IEntityTypeConfiguration<CustomerInv
             .HasForeignKey(c => c.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Transaction currency (Phase 21)
+        builder.Property(c => c.ExchangeRate).HasPrecision(18, 6);
+        builder.HasOne(c => c.Currency)
+            .WithMany()
+            .HasForeignKey(c => c.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // SO FK — Restrict (invoice is derived from the SO; preserve linkage)
         builder.HasOne(c => c.SalesOrder)
             .WithMany()

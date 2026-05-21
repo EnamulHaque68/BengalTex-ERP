@@ -7,6 +7,8 @@ import { PagedQueryParameters } from '../../../models/user.models';
 import { SO_STATUSES, SalesOrderListItemDto } from '../../../models/sales-order.models';
 import { CustomerListItemDto } from '../../../models/customer.models';
 import { ProductListItemDto } from '../../../models/product.models';
+import { CurrencyDto } from '../../../models/master-data.models';
+import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-sales-order-list',
@@ -30,6 +32,7 @@ export class SalesOrderListComponent implements OnInit {
   readonly statuses = SO_STATUSES;
   customers: CustomerListItemDto[] = [];
   products: ProductListItemDto[] = [];
+  currencies: CurrencyDto[] = [];
 
   // Dialog
   dialogVisible = false;
@@ -52,6 +55,7 @@ export class SalesOrderListComponent implements OnInit {
     private soService: SalesOrderService,
     private customerService: CustomerService,
     private productService: ProductService,
+    private currencyService: CurrencyService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -76,6 +80,8 @@ export class SalesOrderListComponent implements OnInit {
       requiredDeliveryDate: [null as string | null],
       customerPoRef: ['', Validators.maxLength(100)],
       deliveryAddress: ['', Validators.maxLength(500)],
+      currencyId: [null as number | null, Validators.required],
+      exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
       notes: ['', Validators.maxLength(2000)],
       lines: this.fb.array([])
     });
@@ -163,6 +169,45 @@ export class SalesOrderListComponent implements OnInit {
         });
       }
     });
+    this.currencyService.getAll(false).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) this.currencies = res.data;
+          if (this.dialogVisible && this.dialogMode === 'create' && !this.form.get('currencyId')?.value) {
+            this.form.patchValue({ currencyId: this.baseCurrencyId(), exchangeRate: 1 });
+          }
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  private baseCurrencyId(): number | null {
+    return this.currencies.find(c => c.isBaseCurrency)?.id ?? this.currencies[0]?.id ?? null;
+  }
+
+  currencyCodeById(id: number | null | undefined): string {
+    return id ? (this.currencies.find(c => c.id === id)?.code ?? '') : '';
+  }
+
+  onCurrencyChange(event: any): void {
+    const cur = this.currencies.find(c => c.id === event?.value);
+    if (cur) this.form.get('exchangeRate')?.setValue(cur.exchangeRateToBase);
+  }
+
+  get currentCurrencyCode(): string {
+    return this.currencyCodeById(this.form?.get('currencyId')?.value) || 'BDT';
+  }
+
+  formatMoney(amount: number, code: string | null | undefined): string {
+    const c = code || 'BDT';
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: c, maximumFractionDigits: 2
+      }).format(amount || 0);
+    } catch {
+      return `${(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${c}`;
+    }
   }
 
   load(): void {
@@ -217,6 +262,8 @@ export class SalesOrderListComponent implements OnInit {
       requiredDeliveryDate: null,
       customerPoRef: '',
       deliveryAddress: '',
+      currencyId: this.baseCurrencyId(),
+      exchangeRate: 1,
       notes: ''
     });
     this.addLine();
@@ -243,6 +290,8 @@ export class SalesOrderListComponent implements OnInit {
               requiredDeliveryDate: s.requiredDeliveryDate ?? null,
               customerPoRef: s.customerPoRef ?? '',
               deliveryAddress: s.deliveryAddress ?? '',
+              currencyId: s.currencyId,
+              exchangeRate: s.exchangeRate,
               notes: s.notes ?? ''
             });
             s.lines.forEach(l => this.lines.push(
@@ -277,6 +326,8 @@ export class SalesOrderListComponent implements OnInit {
       requiredDeliveryDate: v.requiredDeliveryDate || null,
       customerPoRef: (v.customerPoRef as string)?.trim() || null,
       deliveryAddress: (v.deliveryAddress as string)?.trim() || null,
+      currencyId: v.currencyId,
+      exchangeRate: Number(v.exchangeRate) || 1,
       notes: (v.notes as string)?.trim() || null,
       lines
     };

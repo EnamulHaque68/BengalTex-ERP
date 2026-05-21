@@ -44,7 +44,8 @@ public class PurchaseOrdersController : ControllerBase
     {
         var result = await _mediator.Send(new CreatePurchaseOrderCommand(
             request.SupplierId, request.OrderDate, request.ExpectedDeliveryDate,
-            request.DeliveryWarehouseId, request.Notes, request.Lines
+            request.DeliveryWarehouseId, request.Notes,
+            request.CurrencyId, request.ExchangeRate, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -55,7 +56,8 @@ public class PurchaseOrdersController : ControllerBase
     {
         var result = await _mediator.Send(new UpdatePurchaseOrderCommand(
             id, request.SupplierId, request.OrderDate, request.ExpectedDeliveryDate,
-            request.DeliveryWarehouseId, request.Notes, request.Lines
+            request.DeliveryWarehouseId, request.Notes,
+            request.CurrencyId, request.ExchangeRate, request.Lines
         ), ct);
         return Ok(result);
     }
@@ -107,6 +109,8 @@ public record CreatePurchaseOrderRequest(
     DateOnly? ExpectedDeliveryDate,
     int? DeliveryWarehouseId,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<PurchaseOrderLineInput> Lines);
 
 public record UpdatePurchaseOrderRequest(
@@ -115,4 +119,6 @@ public record UpdatePurchaseOrderRequest(
     DateOnly? ExpectedDeliveryDate,
     int? DeliveryWarehouseId,
     string? Notes,
+    int CurrencyId,
+    decimal ExchangeRate,
     IReadOnlyList<PurchaseOrderLineInput> Lines);

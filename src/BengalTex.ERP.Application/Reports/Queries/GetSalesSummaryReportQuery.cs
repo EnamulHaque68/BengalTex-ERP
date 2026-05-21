@@ -61,7 +61,8 @@ internal sealed class GetSalesSummaryReportQueryHandler
             .Select(s => new
             {
                 s.CustomerId,
-                Total = s.Lines.Sum(l => l.Quantity * l.UnitPrice)
+                Total = s.Lines.Sum(l => l.Quantity * l.UnitPrice),
+                s.ExchangeRate
             })
             .ToListAsync(cancellationToken);
 
@@ -71,7 +72,7 @@ internal sealed class GetSalesSummaryReportQueryHandler
             {
                 CustomerId = g.Key,
                 Count = g.Count(),
-                Total = g.Sum(x => x.Total)
+                Total = g.Sum(x => x.Total * x.ExchangeRate)   // → BDT
             })
             .ToList();
 
@@ -87,7 +88,8 @@ internal sealed class GetSalesSummaryReportQueryHandler
             .Select(d => new
             {
                 CustomerId = d.SalesOrder.CustomerId,
-                Value = d.Lines.Sum(l => l.DispatchedQuantity * l.SalesOrderLine.UnitPrice)
+                Value = d.Lines.Sum(l => l.DispatchedQuantity * l.SalesOrderLine.UnitPrice),
+                ExchangeRate = d.SalesOrder.ExchangeRate
             })
             .ToListAsync(cancellationToken);
 
@@ -97,7 +99,7 @@ internal sealed class GetSalesSummaryReportQueryHandler
             {
                 CustomerId = g.Key,
                 Count = g.Count(),
-                Value = g.Sum(x => x.Value)
+                Value = g.Sum(x => x.Value * x.ExchangeRate)   // → BDT
             })
             .ToList();
 
@@ -115,11 +117,12 @@ internal sealed class GetSalesSummaryReportQueryHandler
             {
                 CustomerId = g.Key,
                 Count = g.Count(),
-                InvoicedNet = g.Sum(x => x.SubtotalAmount),
-                VatCollected = g.Sum(x => x.VatAmount),
-                InvoicedTotal = g.Sum(x => x.TotalAmount),
-                AmountPaid = g.Sum(x => x.AmountPaid),
-                AmountDue = g.Sum(x => x.TotalAmount - x.AmountPaid)
+                // Convert each invoice to base currency (BDT) before summing across the customer.
+                InvoicedNet = g.Sum(x => x.SubtotalAmount * x.ExchangeRate),
+                VatCollected = g.Sum(x => x.VatAmount * x.ExchangeRate),
+                InvoicedTotal = g.Sum(x => x.TotalAmount * x.ExchangeRate),
+                AmountPaid = g.Sum(x => x.AmountPaid * x.ExchangeRate),
+                AmountDue = g.Sum(x => (x.TotalAmount - x.AmountPaid) * x.ExchangeRate)
             })
             .ToListAsync(cancellationToken);
 

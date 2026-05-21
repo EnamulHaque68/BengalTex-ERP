@@ -21,6 +21,7 @@ internal sealed class GetSalesOrderByIdQueryHandler
         var so = await _repo.Query()
             .AsNoTracking()
             .Include(s => s.Customer)
+            .Include(s => s.Currency)
             .Include(s => s.Lines).ThenInclude(l => l.Product).ThenInclude(p => p.UnitOfMeasure)
             .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
@@ -42,8 +43,9 @@ internal sealed class GetSalesOrderByIdQueryHandler
             so.OrderDate, so.RequiredDeliveryDate,
             so.CustomerPoRef, so.DeliveryAddress,
             so.Status.ToString(),
+            so.CurrencyId, so.Currency.Code, so.Currency.Symbol, so.ExchangeRate,
             so.ConfirmedAt, so.ConfirmedBy, so.Notes,
-            totalAmount, lines);
+            totalAmount, totalAmount * so.ExchangeRate, lines);
 
         return ApiResponse<SalesOrderDto>.Ok(dto);
     }

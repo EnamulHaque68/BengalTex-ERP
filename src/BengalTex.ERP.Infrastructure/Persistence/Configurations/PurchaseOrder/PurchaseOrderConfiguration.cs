@@ -36,6 +36,13 @@ public class PurchaseOrderConfiguration : IEntityTypeConfiguration<PurchaseOrder
             .HasForeignKey(p => p.DeliveryWarehouseId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Transaction currency (Phase 21)
+        builder.Property(p => p.ExchangeRate).HasPrecision(18, 6);
+        builder.HasOne(p => p.Currency)
+            .WithMany()
+            .HasForeignKey(p => p.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // One-to-many: PurchaseOrder → PurchaseOrderLines
         builder.HasMany(p => p.Lines)
             .WithOne(l => l.PurchaseOrder)

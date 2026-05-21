@@ -124,6 +124,8 @@ internal sealed class CreateCustomerInvoiceCommandHandler
             InvoiceDate = cmd.InvoiceDate,
             DueDate = dueDate,
             Status = Domain.Entities.CustomerInvoiceStatus.Draft,
+            CurrencyId = so.CurrencyId,          // invoice inherits the SO's currency
+            ExchangeRate = so.ExchangeRate,
             VatRate = cmd.VatRate,
             SubtotalAmount = subtotal,
             VatAmount = vatAmount,

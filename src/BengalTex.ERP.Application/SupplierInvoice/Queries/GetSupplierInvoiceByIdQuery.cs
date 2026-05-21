@@ -22,6 +22,7 @@ internal sealed class GetSupplierInvoiceByIdQueryHandler
             .AsNoTracking()
             .Include(s => s.Supplier)
             .Include(s => s.PurchaseOrder)
+            .Include(s => s.Currency)
             .Include(s => s.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
             .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
@@ -43,8 +44,10 @@ internal sealed class GetSupplierInvoiceByIdQueryHandler
             inv.SupplierInvoiceNumber,
             inv.InvoiceDate, inv.DueDate,
             inv.Status.ToString(),
+            inv.CurrencyId, inv.Currency.Code, inv.Currency.Symbol, inv.ExchangeRate,
             inv.VatRate, inv.SubtotalAmount, inv.VatAmount,
             inv.TotalAmount, inv.AmountPaid, inv.TotalAmount - inv.AmountPaid,
+            inv.TotalAmount * inv.ExchangeRate,
             inv.ApprovedAt, inv.ApprovedBy, inv.Notes,
             lines);
 

@@ -22,6 +22,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             .AsNoTracking()
             .Include(c => c.Customer)
             .Include(c => c.SalesOrder)
+            .Include(c => c.Currency)
             .Include(c => c.VatChallan)
             .Include(c => c.Lines).ThenInclude(l => l.Product).ThenInclude(p => p.UnitOfMeasure)
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
@@ -43,8 +44,10 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             inv.SalesOrderId, inv.SalesOrder.Code,
             inv.InvoiceDate, inv.DueDate,
             inv.Status.ToString(),
+            inv.CurrencyId, inv.Currency.Code, inv.Currency.Symbol, inv.ExchangeRate,
             inv.VatRate, inv.SubtotalAmount, inv.VatAmount,
             inv.TotalAmount, inv.AmountPaid, inv.TotalAmount - inv.AmountPaid,
+            inv.TotalAmount * inv.ExchangeRate,
             inv.IssuedAt, inv.IssuedBy, inv.Notes,
             inv.VatChallan?.Code,
             lines);
