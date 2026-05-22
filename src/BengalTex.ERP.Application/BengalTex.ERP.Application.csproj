@@ -21,4 +21,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Lets the test project exercise internal command/query handlers directly. -->
+    <InternalsVisibleTo Include="BengalTex.ERP.Api.Tests" />
+  </ItemGroup>
+
 </Project>
