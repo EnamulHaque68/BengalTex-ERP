@@ -84,6 +84,7 @@ public class DataSeeder : IDataSeeder
             p == Permissions.Dashboard.ViewAccounts ||
             p == Permissions.AuditLog.View ||
             p.StartsWith("Attachments.") ||
+            p.StartsWith("Banking.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Customers.View ||
             p == Permissions.Suppliers.View));
@@ -451,6 +452,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "EMP",  Description = "Employee Code",       Prefix = "BTX/EMP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SUB",  Description = "Subcontract Order",   Prefix = "BTX/SUB",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "STY",  Description = "Style Code",          Prefix = "BTX/STY",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "LC",   Description = "Letter of Credit",    Prefix = "BTX/LC",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)
