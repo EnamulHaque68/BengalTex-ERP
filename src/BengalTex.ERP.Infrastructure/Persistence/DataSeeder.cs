@@ -39,6 +39,96 @@ public class DataSeeder : IDataSeeder
         await SeedProductCategoriesAsync(ct);
         await SeedSuperAdminAsync(ct);
         await SeedNumberingSeriesAsync(ct);
+        await SeedChartOfAccountsAsync(ct);
+    }
+
+    // ─── Chart of Accounts ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds a standard garments-accessories Chart of Accounts: 5 top-level group accounts
+    /// (Assets/Liabilities/Equity/Income/Expense) with the detail accounts the auto-journal
+    /// flows will post to. Idempotent — only adds accounts whose Code doesn't already exist.
+    /// </summary>
+    private async Task SeedChartOfAccountsAsync(CancellationToken ct)
+    {
+        // (Code, Name, Type, IsGroup, ParentCode) — parents must precede children.
+        var defs = new (string Code, string Name, AccountType Type, bool IsGroup, string? Parent)[]
+        {
+            // ── Assets (1000) ──
+            ("1000", "Assets", AccountType.Asset, true, null),
+            ("1100", "Current Assets", AccountType.Asset, true, "1000"),
+            ("1110", "Cash in Hand", AccountType.Asset, false, "1100"),
+            ("1120", "Bank Accounts", AccountType.Asset, false, "1100"),
+            ("1130", "Accounts Receivable", AccountType.Asset, false, "1100"),
+            ("1140", "Raw Material Inventory", AccountType.Asset, false, "1100"),
+            ("1150", "Finished Goods Inventory", AccountType.Asset, false, "1100"),
+            ("1160", "Work In Progress (WIP)", AccountType.Asset, false, "1100"),
+            ("1170", "VAT Receivable (Input VAT)", AccountType.Asset, false, "1100"),
+            ("1180", "Advance to Suppliers", AccountType.Asset, false, "1100"),
+            ("1200", "Fixed Assets", AccountType.Asset, true, "1000"),
+            ("1210", "Machinery & Equipment", AccountType.Asset, false, "1200"),
+
+            // ── Liabilities (2000) ──
+            ("2000", "Liabilities", AccountType.Liability, true, null),
+            ("2100", "Current Liabilities", AccountType.Liability, true, "2000"),
+            ("2110", "Accounts Payable", AccountType.Liability, false, "2100"),
+            ("2120", "VAT Payable (Output VAT)", AccountType.Liability, false, "2100"),
+            ("2130", "Salary Payable", AccountType.Liability, false, "2100"),
+            ("2140", "Advance from Customers", AccountType.Liability, false, "2100"),
+            ("2200", "Long Term Liabilities", AccountType.Liability, true, "2000"),
+            ("2210", "Bank Loan", AccountType.Liability, false, "2200"),
+
+            // ── Equity (3000) ──
+            ("3000", "Equity", AccountType.Equity, true, null),
+            ("3100", "Owner's Capital", AccountType.Equity, false, "3000"),
+            ("3200", "Retained Earnings", AccountType.Equity, false, "3000"),
+            ("3300", "Owner's Drawings", AccountType.Equity, false, "3000"),
+
+            // ── Income (4000) ──
+            ("4000", "Income", AccountType.Income, true, null),
+            ("4100", "Sales Revenue", AccountType.Income, false, "4000"),
+            ("4200", "Other Income", AccountType.Income, false, "4000"),
+            ("4300", "Exchange Gain", AccountType.Income, false, "4000"),
+
+            // ── Expenses (5000) ──
+            ("5000", "Expenses", AccountType.Expense, true, null),
+            ("5100", "Cost of Goods Sold", AccountType.Expense, false, "5000"),
+            ("5200", "Salary & Wages", AccountType.Expense, false, "5000"),
+            ("5300", "Factory Overhead", AccountType.Expense, false, "5000"),
+            ("5400", "Administrative Expense", AccountType.Expense, false, "5000"),
+            ("5500", "Selling & Distribution Expense", AccountType.Expense, false, "5000"),
+            ("5600", "Bank Charges", AccountType.Expense, false, "5000"),
+            ("5700", "Material Wastage", AccountType.Expense, false, "5000"),
+            ("5800", "Exchange Loss", AccountType.Expense, false, "5000"),
+        };
+
+        var existingCodes = (await _db.Accounts.IgnoreQueryFilters()
+            .Select(a => a.Code).ToListAsync(ct)).ToHashSet();
+        var byCode = new Dictionary<string, Account>();
+
+        foreach (var d in defs)
+        {
+            if (existingCodes.Contains(d.Code)) continue;
+
+            int? parentId = null;
+            if (d.Parent is not null && byCode.TryGetValue(d.Parent, out var p))
+                parentId = p.Id;   // resolved after each batch save below; see two-pass note
+
+            var account = new Account
+            {
+                Code = d.Code,
+                Name = d.Name,
+                AccountType = d.Type,
+                IsGroup = d.IsGroup,
+                ParentAccountId = parentId,
+                IsSystem = true,
+                IsActive = true
+            };
+            byCode[d.Code] = account;
+            _db.Accounts.Add(account);
+            // Save immediately so the generated Id is available as a parent for the next rows.
+            await _db.SaveChangesAsync(ct);
+        }
     }
 
     // ─── Roles ───────────────────────────────────────────────────────────────
@@ -85,6 +175,7 @@ public class DataSeeder : IDataSeeder
             p == Permissions.AuditLog.View ||
             p.StartsWith("Attachments.") ||
             p.StartsWith("Banking.") ||
+            p.StartsWith("Accounting.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Notifications.View ||
             p == Permissions.Customers.View ||
@@ -456,6 +547,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "STY",  Description = "Style Code",          Prefix = "BTX/STY",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "LC",   Description = "Letter of Credit",    Prefix = "BTX/LC",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "LOT",  Description = "Stock Lot / Batch",   Prefix = "BTX/LOT",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "JV",   Description = "Journal Voucher",     Prefix = "BTX/JV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

@@ -237,6 +237,14 @@ public static class Permissions
         public const string Manage = "Banking.Manage";   // open / ship / settle / cancel LC
     }
 
+    public static class Accounting
+    {
+        public const string View = "Accounting.View";              // see chart of accounts, journals, reports
+        public const string ManageAccounts = "Accounting.ManageAccounts";  // create/edit/delete chart-of-accounts nodes
+        public const string CreateJournal = "Accounting.CreateJournal";    // create/edit/delete draft journal vouchers
+        public const string PostJournal = "Accounting.PostJournal";        // post (freeze) journal vouchers into the ledger
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";

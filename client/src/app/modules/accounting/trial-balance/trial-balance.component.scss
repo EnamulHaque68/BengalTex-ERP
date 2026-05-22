@@ -1,0 +1,19 @@
+.page-shell { padding: 1.5rem 2rem; }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+  .header-actions { display: flex; align-items: center; gap: 0.6rem; }
+  .lbl { font-size: 0.82rem; color: #6b7280; } .date-input { width: 150px; }
+}
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+.num, .num-h { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-right { text-align: right; font-weight: 700; }
+.totals-row td { font-weight: 700; border-top: 2px solid #e5e7eb; background: #f9fafb; }
+.code-badge { background: #e0e7ff; color: #3730a3; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; font-family: monospace; }
+.type-badge { padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  &.asset { background: #d1fae5; color: #065f46; } &.liability { background: #fee2e2; color: #991b1b; }
+  &.equity { background: #ede9fe; color: #5b21b6; } &.income { background: #dbeafe; color: #1e40af; } &.expense { background: #fef3c7; color: #92400e; } }
+.empty-row { text-align: center; padding: 3rem !important; color: #9ca3af; i { display: block; font-size: 2rem; margin-bottom: 0.5rem; } }
+.bal-note { margin-top: 1rem; text-align: right; }
+.bal { font-size: 0.9rem; font-weight: 700; i { margin-right: 0.3rem; } &.ok { color: #059669; } &.no { color: #b45309; } }
