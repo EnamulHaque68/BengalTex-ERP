@@ -65,4 +65,15 @@ public class AccountsController : ControllerBase
     public async Task<IActionResult> GeneralLedger(
         int id, [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
         => Ok(await _mediator.Send(new GetGeneralLedgerQuery(id, fromDate, toDate), ct));
+
+    [HttpGet("profit-loss")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> ProfitAndLoss(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetProfitAndLossQuery(fromDate, toDate), ct));
+
+    [HttpGet("balance-sheet")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> BalanceSheet([FromQuery] DateOnly? asOfDate = null, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetBalanceSheetQuery(asOfDate), ct));
 }

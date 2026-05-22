@@ -1,0 +1,21 @@
+.page-shell { padding: 1.5rem 2rem; }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+  .header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .lbl { font-size: 0.8rem; color: #6b7280; } .date-input { width: 140px; }
+}
+.stmt { max-width: 720px; }
+.block { background: #fff; border: 1px solid #f1f5f9; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+  h3 { margin: 0 0 0.5rem; font-size: 0.95rem; font-weight: 700; color: #374151; } }
+.stmt-grid { width: 100%; border-collapse: collapse;
+  td { padding: 0.35rem 0.25rem; border-bottom: 1px solid #f8fafc; font-size: 0.88rem; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .code { font-family: monospace; font-size: 0.72rem; color: #3730a3; margin-right: 0.4rem; }
+  .subtotal td { font-weight: 700; border-top: 2px solid #e5e7eb; border-bottom: none; color: #111827; }
+  .muted td { color: #9ca3af; }
+}
+.net { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-radius: 10px; font-weight: 800; font-size: 1.05rem;
+  .num { font-variant-numeric: tabular-nums; }
+  &.profit { background: #d1fae5; color: #065f46; } &.loss { background: #fee2e2; color: #991b1b; } }

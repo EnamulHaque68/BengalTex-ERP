@@ -1,0 +1,38 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Profit &amp; Loss</h2>
+      <p class="page-subtitle">Income less expenses over a period (posted journals only)</p>
+    </div>
+    <div class="header-actions">
+      <label class="lbl">From</label><input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <label class="lbl">To</label><input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="stmt" *ngIf="data">
+    <section class="block">
+      <h3>Income</h3>
+      <table class="stmt-grid">
+        <tr *ngFor="let r of data.income"><td><span class="code">{{ r.accountCode }}</span> {{ r.accountName }}</td><td class="num">{{ r.amount | number:'1.2-2' }}</td></tr>
+        <tr *ngIf="!data.income.length" class="muted"><td>No income.</td><td class="num">0.00</td></tr>
+        <tr class="subtotal"><td>Total Income</td><td class="num">{{ data.totalIncome | number:'1.2-2' }}</td></tr>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3>Expenses</h3>
+      <table class="stmt-grid">
+        <tr *ngFor="let r of data.expenses"><td><span class="code">{{ r.accountCode }}</span> {{ r.accountName }}</td><td class="num">{{ r.amount | number:'1.2-2' }}</td></tr>
+        <tr *ngIf="!data.expenses.length" class="muted"><td>No expenses.</td><td class="num">0.00</td></tr>
+        <tr class="subtotal"><td>Total Expense</td><td class="num">{{ data.totalExpense | number:'1.2-2' }}</td></tr>
+      </table>
+    </section>
+
+    <div class="net" [class.profit]="data.netProfit >= 0" [class.loss]="data.netProfit < 0">
+      <span>{{ data.netProfit >= 0 ? 'Net Profit' : 'Net Loss' }}</span>
+      <span class="num">{{ data.netProfit | number:'1.2-2' }}</span>
+    </div>
+  </div>
+</div>
