@@ -1,0 +1,67 @@
+.page-shell { padding: 1.5rem 2rem; }
+
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+}
+
+.filter-bar {
+  display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: #6b7280; }
+  .year-input { width: 90px; }
+  .search-wrap {
+    position: relative;
+    i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+    input { padding-left: 2.25rem; min-width: 180px; }
+  }
+}
+
+:host ::ng-deep .filter-select { min-width: 180px; }
+:host ::ng-deep .filter-select-sm { min-width: 130px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.net { color: #065f46; }
+.emp-code { font-size: 0.7rem; color: #9ca3af; font-family: monospace; margin-left: 0.3rem; }
+
+.status-badge {
+  padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  &.draft { background: #fef3c7; color: #92400e; }
+  &.paid  { background: #d1fae5; color: #065f46; }
+}
+.paid-note { font-size: 0.72rem; color: #9ca3af; }
+.row-actions { display: flex; align-items: center; gap: 0.05rem; }
+
+.empty-row {
+  text-align: center; padding: 3rem !important; color: #9ca3af;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { font-size: 0.9rem; }
+}
+
+.hint { font-size: 0.82rem; color: #6b7280; margin: 0 0 1rem; }
+
+.gen-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem 1rem;
+  .field { display: flex; flex-direction: column; gap: 0.3rem;
+    label { font-size: 0.8rem; font-weight: 600; color: #374151; } }
+  .col-span-2 { grid-column: span 2; }
+  .net-preview { justify-content: flex-end; .net-val { font-size: 1.05rem; font-weight: 700; color: #065f46; } }
+}
+.w-full { width: 100%; }
+
+.ps-head {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem;
+  padding: 0 0 0.85rem; border-bottom: 1px dashed #e5e7eb; margin-bottom: 1rem;
+  > div { display: flex; flex-direction: column; gap: 0.1rem; }
+  .dlabel { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: #9ca3af; font-weight: 600; }
+  .dval { font-size: 0.85rem; color: #111827; }
+}
+
+.dialog-footer {
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+  margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;
+}

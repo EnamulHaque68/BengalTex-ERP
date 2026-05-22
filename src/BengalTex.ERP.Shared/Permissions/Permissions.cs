@@ -197,6 +197,12 @@ public static class Permissions
         public const string ViewSuspiciousActivity = "Attendance.ViewSuspiciousActivity";
     }
 
+    public static class Payroll
+    {
+        public const string View = "Payroll.View";        // see payslips
+        public const string Process = "Payroll.Process";   // generate / adjust / mark paid / delete
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";
