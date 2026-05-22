@@ -44,7 +44,8 @@ const routes: Routes = [
       { path: 'audit-log', loadChildren: () => import('./modules/audit-log/audit-log.module').then(m => m.AuditLogModule) },
       { path: 'approvals', loadChildren: () => import('./modules/approvals/approvals.module').then(m => m.ApprovalsModule) },
       { path: 'employees', loadChildren: () => import('./modules/employee/employee.module').then(m => m.EmployeeModule) },
-      { path: 'attendance', loadChildren: () => import('./modules/attendance/attendance.module').then(m => m.AttendanceModule) }
+      { path: 'attendance', loadChildren: () => import('./modules/attendance/attendance.module').then(m => m.AttendanceModule) },
+      { path: 'payroll', loadChildren: () => import('./modules/payroll/payroll.module').then(m => m.PayrollModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

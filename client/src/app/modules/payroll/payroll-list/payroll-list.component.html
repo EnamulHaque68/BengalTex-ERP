@@ -1,0 +1,175 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Payroll</h2>
+      <p class="page-subtitle">Monthly payslips &mdash; computed from salary &amp; attendance</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Generate Payroll" icon="pi pi-cog" (click)="openGenerate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search employee..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <label>Year <input pInputText type="number" [(ngModel)]="filterYear" (change)="load()" class="year-input" /></label>
+    <p-select [(ngModel)]="filterMonth" [options]="months" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All months" styleClass="filter-select-sm" (onChange)="load()" />
+    <p-select [(ngModel)]="filterEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+              [showClear]="true" [filter]="true" filterBy="code,fullName" placeholder="All employees"
+              styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="payslips" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Employee</th>
+          <th>Period</th>
+          <th>Basic</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>OT hrs</th>
+          <th>Allow.</th>
+          <th>Deduct.</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          <th style="width:140px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td class="fw-600">{{ p.employeeName }} <span class="emp-code">{{ p.employeeCode }}</span></td>
+          <td class="num">{{ monthName(p.month) }} {{ p.year }}</td>
+          <td class="num">{{ formatCurrency(p.basicSalary) }}</td>
+          <td class="num">{{ p.presentDays }}</td>
+          <td class="num">{{ p.absentDays }}</td>
+          <td class="num">{{ p.overtimeHours }}</td>
+          <td class="num">{{ formatCurrency(p.allowances) }}</td>
+          <td class="num">{{ formatCurrency(p.deductions) }}</td>
+          <td class="num fw-700 net">{{ formatCurrency(p.netPay) }}</td>
+          <td>
+            <span class="status-badge" [class.draft]="p.status === 'Draft'" [class.paid]="p.status === 'Paid'">
+              {{ p.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'" (click)="openEdit(p)" pTooltip="Adjust" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'" [loading]="rowActionId === p.id"
+                        (click)="markPaid(p)" pTooltip="Mark paid" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'" (click)="confirmDelete(p)" pTooltip="Delete" />
+              <span class="paid-note" *ngIf="p.status === 'Paid'">Paid</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="11" class="empty-row">
+            <i class="pi pi-wallet"></i>
+            <span>No payslips. Click "Generate Payroll" for a month.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Generate dialog -->
+<p-dialog [(visible)]="generateVisible" header="Generate Payroll" [modal]="true" [style]="{ width: '420px' }" [draggable]="false">
+  <p class="hint">Creates draft payslips for all active employees who don't yet have one for the selected month — computed from each employee's basic salary &amp; that month's attendance.</p>
+  <div class="alert alert-error" *ngIf="generateError"><i class="pi pi-exclamation-circle"></i>{{ generateError }}</div>
+  <div class="gen-grid">
+    <div class="field">
+      <label>Year</label>
+      <input pInputText type="number" [(ngModel)]="generateYear" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Month</label>
+      <p-select [(ngModel)]="generateMonth" [options]="months" optionLabel="label" optionValue="value"
+                appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="generateVisible = false" [disabled]="generating" />
+    <p-button label="Generate" icon="pi pi-cog" [loading]="generating" (click)="doGenerate()" />
+  </div>
+</p-dialog>
+
+<!-- Edit (adjust) dialog -->
+<p-dialog [(visible)]="editVisible" header="Adjust Payslip" [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="saveEdit()" *ngIf="editing">
+    <div class="alert alert-error" *ngIf="editError"><i class="pi pi-exclamation-circle"></i>{{ editError }}</div>
+    <div class="ps-head">
+      <div><span class="dlabel">Employee</span><span class="dval">{{ editing.employeeName }}</span></div>
+      <div><span class="dlabel">Period</span><span class="dval">{{ monthName(editing.month) }} {{ editing.year }}</span></div>
+      <div><span class="dlabel">Basic</span><span class="dval">{{ formatCurrency(editing.basicSalary) }}</span></div>
+      <div><span class="dlabel">Present / Absent</span><span class="dval">{{ editing.presentDays }} / {{ editing.absentDays }}</span></div>
+    </div>
+    <div class="gen-grid">
+      <div class="field">
+        <label>Overtime Amount</label>
+        <p-inputNumber formControlName="overtimeAmount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Allowances</label>
+        <p-inputNumber formControlName="allowances" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Deductions</label>
+        <p-inputNumber formControlName="deductions" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field net-preview">
+        <label>Net Pay</label>
+        <span class="net-val">{{ formatCurrency(previewNet) }}</span>
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="editVisible = false" [disabled]="editSaving" />
+      <p-button type="submit" [label]="editSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
+                [loading]="editSaving" [disabled]="form.invalid || editSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Payslip" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deletingPayslip">
+    <p>Delete the {{ monthName(deletingPayslip.month) }} {{ deletingPayslip.year }} payslip for
+       <strong>{{ deletingPayslip.employeeName }}</strong>? This is a soft delete.</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

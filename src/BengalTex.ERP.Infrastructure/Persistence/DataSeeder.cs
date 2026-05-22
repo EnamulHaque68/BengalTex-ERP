@@ -91,6 +91,7 @@ public class DataSeeder : IDataSeeder
         await AssignPermissionsAsync("HRManager", all.Where(p =>
             p.StartsWith("Employees.") ||
             p.StartsWith("Attendance.") ||
+            p.StartsWith("Payroll.") ||
             p == Permissions.Reports.ViewHr ||
             p == Permissions.Reports.Export ||
             p == Permissions.Dashboard.ViewHr));
