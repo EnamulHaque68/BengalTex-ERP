@@ -19,20 +19,23 @@ public sealed class ApprovalService : IApprovalService
     private readonly ApprovalSettings _settings;
     private readonly IDateTimeProvider _clock;
     private readonly ICurrentUserService _currentUser;
+    private readonly INotificationService _notifications;
 
     public ApprovalService(
         ApplicationDbContext db,
         IOptions<ApprovalSettings> settings,
         IDateTimeProvider clock,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        INotificationService notifications)
     {
         _db = db;
         _settings = settings.Value;
         _clock = clock;
         _currentUser = currentUser;
+        _notifications = notifications;
     }
 
-    public Task<ApprovalSubmitResult> SubmitAsync(
+    public async Task<ApprovalSubmitResult> SubmitAsync(
         string documentType, long documentId, string documentReference,
         decimal amount, CancellationToken ct = default)
     {
@@ -63,7 +66,20 @@ public sealed class ApprovalService : IApprovalService
         });
 
         _db.ApprovalRequests.Add(request);   // caller saves
-        return Task.FromResult(new ApprovalSubmitResult(auto));
+
+        // Notify the approver role that a request is waiting (record-only; caller commits).
+        if (!auto)
+        {
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp,
+                _settings.PurchaseOrderApproverRole,
+                $"{documentType} {documentReference} pending approval",
+                $"{documentType} {documentReference} (amount {amount:N2}) was submitted by " +
+                $"{_currentUser.UserName ?? _currentUser.UserId} and is awaiting your approval.",
+                documentType, documentId, ct);
+        }
+
+        return new ApprovalSubmitResult(auto);
     }
 
     public async Task<IReadOnlyList<ApprovalRequestDto>> GetInboxAsync(

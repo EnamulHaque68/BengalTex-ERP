@@ -221,6 +221,12 @@ public static class Permissions
         public const string Delete = "Styles.Delete";
     }
 
+    public static class Notifications
+    {
+        public const string View = "Notifications.View";
+        public const string Send = "Notifications.Send";
+    }
+
     public static class Banking
     {
         public const string View = "Banking.View";
