@@ -67,6 +67,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
     public DbSet<StockOnHand> StockOnHand => Set<StockOnHand>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<StockLot> StockLots => Set<StockLot>();
     public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
     public DbSet<StockAdjustmentLine> StockAdjustmentLines => Set<StockAdjustmentLine>();
     public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();

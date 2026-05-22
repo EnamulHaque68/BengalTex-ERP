@@ -9,11 +9,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.GoodsReceipt.Commands;
 
-/// <summary>One line of a GRN — quantity received against a specific PO line.</summary>
+/// <summary>One line of a GRN — quantity received against a specific PO line.
+/// Optional lot fields, when LotNumber is set, create a traceable <c>StockLot</c> on post.</summary>
 public sealed record GoodsReceiptLineInput(
     long PurchaseOrderLineId,
     decimal ReceivedQuantity,
-    string? LineNotes);
+    string? LineNotes,
+    string? LotNumber = null,
+    string? Shade = null,
+    DateOnly? ManufactureDate = null,
+    DateOnly? ExpiryDate = null);
 
 public sealed record CreateGoodsReceiptCommand(
     long PurchaseOrderId,
@@ -39,6 +44,8 @@ public sealed class CreateGoodsReceiptCommandValidator : AbstractValidator<Creat
             line.RuleFor(l => l.PurchaseOrderLineId).GreaterThan(0);
             line.RuleFor(l => l.ReceivedQuantity).GreaterThan(0);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
+            line.RuleFor(l => l.LotNumber).MaximumLength(100);
+            line.RuleFor(l => l.Shade).MaximumLength(100);
         });
         RuleFor(x => x.Lines)
             .Must(lines => lines.Select(l => l.PurchaseOrderLineId).Distinct().Count() == lines.Count)
@@ -124,7 +131,11 @@ internal sealed class CreateGoodsReceiptCommandHandler
                 PurchaseOrderLineId = l.PurchaseOrderLineId,
                 ReceivedQuantity = l.ReceivedQuantity,
                 SortOrder = i,
-                LineNotes = l.LineNotes
+                LineNotes = l.LineNotes,
+                LotNumber = string.IsNullOrWhiteSpace(l.LotNumber) ? null : l.LotNumber.Trim(),
+                Shade = string.IsNullOrWhiteSpace(l.Shade) ? null : l.Shade.Trim(),
+                ManufactureDate = l.ManufactureDate,
+                ExpiryDate = l.ExpiryDate
             }).ToList()
         };
 

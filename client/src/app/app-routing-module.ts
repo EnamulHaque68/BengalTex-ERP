@@ -49,7 +49,8 @@ const routes: Routes = [
       { path: 'subcontract-orders', loadChildren: () => import('./modules/subcontract/subcontract.module').then(m => m.SubcontractModule) },
       { path: 'styles', loadChildren: () => import('./modules/style/style.module').then(m => m.StyleModule) },
       { path: 'letters-of-credit', loadChildren: () => import('./modules/banking/banking.module').then(m => m.BankingModule) },
-      { path: 'notifications', loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule) }
+      { path: 'notifications', loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule) },
+      { path: 'stock-lots', loadChildren: () => import('./modules/stock-lots/stock-lots.module').then(m => m.StockLotsModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

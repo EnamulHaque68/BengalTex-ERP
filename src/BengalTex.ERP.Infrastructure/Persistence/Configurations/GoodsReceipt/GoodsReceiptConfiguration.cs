@@ -56,6 +56,10 @@ public class GoodsReceiptLineConfiguration : IEntityTypeConfiguration<GoodsRecei
         builder.Property(l => l.ReturnedQuantity).HasPrecision(18, 4);
         builder.Property(l => l.LineNotes).HasMaxLength(1000);
 
+        // Optional lot/batch capture (creates a StockLot on GRN post)
+        builder.Property(l => l.LotNumber).HasMaxLength(100);
+        builder.Property(l => l.Shade).HasMaxLength(100);
+
         builder.HasIndex(l => l.GoodsReceiptNoteId);
         builder.HasIndex(l => l.PurchaseOrderLineId);
 

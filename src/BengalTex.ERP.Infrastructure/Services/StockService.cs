@@ -32,7 +32,7 @@ public sealed class StockService : IStockService
         int rawMaterialId, int warehouseId, decimal signedQuantity,
         StockMovementType movementType, string? referenceType, long? referenceId,
         string? referenceCode, DateOnly movementDate, string? notes,
-        CancellationToken ct = default)
+        CancellationToken ct = default, StockLot? lot = null)
     {
         if (rawMaterialId <= 0)
             throw new ArgumentException("Raw material id is required.", nameof(rawMaterialId));
@@ -40,14 +40,14 @@ public sealed class StockService : IStockService
         return PostInternalAsync(
             rawMaterialId: rawMaterialId, productId: null,
             warehouseId, signedQuantity, movementType,
-            referenceType, referenceId, referenceCode, movementDate, notes, ct);
+            referenceType, referenceId, referenceCode, movementDate, notes, lot, ct);
     }
 
     public Task PostProductMovementAsync(
         int productId, int warehouseId, decimal signedQuantity,
         StockMovementType movementType, string? referenceType, long? referenceId,
         string? referenceCode, DateOnly movementDate, string? notes,
-        CancellationToken ct = default)
+        CancellationToken ct = default, StockLot? lot = null)
     {
         if (productId <= 0)
             throw new ArgumentException("Product id is required.", nameof(productId));
@@ -55,7 +55,7 @@ public sealed class StockService : IStockService
         return PostInternalAsync(
             rawMaterialId: null, productId: productId,
             warehouseId, signedQuantity, movementType,
-            referenceType, referenceId, referenceCode, movementDate, notes, ct);
+            referenceType, referenceId, referenceCode, movementDate, notes, lot, ct);
     }
 
     public async Task<decimal> GetRawMaterialOnHandAsync(
@@ -93,7 +93,7 @@ public sealed class StockService : IStockService
     private async Task PostInternalAsync(
         int? rawMaterialId, int? productId, int warehouseId, decimal signedQuantity,
         StockMovementType movementType, string? referenceType, long? referenceId,
-        string? referenceCode, DateOnly movementDate, string? notes, CancellationToken ct)
+        string? referenceCode, DateOnly movementDate, string? notes, StockLot? lot, CancellationToken ct)
     {
         if (warehouseId <= 0)
             throw new ArgumentException("Warehouse id is required.", nameof(warehouseId));
@@ -108,6 +108,8 @@ public sealed class StockService : IStockService
             RawMaterialId = rawMaterialId,
             ProductId = productId,
             WarehouseId = warehouseId,
+            // Set the navigation (not the FK) so a NEW lot's store-generated key resolves on commit.
+            Lot = lot,
             SignedQuantity = signedQuantity,
             MovementType = movementType,
             ReferenceType = referenceType,

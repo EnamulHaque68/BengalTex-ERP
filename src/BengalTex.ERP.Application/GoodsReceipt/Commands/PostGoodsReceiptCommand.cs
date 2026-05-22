@@ -27,23 +27,29 @@ internal sealed class PostGoodsReceiptCommandHandler
 {
     private readonly IRepository<Domain.Entities.GoodsReceiptNote, long> _repo;
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
+    private readonly IRepository<Domain.Entities.StockLot, long> _lotRepo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
+    private readonly INumberingService _numbering;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
     public PostGoodsReceiptCommandHandler(
         IRepository<Domain.Entities.GoodsReceiptNote, long> repo,
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
+        IRepository<Domain.Entities.StockLot, long> lotRepo,
         IUnitOfWork uow,
         IStockService stock,
+        INumberingService numbering,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
         _repo = repo;
         _poRepo = poRepo;
+        _lotRepo = lotRepo;
         _uow = uow;
         _stock = stock;
+        _numbering = numbering;
         _currentUser = currentUser;
         _mediator = mediator;
     }
@@ -103,6 +109,33 @@ internal sealed class PostGoodsReceiptCommandHandler
                     (qtyBefore * poLine.RawMaterial.WeightedAverageCost + grnLine.ReceivedQuantity * receivedCost) / denom;
             }
 
+            // ── Lot/batch capture — a line carrying a lot number births a traceable StockLot,
+            //    and its GrnReceipt movement is tagged with that lot (FK resolves via navigation).
+            Domain.Entities.StockLot? lot = null;
+            if (!string.IsNullOrWhiteSpace(grnLine.LotNumber))
+            {
+                lot = new Domain.Entities.StockLot
+                {
+                    Code = await _numbering.NextAsync("LOT", null, cancellationToken),
+                    LotNumber = grnLine.LotNumber!.Trim(),
+                    RawMaterialId = poLine.RawMaterialId,
+                    WarehouseId = grn.ReceivingWarehouseId,
+                    SupplierId = po.SupplierId,
+                    Shade = grnLine.Shade,
+                    ReceivedDate = grn.ReceiveDate,
+                    ManufactureDate = grnLine.ManufactureDate,
+                    ExpiryDate = grnLine.ExpiryDate,
+                    InitialQuantity = grnLine.ReceivedQuantity,
+                    CurrentQuantity = grnLine.ReceivedQuantity,
+                    Status = Domain.Entities.LotStatus.Active,
+                    SourceType = "GRN",
+                    SourceId = grn.Id,
+                    SourceCode = grn.Code,
+                    Notes = grnLine.LineNotes
+                };
+                await _lotRepo.AddAsync(lot, cancellationToken);
+            }
+
             await _stock.PostRawMaterialMovementAsync(
                 rawMaterialId: poLine.RawMaterialId,
                 warehouseId: grn.ReceivingWarehouseId,
@@ -113,7 +146,8 @@ internal sealed class PostGoodsReceiptCommandHandler
                 referenceCode: grn.Code,
                 movementDate: grn.ReceiveDate,
                 notes: grnLine.LineNotes,
-                ct: cancellationToken);
+                ct: cancellationToken,
+                lot: lot);
         }
 
         // Recompute PO status

@@ -190,6 +190,10 @@
             <th class="num-col">Already Recvd</th>
             <th class="num-col">Remaining</th>
             <th class="num-col receive-col">Receive Now</th>
+            <th class="lot-col">Lot No.</th>
+            <th class="lot-col">Shade</th>
+            <th class="date-col">Mfg Date</th>
+            <th class="date-col">Expiry</th>
             <th>Line Notes</th>
           </tr>
         </thead>
@@ -206,11 +210,23 @@
                              inputStyleClass="grid-num" />
             </td>
             <td>
+              <input pInputText formControlName="lotNumber" placeholder="(optional)" class="lot-input" />
+            </td>
+            <td>
+              <input pInputText formControlName="shade" placeholder="(optional)" class="lot-input" />
+            </td>
+            <td>
+              <input pInputText type="date" formControlName="manufactureDate" class="date-input" />
+            </td>
+            <td>
+              <input pInputText type="date" formControlName="expiryDate" class="date-input" />
+            </td>
+            <td>
               <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
             </td>
           </tr>
           <tr *ngIf="lines.length === 0">
-            <td colspan="7" class="empty-lines">
+            <td colspan="11" class="empty-lines">
               <ng-container *ngIf="!form.get('purchaseOrderId')?.value">
                 Select a Purchase Order to load its lines.
               </ng-container>
@@ -223,6 +239,7 @@
       </table>
       <small class="grid-hint" *ngIf="lines.length > 0 && dialogMode !== 'view'">
         Set <em>Receive Now</em> to 0 to skip a line. Lines with 0 are excluded on save.
+        Enter a <em>Lot No.</em> to create a traceable batch (with shade / expiry) when this GRN is posted.
       </small>
     </div>
 

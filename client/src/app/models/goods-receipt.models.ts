@@ -17,6 +17,10 @@ export interface GoodsReceiptLineDto {
   returnedQuantity: number;           // already-returned via posted SRNs
   sortOrder: number;
   lineNotes: string | null;
+  lotNumber: string | null;           // optional lot/batch capture (Round 3 lot tracking)
+  shade: string | null;
+  manufactureDate: string | null;
+  expiryDate: string | null;
 }
 
 export interface GoodsReceiptDto {
@@ -53,6 +57,10 @@ export interface GoodsReceiptLineInput {
   purchaseOrderLineId: number;
   receivedQuantity: number;
   lineNotes: string | null;
+  lotNumber?: string | null;
+  shade?: string | null;
+  manufactureDate?: string | null;
+  expiryDate?: string | null;
 }
 
 export interface CreateGoodsReceiptRequest {

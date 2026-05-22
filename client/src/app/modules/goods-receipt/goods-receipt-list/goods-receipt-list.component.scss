@@ -131,7 +131,7 @@
 
 // ─── Line grid ─────────────────────────────────────────────────────────────
 
-.lines-wrap { padding-top: 0.25rem; }
+.lines-wrap { padding-top: 0.25rem; overflow-x: auto; }
 
 .line-grid {
   width: 100%;
@@ -157,8 +157,10 @@
 
   .num-col, .num { text-align: right; font-variant-numeric: tabular-nums; }
   .unit-col, .unit-cell { text-align: center; }
-  .rm-col { min-width: 220px; }
-  .receive-col { width: 130px; }
+  .rm-col { min-width: 200px; }
+  .receive-col { width: 110px; }
+  .lot-col { width: 120px; }
+  .date-col { width: 140px; }
 
   .rm-cell {
     font-size: 0.85rem;
@@ -183,6 +185,8 @@
 :host ::ng-deep .line-grid .p-inputnumber { width: 100%; }
 
 .line-notes-input { width: 100%; font-size: 0.8rem; }
+.lot-input { width: 100%; font-size: 0.8rem; }
+.date-input { width: 100%; font-size: 0.78rem; }
 
 .empty-lines {
   text-align: center;
