@@ -1,0 +1,88 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Expenses</h2>
+      <p class="page-subtitle">Operating expenses — approve to record &amp; pay (auto-posts Dr Expense / Cr Cash·Bank)</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap"><i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, payee..." (input)="onSearch($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterCategoryId" [options]="categories" optionLabel="name" optionValue="id" [showClear]="true" placeholder="All categories" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All" styleClass="filter-select-sm" (onChange)="load()" />
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <a routerLink="/expenses/categories" class="link-btn"><i class="pi pi-tags"></i> Categories</a>
+      <a routerLink="/expenses/summary" class="link-btn"><i class="pi pi-chart-pie"></i> Summary</a>
+      <p-button *ngIf="canCreate" label="Add Expense" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="expenses" [loading]="loading" [paginator]="true" [rows]="parameters.pageSize || 25" [totalRecords]="totalCount"
+             [lazy]="true" (onLazyLoad)="onPage($event)" [first]="((parameters.page||1)-1)*(parameters.pageSize||25)" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Date</th><th>Category</th><th>Payee</th><th>Method</th><th class="num-h">Amount</th><th>Status</th><th style="width:130px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td><span class="code-badge">{{ e.code }}</span></td>
+          <td class="num">{{ e.expenseDate | date:'yyyy-MM-dd' }}</td>
+          <td>{{ e.expenseCategoryName }}</td>
+          <td class="muted">{{ e.payee || '—' }}</td>
+          <td class="muted">{{ e.paymentMethod }}</td>
+          <td class="num fw-600">{{ e.amount | number:'1.2-2' }}</td>
+          <td><span class="status-badge" [class]="statusClass(e.status)">{{ e.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="e.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="open(e)" [pTooltip]="e.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status === 'Draft' && canApprove" [loading]="rowActionId === e.id" (click)="approve(e)" pTooltip="Approve & pay" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small" *ngIf="e.status === 'Approved' && canApprove" [loading]="rowActionId === e.id" (click)="cancel(e)" pTooltip="Cancel (reverse)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status === 'Draft' && canCreate" (click)="confirmDelete(e)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-row"><i class="pi pi-wallet"></i><span>No expenses.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'Add Expense' : (dialogMode==='edit' ? 'Edit Expense' : 'View Expense')" [modal]="true" [style]="{ width: '560px' }">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode==='view'"><i class="pi pi-lock"></i>Read-only — only draft expenses can be edited.</div>
+    <div class="dialog-grid">
+      <div class="field"><label>Date *</label><input pInputText type="date" formControlName="expenseDate" class="w-full" /></div>
+      <div class="field"><label>Amount *</label><p-inputNumber formControlName="amount" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" class="w-full" /></div>
+      <div class="field col-span-2"><label>Category *</label>
+        <p-select formControlName="expenseCategoryId" [options]="categories" optionLabel="name" optionValue="id" [filter]="true" filterBy="name" placeholder="Select category" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field"><label>Payment Method *</label>
+        <p-select formControlName="paymentMethod" [options]="methods" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field"><label>Payee</label><input pInputText formControlName="payee" class="w-full" /></div>
+      <div class="field col-span-2"><label>Reference</label><input pInputText formControlName="referenceNumber" class="w-full" placeholder="voucher / cheque no" /></div>
+      <div class="field col-span-2"><label>Description</label><input pInputText formControlName="description" class="w-full" /></div>
+    </div>
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+      <p-button *ngIf="dialogMode!=='view'" type="submit" [label]="dialogSaving ? 'Saving...' : 'Save Draft'" icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Expense" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete draft <strong>{{ deleting.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

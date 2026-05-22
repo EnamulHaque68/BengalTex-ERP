@@ -40,6 +40,45 @@ public class DataSeeder : IDataSeeder
         await SeedSuperAdminAsync(ct);
         await SeedNumberingSeriesAsync(ct);
         await SeedChartOfAccountsAsync(ct);
+        await SeedExpenseCategoriesAsync(ct);
+    }
+
+    // ─── Expense Categories ────────────────────────────────────────────────────
+
+    /// <summary>Seeds common expense categories mapped to their expense ledger account (by code).
+    /// Idempotent by Name. Requires the Chart of Accounts to be seeded first.</summary>
+    private async Task SeedExpenseCategoriesAsync(CancellationToken ct)
+    {
+        var defs = new (string Name, string AccountCode)[]
+        {
+            ("Office Rent", "5400"),
+            ("Electricity", "5300"),
+            ("Internet & Telephone", "5400"),
+            ("Transport & Fuel", "5500"),
+            ("Machine Maintenance", "5300"),
+            ("Printing & Stationery", "5400"),
+            ("Packaging Expense", "5300"),
+            ("Entertainment", "5400"),
+            ("Bank Charges", "5600"),
+            ("Miscellaneous", "5400"),
+        };
+
+        var existing = (await _db.ExpenseCategories.IgnoreQueryFilters()
+            .Select(c => c.Name).ToListAsync(ct)).ToHashSet();
+        var accounts = await _db.Accounts.IgnoreQueryFilters()
+            .ToDictionaryAsync(a => a.Code, a => a.Id, ct);
+
+        foreach (var d in defs)
+        {
+            if (existing.Contains(d.Name)) continue;
+            _db.ExpenseCategories.Add(new ExpenseCategory
+            {
+                Name = d.Name,
+                LedgerAccountId = accounts.TryGetValue(d.AccountCode, out var id) ? id : null,
+                IsActive = true
+            });
+        }
+        await _db.SaveChangesAsync(ct);
     }
 
     // ─── Chart of Accounts ─────────────────────────────────────────────────────
@@ -176,6 +215,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Attachments.") ||
             p.StartsWith("Banking.") ||
             p.StartsWith("Accounting.") ||
+            p.StartsWith("Expenses.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Notifications.View ||
             p == Permissions.Customers.View ||
@@ -548,6 +588,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "LC",   Description = "Letter of Credit",    Prefix = "BTX/LC",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "LOT",  Description = "Stock Lot / Batch",   Prefix = "BTX/LOT",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "JV",   Description = "Journal Voucher",     Prefix = "BTX/JV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "EXP",  Description = "Expense Voucher",     Prefix = "BTX/EXP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)
