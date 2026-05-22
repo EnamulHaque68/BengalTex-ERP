@@ -221,6 +221,15 @@ public static class Permissions
         public const string Delete = "Styles.Delete";
     }
 
+    public static class Banking
+    {
+        public const string View = "Banking.View";
+        public const string Create = "Banking.Create";
+        public const string Edit = "Banking.Edit";
+        public const string Delete = "Banking.Delete";
+        public const string Manage = "Banking.Manage";   // open / ship / settle / cancel LC
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";

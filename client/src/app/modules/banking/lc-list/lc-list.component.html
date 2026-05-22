@@ -1,0 +1,177 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Letters of Credit</h2>
+      <p class="page-subtitle">Import LC tracking &mdash; open, shipment, settlement</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search LC no, bank, supplier..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="New LC" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="lcs" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>LC Number</th>
+          <th>Bank</th>
+          <th>Supplier</th>
+          <th>Amount</th>
+          <th>Issue</th>
+          <th>Expiry</th>
+          <th>Status</th>
+          <th style="width:210px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-l>
+        <tr>
+          <td><span class="code-badge">{{ l.code }}</span></td>
+          <td class="fw-600">{{ l.lcNumber }}</td>
+          <td>{{ l.issuingBank }}</td>
+          <td>{{ l.supplierName }}</td>
+          <td class="num">{{ formatMoney(l.amount, l.currencyCode) }}</td>
+          <td class="num">{{ formatDate(l.issueDate) }}</td>
+          <td class="num">{{ formatDate(l.expiryDate) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="l.status === 'Draft'"
+                  [class.open]="l.status === 'Open'"
+                  [class.shipped]="l.status === 'Shipped'"
+                  [class.settled]="l.status === 'Settled'"
+                  [class.cancelled]="l.status === 'Cancelled'">
+              {{ l.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="canEdit(l) ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(l)" [pTooltip]="canEdit(l) ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="info" [text]="true" size="small"
+                        *ngIf="canOpen(l)" [loading]="rowActionId === l.id" (click)="open(l)" pTooltip="Open LC" />
+              <p-button icon="pi pi-send" severity="contrast" [text]="true" size="small"
+                        *ngIf="canShip(l)" [loading]="rowActionId === l.id" (click)="ship(l)" pTooltip="Mark shipped" />
+              <p-button icon="pi pi-check-square" severity="success" [text]="true" size="small"
+                        *ngIf="canSettle(l)" [loading]="rowActionId === l.id" (click)="settle(l)" pTooltip="Settle" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="canCancel(l)" [loading]="rowActionId === l.id" (click)="cancel(l)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(l)" (click)="confirmDelete(l)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-row">
+          <i class="pi pi-credit-card"></i><span>No letters of credit. Click "New LC".</span>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Letter of Credit' : 'Edit Letter of Credit'"
+          [modal]="true" [style]="{ width: '820px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(blank = auto)</small></label>
+        <input pInputText formControlName="code" placeholder="Auto-generated" class="w-full" [readonly]="dialogMode === 'edit'" />
+      </div>
+      <div class="field">
+        <label>LC Number (bank) *</label>
+        <input pInputText formControlName="lcNumber" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Issuing Bank *</label>
+        <input pInputText formControlName="issuingBank" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Supplier (beneficiary) *</label>
+        <p-select formControlName="supplierId" [options]="suppliers" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="code,name" placeholder="Select" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Currency *</label>
+        <p-select formControlName="currencyId" [options]="currencies" optionLabel="code" optionValue="id"
+                  placeholder="Currency" appendTo="body" class="w-full" styleClass="w-full" (onChange)="onCurrencyChange($event)" />
+      </div>
+      <div class="field">
+        <label>Exchange Rate (→ BDT) *</label>
+        <p-inputNumber formControlName="exchangeRate" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="6" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>LC Amount *</label>
+        <p-inputNumber formControlName="amount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Tenor (days)</label>
+        <p-inputNumber formControlName="tenorDays" [min]="0" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Issue Date *</label>
+        <input pInputText type="date" formControlName="issueDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Expiry Date *</label>
+        <input pInputText type="date" formControlName="expiryDate" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Linked Purchase Order <small>(optional)</small></label>
+        <p-select formControlName="purchaseOrderId" [options]="purchaseOrders" optionLabel="code" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="code,supplierName" placeholder="Select PO"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Letter of Credit" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deletingLc">
+    <p>Delete <strong>{{ deletingLc.lcNumber }}</strong> ({{ deletingLc.code }})? This is a soft delete.</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
