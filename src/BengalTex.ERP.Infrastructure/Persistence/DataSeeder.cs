@@ -104,6 +104,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Returns.") ||
             p.StartsWith("Qc.") ||
             p.StartsWith("Attachments.") ||
+            p.StartsWith("Subcontracting.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Reports.ViewProduction ||
             p == Permissions.Reports.ViewInventory ||
@@ -447,6 +448,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "QC",   Description = "QC Inspection",     Prefix = "BTX/QC",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "DISP", Description = "Quarantine Disposition", Prefix = "BTX/DISP", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "EMP",  Description = "Employee Code",       Prefix = "BTX/EMP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "SUB",  Description = "Subcontract Order",   Prefix = "BTX/SUB",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

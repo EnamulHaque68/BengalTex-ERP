@@ -66,5 +66,7 @@ public enum StockMovementType
     QcRejectIn = 13,        // inbound to quarantine wh — QC-rejected qty segregated
     Scrap = 14,             // outbound write-off — quarantined stock scrapped (disposition)
     QuarantineReleaseOut = 15, // outbound from quarantine wh — released back to usable stock
-    QuarantineReleaseIn = 16   // inbound to destination wh — released quarantined stock
+    QuarantineReleaseIn = 16,  // inbound to destination wh — released quarantined stock
+    SubcontractIssueOut = 17,  // outbound — material issued to a subcontractor for processing
+    SubcontractReceiveIn = 18  // inbound — processed material received back from a subcontractor
 }

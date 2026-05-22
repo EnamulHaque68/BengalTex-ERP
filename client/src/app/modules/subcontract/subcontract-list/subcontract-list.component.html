@@ -1,0 +1,207 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Subcontracting</h2>
+      <p class="page-subtitle">Outsourced processing &mdash; issue material out, receive processed back</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, subcontractor, process..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="New Subcontract" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="orders" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Subcontractor</th>
+          <th>Process</th>
+          <th>Warehouse</th>
+          <th>Order Date</th>
+          <th>Lines</th>
+          <th>Charge</th>
+          <th>Status</th>
+          <th style="width:200px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-o>
+        <tr>
+          <td><span class="code-badge">{{ o.code }}</span></td>
+          <td class="fw-600">{{ o.subcontractorName }}</td>
+          <td>{{ o.processType }}</td>
+          <td>{{ o.warehouseName }}</td>
+          <td class="num">{{ formatDate(o.orderDate) }}</td>
+          <td class="num">{{ o.lineCount }}</td>
+          <td class="num">{{ formatCurrency(o.chargeAmount) }}</td>
+          <td>
+            <span class="status-badge"
+                  [class.draft]="o.status === 'Draft'"
+                  [class.issued]="o.status === 'Issued'"
+                  [class.received]="o.status === 'Received'"
+                  [class.cancelled]="o.status === 'Cancelled'">
+              {{ o.status }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="canEdit(o) ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(o)" [pTooltip]="canEdit(o) ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-send" severity="info" [text]="true" size="small"
+                        *ngIf="canIssue(o)" [loading]="rowActionId === o.id" (click)="issue(o)" pTooltip="Issue to subcontractor" />
+              <p-button icon="pi pi-download" severity="success" [text]="true" size="small"
+                        *ngIf="canReceive(o)" (click)="openReceive(o)" pTooltip="Receive back" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="canCancel(o)" [loading]="rowActionId === o.id" (click)="cancel(o)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete(o)" (click)="confirmDelete(o)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-row">
+          <i class="pi pi-sync"></i><span>No subcontract orders. Click "New Subcontract".</span>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Subcontract Order' : (dialogMode === 'edit' ? 'Edit Subcontract Order' : 'View Subcontract Order')"
+          [modal]="true" [style]="{ width: '880px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'"><i class="pi pi-lock"></i>Read-only — only draft orders can be edited.</div>
+
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Subcontractor (Supplier) *</label>
+        <p-select formControlName="subcontractorId" [options]="suppliers" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="code,name" placeholder="Select" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Warehouse (issue/receive) *</label>
+        <p-select formControlName="warehouseId" [options]="warehouses" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="code,name" placeholder="Select" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Process Type *</label>
+        <input pInputText formControlName="processType" placeholder="e.g. Dyeing, Printing" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Charge Amount (BDT)</label>
+        <p-inputNumber formControlName="chargeAmount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Order Date *</label>
+        <input pInputText type="date" formControlName="orderDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Expected Return</label>
+        <input pInputText type="date" formControlName="expectedReturnDate" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Items to Process</p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="item-col">Item (Raw Material / Product)</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">Issue Qty</th>
+            <th class="act-col" *ngIf="dialogMode !== 'view'"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="itemKey" [options]="itemOptions" optionLabel="label" optionValue="key"
+                        [filter]="true" filterBy="label" placeholder="Select item" appendTo="body" styleClass="w-full" />
+            </td>
+            <td class="unit-cell">{{ itemUom(lineCtrl.get('itemKey')?.value) }}</td>
+            <td>
+              <p-inputNumber formControlName="issuedQuantity" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td class="act-col" *ngIf="dialogMode !== 'view'">
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (click)="removeLine(i)" pTooltip="Remove" />
+            </td>
+          </tr>
+          <tr *ngIf="lines.length === 0">
+            <td [attr.colspan]="dialogMode !== 'view' ? 4 : 3" class="empty-lines">No items yet. Click "Add Item".</td>
+          </tr>
+        </tbody>
+      </table>
+      <p-button label="Add Item" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
+                *ngIf="dialogMode !== 'view'" (click)="addLine()" />
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Receive dialog -->
+<p-dialog [(visible)]="receiveVisible" header="Receive Processed Material" [modal]="true" [style]="{ width: '600px' }" [draggable]="false">
+  <form [formGroup]="receiveForm" (ngSubmit)="doReceive()" *ngIf="receiveOrder">
+    <div class="alert alert-error" *ngIf="receiveError"><i class="pi pi-exclamation-circle"></i>{{ receiveError }}</div>
+    <p class="hint">Enter the quantity received back for each item (≤ issued; shortfall = wastage). Received stock returns to <strong>{{ receiveOrder.warehouseName }}</strong>.</p>
+    <table class="line-grid" formArrayName="lines">
+      <thead><tr><th>Item</th><th class="num-col">Issued</th><th class="num-col">Received</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of receiveLines.controls; let i = index" [formGroupName]="i">
+          <td>{{ l.get('itemLabel')?.value }}</td>
+          <td class="num">{{ l.get('issuedQuantity')?.value }}</td>
+          <td><p-inputNumber formControlName="receivedQuantity" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="receiveVisible = false" [disabled]="receiveSaving" />
+      <p-button type="submit" [label]="receiveSaving ? 'Receiving...' : 'Receive'" icon="pi pi-download"
+                [loading]="receiveSaving" [disabled]="receiveForm.invalid || receiveSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Subcontract Order" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deletingOrder">
+    <p>Delete <strong>{{ deletingOrder.code }}</strong> ({{ deletingOrder.subcontractorName }})? This is a soft delete.</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

@@ -203,6 +203,16 @@ public static class Permissions
         public const string Process = "Payroll.Process";   // generate / adjust / mark paid / delete
     }
 
+    public static class Subcontracting
+    {
+        public const string View = "Subcontracting.View";
+        public const string Create = "Subcontracting.Create";
+        public const string Edit = "Subcontracting.Edit";
+        public const string Delete = "Subcontracting.Delete";
+        public const string Issue = "Subcontracting.Issue";      // post material out to subcontractor
+        public const string Receive = "Subcontracting.Receive";  // receive processed material back
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";

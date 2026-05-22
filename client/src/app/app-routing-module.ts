@@ -45,7 +45,8 @@ const routes: Routes = [
       { path: 'approvals', loadChildren: () => import('./modules/approvals/approvals.module').then(m => m.ApprovalsModule) },
       { path: 'employees', loadChildren: () => import('./modules/employee/employee.module').then(m => m.EmployeeModule) },
       { path: 'attendance', loadChildren: () => import('./modules/attendance/attendance.module').then(m => m.AttendanceModule) },
-      { path: 'payroll', loadChildren: () => import('./modules/payroll/payroll.module').then(m => m.PayrollModule) }
+      { path: 'payroll', loadChildren: () => import('./modules/payroll/payroll.module').then(m => m.PayrollModule) },
+      { path: 'subcontract-orders', loadChildren: () => import('./modules/subcontract/subcontract.module').then(m => m.SubcontractModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
