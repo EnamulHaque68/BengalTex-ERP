@@ -53,6 +53,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<SubcontractLine> SubcontractLines => Set<SubcontractLine>();
     public DbSet<Style> Styles => Set<Style>();
     public DbSet<LetterOfCredit> LettersOfCredit => Set<LetterOfCredit>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();

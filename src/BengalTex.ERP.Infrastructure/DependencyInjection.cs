@@ -36,9 +36,12 @@ public static class DependencyInjection
         services.Configure<SmsSettings>(config.GetSection("Sms"));
         services.AddScoped<ISmsSender, DevSmsSender>();
 
-        // Email gateway (DevLogger stub; swap for SMTP / SendGrid in production)
+        // Email gateway — real SMTP when Email:Provider = "Smtp", else DevLogger (logs).
         services.Configure<EmailSettings>(config.GetSection("Email"));
-        services.AddScoped<IEmailSender, DevEmailSender>();
+        if (string.Equals(config.GetSection("Email")["Provider"], "Smtp", StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+        else
+            services.AddScoped<IEmailSender, DevEmailSender>();
 
         // Auth services
         services.AddScoped<IIdentityService, IdentityService>();
@@ -76,6 +79,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IApprovalService, ApprovalService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
             {

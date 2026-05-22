@@ -48,7 +48,8 @@ const routes: Routes = [
       { path: 'payroll', loadChildren: () => import('./modules/payroll/payroll.module').then(m => m.PayrollModule) },
       { path: 'subcontract-orders', loadChildren: () => import('./modules/subcontract/subcontract.module').then(m => m.SubcontractModule) },
       { path: 'styles', loadChildren: () => import('./modules/style/style.module').then(m => m.StyleModule) },
-      { path: 'letters-of-credit', loadChildren: () => import('./modules/banking/banking.module').then(m => m.BankingModule) }
+      { path: 'letters-of-credit', loadChildren: () => import('./modules/banking/banking.module').then(m => m.BankingModule) },
+      { path: 'notifications', loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

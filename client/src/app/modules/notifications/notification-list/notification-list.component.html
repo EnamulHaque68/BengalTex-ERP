@@ -1,0 +1,165 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Notifications</h2>
+      <p class="page-subtitle">Sent &amp; in-app notification log &mdash; delivery outcome per message (newest first)</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search recipient, subject..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterChannel"
+                [options]="channels"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All channels"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                [options]="statuses"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All statuses"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <p-button *ngIf="canSend" icon="pi pi-send" label="Send Test"
+                size="small" (click)="openSend()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="notifications"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Created</th>
+          <th>Channel</th>
+          <th>Recipient</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Sent</th>
+          <th style="width:70px">Detail</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-n>
+        <tr>
+          <td class="num">{{ n.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+          <td><span class="channel-badge" [class]="channelClass(n.channel)">{{ channelLabel(n.channel) }}</span></td>
+          <td class="fw-600">{{ n.recipient }}</td>
+          <td class="subject">{{ n.subject }}</td>
+          <td><span class="status-badge" [class]="statusClass(n.status)">{{ n.status }}</span></td>
+          <td class="num muted">{{ n.sentAt ? (n.sentAt | date:'yyyy-MM-dd HH:mm') : '—' }}</td>
+          <td>
+            <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                      (click)="openView(n)" pTooltip="View notification" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-bell"></i>
+            <span>No notifications match the filters.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- View detail -->
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="Notification"
+  [modal]="true"
+  [style]="{ width: '620px' }"
+>
+  <div *ngIf="viewing" class="detail">
+    <div class="detail-head">
+      <div><span class="dlabel">Channel</span><span class="dval"><span class="channel-badge" [class]="channelClass(viewing.channel)">{{ channelLabel(viewing.channel) }}</span></span></div>
+      <div><span class="dlabel">Status</span><span class="dval"><span class="status-badge" [class]="statusClass(viewing.status)">{{ viewing.status }}</span></span></div>
+      <div><span class="dlabel">Recipient</span><span class="dval">{{ viewing.recipient }}</span></div>
+      <div><span class="dlabel">Created</span><span class="dval">{{ viewing.createdAt | date:'medium' }}</span></div>
+      <div><span class="dlabel">Sent</span><span class="dval">{{ viewing.sentAt ? (viewing.sentAt | date:'medium') : '—' }}</span></div>
+      <div *ngIf="viewing.relatedEntityType">
+        <span class="dlabel">Related</span>
+        <span class="dval">{{ viewing.relatedEntityType }} #{{ viewing.relatedEntityId }}</span>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <span class="dlabel">Subject</span>
+      <p class="subject-text">{{ viewing.subject }}</p>
+    </div>
+    <div class="field-block">
+      <span class="dlabel">Body</span>
+      <p class="body-text">{{ viewing.body }}</p>
+    </div>
+    <div class="field-block" *ngIf="viewing.error">
+      <span class="dlabel error-label">Error</span>
+      <p class="error-text">{{ viewing.error }}</p>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewDialogVisible = false" />
+  </div>
+</p-dialog>
+
+<!-- Send test -->
+<p-dialog
+  [(visible)]="sendDialogVisible"
+  header="Send Test Notification"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+>
+  <div class="dialog-grid">
+    <div class="field">
+      <label>Channel</label>
+      <p-select [(ngModel)]="testModel.channel"
+                [options]="channels"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Recipient <small>(email / phone / role)</small></label>
+      <input pInputText type="text" class="w-full" [(ngModel)]="testModel.recipient"
+             placeholder="e.g. you@example.com" />
+    </div>
+    <div class="field col-span-2">
+      <label>Subject</label>
+      <input pInputText type="text" class="w-full" [(ngModel)]="testModel.subject" />
+    </div>
+    <div class="field col-span-2">
+      <label>Body</label>
+      <textarea pInputTextarea rows="4" class="w-full" [(ngModel)]="testModel.body"></textarea>
+    </div>
+  </div>
+
+  <p class="send-error" *ngIf="sendError">{{ sendError }}</p>
+  <p class="send-success" *ngIf="sendSuccess">{{ sendSuccess }}</p>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="sendDialogVisible = false" />
+    <p-button label="Send" icon="pi pi-send" (click)="sendTest()" [loading]="sending"
+              [disabled]="!testModel.recipient || !testModel.subject || !testModel.body" />
+  </div>
+</p-dialog>

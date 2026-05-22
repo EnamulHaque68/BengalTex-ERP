@@ -86,6 +86,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Attachments.") ||
             p.StartsWith("Banking.") ||
             p == Permissions.Approvals.View ||
+            p == Permissions.Notifications.View ||
             p == Permissions.Customers.View ||
             p == Permissions.Suppliers.View));
 
@@ -107,6 +108,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Attachments.") ||
             p.StartsWith("Subcontracting.") ||
             p == Permissions.Approvals.View ||
+            p == Permissions.Notifications.View ||
             p == Permissions.Reports.ViewProduction ||
             p == Permissions.Reports.ViewInventory ||
             p == Permissions.Reports.Export ||
