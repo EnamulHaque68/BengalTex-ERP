@@ -91,6 +91,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<QcInspectionLine> QcInspectionLines => Set<QcInspectionLine>();
     public DbSet<QuarantineDisposition> QuarantineDispositions => Set<QuarantineDisposition>();
     public DbSet<QuarantineDispositionLine> QuarantineDispositionLines => Set<QuarantineDispositionLine>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

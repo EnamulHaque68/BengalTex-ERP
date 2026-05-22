@@ -1,0 +1,105 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Journal Vouchers</h2>
+      <p class="page-subtitle">Double-entry journal vouchers — Draft is editable; Posting freezes it into the ledger</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap"><i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, ref, narration..." (input)="onSearch($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All" styleClass="filter-select-sm" (onChange)="load()" />
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <p-button *ngIf="canCreate" label="New Voucher" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="entries" [loading]="loading" [paginator]="true" [rows]="parameters.pageSize || 25" [totalRecords]="totalCount"
+             [lazy]="true" (onLazyLoad)="onPage($event)" [first]="((parameters.page||1)-1)*(parameters.pageSize||25)" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Date</th><th>Reference</th><th>Narration</th><th class="num-h">Amount</th><th>Status</th><th>Source</th><th style="width:120px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td><span class="code-badge">{{ e.code }}</span></td>
+          <td class="num">{{ e.entryDate | date:'yyyy-MM-dd' }}</td>
+          <td class="muted">{{ e.reference || '—' }}</td>
+          <td class="narr">{{ e.narration || '—' }}</td>
+          <td class="num fw-600">{{ e.amount | number:'1.2-2' }}</td>
+          <td><span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'">{{ e.status }}</span></td>
+          <td class="muted">{{ e.sourceCode || (e.sourceType || '—') }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="e.status==='Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="open(e)" [pTooltip]="e.status==='Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status==='Draft' && canPost" [loading]="rowActionId===e.id" (click)="post(e)" pTooltip="Post to ledger" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status==='Draft' && canCreate" (click)="confirmDelete(e)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-row"><i class="pi pi-book"></i><span>No journal vouchers.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'New Journal Voucher' : (dialogMode==='edit' ? 'Edit Voucher' : 'View Voucher')" [modal]="true" [style]="{ width: '900px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode==='view'"><i class="pi pi-lock"></i>Posted — read-only.</div>
+    <div class="head-grid">
+      <div class="field"><label>Date *</label><input pInputText type="date" formControlName="entryDate" class="w-full" /></div>
+      <div class="field"><label>Reference</label><input pInputText formControlName="reference" class="w-full" placeholder="cheque / doc no" /></div>
+      <div class="field col-span-2"><label>Narration</label><input pInputText formControlName="narration" class="w-full" /></div>
+    </div>
+
+    <table class="line-grid" formArrayName="lines">
+      <thead><tr><th class="acc-col">Account</th><th class="num-col">Debit</th><th class="num-col">Credit</th><th>Line Narration</th><th style="width:36px"></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of lines.controls; let i = index" [formGroupName]="i">
+          <td>
+            <p-select formControlName="accountId" [options]="postableAccounts" optionValue="id" [filter]="true" filterBy="code,name"
+                      placeholder="Select account" appendTo="body" styleClass="w-full">
+              <ng-template let-a pTemplate="item"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+              <ng-template let-a pTemplate="selectedItem"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+            </p-select>
+          </td>
+          <td><p-inputNumber formControlName="debit" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" (onInput)="onDebit(i, $event.value)" /></td>
+          <td><p-inputNumber formControlName="credit" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" (onInput)="onCredit(i, $event.value)" /></td>
+          <td><input pInputText formControlName="lineNarration" placeholder="(optional)" class="w-full" /></td>
+          <td><p-button icon="pi pi-times" severity="danger" [text]="true" size="small" *ngIf="dialogMode!=='view'" (click)="removeLine(i)" /></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="totals-row">
+          <td class="ta-right">Totals</td>
+          <td class="num">{{ totalDebit | number:'1.2-2' }}</td>
+          <td class="num">{{ totalCredit | number:'1.2-2' }}</td>
+          <td colspan="2"><span class="bal" [class.ok]="balanced" [class.no]="!balanced"><i class="pi" [class.pi-check-circle]="balanced" [class.pi-exclamation-triangle]="!balanced"></i> {{ balanced ? 'Balanced' : 'Out of balance' }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+    <p-button *ngIf="dialogMode!=='view'" label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small" (click)="addLine()" />
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+      <p-button *ngIf="dialogMode!=='view'" type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode==='create' ? 'Create Draft' : 'Save')" icon="pi pi-save" [loading]="dialogSaving" [disabled]="!balanced || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Voucher" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete draft <strong>{{ deleting.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

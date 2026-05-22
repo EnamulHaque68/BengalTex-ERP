@@ -1,0 +1,22 @@
+.page-shell { padding: 1.5rem 2rem; }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+  .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .date-input { width: 140px; }
+}
+:host ::ng-deep .acc-select { min-width: 280px; }
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+.opt-code { font-family: monospace; font-size: 0.72rem; color: #3730a3; margin-right: 0.4rem; }
+.num, .num-h { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fw-600 { font-weight: 600; } .fw-700 { font-weight: 700; }
+.narr { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-badge { background: #e0e7ff; color: #3730a3; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; font-family: monospace; }
+.ta-right { text-align: right; font-weight: 700; }
+.totals-row td { font-weight: 700; border-top: 2px solid #e5e7eb; background: #f9fafb; }
+.empty-row { text-align: center; padding: 3rem !important; color: #9ca3af; i { display: block; font-size: 2rem; margin-bottom: 0.5rem; } }
+.ledger-head { display: flex; gap: 2rem; padding: 0.85rem 1rem; background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; margin-bottom: 1rem; flex-wrap: wrap;
+  > div { display: flex; flex-direction: column; gap: 0.15rem; } .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; font-weight: 600; } .val { font-size: 0.9rem; color: #111827; } }
+.alert { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.85rem;
+  &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; } }

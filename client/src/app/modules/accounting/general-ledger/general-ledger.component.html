@@ -1,0 +1,54 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">General Ledger</h2>
+      <p class="page-subtitle">Posted movements + running balance for one account over a period</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="accountId" [options]="accounts" optionValue="id" [filter]="true" filterBy="code,name"
+                placeholder="Select account" appendTo="body" styleClass="acc-select">
+        <ng-template let-a pTemplate="item"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+        <ng-template let-a pTemplate="selectedItem"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+      </p-select>
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="ledger-head" *ngIf="data">
+    <div><span class="lbl">Account</span><span class="val">{{ data.accountCode }} — {{ data.accountName }}</span></div>
+    <div><span class="lbl">Normal</span><span class="val">{{ data.normalBalance }}</span></div>
+    <div><span class="lbl">Opening</span><span class="val num">{{ data.openingBalance | number:'1.2-2' }}</span></div>
+    <div><span class="lbl">Closing</span><span class="val num fw-700">{{ data.closingBalance | number:'1.2-2' }}</span></div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="data">
+    <p-table [value]="data.lines" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Date</th><th>Voucher</th><th>Narration</th><th class="num-h">Debit</th><th class="num-h">Credit</th><th class="num-h">Balance</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-l>
+        <tr>
+          <td class="num">{{ l.entryDate | date:'yyyy-MM-dd' }}</td>
+          <td><span class="code-badge">{{ l.journalCode }}</span></td>
+          <td class="narr">{{ l.narration || '—' }}</td>
+          <td class="num">{{ l.debit ? (l.debit | number:'1.2-2') : '' }}</td>
+          <td class="num">{{ l.credit ? (l.credit | number:'1.2-2') : '' }}</td>
+          <td class="num fw-600">{{ l.runningBalance | number:'1.2-2' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="totals-row">
+          <td colspan="3" class="ta-right">Period total</td>
+          <td class="num">{{ data.totalDebit | number:'1.2-2' }}</td>
+          <td class="num">{{ data.totalCredit | number:'1.2-2' }}</td>
+          <td class="num">{{ data.closingBalance | number:'1.2-2' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-row"><i class="pi pi-book"></i><span>No postings in this period.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
