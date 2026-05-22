@@ -1,0 +1,161 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock Lots</h2>
+      <p class="page-subtitle">Batch / lot traceability &mdash; supplier batch, shade &amp; expiry per received lot</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search lot#, code, item, shade..."
+               (input)="onSearchChange($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterItemType"
+                [options]="itemTypes"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All items"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus"
+                [options]="statuses"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="All statuses"
+                styleClass="filter-select-sm"
+                (onChange)="load()" />
+      <label class="toggle"><p-checkbox [(ngModel)]="expiringSoon" [binary]="true" (onChange)="load()" /> Expiring &le; 30d</label>
+      <label class="toggle"><p-checkbox [(ngModel)]="activeOnly" [binary]="true" (onChange)="load()" /> In stock</label>
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="lots"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="parameters.pageSize || 25"
+      [totalRecords]="totalCount"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Lot Code</th>
+          <th>Lot No.</th>
+          <th>Item</th>
+          <th>Shade</th>
+          <th>Warehouse</th>
+          <th>Supplier</th>
+          <th>Received</th>
+          <th>Expiry</th>
+          <th class="num-h">Received Qty</th>
+          <th class="num-h">Remaining</th>
+          <th>Status</th>
+          <th style="width:60px">Trail</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-l>
+        <tr>
+          <td><span class="code-badge">{{ l.code }}</span></td>
+          <td class="fw-600">{{ l.lotNumber }}</td>
+          <td>
+            <div class="item-cell">
+              <span class="item-name">{{ l.itemName }}</span>
+              <span class="item-code">{{ l.itemCode }}</span>
+            </div>
+          </td>
+          <td>{{ l.shade || '—' }}</td>
+          <td class="muted">{{ l.warehouseName }}</td>
+          <td class="muted">{{ l.supplierName || '—' }}</td>
+          <td class="num">{{ l.receivedDate | date:'yyyy-MM-dd' }}</td>
+          <td class="num" [class.expiry-warn]="l.isExpired">
+            {{ l.expiryDate ? (l.expiryDate | date:'yyyy-MM-dd') : '—' }}
+            <i *ngIf="l.isExpired" class="pi pi-exclamation-triangle" pTooltip="Expired"></i>
+          </td>
+          <td class="num">{{ l.initialQuantity | number:'1.0-4' }} <span class="uom">{{ l.unitOfMeasureCode }}</span></td>
+          <td class="num fw-600">{{ l.currentQuantity | number:'1.0-4' }} <span class="uom">{{ l.unitOfMeasureCode }}</span></td>
+          <td><span class="status-badge" [class]="statusClass(l)">{{ statusLabel(l) }}</span></td>
+          <td>
+            <p-button icon="pi pi-list" severity="secondary" [text]="true" size="small"
+                      (click)="openView(l)" pTooltip="Lot detail & movement trail" />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="12" class="empty-row">
+            <i class="pi pi-box"></i>
+            <span>No lots match the filters. Lots are created when a GRN line carrying a lot number is posted.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Detail -->
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="Lot Detail"
+  [modal]="true"
+  [style]="{ width: '820px' }"
+>
+  <div *ngIf="viewing" class="detail">
+    <div class="detail-head">
+      <div><span class="dlabel">Lot Code</span><span class="dval"><span class="code-badge">{{ viewing.code }}</span></span></div>
+      <div><span class="dlabel">Lot No.</span><span class="dval fw-600">{{ viewing.lotNumber }}</span></div>
+      <div><span class="dlabel">Status</span><span class="dval"><span class="status-badge" [class]="statusClass(viewing)">{{ statusLabel(viewing) }}</span></span></div>
+      <div><span class="dlabel">Item</span><span class="dval">{{ viewing.itemName }} <span class="muted">({{ viewing.itemCode }})</span></span></div>
+      <div><span class="dlabel">Shade</span><span class="dval">{{ viewing.shade || '—' }}</span></div>
+      <div><span class="dlabel">Warehouse</span><span class="dval">{{ viewing.warehouseName }}</span></div>
+      <div><span class="dlabel">Supplier</span><span class="dval">{{ viewing.supplierName || '—' }}</span></div>
+      <div><span class="dlabel">Received</span><span class="dval">{{ viewing.receivedDate | date:'yyyy-MM-dd' }}</span></div>
+      <div><span class="dlabel">Manufactured</span><span class="dval">{{ viewing.manufactureDate ? (viewing.manufactureDate | date:'yyyy-MM-dd') : '—' }}</span></div>
+      <div><span class="dlabel">Expiry</span><span class="dval" [class.expiry-warn]="viewing.isExpired">{{ viewing.expiryDate ? (viewing.expiryDate | date:'yyyy-MM-dd') : '—' }}</span></div>
+      <div><span class="dlabel">Received Qty</span><span class="dval">{{ viewing.initialQuantity | number:'1.0-4' }} {{ viewing.unitOfMeasureCode }}</span></div>
+      <div><span class="dlabel">Remaining</span><span class="dval fw-600">{{ viewing.currentQuantity | number:'1.0-4' }} {{ viewing.unitOfMeasureCode }}</span></div>
+      <div *ngIf="viewing.sourceCode"><span class="dlabel">Source</span><span class="dval">{{ viewing.sourceType }} {{ viewing.sourceCode }}</span></div>
+    </div>
+
+    <h4 class="trail-title">Movement Trail</h4>
+    <table class="trail-grid">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Movement Code</th>
+          <th>Type</th>
+          <th class="num-h">Qty</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of movements">
+          <td class="num">{{ m.movementDate | date:'yyyy-MM-dd' }}</td>
+          <td><span class="code-badge">{{ m.code }}</span></td>
+          <td>{{ m.movementType }}</td>
+          <td class="num" [class.neg]="m.signedQuantity < 0">{{ m.signedQuantity | number:'1.0-4' }}</td>
+          <td class="muted">{{ m.referenceCode || (m.referenceType || '—') }}</td>
+        </tr>
+        <tr *ngIf="!detailLoading && movements.length === 0">
+          <td colspan="5" class="empty-trail">No movements tagged to this lot yet.</td>
+        </tr>
+        <tr *ngIf="detailLoading">
+          <td colspan="5" class="empty-trail">Loading…</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewDialogVisible = false" />
+  </div>
+</p-dialog>

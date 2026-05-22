@@ -32,6 +32,8 @@ public sealed class UpdateGoodsReceiptCommandValidator : AbstractValidator<Updat
             line.RuleFor(l => l.PurchaseOrderLineId).GreaterThan(0);
             line.RuleFor(l => l.ReceivedQuantity).GreaterThan(0);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
+            line.RuleFor(l => l.LotNumber).MaximumLength(100);
+            line.RuleFor(l => l.Shade).MaximumLength(100);
         });
         RuleFor(x => x.Lines)
             .Must(lines => lines.Select(l => l.PurchaseOrderLineId).Distinct().Count() == lines.Count)
@@ -111,7 +113,11 @@ internal sealed class UpdateGoodsReceiptCommandHandler
                 PurchaseOrderLineId = line.PurchaseOrderLineId,
                 ReceivedQuantity = line.ReceivedQuantity,
                 SortOrder = sortOrder++,
-                LineNotes = line.LineNotes
+                LineNotes = line.LineNotes,
+                LotNumber = string.IsNullOrWhiteSpace(line.LotNumber) ? null : line.LotNumber.Trim(),
+                Shade = string.IsNullOrWhiteSpace(line.Shade) ? null : line.Shade.Trim(),
+                ManufactureDate = line.ManufactureDate,
+                ExpiryDate = line.ExpiryDate
             });
         }
 

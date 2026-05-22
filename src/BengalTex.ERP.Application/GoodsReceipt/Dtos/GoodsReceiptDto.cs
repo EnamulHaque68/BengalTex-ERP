@@ -28,7 +28,11 @@ public record GoodsReceiptLineDto(
     decimal ReceivedQuantity,            // this GRN line's quantity
     decimal ReturnedQuantity,            // already-returned via posted SRNs (Phase 13)
     int SortOrder,
-    string? LineNotes);
+    string? LineNotes,
+    string? LotNumber,                   // optional lot/batch capture (Round 3 lot tracking)
+    string? Shade,
+    DateOnly? ManufactureDate,
+    DateOnly? ExpiryDate);
 
 public record GoodsReceiptListItemDto(
     long Id,

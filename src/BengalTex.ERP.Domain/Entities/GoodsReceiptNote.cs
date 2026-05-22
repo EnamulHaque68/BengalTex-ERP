@@ -62,6 +62,13 @@ public class GoodsReceiptLine : BaseTransactionalEntity
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }
+
+    // ── Optional lot/batch capture — when LotNumber is set, posting the GRN creates a
+    //    traceable StockLot for this line and tags its receipt movement (see StockLot). ──
+    public string? LotNumber { get; set; }
+    public string? Shade { get; set; }
+    public DateOnly? ManufactureDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
 }
 
 public enum GoodsReceiptStatus

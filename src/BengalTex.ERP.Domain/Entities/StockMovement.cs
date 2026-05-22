@@ -30,6 +30,14 @@ public class StockMovement : BaseTransactionalEntity
     public int WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
 
+    /// <summary>
+    /// Optional lot/batch this movement belongs to (<see cref="StockLot"/>). Set on lot-traced
+    /// inbound (a GRN line carrying a lot number) and on lot-aware outbound. Null for movements
+    /// that are not lot-tracked. Additive — does not affect the StockOnHand total.
+    /// </summary>
+    public long? LotId { get; set; }
+    public StockLot? Lot { get; set; }
+
     /// <summary>Positive for inbound, negative for outbound.</summary>
     public decimal SignedQuantity { get; set; }
 

@@ -42,7 +42,8 @@ internal sealed class GetGoodsReceiptByIdQueryHandler
                 l.PurchaseOrderLine.Quantity,
                 l.ReceivedQuantity,
                 l.ReturnedQuantity,
-                l.SortOrder, l.LineNotes))
+                l.SortOrder, l.LineNotes,
+                l.LotNumber, l.Shade, l.ManufactureDate, l.ExpiryDate))
             .ToList();
 
         var dto = new GoodsReceiptDto(

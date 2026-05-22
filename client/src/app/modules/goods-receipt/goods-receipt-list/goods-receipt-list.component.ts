@@ -184,7 +184,11 @@ export class GoodsReceiptListComponent implements OnInit {
         alreadyReceived: [poLine.receivedQuantity],
         remaining: [remaining],
         receivedQuantity: [existing?.receivedQuantity ?? remaining, [Validators.required, Validators.min(0)]],
-        lineNotes: [existing?.lineNotes ?? '', Validators.maxLength(1000)]
+        lineNotes: [existing?.lineNotes ?? '', Validators.maxLength(1000)],
+        lotNumber: [existing?.lotNumber ?? '', Validators.maxLength(100)],
+        shade: [existing?.shade ?? '', Validators.maxLength(100)],
+        manufactureDate: [existing?.manufactureDate ?? null],
+        expiryDate: [existing?.expiryDate ?? null]
       }));
     }
   }
@@ -287,7 +291,11 @@ export class GoodsReceiptListComponent implements OnInit {
         alreadyReceived: [0],
         remaining: [0],
         receivedQuantity: [l.receivedQuantity],
-        lineNotes: [l.lineNotes ?? '']
+        lineNotes: [l.lineNotes ?? ''],
+        lotNumber: [l.lotNumber ?? ''],
+        shade: [l.shade ?? ''],
+        manufactureDate: [l.manufactureDate ?? null],
+        expiryDate: [l.expiryDate ?? null]
       }));
     }
   }
@@ -305,7 +313,11 @@ export class GoodsReceiptListComponent implements OnInit {
       .map(l => ({
         purchaseOrderLineId: l.purchaseOrderLineId,
         receivedQuantity: Number(l.receivedQuantity),
-        lineNotes: (l.lineNotes as string)?.trim() || null
+        lineNotes: (l.lineNotes as string)?.trim() || null,
+        lotNumber: (l.lotNumber as string)?.trim() || null,
+        shade: (l.shade as string)?.trim() || null,
+        manufactureDate: (l.manufactureDate as string) || null,
+        expiryDate: (l.expiryDate as string) || null
       }));
 
     if (lines.length === 0) {

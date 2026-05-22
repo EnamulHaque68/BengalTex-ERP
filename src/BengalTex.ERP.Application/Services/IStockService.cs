@@ -8,6 +8,9 @@ public interface IStockService
     /// Posts a single RawMaterial stock movement and upserts the corresponding
     /// <c>StockOnHand</c> row. Does NOT call <c>SaveChanges</c> — the caller's commit
     /// ties this together with its source-document update so the whole thing is atomic.
+    /// <paramref name="lot"/> (optional, kept last to avoid disturbing existing callers)
+    /// tags the movement with a <c>StockLot</c> for batch traceability — pass a NEW (unsaved,
+    /// caller-added) or existing tracked lot; the FK resolves via navigation on commit.
     /// </summary>
     Task PostRawMaterialMovementAsync(
         int rawMaterialId,
@@ -19,12 +22,14 @@ public interface IStockService
         string? referenceCode,
         DateOnly movementDate,
         string? notes,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        StockLot? lot = null);
 
     /// <summary>
     /// Posts a single Product stock movement (production receipt, sales dispatch, etc.)
     /// and upserts the corresponding <c>StockOnHand</c> row. Same atomicity contract as
-    /// <see cref="PostRawMaterialMovementAsync"/>.
+    /// <see cref="PostRawMaterialMovementAsync"/>. <paramref name="lot"/> optionally tags
+    /// the movement with a <c>StockLot</c> for batch traceability.
     /// </summary>
     Task PostProductMovementAsync(
         int productId,
@@ -36,7 +41,8 @@ public interface IStockService
         string? referenceCode,
         DateOnly movementDate,
         string? notes,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        StockLot? lot = null);
 
     /// <summary>
     /// Current StockOnHand quantity for the given (RawMaterial × Warehouse). Returns 0
