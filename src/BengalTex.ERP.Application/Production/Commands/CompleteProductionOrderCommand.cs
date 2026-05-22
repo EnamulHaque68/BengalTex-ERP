@@ -28,6 +28,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
+    private readonly IStockLotService _lots;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
@@ -35,12 +36,14 @@ internal sealed class CompleteProductionOrderCommandHandler
         IRepository<Domain.Entities.ProductionOrder, long> repo,
         IUnitOfWork uow,
         IStockService stock,
+        IStockLotService lots,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
         _repo = repo;
         _uow = uow;
         _stock = stock;
+        _lots = lots;
         _currentUser = currentUser;
         _mediator = mediator;
     }
@@ -89,10 +92,12 @@ internal sealed class CompleteProductionOrderCommandHandler
         {
             var consumedQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
             totalRmCost += consumedQty * bomLine.RawMaterial.WeightedAverageCost;
-            await _stock.PostRawMaterialMovementAsync(
+            // FIFO lot draw-down — decrements the oldest lots and tags each issue movement;
+            // any lot-less remainder posts un-tagged (same as before lot tracking existed).
+            await _lots.ConsumeRawMaterialFifoAsync(
                 rawMaterialId: bomLine.RawMaterialId,
                 warehouseId: po.IssueWarehouseId,
-                signedQuantity: -consumedQty,         // outbound
+                quantity: consumedQty,                // positive amount; service posts outbound
                 movementType: StockMovementType.ProductionIssue,
                 referenceType: "ProductionOrder",
                 referenceId: po.Id,

@@ -36,6 +36,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
     private readonly IRepository<Domain.Entities.GoodsReceiptNote, long> _grnRepo;
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IStockService _stockService;
+    private readonly IStockLotService _lots;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -45,6 +46,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
         IRepository<Domain.Entities.GoodsReceiptNote, long> grnRepo,
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IStockService stockService,
+        IStockLotService lots,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -53,6 +55,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
         _grnRepo = grnRepo;
         _poRepo = poRepo;
         _stockService = stockService;
+        _lots = lots;
         _uow = uow;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -123,10 +126,12 @@ internal sealed class PostSupplierReturnNoteCommandHandler
             var poLine = poLineById[grnLine.PurchaseOrderLineId];
             poLine.ReceivedQuantity -= srnLine.ReturnedQuantity;
 
-            await _stockService.PostRawMaterialMovementAsync(
+            // FIFO lot draw-down for the returned RM — decrements the oldest lots at the source
+            // warehouse and tags each ReturnOut movement; lot-less remainder posts un-tagged.
+            await _lots.ConsumeRawMaterialFifoAsync(
                 rawMaterialId: srnLine.RawMaterialId,
                 warehouseId: srn.ReturnFromWarehouseId,
-                signedQuantity: -srnLine.ReturnedQuantity,       // outbound
+                quantity: srnLine.ReturnedQuantity,              // positive; service posts outbound
                 movementType: StockMovementType.ReturnOut,
                 referenceType: "SRN",
                 referenceId: srn.Id,

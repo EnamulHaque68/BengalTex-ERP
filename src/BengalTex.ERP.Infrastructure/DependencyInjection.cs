@@ -76,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<INumberingService, NumberingService>();
         services.AddScoped<IStockService, StockService>();
+        services.AddScoped<IStockLotService, StockLotService>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IApprovalService, ApprovalService>();
