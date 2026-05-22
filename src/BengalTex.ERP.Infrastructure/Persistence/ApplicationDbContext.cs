@@ -51,6 +51,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<SubcontractOrder> SubcontractOrders => Set<SubcontractOrder>();
     public DbSet<SubcontractLine> SubcontractLines => Set<SubcontractLine>();
+    public DbSet<Style> Styles => Set<Style>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();
