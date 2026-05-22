@@ -1,4 +1,7 @@
+using BengalTex.ERP.Application.Accounting;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
+using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
 
@@ -20,15 +23,18 @@ internal sealed class DeletePaymentCommandHandler : IRequestHandler<DeletePaymen
     private readonly IRepository<Domain.Entities.Payment, long> _repo;
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _invRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IJournalPostingService _journal;
 
     public DeletePaymentCommandHandler(
         IRepository<Domain.Entities.Payment, long> repo,
         IRepository<Domain.Entities.SupplierInvoice, long> invRepo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IJournalPostingService journal)
     {
         _repo = repo;
         _invRepo = invRepo;
         _uow = uow;
+        _journal = journal;
     }
 
     public async Task<ApiResponse> Handle(DeletePaymentCommand cmd, CancellationToken cancellationToken)
@@ -51,6 +57,18 @@ internal sealed class DeletePaymentCommandHandler : IRequestHandler<DeletePaymen
         _invRepo.Update(inv);
 
         _repo.Remove(pay);
+
+        // Reversing journal — mirror of the original payment entry (Dr Cash/Bank, Cr AP).
+        var cashAccount = pay.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+        var baseAmount = pay.Amount * inv.ExchangeRate;
+        await _journal.PostAsync(
+            DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of payment {pay.Code}", "PaymentReversal", pay.Id, pay.Code,
+            new[]
+            {
+                new JournalPostingLine(cashAccount, baseAmount, 0m),
+                new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, baseAmount),
+            }, cancellationToken);
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return ApiResponse.Ok("Payment deleted and invoice balance reversed.");

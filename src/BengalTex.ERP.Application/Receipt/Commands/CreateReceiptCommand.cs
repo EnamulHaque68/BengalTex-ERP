@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Receipt.Dtos;
 using BengalTex.ERP.Application.Receipt.Queries;
 using BengalTex.ERP.Application.Services;
@@ -49,6 +50,7 @@ internal sealed class CreateReceiptCommandHandler
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public CreateReceiptCommandHandler(
@@ -56,12 +58,14 @@ internal sealed class CreateReceiptCommandHandler
         IRepository<Domain.Entities.CustomerInvoice, long> invRepo,
         IUnitOfWork uow,
         INumberingService numbering,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _invRepo = invRepo;
         _uow = uow;
         _numbering = numbering;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -107,6 +111,18 @@ internal sealed class CreateReceiptCommandHandler
             : Domain.Entities.CustomerInvoiceStatus.PartiallyPaid;
         _invRepo.Update(inv);
 
+        await _uow.SaveChangesAsync(cancellationToken);   // persist receipt (gets its Id) + invoice
+
+        // Auto-journal: Dr Cash/Bank, Cr Accounts Receivable (base BDT via the invoice's rate).
+        var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+        var baseAmount = cmd.Amount * inv.ExchangeRate;
+        await _journal.PostAsync(
+            entity.ReceiptDate, $"Receipt {entity.Code} against {inv.Code}", "Receipt", entity.Id, entity.Code,
+            new[]
+            {
+                new JournalPostingLine(cashAccount, baseAmount, 0m),
+                new JournalPostingLine(LedgerAccounts.AccountsReceivable, 0m, baseAmount),
+            }, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetReceiptByIdQuery(entity.Id), cancellationToken);

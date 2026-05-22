@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.CustomerInvoice.Dtos;
 using BengalTex.ERP.Application.CustomerInvoice.Queries;
@@ -28,6 +29,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly INumberingService _numbering;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public IssueCustomerInvoiceCommandHandler(
@@ -36,6 +38,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         INumberingService numbering,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
@@ -43,6 +46,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
         _uow = uow;
         _currentUser = currentUser;
         _numbering = numbering;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -85,6 +89,18 @@ internal sealed class IssueCustomerInvoiceCommandHandler
             };
             await _challanRepo.AddAsync(challan, cancellationToken);
         }
+
+        // Auto-journal (base BDT = doc amount × exchange rate):
+        //   Dr Accounts Receivable (gross) / Cr Sales Revenue (net) / Cr VAT Payable (output VAT)
+        var rate = inv.ExchangeRate;
+        await _journal.PostAsync(
+            inv.InvoiceDate, $"Sales invoice {inv.Code}", "CustomerInvoice", inv.Id, inv.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.AccountsReceivable, inv.TotalAmount * rate, 0m),
+                new JournalPostingLine(LedgerAccounts.SalesRevenue, 0m, inv.SubtotalAmount * rate),
+                new JournalPostingLine(LedgerAccounts.VatPayable, 0m, inv.VatAmount * rate),
+            }, cancellationToken);
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(cancellationToken);

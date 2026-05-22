@@ -1,5 +1,7 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.CustomerInvoice.Dtos;
 using BengalTex.ERP.Application.CustomerInvoice.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
@@ -23,17 +25,20 @@ internal sealed class CancelCustomerInvoiceCommandHandler
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.VatChallan, long> _challanRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public CancelCustomerInvoiceCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
         IRepository<Domain.Entities.VatChallan, long> challanRepo,
         IUnitOfWork uow,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _challanRepo = challanRepo;
         _uow = uow;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -63,8 +68,25 @@ internal sealed class CancelCustomerInvoiceCommandHandler
             _challanRepo.Remove(inv.VatChallan);
         }
 
+        var wasIssued = inv.Status == Domain.Entities.CustomerInvoiceStatus.Issued;
+
         inv.Status = Domain.Entities.CustomerInvoiceStatus.Cancelled;
         _repo.Update(inv);
+
+        // If it was Issued, an auto-journal exists — post its reversal (Cr AR / Dr Sales / Dr VAT).
+        if (wasIssued)
+        {
+            var rate = inv.ExchangeRate;
+            await _journal.PostAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of sales invoice {inv.Code}", "CustomerInvoiceReversal", inv.Id, inv.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.AccountsReceivable, 0m, inv.TotalAmount * rate),
+                    new JournalPostingLine(LedgerAccounts.SalesRevenue, inv.SubtotalAmount * rate, 0m),
+                    new JournalPostingLine(LedgerAccounts.VatPayable, inv.VatAmount * rate, 0m),
+                }, cancellationToken);
+        }
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetCustomerInvoiceByIdQuery(inv.Id), cancellationToken);
