@@ -2013,6 +2013,97 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("ProductionOrders", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionStage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("CompletedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("OperatorEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PlannedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ProductionLine")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<long>("ProductionOrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("RejectedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StageName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperatorEmployeeId");
+
+                    b.HasIndex("ProductionOrderId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ProductionStages", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.Property<long>("Id")
@@ -5809,6 +5900,24 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("ReceiveWarehouse");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionStage", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Employee", "OperatorEmployee")
+                        .WithMany()
+                        .HasForeignKey("OperatorEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.ProductionOrder", "ProductionOrder")
+                        .WithMany("Stages")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OperatorEmployee");
+
+                    b.Navigation("ProductionOrder");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
@@ -6477,6 +6586,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductCategory", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionOrder", b =>
+                {
+                    b.Navigation("Stages");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrder", b =>

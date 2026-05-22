@@ -65,7 +65,16 @@ internal sealed class GetProductionOrdersQueryHandler
                 p.Quantity,
                 p.Status.ToString(),
                 p.PlannedStartDate,
-                p.ActualEndDate))
+                p.ActualEndDate,
+                p.Stages.Count,
+                p.Stages.Count(s => s.Status == Domain.Entities.ProductionStageStatus.Completed
+                                 || s.Status == Domain.Entities.ProductionStageStatus.Skipped),
+                p.Stages
+                    .Where(s => s.Status != Domain.Entities.ProductionStageStatus.Completed
+                             && s.Status != Domain.Entities.ProductionStageStatus.Skipped)
+                    .OrderBy(s => s.Sequence)
+                    .Select(s => s.StageName)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<ProductionOrderListItemDto>.Create(

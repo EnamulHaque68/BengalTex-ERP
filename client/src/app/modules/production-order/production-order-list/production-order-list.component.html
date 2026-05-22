@@ -84,6 +84,11 @@
                   [class.cancelled]="p.status === 'Cancelled'">
               {{ p.status === 'InProgress' ? 'In Progress' : p.status }}
             </span>
+            <div class="stage-progress" *ngIf="hasStages(p)">
+              <i class="pi pi-sitemap"></i>
+              {{ p.completedStageCount }}/{{ p.stageCount }}
+              <span class="cur-stage" *ngIf="p.currentStageName">· {{ p.currentStageName }}</span>
+            </div>
           </td>
           <td>
             <div class="row-actions">
@@ -91,6 +96,9 @@
                         severity="secondary" [text]="true" size="small"
                         (click)="openEdit(p)"
                         [pTooltip]="p.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-sitemap" severity="help" [text]="true" size="small"
+                        *ngIf="hasStages(p)"
+                        (click)="openStages(p)" pTooltip="Routing stages" />
               <p-button icon="pi pi-play" severity="info" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'"
                         [loading]="rowActionId === p.id"
@@ -217,6 +225,75 @@
       </div>
     </div>
 
+    <!-- Routing stages (optional multi-stage production) -->
+    <ng-container *ngIf="dialogMode !== 'view'">
+      <p class="section-label">
+        Routing Stages <small>(optional — Cutting → Sewing → … ; leave empty for a single-step run)</small>
+      </p>
+      <div class="quick-stages">
+        <span class="quick-label">Quick add:</span>
+        <button type="button" class="quick-chip" *ngFor="let n of commonStageNames" (click)="addStage(n.value)">+ {{ n.label }}</button>
+      </div>
+      <table class="line-grid" *ngIf="stages.length > 0">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th>
+            <th>Stage</th>
+            <th class="num-col">Planned Qty</th>
+            <th>Line</th>
+            <th>Operator</th>
+            <th>Notes</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody formArrayName="stages">
+          <tr *ngFor="let st of stages.controls; let i = index" [formGroupName]="i">
+            <td class="num muted">{{ i + 1 }}</td>
+            <td><input pInputText formControlName="stageName" placeholder="Stage name" class="stage-input" /></td>
+            <td>
+              <p-inputNumber formControlName="plannedQuantity" [min]="0" [minFractionDigits]="0"
+                             [maxFractionDigits]="4" placeholder="= order qty" inputStyleClass="grid-num" />
+            </td>
+            <td><input pInputText formControlName="productionLine" placeholder="(optional)" class="stage-input" /></td>
+            <td>
+              <p-select formControlName="operatorEmployeeId" [options]="employees"
+                        optionLabel="fullName" optionValue="id" [filter]="true" filterBy="code,fullName"
+                        [showClear]="true" placeholder="(optional)" appendTo="body" styleClass="w-full" />
+            </td>
+            <td><input pInputText formControlName="notes" placeholder="(optional)" class="stage-input" /></td>
+            <td>
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (click)="removeStage(i)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
+    <!-- Read-only routing in view mode -->
+    <ng-container *ngIf="dialogMode === 'view' && loadedDetail && loadedDetail.stages.length > 0">
+      <p class="section-label">Routing Stages</p>
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th><th>Stage</th><th class="num-col">Planned</th>
+            <th class="num-col">Completed</th><th class="num-col">Rejected</th><th>Line</th><th>Operator</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of loadedDetail.stages">
+            <td class="num muted">{{ s.sequence }}</td>
+            <td class="fw-600">{{ s.stageName }}</td>
+            <td class="num">{{ s.plannedQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ s.completedQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ s.rejectedQuantity | number:'1.0-4' }}</td>
+            <td>{{ s.productionLine || '—' }}</td>
+            <td>{{ s.operatorEmployeeName || '—' }}</td>
+            <td><span class="stage-badge" [class]="stageBadgeClass(s.status)">{{ s.status }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+
     <!-- Planned consumption preview (only in edit/view, server-computed) -->
     <ng-container *ngIf="loadedDetail && loadedDetail.plannedLines.length > 0">
       <p class="section-label">Planned RM Consumption <small>(scaled to Quantity × BOM line × wastage)</small></p>
@@ -286,5 +363,99 @@
       <p-button label="Delete" icon="pi pi-trash" severity="danger"
                 [loading]="deleting" (click)="doDelete()" />
     </div>
+  </div>
+</p-dialog>
+
+<!-- Stage tracking -->
+<p-dialog
+  [(visible)]="stagesDialogVisible"
+  [header]="trackingOrder ? ('Routing — ' + trackingOrder.code) : 'Routing'"
+  [modal]="true"
+  [style]="{ width: '880px' }"
+  [draggable]="false"
+>
+  <div *ngIf="trackingOrder">
+    <p class="track-sub">
+      <strong>{{ trackingOrder.productName }}</strong> · Qty {{ trackingOrder.quantity | number:'1.0-4' }}
+      <span class="status-badge"
+            [class.draft]="trackingOrder.status === 'Draft'"
+            [class.in-progress]="trackingOrder.status === 'InProgress'"
+            [class.completed]="trackingOrder.status === 'Completed'"
+            [class.cancelled]="trackingOrder.status === 'Cancelled'">
+        {{ trackingOrder.status === 'InProgress' ? 'In Progress' : trackingOrder.status }}
+      </span>
+    </p>
+
+    <div class="alert alert-error" *ngIf="stagesError">
+      <i class="pi pi-exclamation-circle"></i>{{ stagesError }}
+    </div>
+    <div class="alert alert-info" *ngIf="trackingOrder.status !== 'InProgress'">
+      <i class="pi pi-info-circle"></i>Stages can only be advanced while the order is In Progress.
+    </div>
+
+    <table class="line-grid stage-track-grid">
+      <thead>
+        <tr>
+          <th style="width:32px">#</th>
+          <th>Stage</th>
+          <th>Line / Operator</th>
+          <th class="num-col">Done</th>
+          <th class="num-col">Rej.</th>
+          <th>Status</th>
+          <th style="width:210px">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let s of trackingOrder.stages">
+          <tr>
+            <td class="num muted">{{ s.sequence }}</td>
+            <td class="fw-600">{{ s.stageName }}</td>
+            <td class="muted small">
+              {{ s.productionLine || '—' }}<span *ngIf="s.operatorEmployeeName"> · {{ s.operatorEmployeeName }}</span>
+            </td>
+            <td class="num">{{ s.completedQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ s.rejectedQuantity | number:'1.0-4' }}</td>
+            <td><span class="stage-badge" [class]="stageBadgeClass(s.status)">{{ s.status }}</span></td>
+            <td>
+              <div class="stage-actions" *ngIf="trackingOrder.status === 'InProgress' && completingStageId !== s.id">
+                <p-button label="Start" icon="pi pi-play" severity="info" [text]="true" size="small"
+                          *ngIf="s.status === 'Pending'" [loading]="stageActionId === s.id"
+                          (click)="startStage(s)" />
+                <p-button label="Complete" icon="pi pi-check" severity="success" [text]="true" size="small"
+                          *ngIf="s.status === 'Pending' || s.status === 'InProgress'"
+                          (click)="beginComplete(s)" />
+                <p-button label="Skip" icon="pi pi-forward" severity="secondary" [text]="true" size="small"
+                          *ngIf="s.status === 'Pending' || s.status === 'InProgress'"
+                          [loading]="stageActionId === s.id" (click)="skipStage(s)" />
+              </div>
+            </td>
+          </tr>
+          <!-- Inline complete row -->
+          <tr *ngIf="completingStageId === s.id" class="complete-row">
+            <td></td>
+            <td colspan="6">
+              <div class="complete-form">
+                <span class="cf-label">Completed</span>
+                <p-inputNumber [(ngModel)]="completeQty" [ngModelOptions]="{ standalone: true }"
+                               [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+                <span class="cf-label">Rejected</span>
+                <p-inputNumber [(ngModel)]="rejectQty" [ngModelOptions]="{ standalone: true }"
+                               [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+                <p-button label="Confirm" icon="pi pi-check" severity="success" size="small"
+                          [loading]="stageActionId === s.id" (click)="confirmComplete(s)" />
+                <p-button label="Cancel" severity="secondary" [text]="true" size="small" (click)="cancelComplete()" />
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="trackingOrder.stages.length === 0">
+          <td colspan="7" class="empty-row"><span>This order has no routing stages.</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="stagesDialogVisible = false" />
   </div>
 </p-dialog>

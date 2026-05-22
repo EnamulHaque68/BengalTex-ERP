@@ -137,6 +137,7 @@ public static class Permissions
         public const string Edit = "Production.Edit";
         public const string IssueMaterial = "Production.IssueMaterial";
         public const string ReceiveFinishedGoods = "Production.ReceiveFinishedGoods";
+        public const string ManageStages = "Production.ManageStages";   // start / complete / skip routing stages
     }
 
     public static class Inventory

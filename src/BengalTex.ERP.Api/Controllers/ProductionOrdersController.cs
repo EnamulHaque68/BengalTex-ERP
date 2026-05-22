@@ -45,7 +45,7 @@ public class ProductionOrdersController : ControllerBase
         var result = await _mediator.Send(new CreateProductionOrderCommand(
             request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
-            request.PlannedStartDate, request.PlannedEndDate, request.Notes
+            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages
         ), ct);
         return Ok(result);
     }
@@ -57,7 +57,7 @@ public class ProductionOrdersController : ControllerBase
         var result = await _mediator.Send(new UpdateProductionOrderCommand(
             id, request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
-            request.PlannedStartDate, request.PlannedEndDate, request.Notes
+            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages
         ), ct);
         return Ok(result);
     }
@@ -93,7 +93,39 @@ public class ProductionOrdersController : ControllerBase
         var result = await _mediator.Send(new CancelProductionOrderCommand(id), ct);
         return Ok(result);
     }
+
+    // ── Routing stage workflow ────────────────────────────────────────────────
+
+    [HttpPost("stages/{stageId:long}/start")]
+    [HasPermission(Permissions.Production.ManageStages)]
+    public async Task<IActionResult> StartStage(long stageId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new StartProductionStageCommand(stageId), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("stages/{stageId:long}/complete")]
+    [HasPermission(Permissions.Production.ManageStages)]
+    public async Task<IActionResult> CompleteStage(long stageId, [FromBody] CompleteProductionStageRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new CompleteProductionStageCommand(
+            stageId, request.CompletedQuantity, request.RejectedQuantity, request.Notes), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("stages/{stageId:long}/skip")]
+    [HasPermission(Permissions.Production.ManageStages)]
+    public async Task<IActionResult> SkipStage(long stageId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SkipProductionStageCommand(stageId), ct);
+        return Ok(result);
+    }
 }
+
+public record CompleteProductionStageRequest(
+    decimal CompletedQuantity,
+    decimal RejectedQuantity,
+    string? Notes);
 
 public record CreateProductionOrderRequest(
     int ProductId,
@@ -103,7 +135,8 @@ public record CreateProductionOrderRequest(
     int ReceiveWarehouseId,
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<ProductionStageInput>? Stages = null);
 
 public record UpdateProductionOrderRequest(
     int ProductId,
@@ -113,4 +146,5 @@ public record UpdateProductionOrderRequest(
     int ReceiveWarehouseId,
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<ProductionStageInput>? Stages = null);

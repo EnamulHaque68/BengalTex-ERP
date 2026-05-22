@@ -7,6 +7,18 @@ export const PRODUCTION_ORDER_STATUSES: { label: string; value: string }[] = [
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
+export const PRODUCTION_STAGE_STATUSES: { label: string; value: string }[] = [
+  { label: 'Pending', value: 'Pending' },
+  { label: 'In Progress', value: 'InProgress' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'Skipped', value: 'Skipped' }
+];
+
+// Common garments routing stages — suggestions for the stage-name picker
+export const COMMON_STAGE_NAMES: string[] = [
+  'Cutting', 'Printing', 'Embroidery', 'Sewing', 'Finishing', 'Ironing', 'QC', 'Packing'
+];
+
 export interface ProductionPlannedLineDto {
   rawMaterialId: number;
   rawMaterialCode: string;
@@ -17,6 +29,31 @@ export interface ProductionPlannedLineDto {
   scaledQuantity: number;
   currentOnHand: number;
   sufficient: boolean;
+}
+
+export interface ProductionStageDto {
+  id: number;
+  sequence: number;
+  stageName: string;
+  status: string;
+  plannedQuantity: number;
+  completedQuantity: number;
+  rejectedQuantity: number;
+  productionLine: string | null;
+  operatorEmployeeId: number | null;
+  operatorEmployeeName: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  notes: string | null;
+}
+
+export interface ProductionStageInput {
+  sequence: number;
+  stageName: string;
+  plannedQuantity: number | null;
+  productionLine: string | null;
+  operatorEmployeeId: number | null;
+  notes: string | null;
 }
 
 export interface ProductionOrderDto {
@@ -46,6 +83,7 @@ export interface ProductionOrderDto {
   completedBy: string | null;
   notes: string | null;
   plannedLines: ProductionPlannedLineDto[];
+  stages: ProductionStageDto[];
 }
 
 export interface ProductionOrderListItemDto {
@@ -58,6 +96,9 @@ export interface ProductionOrderListItemDto {
   status: string;
   plannedStartDate: string | null;
   actualEndDate: string | null;
+  stageCount: number;
+  completedStageCount: number;
+  currentStageName: string | null;
 }
 
 export interface CreateProductionOrderRequest {
@@ -69,6 +110,7 @@ export interface CreateProductionOrderRequest {
   plannedStartDate: string | null;
   plannedEndDate: string | null;
   notes: string | null;
+  stages?: ProductionStageInput[];
 }
 
 export interface UpdateProductionOrderRequest {
@@ -79,5 +121,12 @@ export interface UpdateProductionOrderRequest {
   receiveWarehouseId: number;
   plannedStartDate: string | null;
   plannedEndDate: string | null;
+  notes: string | null;
+  stages?: ProductionStageInput[];
+}
+
+export interface CompleteProductionStageRequest {
+  completedQuantity: number;
+  rejectedQuantity: number;
   notes: string | null;
 }

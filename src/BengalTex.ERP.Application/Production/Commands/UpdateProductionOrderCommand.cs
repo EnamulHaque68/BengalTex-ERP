@@ -4,6 +4,7 @@ using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.Production.Commands;
 
@@ -16,7 +17,8 @@ public sealed record UpdateProductionOrderCommand(
     int ReceiveWarehouseId,
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
-    string? Notes
+    string? Notes,
+    IReadOnlyList<ProductionStageInput>? Stages = null
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class UpdateProductionOrderCommandValidator : AbstractValidator<UpdateProductionOrderCommand>
@@ -30,6 +32,13 @@ public sealed class UpdateProductionOrderCommandValidator : AbstractValidator<Up
         RuleFor(x => x.IssueWarehouseId).GreaterThan(0);
         RuleFor(x => x.ReceiveWarehouseId).GreaterThan(0);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleForEach(x => x.Stages).ChildRules(stage =>
+        {
+            stage.RuleFor(s => s.StageName).NotEmpty().MaximumLength(100);
+            stage.RuleFor(s => s.ProductionLine).MaximumLength(100);
+            stage.RuleFor(s => s.Notes).MaximumLength(1000);
+            stage.RuleFor(s => s.PlannedQuantity).GreaterThan(0).When(s => s.PlannedQuantity.HasValue);
+        });
     }
 }
 
@@ -62,7 +71,9 @@ internal sealed class UpdateProductionOrderCommandHandler
     public async Task<ApiResponse<ProductionOrderDto>> Handle(
         UpdateProductionOrderCommand cmd, CancellationToken cancellationToken)
     {
-        var po = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
+        var po = await _repo.Query()
+            .Include(p => p.Stages)
+            .FirstOrDefaultAsync(p => p.Id == cmd.Id, cancellationToken);
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
         if (po.Status != Domain.Entities.ProductionOrderStatus.Draft)
             return ApiResponse<ProductionOrderDto>.Fail("Only draft production orders can be edited.");
@@ -89,6 +100,28 @@ internal sealed class UpdateProductionOrderCommandHandler
         po.PlannedStartDate = cmd.PlannedStartDate;
         po.PlannedEndDate = cmd.PlannedEndDate;
         po.Notes = cmd.Notes;
+
+        // Replace the routing (order is Draft, so no stage has been worked yet).
+        po.Stages.Clear();
+        if (cmd.Stages is { Count: > 0 })
+        {
+            var seq = 1;
+            foreach (var s in cmd.Stages.OrderBy(s => s.Sequence))
+            {
+                po.Stages.Add(new Domain.Entities.ProductionStage
+                {
+                    Sequence = seq++,
+                    StageName = s.StageName.Trim(),
+                    Status = Domain.Entities.ProductionStageStatus.Pending,
+                    PlannedQuantity = s.PlannedQuantity ?? cmd.Quantity,
+                    CompletedQuantity = 0m,
+                    RejectedQuantity = 0m,
+                    ProductionLine = string.IsNullOrWhiteSpace(s.ProductionLine) ? null : s.ProductionLine.Trim(),
+                    OperatorEmployeeId = s.OperatorEmployeeId,
+                    Notes = string.IsNullOrWhiteSpace(s.Notes) ? null : s.Notes.Trim()
+                });
+            }
+        }
 
         _repo.Update(po);
         await _uow.SaveChangesAsync(cancellationToken);

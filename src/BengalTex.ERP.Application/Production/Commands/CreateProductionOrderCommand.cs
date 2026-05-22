@@ -8,6 +8,15 @@ using MediatR;
 
 namespace BengalTex.ERP.Application.Production.Commands;
 
+/// <summary>Optional routing stage on a production order (Cutting / Sewing / …).</summary>
+public sealed record ProductionStageInput(
+    int Sequence,
+    string StageName,
+    decimal? PlannedQuantity,            // null → defaults to the order quantity
+    string? ProductionLine,
+    int? OperatorEmployeeId,
+    string? Notes);
+
 public sealed record CreateProductionOrderCommand(
     int ProductId,
     int BomId,
@@ -16,7 +25,8 @@ public sealed record CreateProductionOrderCommand(
     int ReceiveWarehouseId,
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
-    string? Notes
+    string? Notes,
+    IReadOnlyList<ProductionStageInput>? Stages = null
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class CreateProductionOrderCommandValidator : AbstractValidator<CreateProductionOrderCommand>
@@ -29,6 +39,13 @@ public sealed class CreateProductionOrderCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.IssueWarehouseId).GreaterThan(0);
         RuleFor(x => x.ReceiveWarehouseId).GreaterThan(0);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleForEach(x => x.Stages).ChildRules(stage =>
+        {
+            stage.RuleFor(s => s.StageName).NotEmpty().MaximumLength(100);
+            stage.RuleFor(s => s.ProductionLine).MaximumLength(100);
+            stage.RuleFor(s => s.Notes).MaximumLength(1000);
+            stage.RuleFor(s => s.PlannedQuantity).GreaterThan(0).When(s => s.PlannedQuantity.HasValue);
+        });
     }
 }
 
@@ -93,6 +110,26 @@ internal sealed class CreateProductionOrderCommandHandler
             Status = Domain.Entities.ProductionOrderStatus.Draft,
             Notes = cmd.Notes
         };
+
+        if (cmd.Stages is { Count: > 0 })
+        {
+            var seq = 1;
+            foreach (var s in cmd.Stages.OrderBy(s => s.Sequence))
+            {
+                entity.Stages.Add(new Domain.Entities.ProductionStage
+                {
+                    Sequence = seq++,
+                    StageName = s.StageName.Trim(),
+                    Status = Domain.Entities.ProductionStageStatus.Pending,
+                    PlannedQuantity = s.PlannedQuantity ?? cmd.Quantity,
+                    CompletedQuantity = 0m,
+                    RejectedQuantity = 0m,
+                    ProductionLine = string.IsNullOrWhiteSpace(s.ProductionLine) ? null : s.ProductionLine.Trim(),
+                    OperatorEmployeeId = s.OperatorEmployeeId,
+                    Notes = string.IsNullOrWhiteSpace(s.Notes) ? null : s.Notes.Trim()
+                });
+            }
+        }
 
         await _repo.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

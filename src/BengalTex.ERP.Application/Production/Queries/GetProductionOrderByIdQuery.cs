@@ -31,6 +31,7 @@ internal sealed class GetProductionOrderByIdQueryHandler
             .Include(p => p.IssueWarehouse)
             .Include(p => p.ReceiveWarehouse)
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
+            .Include(p => p.Stages).ThenInclude(s => s.OperatorEmployee)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
@@ -60,6 +61,16 @@ internal sealed class GetProductionOrderByIdQueryHandler
             })
             .ToList();
 
+        var stages = po.Stages
+            .OrderBy(s => s.Sequence)
+            .Select(s => new ProductionStageDto(
+                s.Id, s.Sequence, s.StageName, s.Status.ToString(),
+                s.PlannedQuantity, s.CompletedQuantity, s.RejectedQuantity,
+                s.ProductionLine, s.OperatorEmployeeId,
+                s.OperatorEmployee != null ? s.OperatorEmployee.FullName : null,
+                s.StartedAt, s.CompletedAt, s.Notes))
+            .ToList();
+
         var dto = new ProductionOrderDto(
             po.Id, po.Code,
             po.ProductId, po.Product.Code, po.Product.Name, po.Product.UnitOfMeasure.Code,
@@ -71,7 +82,7 @@ internal sealed class GetProductionOrderByIdQueryHandler
             po.ActualStartDate, po.ActualEndDate,
             po.Status.ToString(),
             po.CompletedAt, po.CompletedBy, po.Notes,
-            plannedLines);
+            plannedLines, stages);
 
         return ApiResponse<ProductionOrderDto>.Ok(dto);
     }
