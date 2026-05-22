@@ -1,0 +1,44 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Balance Sheet</h2>
+      <p class="page-subtitle">Assets vs Liabilities + Equity as of a date (posted journals only)</p>
+    </div>
+    <div class="header-actions">
+      <label class="lbl">As of</label><input pInputText type="date" [(ngModel)]="asOfDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="bs" *ngIf="data">
+    <div class="cols">
+      <section class="block">
+        <h3>Assets</h3>
+        <table class="stmt-grid">
+          <tr *ngFor="let r of data.assets"><td><span class="code">{{ r.accountCode }}</span> {{ r.accountName }}</td><td class="num">{{ r.amount | number:'1.2-2' }}</td></tr>
+          <tr *ngIf="!data.assets.length" class="muted"><td>No assets.</td><td class="num">0.00</td></tr>
+          <tr class="subtotal"><td>Total Assets</td><td class="num">{{ data.totalAssets | number:'1.2-2' }}</td></tr>
+        </table>
+      </section>
+
+      <section class="block">
+        <h3>Liabilities &amp; Equity</h3>
+        <table class="stmt-grid">
+          <tr class="sub-head"><td colspan="2">Liabilities</td></tr>
+          <tr *ngFor="let r of data.liabilities"><td><span class="code">{{ r.accountCode }}</span> {{ r.accountName }}</td><td class="num">{{ r.amount | number:'1.2-2' }}</td></tr>
+          <tr class="line"><td>Total Liabilities</td><td class="num">{{ data.totalLiabilities | number:'1.2-2' }}</td></tr>
+          <tr class="sub-head"><td colspan="2">Equity</td></tr>
+          <tr *ngFor="let r of data.equity"><td><span class="code">{{ r.accountCode }}</span> {{ r.accountName }}</td><td class="num">{{ r.amount | number:'1.2-2' }}</td></tr>
+          <tr><td>Current Earnings</td><td class="num">{{ data.currentEarnings | number:'1.2-2' }}</td></tr>
+          <tr class="line"><td>Total Equity</td><td class="num">{{ data.totalEquity | number:'1.2-2' }}</td></tr>
+          <tr class="subtotal"><td>Total Liabilities &amp; Equity</td><td class="num">{{ data.totalLiabilitiesAndEquity | number:'1.2-2' }}</td></tr>
+        </table>
+      </section>
+    </div>
+
+    <div class="bal" [class.ok]="data.isBalanced" [class.no]="!data.isBalanced">
+      <i class="pi" [class.pi-check-circle]="data.isBalanced" [class.pi-exclamation-triangle]="!data.isBalanced"></i>
+      {{ data.isBalanced ? 'Balanced (Assets = Liabilities + Equity)' : 'Out of balance' }}
+    </div>
+  </div>
+</div>

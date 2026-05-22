@@ -143,3 +143,33 @@ export interface GeneralLedgerDto {
   closingBalance: number;
   lines: GeneralLedgerLineDto[];
 }
+
+export interface StatementLineDto {
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  amount: number;
+}
+
+export interface ProfitAndLossDto {
+  fromDate: string;
+  toDate: string;
+  income: StatementLineDto[];
+  totalIncome: number;
+  expenses: StatementLineDto[];
+  totalExpense: number;
+  netProfit: number;
+}
+
+export interface BalanceSheetDto {
+  asOfDate: string;
+  assets: StatementLineDto[];
+  totalAssets: number;
+  liabilities: StatementLineDto[];
+  totalLiabilities: number;
+  equity: StatementLineDto[];
+  currentEarnings: number;
+  totalEquity: number;
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+}
