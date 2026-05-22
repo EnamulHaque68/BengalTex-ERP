@@ -221,3 +221,39 @@
     &:hover { opacity: 1; }
   }
 }
+
+/* ── Multi-stage routing ─────────────────────────────────────────────────── */
+.stage-progress {
+  margin-top: 0.25rem; font-size: 0.72rem; color: #6b21a8;
+  i { font-size: 0.7rem; margin-right: 0.15rem; }
+  .cur-stage { color: #9333ea; font-weight: 600; }
+}
+
+.quick-stages {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.25rem 0 0.6rem;
+  .quick-label { font-size: 0.75rem; color: #9ca3af; }
+  .quick-chip {
+    border: 1px solid #ddd6fe; background: #f5f3ff; color: #5b21b6;
+    border-radius: 999px; padding: 0.1rem 0.55rem; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    &:hover { background: #ede9fe; }
+  }
+}
+
+.stage-input { width: 100%; font-size: 0.8rem; }
+
+.stage-badge {
+  padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  &.pending    { background: #f3f4f6; color: #4b5563; }
+  &.inprogress { background: #dbeafe; color: #1e40af; }
+  &.completed  { background: #d1fae5; color: #065f46; }
+  &.skipped    { background: #fef3c7; color: #92400e; }
+}
+
+.track-sub { margin: 0 0 0.85rem; font-size: 0.9rem; color: #374151; display: flex; align-items: center; gap: 0.6rem; }
+.stage-track-grid { td { vertical-align: middle; } .small { font-size: 0.78rem; } }
+.stage-actions { display: flex; gap: 0.15rem; flex-wrap: wrap; }
+.complete-row { background: #faf5ff; }
+.complete-form {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.25rem 0;
+  .cf-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; }
+}

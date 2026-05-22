@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
+  CompleteProductionStageRequest,
   CreateProductionOrderRequest,
   ProductionOrderDto,
   ProductionOrderListItemDto,
@@ -59,5 +60,18 @@ export class ProductionOrderService {
 
   cancel(id: number): Observable<ApiResponse<ProductionOrderDto>> {
     return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}/cancel`, {});
+  }
+
+  // ── Routing stage workflow ──
+  startStage(stageId: number): Observable<ApiResponse<ProductionOrderDto>> {
+    return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/stages/${stageId}/start`, {});
+  }
+
+  completeStage(stageId: number, data: CompleteProductionStageRequest): Observable<ApiResponse<ProductionOrderDto>> {
+    return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/stages/${stageId}/complete`, data);
+  }
+
+  skipStage(stageId: number): Observable<ApiResponse<ProductionOrderDto>> {
+    return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/stages/${stageId}/skip`, {});
   }
 }

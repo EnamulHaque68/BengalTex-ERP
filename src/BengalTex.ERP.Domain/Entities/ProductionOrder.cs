@@ -46,6 +46,53 @@ public class ProductionOrder : BaseTransactionalEntity
     public string? CompletedBy { get; set; }
 
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// Optional multi-stage routing (Cutting → Sewing → Finishing → Packing …). Additive:
+    /// an order with no stages behaves exactly as a single-step run. When stages exist, every
+    /// stage must be Completed/Skipped before the order can be completed. Stages track WIP
+    /// progress + line/operator only — all stock impact still happens at order Complete.
+    /// </summary>
+    public ICollection<ProductionStage> Stages { get; set; } = new List<ProductionStage>();
+}
+
+/// <summary>
+/// One step in a production order's routing. Tracks the quantity worked through this stage,
+/// the line/operator who did it, and timing. No stock movement of its own (v1).
+/// </summary>
+public class ProductionStage : BaseTransactionalEntity
+{
+    public long ProductionOrderId { get; set; }
+    public ProductionOrder ProductionOrder { get; set; } = null!;
+
+    /// <summary>1-based position in the routing.</summary>
+    public int Sequence { get; set; }
+
+    /// <summary>e.g. "Cutting", "Sewing", "Finishing", "Packing".</summary>
+    public string StageName { get; set; } = string.Empty;
+
+    public ProductionStageStatus Status { get; set; } = ProductionStageStatus.Pending;
+
+    /// <summary>Units expected to pass through this stage (defaults to the order quantity).</summary>
+    public decimal PlannedQuantity { get; set; }
+
+    /// <summary>Good units that completed this stage.</summary>
+    public decimal CompletedQuantity { get; set; }
+
+    /// <summary>Units rejected / scrapped at this stage.</summary>
+    public decimal RejectedQuantity { get; set; }
+
+    /// <summary>Production line / workstation, free text.</summary>
+    public string? ProductionLine { get; set; }
+
+    /// <summary>Operator assigned to this stage (reuses the Employee master).</summary>
+    public int? OperatorEmployeeId { get; set; }
+    public Employee? OperatorEmployee { get; set; }
+
+    public DateTimeOffset? StartedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public string? Notes { get; set; }
 }
 
 public enum ProductionOrderStatus
@@ -54,4 +101,12 @@ public enum ProductionOrderStatus
     InProgress = 2,
     Completed = 3,
     Cancelled = 4
+}
+
+public enum ProductionStageStatus
+{
+    Pending = 1,
+    InProgress = 2,
+    Completed = 3,
+    Skipped = 4
 }

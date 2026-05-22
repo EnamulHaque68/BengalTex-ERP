@@ -1,18 +1,22 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProductionOrderService } from '../../../services/production-order.service';
 import { ProductService } from '../../../services/product.service';
 import { BomService } from '../../../services/bom.service';
 import { WarehouseService } from '../../../services/warehouse.service';
+import { EmployeeService } from '../../../services/employee.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
+  COMMON_STAGE_NAMES,
   PRODUCTION_ORDER_STATUSES,
   ProductionOrderDto,
-  ProductionOrderListItemDto
+  ProductionOrderListItemDto,
+  ProductionStageDto
 } from '../../../models/production-order.models';
 import { ProductListItemDto } from '../../../models/product.models';
 import { BomListItemDto } from '../../../models/bom.models';
 import { WarehouseDto } from '../../../models/master-data.models';
+import { EmployeeListItemDto } from '../../../models/employee.models';
 
 interface BomOption extends BomListItemDto {
   displayLabel: string;     // "BTX/BOM/2026/00001 — v3 (Active)"
@@ -37,9 +41,20 @@ export class ProductionOrderListComponent implements OnInit {
   searchTimer: any = null;
 
   readonly statuses = PRODUCTION_ORDER_STATUSES;
+  readonly commonStageNames = COMMON_STAGE_NAMES.map(n => ({ label: n, value: n }));
   products: ProductListItemDto[] = [];
   bomsForSelectedProduct: BomOption[] = [];
   warehouses: WarehouseDto[] = [];
+  employees: EmployeeListItemDto[] = [];
+
+  // Stage-tracking dialog (shop-floor progress on an order's routing)
+  stagesDialogVisible = false;
+  trackingOrder: ProductionOrderDto | null = null;
+  stageActionId: number | null = null;
+  stagesError = '';
+  completingStageId: number | null = null;
+  completeQty = 0;
+  rejectQty = 0;
 
   // Dialog
   dialogVisible = false;
@@ -64,6 +79,7 @@ export class ProductionOrderListComponent implements OnInit {
     private productService: ProductService,
     private bomService: BomService,
     private warehouseService: WarehouseService,
+    private employeeService: EmployeeService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -88,8 +104,27 @@ export class ProductionOrderListComponent implements OnInit {
       receiveWarehouseId: [null as number | null, Validators.required],
       plannedStartDate: [this.todayIso() as string | null],
       plannedEndDate: [null as string | null],
-      notes: ['', Validators.maxLength(2000)]
+      notes: ['', Validators.maxLength(2000)],
+      stages: this.fb.array([])
     });
+  }
+
+  get stages(): FormArray {
+    return this.form.get('stages') as FormArray;
+  }
+
+  addStage(stageName = ''): void {
+    this.stages.push(this.fb.group({
+      stageName: [stageName, [Validators.required, Validators.maxLength(100)]],
+      plannedQuantity: [null as number | null],
+      productionLine: ['', Validators.maxLength(100)],
+      operatorEmployeeId: [null as number | null],
+      notes: ['', Validators.maxLength(1000)]
+    }));
+  }
+
+  removeStage(i: number): void {
+    this.stages.removeAt(i);
   }
 
   // ─── Data loading ────────────────────────────────────────────────────────
@@ -107,6 +142,14 @@ export class ProductionOrderListComponent implements OnInit {
       next: (res) => {
         this.zone.run(() => {
           if (res.success) this.warehouses = res.data ?? [];
+          this.cdr.detectChanges();
+        });
+      }
+    });
+    this.employeeService.getAll({ page: 1, pageSize: 500, search: '' }, false).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) this.employees = res.data.items;
           this.cdr.detectChanges();
         });
       }
@@ -190,6 +233,7 @@ export class ProductionOrderListComponent implements OnInit {
     this.loadedDetail = null;
     this.bomsForSelectedProduct = [];
     this.form.enable();
+    this.stages.clear();
     this.form.reset({
       productId: this.filterProductId ?? null,
       bomId: null,
@@ -232,6 +276,16 @@ export class ProductionOrderListComponent implements OnInit {
               plannedEndDate: p.plannedEndDate ?? null,
               notes: p.notes ?? ''
             });
+            this.stages.clear();
+            for (const s of p.stages) {
+              this.stages.push(this.fb.group({
+                stageName: [s.stageName, [Validators.required, Validators.maxLength(100)]],
+                plannedQuantity: [s.plannedQuantity as number | null],
+                productionLine: [s.productionLine ?? '', Validators.maxLength(100)],
+                operatorEmployeeId: [s.operatorEmployeeId as number | null],
+                notes: [s.notes ?? '', Validators.maxLength(1000)]
+              }));
+            }
             this.loadBomsForProduct(p.productId, p.bomId);
             if (this.dialogMode === 'view') this.form.disable();
             this.cdr.detectChanges();
@@ -249,6 +303,17 @@ export class ProductionOrderListComponent implements OnInit {
     this.cdr.detectChanges();
 
     const v = this.form.getRawValue();
+    const stages = (v.stages as any[])
+      .filter(s => (s.stageName as string)?.trim())
+      .map((s, i) => ({
+        sequence: i + 1,
+        stageName: (s.stageName as string).trim(),
+        plannedQuantity: s.plannedQuantity != null && s.plannedQuantity !== '' ? Number(s.plannedQuantity) : null,
+        productionLine: (s.productionLine as string)?.trim() || null,
+        operatorEmployeeId: s.operatorEmployeeId ?? null,
+        notes: (s.notes as string)?.trim() || null
+      }));
+
     const payload = {
       productId: v.productId,
       bomId: v.bomId,
@@ -257,7 +322,8 @@ export class ProductionOrderListComponent implements OnInit {
       receiveWarehouseId: v.receiveWarehouseId,
       plannedStartDate: v.plannedStartDate || null,
       plannedEndDate: v.plannedEndDate || null,
-      notes: (v.notes as string)?.trim() || null
+      notes: (v.notes as string)?.trim() || null,
+      stages
     };
 
     if (this.dialogMode === 'create') {
@@ -338,6 +404,97 @@ export class ProductionOrderListComponent implements OnInit {
       this.actionError = err?.error?.message || 'Action failed.';
       this.cdr.detectChanges();
     });
+  }
+
+  // ─── Stage tracking (routing progress) ────────────────────────────────────
+
+  hasStages(po: ProductionOrderListItemDto): boolean {
+    return po.stageCount > 0;
+  }
+
+  openStages(po: ProductionOrderListItemDto): void {
+    this.stagesError = '';
+    this.completingStageId = null;
+    this.trackingOrder = null;
+    this.stagesDialogVisible = true;
+    this.poService.getById(po.id).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) this.trackingOrder = res.data;
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  startStage(stage: ProductionStageDto): void {
+    this.runStageAction(stage.id, this.poService.startStage(stage.id));
+  }
+
+  skipStage(stage: ProductionStageDto): void {
+    this.runStageAction(stage.id, this.poService.skipStage(stage.id));
+  }
+
+  beginComplete(stage: ProductionStageDto): void {
+    this.completingStageId = stage.id;
+    this.completeQty = stage.completedQuantity || stage.plannedQuantity || 0;
+    this.rejectQty = stage.rejectedQuantity || 0;
+  }
+
+  cancelComplete(): void {
+    this.completingStageId = null;
+  }
+
+  confirmComplete(stage: ProductionStageDto): void {
+    this.runStageAction(stage.id, this.poService.completeStage(stage.id, {
+      completedQuantity: Number(this.completeQty) || 0,
+      rejectedQuantity: Number(this.rejectQty) || 0,
+      notes: null
+    }));
+  }
+
+  private runStageAction(stageId: number, obs: any): void {
+    if (this.stageActionId) return;
+    this.stageActionId = stageId;
+    this.stagesError = '';
+    this.cdr.detectChanges();
+    obs.subscribe({
+      next: (res: { success: boolean; message?: string | null; data?: ProductionOrderDto }) => {
+        this.zone.run(() => {
+          this.stageActionId = null;
+          this.completingStageId = null;
+          if (res.success && res.data) {
+            this.trackingOrder = res.data;
+            this.load();   // refresh list progress column
+          } else {
+            this.stagesError = res.message || 'Stage action failed.';
+          }
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err: any) => {
+        this.zone.run(() => {
+          this.stageActionId = null;
+          this.stagesError = err?.error?.message || 'Stage action failed.';
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  stageBadgeClass(status: string): string {
+    switch (status) {
+      case 'Pending':    return 'pending';
+      case 'InProgress': return 'inprogress';
+      case 'Completed':  return 'completed';
+      case 'Skipped':    return 'skipped';
+      default:           return '';
+    }
+  }
+
+  employeeName(id: number | null): string {
+    if (!id) return '—';
+    return this.employees.find(e => e.id === id)?.fullName ?? '—';
   }
 
   canCancel(po: ProductionOrderListItemDto): boolean {

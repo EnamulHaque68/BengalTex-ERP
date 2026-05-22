@@ -49,6 +49,43 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
             .HasForeignKey(p => p.ReceiveWarehouseId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // One-to-many: order → routing stages
+        builder.HasMany(p => p.Stages)
+            .WithOne(s => s.ProductionOrder)
+            .HasForeignKey(s => s.ProductionOrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(p => p.RowVersion).IsRowVersion();
+    }
+}
+
+public class ProductionStageConfiguration : IEntityTypeConfiguration<ProductionStage>
+{
+    public void Configure(EntityTypeBuilder<ProductionStage> builder)
+    {
+        builder.ToTable("ProductionStages");
+
+        builder.Property(s => s.StageName).IsRequired().HasMaxLength(100);
+        builder.Property(s => s.ProductionLine).HasMaxLength(100);
+        builder.Property(s => s.Notes).HasMaxLength(1000);
+
+        builder.Property(s => s.PlannedQuantity).HasPrecision(18, 4);
+        builder.Property(s => s.CompletedQuantity).HasPrecision(18, 4);
+        builder.Property(s => s.RejectedQuantity).HasPrecision(18, 4);
+
+        builder.Property(s => s.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.HasIndex(s => s.ProductionOrderId);
+        builder.HasIndex(s => s.Status);
+
+        // Operator → Employee (optional) — Restrict so an employee with stage history isn't deleted
+        builder.HasOne(s => s.OperatorEmployee)
+            .WithMany()
+            .HasForeignKey(s => s.OperatorEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(s => s.RowVersion).IsRowVersion();
     }
 }

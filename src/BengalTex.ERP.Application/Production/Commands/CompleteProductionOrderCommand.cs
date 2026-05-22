@@ -54,11 +54,24 @@ internal sealed class CompleteProductionOrderCommandHandler
         var po = await _repo.Query()
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial)
             .Include(p => p.Product)
+            .Include(p => p.Stages)
             .FirstOrDefaultAsync(p => p.Id == cmd.Id, cancellationToken);
 
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
         if (po.Status != ProductionOrderStatus.InProgress)
             return ApiResponse<ProductionOrderDto>.Fail("Only in-progress production orders can be completed.");
+
+        // Multi-stage gate (additive): if a routing exists, every stage must be done first.
+        if (po.Stages.Count > 0 && po.Stages.Any(s =>
+                s.Status != ProductionStageStatus.Completed && s.Status != ProductionStageStatus.Skipped))
+        {
+            var pending = po.Stages
+                .Where(s => s.Status != ProductionStageStatus.Completed && s.Status != ProductionStageStatus.Skipped)
+                .OrderBy(s => s.Sequence)
+                .Select(s => s.StageName);
+            return ApiResponse<ProductionOrderDto>.Fail(
+                "Complete or skip all production stages first — pending: " + string.Join(", ", pending));
+        }
         if (po.Bom.Lines.Count == 0)
             return ApiResponse<ProductionOrderDto>.Fail("Cannot complete a production whose BOM has no lines.");
         if (po.Bom.OutputQuantity <= 0)
