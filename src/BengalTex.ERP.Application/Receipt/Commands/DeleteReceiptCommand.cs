@@ -1,4 +1,7 @@
+using BengalTex.ERP.Application.Accounting;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
+using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
 
@@ -20,15 +23,18 @@ internal sealed class DeleteReceiptCommandHandler : IRequestHandler<DeleteReceip
     private readonly IRepository<Domain.Entities.Receipt, long> _repo;
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IJournalPostingService _journal;
 
     public DeleteReceiptCommandHandler(
         IRepository<Domain.Entities.Receipt, long> repo,
         IRepository<Domain.Entities.CustomerInvoice, long> invRepo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IJournalPostingService journal)
     {
         _repo = repo;
         _invRepo = invRepo;
         _uow = uow;
+        _journal = journal;
     }
 
     public async Task<ApiResponse> Handle(DeleteReceiptCommand cmd, CancellationToken cancellationToken)
@@ -51,6 +57,18 @@ internal sealed class DeleteReceiptCommandHandler : IRequestHandler<DeleteReceip
         _invRepo.Update(inv);
 
         _repo.Remove(rct);
+
+        // Reversing journal — mirror of the original receipt entry (Dr AR, Cr Cash/Bank).
+        var cashAccount = rct.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+        var baseAmount = rct.Amount * inv.ExchangeRate;
+        await _journal.PostAsync(
+            DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of receipt {rct.Code}", "ReceiptReversal", rct.Id, rct.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.AccountsReceivable, baseAmount, 0m),
+                new JournalPostingLine(cashAccount, 0m, baseAmount),
+            }, cancellationToken);
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return ApiResponse.Ok("Receipt deleted and invoice balance reversed.");

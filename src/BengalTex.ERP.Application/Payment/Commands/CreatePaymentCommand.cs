@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Payment.Dtos;
 using BengalTex.ERP.Application.Payment.Queries;
 using BengalTex.ERP.Application.Services;
@@ -49,6 +50,7 @@ internal sealed class CreatePaymentCommandHandler
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _invRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public CreatePaymentCommandHandler(
@@ -56,12 +58,14 @@ internal sealed class CreatePaymentCommandHandler
         IRepository<Domain.Entities.SupplierInvoice, long> invRepo,
         IUnitOfWork uow,
         INumberingService numbering,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _invRepo = invRepo;
         _uow = uow;
         _numbering = numbering;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -107,6 +111,18 @@ internal sealed class CreatePaymentCommandHandler
             : Domain.Entities.SupplierInvoiceStatus.PartiallyPaid;
         _invRepo.Update(inv);
 
+        await _uow.SaveChangesAsync(cancellationToken);   // persist payment (gets its Id) + invoice
+
+        // Auto-journal: Dr Accounts Payable, Cr Cash/Bank (base BDT via the invoice's rate).
+        var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+        var baseAmount = cmd.Amount * inv.ExchangeRate;
+        await _journal.PostAsync(
+            entity.PaymentDate, $"Payment {entity.Code} against {inv.Code}", "Payment", entity.Id, entity.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.AccountsPayable, baseAmount, 0m),
+                new JournalPostingLine(cashAccount, 0m, baseAmount),
+            }, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetPaymentByIdQuery(entity.Id), cancellationToken);

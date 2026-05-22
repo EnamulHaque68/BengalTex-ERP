@@ -1,3 +1,5 @@
+using BengalTex.ERP.Application.Accounting;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Application.SupplierInvoice.Dtos;
 using BengalTex.ERP.Application.SupplierInvoice.Queries;
 using BengalTex.ERP.Domain.Common;
@@ -17,15 +19,18 @@ internal sealed class CancelSupplierInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _repo;
     private readonly IUnitOfWork _uow;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public CancelSupplierInvoiceCommandHandler(
         IRepository<Domain.Entities.SupplierInvoice, long> repo,
         IUnitOfWork uow,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _uow = uow;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -48,8 +53,25 @@ internal sealed class CancelSupplierInvoiceCommandHandler
                 "Cannot cancel: payments have already been made. Delete the payments first.");
         }
 
+        var wasApproved = inv.Status == Domain.Entities.SupplierInvoiceStatus.Approved;
+
         inv.Status = Domain.Entities.SupplierInvoiceStatus.Cancelled;
         _repo.Update(inv);
+
+        // If it was Approved, an auto-journal exists — reverse it (Cr RM Inv / Cr VAT-in / Dr AP).
+        if (wasApproved)
+        {
+            var rate = inv.ExchangeRate;
+            await _journal.PostAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of supplier bill {inv.Code}", "SupplierInvoiceReversal", inv.Id, inv.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, inv.SubtotalAmount * rate),
+                    new JournalPostingLine(LedgerAccounts.VatReceivable, 0m, inv.VatAmount * rate),
+                    new JournalPostingLine(LedgerAccounts.AccountsPayable, inv.TotalAmount * rate, 0m),
+                }, cancellationToken);
+        }
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetSupplierInvoiceByIdQuery(inv.Id), cancellationToken);

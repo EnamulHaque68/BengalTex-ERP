@@ -1,4 +1,6 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Application.SupplierInvoice.Dtos;
 using BengalTex.ERP.Application.SupplierInvoice.Queries;
 using BengalTex.ERP.Domain.Common;
@@ -23,17 +25,20 @@ internal sealed class ApproveSupplierInvoiceCommandHandler
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _repo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
+    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public ApproveSupplierInvoiceCommandHandler(
         IRepository<Domain.Entities.SupplierInvoice, long> repo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
+        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _uow = uow;
         _currentUser = currentUser;
+        _journal = journal;
         _mediator = mediator;
     }
 
@@ -57,6 +62,18 @@ internal sealed class ApproveSupplierInvoiceCommandHandler
         inv.Status = Domain.Entities.SupplierInvoiceStatus.Approved;
         inv.ApprovedAt = DateTimeOffset.UtcNow;
         inv.ApprovedBy = _currentUser.UserName;
+
+        // Auto-journal (base BDT = doc amount × exchange rate):
+        //   Dr Raw Material Inventory (net) / Dr VAT Receivable (input VAT) / Cr Accounts Payable (gross)
+        var rate = inv.ExchangeRate;
+        await _journal.PostAsync(
+            inv.InvoiceDate, $"Supplier bill {inv.Code}", "SupplierInvoice", inv.Id, inv.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.RawMaterialInventory, inv.SubtotalAmount * rate, 0m),
+                new JournalPostingLine(LedgerAccounts.VatReceivable, inv.VatAmount * rate, 0m),
+                new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, inv.TotalAmount * rate),
+            }, cancellationToken);
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(cancellationToken);
