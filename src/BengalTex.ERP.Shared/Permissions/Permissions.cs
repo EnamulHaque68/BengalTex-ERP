@@ -213,6 +213,14 @@ public static class Permissions
         public const string Receive = "Subcontracting.Receive";  // receive processed material back
     }
 
+    public static class Styles
+    {
+        public const string View = "Styles.View";
+        public const string Create = "Styles.Create";
+        public const string Edit = "Styles.Edit";
+        public const string Delete = "Styles.Delete";
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";
