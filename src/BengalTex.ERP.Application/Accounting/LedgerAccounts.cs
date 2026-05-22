@@ -18,4 +18,5 @@ public static class LedgerAccounts
     public const string SalesRevenue = "4100";
     public const string CostOfGoodsSold = "5100";
     public const string SalaryExpense = "5200";
+    public const string AdministrativeExpense = "5400";   // default expense account for unmapped categories
 }

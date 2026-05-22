@@ -245,6 +245,16 @@ public static class Permissions
         public const string PostJournal = "Accounting.PostJournal";        // post (freeze) journal vouchers into the ledger
     }
 
+    public static class Expenses
+    {
+        public const string View = "Expenses.View";
+        public const string Create = "Expenses.Create";
+        public const string Edit = "Expenses.Edit";
+        public const string Delete = "Expenses.Delete";
+        public const string Approve = "Expenses.Approve";              // approve + pay (posts to ledger) / cancel
+        public const string ManageCategories = "Expenses.ManageCategories";
+    }
+
     public static class Reports
     {
         public const string ViewSales = "Reports.ViewSales";

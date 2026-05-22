@@ -51,7 +51,8 @@ const routes: Routes = [
       { path: 'letters-of-credit', loadChildren: () => import('./modules/banking/banking.module').then(m => m.BankingModule) },
       { path: 'notifications', loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule) },
       { path: 'stock-lots', loadChildren: () => import('./modules/stock-lots/stock-lots.module').then(m => m.StockLotsModule) },
-      { path: 'accounting', loadChildren: () => import('./modules/accounting/accounting.module').then(m => m.AccountingModule) }
+      { path: 'accounting', loadChildren: () => import('./modules/accounting/accounting.module').then(m => m.AccountingModule) },
+      { path: 'expenses', loadChildren: () => import('./modules/expenses/expenses.module').then(m => m.ExpensesModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
