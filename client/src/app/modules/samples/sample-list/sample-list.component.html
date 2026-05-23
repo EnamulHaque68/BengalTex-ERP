@@ -1,0 +1,112 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Sample Development</h2>
+      <p class="page-subtitle">Buyer sample requests — develop, submit, capture approval &amp; feedback before bulk</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap"><i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, title, buyer..." (input)="onSearch($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button *ngIf="canCreate" label="New Sample" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="samples" [loading]="loading" [paginator]="true" [rows]="parameters.pageSize || 25" [totalRecords]="totalCount"
+             [lazy]="true" (onLazyLoad)="onPage($event)" [first]="((parameters.page||1)-1)*(parameters.pageSize||25)" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Buyer</th><th>Title</th><th>Product</th><th class="num-h">Qty</th><th>Requested</th><th>Target</th><th class="num-h">Lead (d)</th><th>Status</th><th style="width:170px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td class="fw-600">{{ s.customerName }}</td>
+          <td>{{ s.title }}</td>
+          <td class="muted">{{ s.productName || '—' }}</td>
+          <td class="num">{{ s.quantity | number:'1.0-2' }}</td>
+          <td class="num">{{ s.requestedDate | date:'yyyy-MM-dd' }}</td>
+          <td class="num muted">{{ s.targetDate ? (s.targetDate | date:'yyyy-MM-dd') : '—' }}</td>
+          <td class="num">{{ s.leadTimeDays != null ? s.leadTimeDays : '—' }}</td>
+          <td><span class="status-badge" [class]="statusClass(s.status)">{{ s.status === 'InDevelopment' ? 'In Dev' : s.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="(s.status === 'Approved' || s.status === 'Rejected') ? 'pi pi-eye' : 'pi pi-pencil'" severity="secondary" [text]="true" size="small" (click)="open(s)" pTooltip="Open" />
+              <p-button icon="pi pi-cog" severity="info" [text]="true" size="small" *ngIf="s.status === 'Requested' && canManage" [loading]="rowActionId === s.id" (click)="startDev(s)" pTooltip="Start development" />
+              <p-button icon="pi pi-send" severity="info" [text]="true" size="small" *ngIf="s.status === 'InDevelopment' && canManage" [loading]="rowActionId === s.id" (click)="submit(s)" pTooltip="Submit to buyer" />
+              <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="s.status === 'Submitted' && canManage" (click)="openDecide(s, true)" pTooltip="Approve" />
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" *ngIf="s.status === 'Submitted' && canManage" (click)="openDecide(s, false)" pTooltip="Reject" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="s.status !== 'Approved' && s.status !== 'Rejected' && canCreate" (click)="confirmDelete(s)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="10" class="empty-row"><i class="pi pi-box"></i><span>No samples.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'New Sample' : (dialogMode==='edit' ? ('Sample ' + (loaded?.code || '')) : ('Sample ' + (loaded?.code || '')))" [modal]="true" [style]="{ width: '720px' }">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode==='view'"><i class="pi pi-lock"></i>{{ loaded?.status }} — read-only.</div>
+    <div class="alert alert-success" *ngIf="loaded?.status === 'Approved' && loaded?.feedback"><i class="pi pi-comment"></i><strong>Buyer feedback:</strong> {{ loaded?.feedback }}</div>
+    <div class="alert alert-error" *ngIf="loaded?.status === 'Rejected' && loaded?.feedback"><i class="pi pi-comment"></i><strong>Rejection note:</strong> {{ loaded?.feedback }}</div>
+
+    <div class="dialog-grid">
+      <div class="field"><label>Buyer *</label>
+        <p-select formControlName="customerId" [options]="customers" optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name" placeholder="Select buyer" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field"><label>Based on Product</label>
+        <p-select formControlName="productId" [options]="products" optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name" [showClear]="true" placeholder="(new / none)" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2"><label>Title *</label><input pInputText formControlName="title" class="w-full" /></div>
+      <div class="field"><label>Buyer Reference</label><input pInputText formControlName="buyerReference" class="w-full" /></div>
+      <div class="field"><label>Quantity</label><p-inputNumber formControlName="quantity" [min]="0" [maxFractionDigits]="2" class="w-full" /></div>
+      <div class="field"><label>Requested Date *</label><input pInputText type="date" formControlName="requestedDate" class="w-full" /></div>
+      <div class="field"><label>Target Date</label><input pInputText type="date" formControlName="targetDate" class="w-full" /></div>
+      <div class="field col-span-2"><label>Description</label><input pInputText formControlName="description" class="w-full" /></div>
+      <div class="field col-span-2"><label>Notes</label><input pInputText formControlName="notes" class="w-full" /></div>
+    </div>
+
+    <!-- Sample images / spec sheets (only after the sample exists) -->
+    <div class="attachments" *ngIf="editingId">
+      <p class="section-label">Sample Images &amp; Documents</p>
+      <app-attachments-panel entityType="Sample" [entityId]="editingId"></app-attachments-panel>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+      <p-button *ngIf="dialogMode!=='view'" type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode==='create' ? 'Create' : 'Save')" icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Decide -->
+<p-dialog [(visible)]="decideDialogVisible" [header]="decideApprove ? 'Approve Sample' : 'Reject Sample'" [modal]="true" [style]="{ width: '480px' }">
+  <div *ngIf="decideSample">
+    <p>{{ decideApprove ? 'Approve' : 'Reject' }} <strong>{{ decideSample.code }}</strong> — {{ decideSample.title }}?</p>
+    <div class="field"><label>Buyer Feedback</label><textarea pInputTextarea rows="3" [(ngModel)]="decideFeedback" class="w-full" placeholder="Comments / required changes..."></textarea></div>
+    <div class="alert alert-error" *ngIf="decideError"><i class="pi pi-exclamation-circle"></i>{{ decideError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="decideDialogVisible=false" [disabled]="decideBusy" />
+      <p-button [label]="decideApprove ? 'Approve' : 'Reject'" [icon]="decideApprove ? 'pi pi-check' : 'pi pi-times'" [severity]="decideApprove ? 'success' : 'danger'" [loading]="decideBusy" (click)="doDecide()" />
+    </div>
+  </div>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Sample" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

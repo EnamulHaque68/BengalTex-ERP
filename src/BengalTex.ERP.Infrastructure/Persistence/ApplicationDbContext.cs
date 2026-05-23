@@ -98,6 +98,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Quotation> Quotations => Set<Quotation>();
     public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
+    public DbSet<Sample> Samples => Set<Sample>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

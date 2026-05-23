@@ -113,6 +113,15 @@ public static class Permissions
         public const string Convert = "Quotations.Convert";    // convert an accepted quotation to a Sales Order
     }
 
+    public static class Samples
+    {
+        public const string View = "Samples.View";
+        public const string Create = "Samples.Create";
+        public const string Edit = "Samples.Edit";
+        public const string Delete = "Samples.Delete";
+        public const string Manage = "Samples.Manage";        // advance lifecycle: start dev / submit / approve / reject
+    }
+
     public static class PurchaseOrders
     {
         public const string View = "PurchaseOrders.View";

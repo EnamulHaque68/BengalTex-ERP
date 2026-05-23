@@ -53,7 +53,8 @@ const routes: Routes = [
       { path: 'stock-lots', loadChildren: () => import('./modules/stock-lots/stock-lots.module').then(m => m.StockLotsModule) },
       { path: 'accounting', loadChildren: () => import('./modules/accounting/accounting.module').then(m => m.AccountingModule) },
       { path: 'expenses', loadChildren: () => import('./modules/expenses/expenses.module').then(m => m.ExpensesModule) },
-      { path: 'quotations', loadChildren: () => import('./modules/quotations/quotations.module').then(m => m.QuotationsModule) }
+      { path: 'quotations', loadChildren: () => import('./modules/quotations/quotations.module').then(m => m.QuotationsModule) },
+      { path: 'samples', loadChildren: () => import('./modules/samples/samples.module').then(m => m.SamplesModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
