@@ -1,0 +1,33 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Wastage Summary</h2>
+      <p class="page-subtitle">Wastage cost by reason over a period</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/wastage" class="link-btn"><i class="pi pi-arrow-left"></i> Wastage</a>
+      <label class="lbl">From</label><input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <label class="lbl">To</label><input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="data?.rows || []" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header"><tr><th>Reason</th><th>Type</th><th class="num-h">Count</th><th class="num-h">Cost</th><th style="width:170px">Share</th></tr></ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.wastageReasonName }}</td>
+          <td><span class="badge" [class.yes]="r.isReusable" [class.no]="!r.isReusable">{{ r.isReusable ? 'Reusable' : 'Loss' }}</span></td>
+          <td class="num">{{ r.count }}</td>
+          <td class="num">{{ r.totalCost | number:'1.2-2' }}</td>
+          <td><div class="bar-wrap"><div class="bar" [style.width.%]="pct(r.totalCost)"></div></div><span class="pct">{{ pct(r.totalCost) }}%</span></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer" *ngIf="data && data.rows.length">
+        <tr class="totals-row"><td class="ta-right">Total</td><td></td><td></td><td class="num">{{ data.totalCost | number:'1.2-2' }}</td><td></td></tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="5" class="empty-row"><i class="pi pi-chart-pie"></i><span>No wastage in this period.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>

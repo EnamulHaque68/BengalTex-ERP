@@ -99,6 +99,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Quotation> Quotations => Set<Quotation>();
     public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
     public DbSet<Sample> Samples => Set<Sample>();
+    public DbSet<WastageReason> WastageReasons => Set<WastageReason>();
+    public DbSet<WastageEntry> WastageEntries => Set<WastageEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
