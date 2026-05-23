@@ -41,6 +41,31 @@ public class DataSeeder : IDataSeeder
         await SeedNumberingSeriesAsync(ct);
         await SeedChartOfAccountsAsync(ct);
         await SeedExpenseCategoriesAsync(ct);
+        await SeedWastageReasonsAsync(ct);
+    }
+
+    // ─── Wastage Reasons ───────────────────────────────────────────────────────
+
+    private async Task SeedWastageReasonsAsync(CancellationToken ct)
+    {
+        var defs = new (string Name, bool Reusable)[]
+        {
+            ("Setup / Startup Waste", false),
+            ("Machine Fault", false),
+            ("Quality Reject", false),
+            ("Trim / Cutting Waste", true),
+            ("Color / Shade Mismatch", false),
+            ("Operator Error", false),
+            ("Material Defect", false),
+            ("Excess Production", true),
+        };
+        var existing = (await _db.WastageReasons.IgnoreQueryFilters().Select(r => r.Name).ToListAsync(ct)).ToHashSet();
+        foreach (var d in defs)
+        {
+            if (existing.Contains(d.Name)) continue;
+            _db.WastageReasons.Add(new WastageReason { Name = d.Name, IsReusable = d.Reusable, IsActive = true });
+        }
+        await _db.SaveChangesAsync(ct);
     }
 
     // ─── Expense Categories ────────────────────────────────────────────────────
@@ -238,6 +263,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Qc.") ||
             p.StartsWith("Attachments.") ||
             p.StartsWith("Subcontracting.") ||
+            p.StartsWith("Wastage.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Notifications.View ||
             p == Permissions.Reports.ViewProduction ||
@@ -593,6 +619,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "EXP",  Description = "Expense Voucher",     Prefix = "BTX/EXP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "QUOT", Description = "Quotation",           Prefix = "BTX/QUOT", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SMP",  Description = "Sample",              Prefix = "BTX/SMP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "WST",  Description = "Wastage Entry",       Prefix = "BTX/WST",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

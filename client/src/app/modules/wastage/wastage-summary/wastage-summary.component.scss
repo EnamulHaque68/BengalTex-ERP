@@ -1,0 +1,18 @@
+.page-shell { padding: 1.5rem 2rem; }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+  .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .link-btn { font-size: 0.82rem; color: #4f46e5; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; &:hover { text-decoration: underline; } }
+  .lbl { font-size: 0.8rem; color: #6b7280; } .date-input { width: 140px; }
+}
+:host ::ng-deep .table-card .p-card-body { padding: 0; }
+.fw-600 { font-weight: 600; }
+.num, .num-h { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-right { text-align: right; font-weight: 700; }
+.totals-row td { font-weight: 700; border-top: 2px solid #e5e7eb; background: #f9fafb; }
+.badge { padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; &.yes { background: #d1fae5; color: #065f46; } &.no { background: #fef3c7; color: #92400e; } }
+.empty-row { text-align: center; padding: 3rem !important; color: #9ca3af; i { display: block; font-size: 2rem; margin-bottom: 0.5rem; } }
+.bar-wrap { display: inline-block; width: 110px; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; vertical-align: middle; margin-right: 0.4rem; .bar { height: 100%; background: #ef4444; } }
+.pct { font-size: 0.75rem; color: #6b7280; }

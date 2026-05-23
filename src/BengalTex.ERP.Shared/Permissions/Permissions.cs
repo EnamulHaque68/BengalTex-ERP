@@ -159,6 +159,15 @@ public static class Permissions
         public const string ManageStages = "Production.ManageStages";   // start / complete / skip routing stages
     }
 
+    public static class Wastage
+    {
+        public const string View = "Wastage.View";
+        public const string Create = "Wastage.Create";
+        public const string Edit = "Wastage.Edit";
+        public const string Delete = "Wastage.Delete";
+        public const string ManageReasons = "Wastage.ManageReasons";
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";
