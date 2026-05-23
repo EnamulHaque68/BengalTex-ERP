@@ -103,6 +103,16 @@ public static class Permissions
         public const string Cancel = "SalesOrders.Cancel";
     }
 
+    public static class Quotations
+    {
+        public const string View = "Quotations.View";
+        public const string Create = "Quotations.Create";
+        public const string Edit = "Quotations.Edit";
+        public const string Delete = "Quotations.Delete";
+        public const string Send = "Quotations.Send";         // send / accept / reject / revise
+        public const string Convert = "Quotations.Convert";    // convert an accepted quotation to a Sales Order
+    }
+
     public static class PurchaseOrders
     {
         public const string View = "PurchaseOrders.View";

@@ -1,0 +1,134 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Quotations</h2>
+      <p class="page-subtitle">Pre-order costing &amp; price quotes — send, negotiate (revise), convert to a sales order</p>
+    </div>
+    <div class="header-actions">
+      <span class="search-wrap"><i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search code, customer..." (input)="onSearch($any($event.target).value)" />
+      </span>
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button *ngIf="canCreate" label="New Quotation" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="quotations" [loading]="loading" [paginator]="true" [rows]="parameters.pageSize || 25" [totalRecords]="totalCount"
+             [lazy]="true" (onLazyLoad)="onPage($event)" [first]="((parameters.page||1)-1)*(parameters.pageSize||25)" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Customer</th><th>Date</th><th>Valid Until</th><th class="num-h">Total</th><th>Ver.</th><th>Status</th><th style="width:200px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-q>
+        <tr>
+          <td><span class="code-badge">{{ q.code }}</span></td>
+          <td class="fw-600">{{ q.customerName }}</td>
+          <td class="num">{{ q.quotationDate | date:'yyyy-MM-dd' }}</td>
+          <td class="num muted">{{ q.validUntil ? (q.validUntil | date:'yyyy-MM-dd') : '—' }}</td>
+          <td class="num fw-600">{{ q.totalAmount | number:'1.2-2' }} <span class="cur">{{ q.currencyCode }}</span></td>
+          <td class="num">v{{ q.version }}</td>
+          <td><span class="status-badge" [class]="statusClass(q.status)">{{ q.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="q.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="open(q)" [pTooltip]="q.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-send" severity="info" [text]="true" size="small" *ngIf="q.status === 'Draft' && canSend" [loading]="rowActionId === q.id" (click)="send(q)" pTooltip="Send" />
+              <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="q.status === 'Sent' && canSend" [loading]="rowActionId === q.id" (click)="accept(q)" pTooltip="Accept" />
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" *ngIf="q.status === 'Sent' && canSend" [loading]="rowActionId === q.id" (click)="reject(q)" pTooltip="Reject" />
+              <p-button icon="pi pi-arrow-right" severity="help" [text]="true" size="small" *ngIf="q.status === 'Accepted' && canConvert" [loading]="rowActionId === q.id" (click)="convert(q)" pTooltip="Convert to Sales Order" />
+              <p-button icon="pi pi-copy" severity="secondary" [text]="true" size="small" *ngIf="canCreate && (q.status === 'Sent' || q.status === 'Rejected' || q.status === 'Accepted' || q.status === 'Expired')" [loading]="rowActionId === q.id" (click)="revise(q)" pTooltip="Revise (new version)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="q.status === 'Draft' && canCreate" (click)="confirmDelete(q)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-row"><i class="pi pi-calculator"></i><span>No quotations.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'New Quotation' : (dialogMode==='edit' ? 'Edit Quotation' : ('Quotation ' + (loaded?.code || '')))" [modal]="true" [style]="{ width: '1080px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode==='view'"><i class="pi pi-lock"></i>Read-only — {{ loaded?.status }}{{ loaded?.convertedSalesOrderId ? ' (converted to SO #' + loaded?.convertedSalesOrderId + ')' : '' }}.</div>
+
+    <div class="head-grid">
+      <div class="field"><label>Customer *</label>
+        <p-select formControlName="customerId" [options]="customers" optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name" placeholder="Select customer" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field"><label>Quotation Date *</label><input pInputText type="date" formControlName="quotationDate" class="w-full" /></div>
+      <div class="field"><label>Valid Until</label><input pInputText type="date" formControlName="validUntil" class="w-full" /></div>
+      <div class="field"><label>Currency *</label>
+        <p-select formControlName="currencyId" [options]="currencies" optionLabel="code" optionValue="id" appendTo="body" styleClass="w-full" (onChange)="onCurrencyChange($event)" />
+      </div>
+      <div class="field"><label>Exchange Rate *</label><p-inputNumber formControlName="exchangeRate" [minFractionDigits]="2" [maxFractionDigits]="6" class="w-full" /></div>
+      <div class="field"><label>Customer Ref.</label><input pInputText formControlName="customerReference" class="w-full" /></div>
+    </div>
+
+    <p class="section-label">Costing Lines <small>(unit price is computed: (material+labor+machine+overhead) × wastage% × margin%)</small></p>
+    <div class="lines-wrap">
+      <table class="line-grid" formArrayName="lines">
+        <thead>
+          <tr>
+            <th class="prod-col">Product</th>
+            <th class="num-col">Qty</th>
+            <th class="num-col">Material</th>
+            <th class="num-col">Labor</th>
+            <th class="num-col">Machine</th>
+            <th class="num-col">Overhead</th>
+            <th class="num-col">Wastage%</th>
+            <th class="num-col">Margin%</th>
+            <th class="num-col calc">Unit Cost</th>
+            <th class="num-col calc">Unit Price</th>
+            <th class="num-col calc">Line Total</th>
+            <th style="width:32px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="productId" [options]="products" optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name" placeholder="Product" appendTo="body" styleClass="w-full" />
+            </td>
+            <td><p-inputNumber formControlName="quantity" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="materialCost" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="laborCost" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="machineCost" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="overheadCost" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="wastagePercent" [min]="0" [max]="100" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="marginPercent" [min]="0" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+            <td class="num calc">{{ lineUnitCost(l) | number:'1.2-2' }}</td>
+            <td class="num calc">{{ lineUnitPrice(l) | number:'1.2-2' }}</td>
+            <td class="num calc fw-600">{{ lineTotal(l) | number:'1.2-2' }}</td>
+            <td><p-button icon="pi pi-times" severity="danger" [text]="true" size="small" *ngIf="dialogMode!=='view'" (click)="removeLine(i)" /></td>
+          </tr>
+          <tr *ngIf="lines.length === 0"><td colspan="12" class="empty-lines">Add a costing line.</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="totals-row"><td colspan="10" class="ta-right">Total</td><td class="num">{{ grandTotal | number:'1.2-2' }}</td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <p-button *ngIf="dialogMode!=='view'" label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small" (click)="addLine()" />
+
+    <div class="field col-full"><label>Notes</label><input pInputText formControlName="notes" class="w-full" /></div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+      <p-button *ngIf="dialogMode!=='view'" type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode==='create' ? 'Create Draft' : 'Save')" icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Quotation" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete draft <strong>{{ deleting.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
