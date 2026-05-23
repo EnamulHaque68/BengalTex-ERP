@@ -52,7 +52,8 @@ const routes: Routes = [
       { path: 'notifications', loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule) },
       { path: 'stock-lots', loadChildren: () => import('./modules/stock-lots/stock-lots.module').then(m => m.StockLotsModule) },
       { path: 'accounting', loadChildren: () => import('./modules/accounting/accounting.module').then(m => m.AccountingModule) },
-      { path: 'expenses', loadChildren: () => import('./modules/expenses/expenses.module').then(m => m.ExpensesModule) }
+      { path: 'expenses', loadChildren: () => import('./modules/expenses/expenses.module').then(m => m.ExpensesModule) },
+      { path: 'quotations', loadChildren: () => import('./modules/quotations/quotations.module').then(m => m.QuotationsModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

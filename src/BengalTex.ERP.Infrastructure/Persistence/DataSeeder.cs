@@ -248,6 +248,7 @@ public class DataSeeder : IDataSeeder
 
         await AssignPermissionsAsync("SalesManager", all.Where(p =>
             p.StartsWith("SalesOrders.") ||
+            p.StartsWith("Quotations.") ||
             p.StartsWith("Customers.") ||
             p.StartsWith("Returns.") ||
             p.StartsWith("Attachments.") ||
@@ -589,6 +590,7 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "LOT",  Description = "Stock Lot / Batch",   Prefix = "BTX/LOT",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "JV",   Description = "Journal Voucher",     Prefix = "BTX/JV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "EXP",  Description = "Expense Voucher",     Prefix = "BTX/EXP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "QUOT", Description = "Quotation",           Prefix = "BTX/QUOT", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)
