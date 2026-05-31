@@ -1,0 +1,211 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/compliance"><i class="pi pi-arrow-left"></i> Dashboard</a>
+      <h2 class="page-title">Compliance Audits</h2>
+      <p class="page-subtitle">Scheduled &amp; completed audits with corrective action plan (CAP) tracking</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/compliance/certificates"><i class="pi pi-id-card"></i> Certificates</a>
+      <p-button label="Schedule Audit" icon="pi pi-plus" *ngIf="canSchedule" (click)="openCreateAudit()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, auditor..." (input)="onSearch($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterType" [options]="types" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All audit types" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="audits" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Type</th><th>Auditor</th><th>Scheduled</th><th>Actual</th>
+            <th>Status</th><th>Result</th><th>Score</th><th>Open CAP</th>
+            <th style="width:140px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-a>
+        <tr (dblclick)="openDetail(a)">
+          <td><span class="code-badge">{{ a.code }}</span></td>
+          <td><span class="type-pill">{{ a.auditType }}</span></td>
+          <td class="fw-600">{{ a.auditor }}</td>
+          <td class="num">{{ a.scheduledDate | date:'mediumDate' }}</td>
+          <td class="num">{{ a.actualDate ? (a.actualDate | date:'mediumDate') : '—' }}</td>
+          <td><p-tag [value]="a.status" [severity]="auditStatusSeverity(a.status)" /></td>
+          <td><p-tag *ngIf="a.result" [value]="a.result" [severity]="resultSeverity(a.result)" /></td>
+          <td class="num">{{ a.score != null ? a.score + '/100' : '—' }}</td>
+          <td class="num"><span *ngIf="a.openFindings > 0" class="open-cap-badge">{{ a.openFindings }}</span><span *ngIf="a.openFindings === 0" class="muted">—</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-list" severity="info" [text]="true" size="small" (click)="openDetail(a)" pTooltip="View / CAP" />
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        *ngIf="canRecord" (click)="openEditAudit(a)" pTooltip="Edit audit" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="10" class="empty-row"><i class="pi pi-check-square"></i><span>No audits found.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Audit create / edit dialog -->
+<p-dialog [(visible)]="auditDialogVisible" [header]="auditDialogMode === 'create' ? 'Schedule Audit' : 'Edit Audit'"
+          [modal]="true" [style]="{ width: '600px' }" [draggable]="false">
+  <form [formGroup]="auditForm" (ngSubmit)="saveAudit()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="auditError"><i class="pi pi-exclamation-circle"></i>{{ auditError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Audit Type *</label>
+        <p-select formControlName="auditType" [options]="types" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" [disabled]="auditDialogMode === 'edit'" />
+      </div>
+      <div class="field">
+        <label>Scheduled Date *</label>
+        <input pInputText type="date" formControlName="scheduledDate" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Auditor *</label>
+        <input pInputText formControlName="auditor" placeholder="e.g. SGS BSCI Audit Team, H&amp;M Sustainability" class="w-full" />
+      </div>
+      <ng-container *ngIf="auditDialogMode === 'edit'">
+        <div class="field">
+          <label>Actual Date</label>
+          <input pInputText type="date" formControlName="actualDate" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Status *</label>
+          <p-select formControlName="status" [options]="statuses" optionLabel="label" optionValue="value"
+                    appendTo="body" class="w-full" styleClass="w-full" />
+        </div>
+        <div class="field">
+          <label>Result</label>
+          <p-select formControlName="result" [options]="results" optionLabel="label" optionValue="value"
+                    [showClear]="true" appendTo="body" class="w-full" styleClass="w-full" />
+        </div>
+        <div class="field">
+          <label>Score (0-100)</label>
+          <p-inputNumber formControlName="score" [min]="0" [max]="100" [maxFractionDigits]="2"
+                         inputStyleClass="w-full" styleClass="w-full" />
+        </div>
+      </ng-container>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="auditDialogVisible = false" [disabled]="auditSaving" />
+      <p-button type="submit" [label]="auditSaving ? 'Saving...' : (auditDialogMode === 'create' ? 'Schedule' : 'Save')"
+                icon="pi pi-save" [loading]="auditSaving" [disabled]="auditForm.invalid || auditSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Audit detail + CAP findings dialog -->
+<p-dialog [(visible)]="detailVisible" [header]="'Audit ' + (detail?.code || '')"
+          [modal]="true" [style]="{ width: '900px' }" [draggable]="false">
+  <div *ngIf="detailLoading" class="loading">Loading...</div>
+  <div *ngIf="detail && !detailLoading">
+    <div class="detail-grid">
+      <div><span class="dlabel">Type</span><span class="dval">{{ detail.auditType }}</span></div>
+      <div><span class="dlabel">Auditor</span><span class="dval">{{ detail.auditor }}</span></div>
+      <div><span class="dlabel">Scheduled</span><span class="dval">{{ detail.scheduledDate | date:'mediumDate' }}</span></div>
+      <div><span class="dlabel">Actual</span><span class="dval">{{ detail.actualDate ? (detail.actualDate | date:'mediumDate') : '—' }}</span></div>
+      <div><span class="dlabel">Status</span><span class="dval"><p-tag [value]="detail.status" [severity]="auditStatusSeverity(detail.status)" /></span></div>
+      <div><span class="dlabel">Result</span><span class="dval"><p-tag *ngIf="detail.result" [value]="detail.result" [severity]="resultSeverity(detail.result)" /></span></div>
+      <div><span class="dlabel">Score</span><span class="dval">{{ detail.score != null ? detail.score + '/100' : '—' }}</span></div>
+    </div>
+    <div *ngIf="detail.notes" class="notes-block"><strong>Notes:</strong> {{ detail.notes }}</div>
+
+    <div class="findings-header">
+      <h4>Corrective Action Plan ({{ detail.findings.length }})</h4>
+      <p-button label="Add Finding" icon="pi pi-plus" size="small" *ngIf="canRecord" (click)="openAddFinding()" />
+    </div>
+    <div *ngIf="detail.findings.length === 0" class="empty-cap">No findings recorded yet.</div>
+    <div class="finding-list" *ngIf="detail.findings.length > 0">
+      <div class="finding-card" *ngFor="let f of detail.findings"
+           [class.overdue]="f.isOverdue" [class.closed]="f.status === 'Closed' || f.status === 'Waived'">
+        <div class="finding-head">
+          <span class="sev-pill" [style.background]="severityColor(f.severity)">{{ f.severity }}</span>
+          <p-tag [value]="f.status" [severity]="findingStatusSeverity(f.status)" />
+          <span class="overdue-tag" *ngIf="f.isOverdue">OVERDUE</span>
+          <span class="muted" *ngIf="f.dueDate">Due {{ f.dueDate | date:'mediumDate' }}</span>
+          <span class="muted" *ngIf="f.assignedToEmployeeName">· {{ f.assignedToEmployeeName }}</span>
+          <span class="spacer"></span>
+          <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                    *ngIf="canManageCap" (click)="openEditFinding(f)" pTooltip="Edit" />
+          <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                    *ngIf="canManageCap" [loading]="rowActionId === f.id" (click)="deleteFinding(f)" pTooltip="Delete" />
+        </div>
+        <div class="finding-desc">{{ f.findingDescription }}</div>
+        <div *ngIf="f.correctiveAction" class="finding-action"><strong>Corrective action:</strong> {{ f.correctiveAction }}</div>
+        <div *ngIf="f.closureDate" class="muted">Closed {{ f.closureDate | date:'mediumDate' }}</div>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Finding add/edit dialog -->
+<p-dialog [(visible)]="findingDialogVisible" [header]="findingMode === 'add' ? 'Add Finding' : 'Edit Finding'"
+          [modal]="true" [style]="{ width: '620px' }" [draggable]="false">
+  <form [formGroup]="findingForm" (ngSubmit)="saveFinding()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="findingError"><i class="pi pi-exclamation-circle"></i>{{ findingError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Finding Description *</label>
+        <textarea pTextarea rows="3" formControlName="findingDescription"
+                  placeholder="e.g. Fire exit signs not visible on production floor 2" class="w-full"></textarea>
+      </div>
+      <div class="field">
+        <label>Severity *</label>
+        <p-select formControlName="severity" [options]="severities" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Status *</label>
+        <p-select formControlName="status" [options]="findingStatuses" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Corrective Action</label>
+        <textarea pTextarea rows="2" formControlName="correctiveAction"
+                  placeholder="e.g. Install illuminated exit signs at 5 locations by end of month" class="w-full"></textarea>
+      </div>
+      <div class="field">
+        <label>Assigned To</label>
+        <p-select formControlName="assignedToEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="fullName,code"
+                  placeholder="Pick employee" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Due Date</label>
+        <input pInputText type="date" formControlName="dueDate" class="w-full" />
+      </div>
+      <div class="field" *ngIf="findingMode === 'edit'">
+        <label>Closure Date</label>
+        <input pInputText type="date" formControlName="closureDate" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="findingDialogVisible = false" [disabled]="findingSaving" />
+      <p-button type="submit" [label]="findingSaving ? 'Saving...' : (findingMode === 'add' ? 'Add' : 'Save')"
+                icon="pi pi-save" [loading]="findingSaving" [disabled]="findingForm.invalid || findingSaving" />
+    </div>
+  </form>
+</p-dialog>

@@ -1,0 +1,131 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/compliance"><i class="pi pi-arrow-left"></i> Dashboard</a>
+      <h2 class="page-title">Compliance Certificates</h2>
+      <p class="page-subtitle">BSCI / Sedex / WRAP / SA8000 + statutory BD licenses with expiry tracking</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/compliance/audits"><i class="pi pi-check-square"></i> Audits</a>
+      <p-button label="Add Certificate" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search name, number, authority..." (input)="onSearch($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterType" [options]="types" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All types" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All expiry statuses" styleClass="filter-select" (onChange)="load()" />
+    <label class="inactive-toggle"><p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive</label>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="certs" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Name</th><th>Type</th><th>Authority</th><th>Number</th>
+            <th>Issued</th><th>Expires</th><th>Status</th>
+            <th style="width:140px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-c>
+        <tr [class.row-expired]="c.expiryStatus === 'Expired'" [class.row-soon]="c.expiryStatus === 'ExpiringSoon'">
+          <td class="fw-600">{{ c.name }}</td>
+          <td><span class="type-pill">{{ c.certificateType }}</span></td>
+          <td>{{ c.issuingAuthority || '—' }}</td>
+          <td class="mono">{{ c.certificateNumber || '—' }}</td>
+          <td class="num">{{ c.issuedDate | date:'mediumDate' }}</td>
+          <td class="num">
+            {{ c.expiryDate | date:'mediumDate' }}
+            <div class="days-line"><p-tag [value]="daysBadge(c)" [severity]="expirySeverity(c.expiryStatus)" /></div>
+          </td>
+          <td><p-tag [value]="c.expiryStatus" [severity]="expirySeverity(c.expiryStatus)" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-paperclip" severity="secondary" [text]="true" size="small"
+                        (click)="openAttachments(c)" pTooltip="Attachments" />
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        *ngIf="canManage" (click)="openEdit(c)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canManage" (click)="confirmDelete(c)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty-row"><i class="pi pi-id-card"></i><span>No certificates.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'Add Certificate' : 'Edit Certificate'"
+          [modal]="true" [style]="{ width: '600px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="e.g. BSCI Audit 2026, Fire License" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Type *</label>
+        <p-select formControlName="certificateType" [options]="types" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Certificate Number</label>
+        <input pInputText formControlName="certificateNumber" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Issuing Authority</label>
+        <input pInputText formControlName="issuingAuthority" placeholder="e.g. SGS, Bureau Veritas, Fire Service" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Issued Date *</label>
+        <input pInputText type="date" formControlName="issuedDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Expiry Date *</label>
+        <input pInputText type="date" formControlName="expiryDate" class="w-full" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="attachmentsVisible" header="Certificate Attachments" [modal]="true" [style]="{ width: '700px' }">
+  <div *ngIf="attachmentsTarget">
+    <p class="hint"><strong>{{ attachmentsTarget.name }}</strong> ({{ attachmentsTarget.certificateType }})</p>
+    <app-attachments-panel entityType="ComplianceCertificate" [entityId]="attachmentsTarget.id" />
+  </div>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Certificate" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.name }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
