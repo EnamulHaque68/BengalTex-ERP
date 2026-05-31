@@ -1,0 +1,126 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Festival Bonuses</h2>
+      <p class="page-subtitle">Eid &amp; Pohela Boishakh bonuses &mdash; bulk-issue then pay individually</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/loans-bonuses/loans"><i class="pi pi-wallet"></i> Loans</a>
+      <p-button label="Bulk Issue" icon="pi pi-gift" *ngIf="canCreate" (click)="openBulk()" />
+    </div>
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, employee..." (input)="onSearch($any($event.target).value)" />
+    </span>
+    <label class="year-filter">Year <input pInputText type="number" [(ngModel)]="filterYear" (change)="load()" class="year-input" /></label>
+    <p-select [(ngModel)]="filterType" [options]="bonusTypes" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All festivals" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="bonuses" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Employee</th><th>Year</th><th>Festival</th>
+          <th>Amount</th><th>Method</th><th>Status</th>
+          <th>Paid At</th><th style="width:180px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-b>
+        <tr>
+          <td><span class="code-badge">{{ b.code }}</span></td>
+          <td class="fw-600">{{ b.employeeName }} <span class="emp-code">{{ b.employeeCode }}</span></td>
+          <td class="num">{{ b.bonusYear }}</td>
+          <td>{{ bonusTypeLabel(b.bonusType) }}</td>
+          <td class="num">{{ formatCurrency(b.amount) }}</td>
+          <td>{{ b.paymentMethod }}</td>
+          <td><p-tag [value]="b.status" [severity]="statusSeverity(b.status)" /></td>
+          <td class="num">{{ b.paidAt ? (b.paidAt | date:'short') : '—' }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        *ngIf="canEdit && b.status === 'Draft'" (click)="openEdit(b)" pTooltip="Edit" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="canPay && b.status === 'Draft'" [loading]="rowActionId === b.id" (click)="pay(b)" pTooltip="Pay (auto-journal)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="canDelete && b.status === 'Draft'" [loading]="rowActionId === b.id" (click)="remove(b)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-row"><i class="pi pi-gift"></i><span>No festival bonuses for the current filter.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="bulkVisible" header="Bulk Issue Festival Bonus" [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+  <form [formGroup]="bulkForm" (ngSubmit)="doBulk()" autocomplete="off">
+    <p class="hint"><i class="pi pi-info-circle"></i> Creates Draft bonuses for ALL active employees who don't yet have one for this festival + year. Skips duplicates.</p>
+    <div class="alert alert-error" *ngIf="bulkError"><i class="pi pi-exclamation-circle"></i>{{ bulkError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Year *</label>
+        <p-inputNumber formControlName="bonusYear" [min]="2000" [max]="2100" [useGrouping]="false" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Festival *</label>
+        <p-select formControlName="bonusType" [options]="bonusTypes" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Amount per Employee (BDT) *</label>
+        <p-inputNumber formControlName="amount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="bulkVisible = false" [disabled]="bulkSaving" />
+      <p-button type="submit" [label]="bulkSaving ? 'Creating...' : 'Bulk Create'" icon="pi pi-gift"
+                [loading]="bulkSaving" [disabled]="bulkForm.invalid || bulkSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="editVisible" header="Edit Festival Bonus" [modal]="true" [style]="{ width: '480px' }">
+  <form [formGroup]="editForm" (ngSubmit)="saveEdit()" *ngIf="editing">
+    <div class="alert alert-error" *ngIf="editError"><i class="pi pi-exclamation-circle"></i>{{ editError }}</div>
+    <p><strong>{{ editing.employeeName }}</strong> &mdash; {{ bonusTypeLabel(editing.bonusType) }} {{ editing.bonusYear }}</p>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Amount (BDT) *</label>
+        <p-inputNumber formControlName="amount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Payment Method *</label>
+        <p-select formControlName="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="editVisible = false" [disabled]="editSaving" />
+      <p-button type="submit" [label]="editSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
+                [loading]="editSaving" [disabled]="editForm.invalid || editSaving" />
+    </div>
+  </form>
+</p-dialog>

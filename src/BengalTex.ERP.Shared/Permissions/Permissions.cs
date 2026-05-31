@@ -197,6 +197,23 @@ public static class Permissions
         public const string ManageBalances = "Leaves.ManageBalances";  // HR — initialize / adjust balances
     }
 
+    public static class EmployeeLoans
+    {
+        public const string View = "EmployeeLoans.View";
+        public const string Create = "EmployeeLoans.Create";
+        public const string Edit = "EmployeeLoans.Edit";
+        public const string Close = "EmployeeLoans.Close";    // cancel / write-off
+    }
+
+    public static class FestivalBonuses
+    {
+        public const string View = "FestivalBonuses.View";
+        public const string Create = "FestivalBonuses.Create";
+        public const string Edit = "FestivalBonuses.Edit";
+        public const string Delete = "FestivalBonuses.Delete";
+        public const string Pay = "FestivalBonuses.Pay";      // mark paid + auto-journal
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";

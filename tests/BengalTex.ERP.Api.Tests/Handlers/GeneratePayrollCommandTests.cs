@@ -18,6 +18,7 @@ public class GeneratePayrollCommandTests
         new(new Repository<Payslip, long>(ctx),
             new Repository<Employee>(ctx),
             new Repository<AttendanceRecord, long>(ctx),
+            new Repository<EmployeeLoan, long>(ctx),
             new BengalTex.ERP.Infrastructure.Persistence.UnitOfWork(ctx));
 
     private static Employee ActiveEmployee(decimal basic) => new()

@@ -11,7 +11,9 @@ namespace BengalTex.ERP.Application.Payroll.Commands;
 /// Generates draft payslips for all active employees who don't yet have one for the
 /// given month. Pay = Basic + Allowances(legacy) + BD components (HouseRent/Medical/Transport/Food)
 /// + OvertimeAmount; Deductions = absence-based + PF (if opted-in) + IncomeTax (if opted-in)
-/// + LoanDeduction (v1b).
+/// + LoanDeduction (auto-summed from this employee's Active <see cref="EmployeeLoan"/>s whose
+///   StartYearMonth ≤ current YYYYMM; per-loan deduction = min(EmiAmount, OutstandingPrincipal);
+///   loan auto-Closes when OutstandingPrincipal hits 0).
 /// </summary>
 public sealed record GeneratePayrollCommand(int Year, int Month) : IRequest<ApiResponse<int>>;
 
@@ -30,17 +32,20 @@ internal sealed class GeneratePayrollCommandHandler
     private readonly IRepository<Payslip, long> _payslipRepo;
     private readonly IRepository<Domain.Entities.Employee> _employeeRepo;
     private readonly IRepository<AttendanceRecord, long> _attendanceRepo;
+    private readonly IRepository<EmployeeLoan, long> _loanRepo;
     private readonly IUnitOfWork _uow;
 
     public GeneratePayrollCommandHandler(
         IRepository<Payslip, long> payslipRepo,
         IRepository<Domain.Entities.Employee> employeeRepo,
         IRepository<AttendanceRecord, long> attendanceRepo,
+        IRepository<EmployeeLoan, long> loanRepo,
         IUnitOfWork uow)
     {
         _payslipRepo = payslipRepo;
         _employeeRepo = employeeRepo;
         _attendanceRepo = attendanceRepo;
+        _loanRepo = loanRepo;
         _uow = uow;
     }
 
@@ -65,6 +70,15 @@ internal sealed class GeneratePayrollCommandHandler
             .Select(a => new { a.EmployeeId, a.Status, a.OvertimeHours })
             .ToListAsync(ct);
         var byEmployee = attendance.GroupBy(a => a.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
+
+        // Active loans whose start month is at or before the payroll month
+        var currentYm = cmd.Year * 100 + cmd.Month;
+        var activeLoans = await _loanRepo.Query()
+            .Where(l => l.Status == EmployeeLoanStatus.Active
+                        && l.OutstandingPrincipal > 0m
+                        && l.StartYearMonth <= currentYm)
+            .ToListAsync(ct);
+        var loansByEmployee = activeLoans.GroupBy(l => l.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
 
         var generated = 0;
         foreach (var emp in employees)
@@ -98,7 +112,26 @@ internal sealed class GeneratePayrollCommandHandler
             var pfEmployee = emp.IsPfMember ? Round(basic * emp.PfRate / 100m) : 0m;
             var pfEmployer = pfEmployee;
             var incomeTax = emp.IsTaxable ? BangladeshIncomeTax.MonthlyTaxOf(gross) : 0m;
-            decimal loanDeduction = 0m;  // v1b feature
+
+            // Auto-deduct EMI from each active loan; loan auto-closes when fully repaid.
+            decimal loanDeduction = 0m;
+            if (loansByEmployee.TryGetValue(emp.Id, out var loans))
+            {
+                foreach (var loan in loans)
+                {
+                    var thisMonth = Math.Min(loan.EmiAmount, loan.OutstandingPrincipal);
+                    if (thisMonth <= 0m) continue;
+                    loanDeduction += thisMonth;
+                    loan.OutstandingPrincipal -= thisMonth;
+                    if (loan.OutstandingPrincipal <= 0m)
+                    {
+                        loan.OutstandingPrincipal = 0m;
+                        loan.Status = EmployeeLoanStatus.Closed;
+                    }
+                    _loanRepo.Update(loan);
+                }
+                loanDeduction = Round(loanDeduction);
+            }
 
             var totalDeductions = Round(absenceDeduction + pfEmployee + incomeTax + loanDeduction);
             var net = Round(gross - totalDeductions);

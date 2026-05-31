@@ -1,0 +1,131 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Employee Loans</h2>
+      <p class="page-subtitle">Loans &amp; EMI tracker &mdash; auto-deducted on payroll generate</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/loans-bonuses/festival-bonuses"><i class="pi pi-gift"></i> Festival Bonuses</a>
+      <p-button label="New Loan" icon="pi pi-plus" *ngIf="canCreate" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, employee..." (input)="onSearch($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="loans" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Employee</th><th>Issued</th>
+          <th>Principal</th><th>EMI</th><th>Start</th><th>Tenure</th>
+          <th>Outstanding</th><th>Progress</th><th>Status</th>
+          <th style="width:140px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-l>
+        <tr>
+          <td><span class="code-badge">{{ l.code }}</span></td>
+          <td class="fw-600">{{ l.employeeName }} <span class="emp-code">{{ l.employeeCode }}</span></td>
+          <td class="num">{{ l.issuedDate | date:'mediumDate' }}</td>
+          <td class="num">{{ formatCurrency(l.principal) }}</td>
+          <td class="num">{{ formatCurrency(l.emiAmount) }}</td>
+          <td class="num">{{ formatYearMonth(l.startYearMonth) }}</td>
+          <td class="num">{{ l.tenureMonths }}m</td>
+          <td class="num remaining"><strong>{{ formatCurrency(l.outstandingPrincipal) }}</strong></td>
+          <td>
+            <div class="progress-cell">
+              <div class="progress-bar"><div class="bar-fill" [style.width.%]="progressPercent(l)" [class.full]="progressPercent(l) >= 100"></div></div>
+              <span class="pct">{{ progressPercent(l) }}%</span>
+            </div>
+          </td>
+          <td><p-tag [value]="l.status" [severity]="statusSeverity(l.status)" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
+                        *ngIf="canEdit && l.status === 'Active'" (click)="openEdit(l)" pTooltip="Edit terms" />
+              <p-button icon="pi pi-check" severity="info" [text]="true" size="small"
+                        *ngIf="canClose && l.status === 'Active'" (click)="openClose(l, false)" pTooltip="Close (write off remaining)" />
+              <p-button icon="pi pi-ban" severity="danger" [text]="true" size="small"
+                        *ngIf="canClose && l.status === 'Active'" (click)="openClose(l, true)" pTooltip="Cancel loan" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="11" class="empty-row"><i class="pi pi-wallet"></i><span>No loans found.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'New Loan' : 'Edit Loan'"
+          [modal]="true" [style]="{ width: '600px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Employee *</label>
+        <p-select formControlName="employeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+                  [filter]="true" filterBy="fullName,code" placeholder="Pick employee"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Issued Date *</label>
+        <input pInputText type="date" formControlName="issuedDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Start Year-Month (YYYYMM) *</label>
+        <p-inputNumber formControlName="startYearMonth" [min]="200001" [max]="210012" [useGrouping]="false"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Principal (BDT) *</label>
+        <p-inputNumber formControlName="principal" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>EMI Amount (BDT) *</label>
+        <p-inputNumber formControlName="emiAmount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Tenure (months) *</label>
+        <p-inputNumber formControlName="tenureMonths" [min]="1" [max]="120" [maxFractionDigits]="0" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="closeDialogVisible" [header]="closeAsCancel ? 'Cancel Loan' : 'Close Loan'"
+          [modal]="true" [style]="{ width: '440px' }">
+  <div *ngIf="closeTarget">
+    <p *ngIf="!closeAsCancel">Close loan <strong>{{ closeTarget.code }}</strong> for {{ closeTarget.employeeName }}?
+      <br /><br />Outstanding {{ formatCurrency(closeTarget.outstandingPrincipal) }} will be marked as <strong>written off</strong> (no further EMI deduction). Already-deducted amounts are preserved.</p>
+    <p *ngIf="closeAsCancel">Cancel loan <strong>{{ closeTarget.code }}</strong> for {{ closeTarget.employeeName }}?
+      <br /><br />Marks the loan as Cancelled — no further EMI deduction.</p>
+    <div class="alert alert-error" *ngIf="closeError"><i class="pi pi-exclamation-circle"></i>{{ closeError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Back" severity="secondary" [text]="true" (click)="closeDialogVisible = false" [disabled]="closeBusy" />
+      <p-button [label]="closeAsCancel ? 'Cancel Loan' : 'Close Loan'" icon="pi pi-check"
+                [severity]="closeAsCancel ? 'danger' : 'info'" [loading]="closeBusy" (click)="doClose()" />
+    </div>
+  </div>
+</p-dialog>
