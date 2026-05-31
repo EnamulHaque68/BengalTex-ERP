@@ -1,0 +1,92 @@
+<div class="page-shell" *ngIf="card">
+  <div class="page-header no-print">
+    <div>
+      <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Job Cards</a>
+      <h2 class="page-title">{{ card.code }} <p-tag [value]="card.status" [severity]="statusSeverity(card.status)" /></h2>
+      <p class="page-subtitle">{{ card.productionOrderCode }} &mdash; {{ card.productName }}</p>
+    </div>
+    <div class="header-actions">
+      <ng-container *ngIf="canScan && card.status !== 'Completed' && card.status !== 'Cancelled'">
+        <p-button *ngIf="card.status === 'Open'" label="Start" icon="pi pi-play" severity="success" (click)="scanShortcut('Start')" />
+        <p-button *ngIf="card.status === 'InProgress'" label="Pause" icon="pi pi-pause" severity="warn" (click)="scanShortcut('Pause')" />
+        <p-button *ngIf="card.status === 'OnHold'" label="Resume" icon="pi pi-play" severity="info" (click)="scanShortcut('Resume')" />
+        <p-button *ngIf="card.status === 'InProgress' || card.status === 'OnHold'" label="Complete" icon="pi pi-check" severity="success" (click)="scanShortcut('Complete')" />
+        <p-button label="Cancel" icon="pi pi-times" severity="danger" [text]="true" (click)="scanShortcut('Cancel')" />
+      </ng-container>
+      <p-button label="Print Card" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <p-card styleClass="qr-card">
+      <ng-template pTemplate="header">
+        <div class="qr-banner">
+          <div>
+            <div class="brand">BENGAL TEX</div>
+            <div class="jc-code">{{ card.code }}</div>
+          </div>
+          <p-tag [value]="card.status" [severity]="statusSeverity(card.status)" />
+        </div>
+      </ng-template>
+      <div class="qr-wrap">
+        <img *ngIf="qrUrl" [src]="qrUrl" alt="Job Card QR" class="qr-img" />
+        <div *ngIf="!qrUrl" class="qr-placeholder">Loading QR...</div>
+      </div>
+      <div class="qr-footer">
+        <div><strong>PO:</strong> {{ card.productionOrderCode }}</div>
+        <div><strong>Product:</strong> {{ card.productName }}</div>
+        <div *ngIf="card.batchNumber"><strong>Batch:</strong> {{ card.batchNumber }}</div>
+        <div><strong>Qty:</strong> {{ card.quantity }}</div>
+        <div *ngIf="card.machineName"><strong>Machine:</strong> {{ card.machineName }}</div>
+        <div *ngIf="card.operatorName"><strong>Operator:</strong> {{ card.operatorName }}</div>
+      </div>
+    </p-card>
+
+    <div class="info-stack">
+      <p-card styleClass="info-card">
+        <ng-template pTemplate="title">Details</ng-template>
+        <div class="info-grid">
+          <div><span class="lbl">PO</span><span class="val">{{ card.productionOrderCode }}</span></div>
+          <div><span class="lbl">Product</span><span class="val">{{ card.productName }}</span></div>
+          <div><span class="lbl">Stage</span><span class="val">{{ card.stageName || '—' }}</span></div>
+          <div><span class="lbl">Batch</span><span class="val">{{ card.batchNumber || '—' }}</span></div>
+          <div><span class="lbl">Quantity</span><span class="val">{{ card.quantity }}</span></div>
+          <div><span class="lbl">Completed</span><span class="val">{{ card.completedQuantity }}</span></div>
+          <div><span class="lbl">Rejected</span><span class="val rej">{{ card.rejectedQuantity }}</span></div>
+          <div><span class="lbl">Active Time</span><span class="val">{{ formatMinutes(card.activeMinutes) }}</span></div>
+          <div><span class="lbl">Machine</span><span class="val">{{ card.machineName || '—' }}</span></div>
+          <div><span class="lbl">Operator</span><span class="val">{{ card.operatorName || '—' }}</span></div>
+          <div><span class="lbl">Started</span><span class="val">{{ card.startedAt ? (card.startedAt | date:'short') : '—' }}</span></div>
+          <div><span class="lbl">Completed</span><span class="val">{{ card.completedAt ? (card.completedAt | date:'short') : '—' }}</span></div>
+        </div>
+        <div *ngIf="card.notes" class="notes-row">
+          <span class="lbl">Notes:</span> {{ card.notes }}
+        </div>
+      </p-card>
+
+      <p-card styleClass="info-card no-print">
+        <ng-template pTemplate="title">Scan Timeline ({{ card.scans.length }})</ng-template>
+        <div *ngIf="card.scans.length === 0" class="empty-timeline">No scans yet.</div>
+        <div class="timeline" *ngIf="card.scans.length > 0">
+          <div class="tl-row" *ngFor="let s of card.scans">
+            <span class="tl-dot" [style.background]="scanTypeColor(s.scanType)"></span>
+            <div class="tl-body">
+              <div class="tl-head">
+                <strong [style.color]="scanTypeColor(s.scanType)">{{ s.scanType }}</strong>
+                <span class="tl-time">{{ s.scannedAt | date:'short' }}</span>
+                <span class="tl-by" *ngIf="s.scannedBy">by {{ s.scannedBy }}</span>
+              </div>
+              <div class="tl-meta" *ngIf="s.quantity != null || s.rejectedQuantity != null">
+                <span *ngIf="s.quantity != null">Qty: {{ s.quantity }}</span>
+                <span *ngIf="s.rejectedQuantity != null">Rejected: {{ s.rejectedQuantity }}</span>
+              </div>
+              <div class="tl-notes" *ngIf="s.notes">{{ s.notes }}</div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</div>
+
+<div class="page-shell" *ngIf="loading && !card"><p>Loading...</p></div>

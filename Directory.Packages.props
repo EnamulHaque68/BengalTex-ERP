@@ -17,6 +17,7 @@
     <!-- API helpers -->
     <PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+    <PackageVersion Include="QRCoder" Version="1.6.0" />
     <!-- <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" /> -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.8.1" />
     <!-- MediatR / Validation / Mapping -->
