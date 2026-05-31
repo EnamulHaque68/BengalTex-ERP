@@ -173,3 +173,31 @@ export interface BalanceSheetDto {
   totalLiabilitiesAndEquity: number;
   isBalanced: boolean;
 }
+
+// ─── Cash Flow Statement ──────────────────────────────────────────────────
+export interface CashFlowLineDto {
+  date: string;
+  sourceType: string;
+  sourceCode: string | null;
+  accountName: string;
+  narration: string;
+  inflow: number;
+  outflow: number;
+}
+
+export interface CashFlowSectionDto {
+  sectionName: string;
+  lines: CashFlowLineDto[];
+  totalInflow: number;
+  totalOutflow: number;
+  netChange: number;
+}
+
+export interface CashFlowStatementDto {
+  fromDate: string;
+  toDate: string;
+  openingCashBalance: number;
+  sections: CashFlowSectionDto[];
+  netCashChange: number;
+  closingCashBalance: number;
+}

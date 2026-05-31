@@ -1,0 +1,78 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Cash Flow Statement</h2>
+      <p class="page-subtitle">Cash movements categorised into Operating / Investing / Financing</p>
+    </div>
+    <div class="header-actions">
+      <label class="lbl">From <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" /></label>
+      <label class="lbl">To <input pInputText type="date" [(ngModel)]="toDate" class="date-input" /></label>
+      <p-button label="Run" icon="pi pi-play" [loading]="loading" (click)="run()" />
+    </div>
+  </div>
+
+  <div class="stmt" *ngIf="data">
+    <div class="opening-block">
+      <span class="ob-label">Opening Cash Balance</span>
+      <span class="ob-value">{{ format(data.openingCashBalance) }}</span>
+    </div>
+
+    <div class="block section-block" *ngFor="let s of data.sections">
+      <div class="section-header" (click)="toggle(s.sectionName)" [style.border-left-color]="sectionColor(s.sectionName)">
+        <i class="pi" [class.pi-chevron-down]="expanded[s.sectionName]" [class.pi-chevron-right]="!expanded[s.sectionName]"></i>
+        <h3 [style.color]="sectionColor(s.sectionName)">{{ s.sectionName }} Activities</h3>
+        <span class="line-count">{{ s.lines.length }} {{ s.lines.length === 1 ? 'line' : 'lines' }}</span>
+        <span class="spacer"></span>
+        <span class="section-net" [class.positive]="s.netChange >= 0" [class.negative]="s.netChange < 0">
+          Net: {{ format(s.netChange) }}
+        </span>
+      </div>
+      <table class="stmt-grid" *ngIf="expanded[s.sectionName]">
+        <thead>
+          <tr class="head-row">
+            <td>Date</td>
+            <td>Source</td>
+            <td>Narration</td>
+            <td class="num">Inflow</td>
+            <td class="num">Outflow</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of s.lines">
+            <td class="num">{{ l.date | date:'mediumDate' }}</td>
+            <td>
+              <span class="src-pill">{{ l.sourceType }}</span>
+              <span class="src-code" *ngIf="l.sourceCode">{{ l.sourceCode }}</span>
+            </td>
+            <td class="narration">{{ l.narration }}</td>
+            <td class="num inflow">{{ l.inflow > 0 ? format(l.inflow) : '' }}</td>
+            <td class="num outflow">{{ l.outflow > 0 ? format(l.outflow) : '' }}</td>
+          </tr>
+          <tr *ngIf="s.lines.length === 0" class="muted">
+            <td colspan="5" class="empty">No {{ s.sectionName | lowercase }} activity in the period.</td>
+          </tr>
+          <tr class="subtotal" *ngIf="s.lines.length > 0">
+            <td colspan="3">Subtotal — {{ s.sectionName }}</td>
+            <td class="num">{{ format(s.totalInflow) }}</td>
+            <td class="num">{{ format(s.totalOutflow) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="closing-summary">
+      <div class="cs-row">
+        <span class="cs-label">Net Cash Change</span>
+        <span class="cs-value" [class.positive]="data.netCashChange >= 0" [class.negative]="data.netCashChange < 0">
+          {{ format(data.netCashChange) }}
+        </span>
+      </div>
+      <div class="cs-row total">
+        <span class="cs-label">Closing Cash Balance</span>
+        <span class="cs-value">{{ format(data.closingCashBalance) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="loading && !data" class="loading">Loading...</p>
+</div>

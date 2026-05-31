@@ -7,7 +7,7 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   AccountDto, CreateAccountRequest, UpdateAccountRequest,
   JournalEntryDto, JournalEntryListItemDto, SaveJournalEntryRequest,
-  TrialBalanceDto, GeneralLedgerDto, ProfitAndLossDto, BalanceSheetDto
+  TrialBalanceDto, GeneralLedgerDto, ProfitAndLossDto, BalanceSheetDto, CashFlowStatementDto
 } from '../models/accounting.models';
 
 @Injectable({ providedIn: 'root' })
@@ -55,6 +55,10 @@ export class AccountingService {
     let params = new HttpParams();
     if (asOfDate) params = params.set('asOfDate', asOfDate);
     return this.http.get<ApiResponse<BalanceSheetDto>>(`${this.accounts}/balance-sheet`, { params });
+  }
+  cashFlow(fromDate: string, toDate: string): Observable<ApiResponse<CashFlowStatementDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<CashFlowStatementDto>>(`${this.accounts}/cash-flow`, { params });
   }
 
   // ── Journal Vouchers ──
