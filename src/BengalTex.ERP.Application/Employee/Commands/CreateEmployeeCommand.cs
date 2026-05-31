@@ -23,6 +23,13 @@ public sealed record CreateEmployeeCommand(
     string Gender,                 // "Male" | "Female" | "Other"
     string EmploymentType,         // "Permanent" | "Contract" | "DailyWage"
     decimal BasicSalary,
+    decimal HouseRentAllowance,
+    decimal MedicalAllowance,
+    decimal TransportAllowance,
+    decimal FoodAllowance,
+    bool IsPfMember,
+    decimal PfRate,
+    bool IsTaxable,
     string? Notes
 ) : IRequest<ApiResponse<EmployeeDto>>;
 
@@ -49,6 +56,11 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
             .Must(t => Enum.TryParse<EmploymentType>(t, out _))
             .WithMessage("EmploymentType must be Permanent, Contract, or DailyWage.");
         RuleFor(x => x.BasicSalary).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.HouseRentAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MedicalAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.TransportAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.FoodAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.PfRate).InclusiveBetween(0, 100);
         RuleFor(x => x.Notes).MaximumLength(2000);
     }
 }
@@ -98,6 +110,13 @@ internal sealed class CreateEmployeeCommandHandler
             Gender = Enum.Parse<Gender>(cmd.Gender),
             EmploymentType = Enum.Parse<EmploymentType>(cmd.EmploymentType),
             BasicSalary = cmd.BasicSalary,
+            HouseRentAllowance = cmd.HouseRentAllowance,
+            MedicalAllowance = cmd.MedicalAllowance,
+            TransportAllowance = cmd.TransportAllowance,
+            FoodAllowance = cmd.FoodAllowance,
+            IsPfMember = cmd.IsPfMember,
+            PfRate = cmd.PfRate,
+            IsTaxable = cmd.IsTaxable,
             Status = EmployeeStatus.Active,
             Notes = cmd.Notes,
             IsActive = true

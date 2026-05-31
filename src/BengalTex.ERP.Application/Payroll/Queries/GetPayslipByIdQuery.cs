@@ -25,7 +25,10 @@ internal sealed class GetPayslipByIdQueryHandler
                 p.Id, p.EmployeeId, p.Employee.Code, p.Employee.FullName,
                 p.Year, p.Month, p.BasicSalary,
                 p.PresentDays, p.AbsentDays, p.LeaveDays, p.OvertimeHours,
-                p.OvertimeAmount, p.Allowances, p.Deductions, p.GrossPay, p.NetPay,
+                p.OvertimeAmount, p.Allowances, p.Deductions,
+                p.HouseRent, p.Medical, p.Transport, p.FoodAllowance, p.FestivalBonus,
+                p.PfEmployee, p.PfEmployer, p.IncomeTax, p.LoanDeduction,
+                p.GrossPay, p.NetPay,
                 p.Status.ToString(), p.PaidAt, p.Notes))
             .FirstOrDefaultAsync(ct);
 

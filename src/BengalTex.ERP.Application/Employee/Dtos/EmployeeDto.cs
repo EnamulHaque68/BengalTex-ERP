@@ -16,6 +16,13 @@ public record EmployeeDto(
     string Gender,                 // enum as string
     string EmploymentType,         // enum as string
     decimal BasicSalary,
+    decimal HouseRentAllowance,
+    decimal MedicalAllowance,
+    decimal TransportAllowance,
+    decimal FoodAllowance,
+    bool IsPfMember,
+    decimal PfRate,
+    bool IsTaxable,
     string Status,                 // enum as string
     string? Notes,
     bool IsActive);

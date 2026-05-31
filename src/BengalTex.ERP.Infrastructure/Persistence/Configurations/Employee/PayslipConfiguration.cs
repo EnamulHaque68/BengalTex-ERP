@@ -14,8 +14,14 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.PaidBy).HasMaxLength(100);
         builder.Property(p => p.Notes).HasMaxLength(1000);
 
-        foreach (var money in new[] { nameof(Payslip.BasicSalary), nameof(Payslip.OvertimeAmount),
-                     nameof(Payslip.Allowances), nameof(Payslip.Deductions), nameof(Payslip.GrossPay), nameof(Payslip.NetPay) })
+        foreach (var money in new[] {
+                     nameof(Payslip.BasicSalary), nameof(Payslip.OvertimeAmount),
+                     nameof(Payslip.Allowances), nameof(Payslip.Deductions),
+                     nameof(Payslip.HouseRent), nameof(Payslip.Medical), nameof(Payslip.Transport),
+                     nameof(Payslip.FoodAllowance), nameof(Payslip.FestivalBonus),
+                     nameof(Payslip.PfEmployee), nameof(Payslip.PfEmployer),
+                     nameof(Payslip.IncomeTax), nameof(Payslip.LoanDeduction),
+                     nameof(Payslip.GrossPay), nameof(Payslip.NetPay) })
             builder.Property(money).HasPrecision(18, 2);
 
         foreach (var qty in new[] { nameof(Payslip.PresentDays), nameof(Payslip.AbsentDays),

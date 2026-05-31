@@ -122,7 +122,7 @@
 </p-dialog>
 
 <!-- Edit (adjust) dialog -->
-<p-dialog [(visible)]="editVisible" header="Adjust Payslip" [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+<p-dialog [(visible)]="editVisible" header="Adjust Payslip" [modal]="true" [style]="{ width: '640px' }" [draggable]="false">
   <form [formGroup]="form" (ngSubmit)="saveEdit()" *ngIf="editing">
     <div class="alert alert-error" *ngIf="editError"><i class="pi pi-exclamation-circle"></i>{{ editError }}</div>
     <div class="ps-head">
@@ -131,18 +131,64 @@
       <div><span class="dlabel">Basic</span><span class="dval">{{ formatCurrency(editing.basicSalary) }}</span></div>
       <div><span class="dlabel">Present / Absent</span><span class="dval">{{ editing.presentDays }} / {{ editing.absentDays }}</span></div>
     </div>
+
+    <div class="section-title">Earnings</div>
     <div class="gen-grid">
       <div class="field">
         <label>Overtime Amount</label>
         <p-inputNumber formControlName="overtimeAmount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
       </div>
       <div class="field">
-        <label>Allowances</label>
+        <label>Allowances (other)</label>
         <p-inputNumber formControlName="allowances" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
       </div>
       <div class="field">
-        <label>Deductions</label>
+        <label>House Rent</label>
+        <p-inputNumber formControlName="houseRent" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Medical</label>
+        <p-inputNumber formControlName="medical" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Transport</label>
+        <p-inputNumber formControlName="transport" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Food Allowance</label>
+        <p-inputNumber formControlName="foodAllowance" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Festival Bonus</label>
+        <p-inputNumber formControlName="festivalBonus" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field net-preview">
+        <label>Gross Pay</label>
+        <span class="net-val">{{ formatCurrency(previewGross) }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Deductions</div>
+    <div class="gen-grid">
+      <div class="field">
+        <label>Absence / Other</label>
         <p-inputNumber formControlName="deductions" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>PF (Employee)</label>
+        <p-inputNumber formControlName="pfEmployee" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>PF (Employer)</label>
+        <p-inputNumber formControlName="pfEmployer" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Income Tax</label>
+        <p-inputNumber formControlName="incomeTax" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Loan Deduction</label>
+        <p-inputNumber formControlName="loanDeduction" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
       </div>
       <div class="field net-preview">
         <label>Net Pay</label>
@@ -153,6 +199,7 @@
         <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
       </div>
     </div>
+
     <div class="dialog-footer">
       <p-button label="Cancel" severity="secondary" [text]="true" (click)="editVisible = false" [disabled]="editSaving" />
       <p-button type="submit" [label]="editSaving ? 'Saving...' : 'Save'" icon="pi pi-save"

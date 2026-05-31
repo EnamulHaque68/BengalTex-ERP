@@ -15,6 +15,17 @@ public sealed record PayslipDto(
     decimal OvertimeAmount,
     decimal Allowances,
     decimal Deductions,
+    // BD payroll breakdown — earnings
+    decimal HouseRent,
+    decimal Medical,
+    decimal Transport,
+    decimal FoodAllowance,
+    decimal FestivalBonus,
+    // BD payroll breakdown — deductions
+    decimal PfEmployee,
+    decimal PfEmployer,
+    decimal IncomeTax,
+    decimal LoanDeduction,
     decimal GrossPay,
     decimal NetPay,
     string Status,                 // Draft | Paid

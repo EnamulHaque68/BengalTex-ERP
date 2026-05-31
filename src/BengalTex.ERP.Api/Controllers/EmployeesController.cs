@@ -47,7 +47,11 @@ public class EmployeesController : ControllerBase
             request.Code, request.FullName, request.Designation, request.Department,
             request.Phone, request.Email, request.NationalId, request.Address,
             request.JoiningDate, request.DateOfBirth, request.Gender, request.EmploymentType,
-            request.BasicSalary, request.Notes
+            request.BasicSalary,
+            request.HouseRentAllowance, request.MedicalAllowance,
+            request.TransportAllowance, request.FoodAllowance,
+            request.IsPfMember, request.PfRate, request.IsTaxable,
+            request.Notes
         ), ct);
         return Ok(result);
     }
@@ -60,7 +64,11 @@ public class EmployeesController : ControllerBase
             id, request.FullName, request.Designation, request.Department,
             request.Phone, request.Email, request.NationalId, request.Address,
             request.JoiningDate, request.DateOfBirth, request.Gender, request.EmploymentType,
-            request.BasicSalary, request.Status, request.Notes, request.IsActive
+            request.BasicSalary,
+            request.HouseRentAllowance, request.MedicalAllowance,
+            request.TransportAllowance, request.FoodAllowance,
+            request.IsPfMember, request.PfRate, request.IsTaxable,
+            request.Status, request.Notes, request.IsActive
         ), ct);
         return Ok(result);
     }
@@ -88,6 +96,13 @@ public record CreateEmployeeRequest(
     string Gender,
     string EmploymentType,
     decimal BasicSalary,
+    decimal HouseRentAllowance,
+    decimal MedicalAllowance,
+    decimal TransportAllowance,
+    decimal FoodAllowance,
+    bool IsPfMember,
+    decimal PfRate,
+    bool IsTaxable,
     string? Notes);
 
 public record UpdateEmployeeRequest(
@@ -103,6 +118,13 @@ public record UpdateEmployeeRequest(
     string Gender,
     string EmploymentType,
     decimal BasicSalary,
+    decimal HouseRentAllowance,
+    decimal MedicalAllowance,
+    decimal TransportAllowance,
+    decimal FoodAllowance,
+    bool IsPfMember,
+    decimal PfRate,
+    bool IsTaxable,
     string Status,
     string? Notes,
     bool IsActive);

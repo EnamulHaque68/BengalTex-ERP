@@ -29,6 +29,19 @@ public class Payslip : BaseTransactionalEntity
     public decimal Allowances { get; set; }
     public decimal Deductions { get; set; }
 
+    // BD payroll breakdown — additive earnings (snapshotted from Employee at generation)
+    public decimal HouseRent { get; set; }
+    public decimal Medical { get; set; }
+    public decimal Transport { get; set; }
+    public decimal FoodAllowance { get; set; }
+    public decimal FestivalBonus { get; set; }
+
+    // BD payroll breakdown — additive deductions
+    public decimal PfEmployee { get; set; }
+    public decimal PfEmployer { get; set; }   // not deducted from net; for ledger/reporting
+    public decimal IncomeTax { get; set; }
+    public decimal LoanDeduction { get; set; }
+
     public decimal GrossPay { get; set; }
     public decimal NetPay { get; set; }
 

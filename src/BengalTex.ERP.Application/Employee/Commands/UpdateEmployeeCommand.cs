@@ -23,6 +23,13 @@ public sealed record UpdateEmployeeCommand(
     string Gender,
     string EmploymentType,
     decimal BasicSalary,
+    decimal HouseRentAllowance,
+    decimal MedicalAllowance,
+    decimal TransportAllowance,
+    decimal FoodAllowance,
+    bool IsPfMember,
+    decimal PfRate,
+    bool IsTaxable,
     string Status,                 // "Active" | "Inactive" | "Terminated"
     string? Notes,
     bool IsActive
@@ -50,6 +57,11 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
             .Must(s => Enum.TryParse<EmployeeStatus>(s, out _))
             .WithMessage("Status must be Active, Inactive, or Terminated.");
         RuleFor(x => x.BasicSalary).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.HouseRentAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MedicalAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.TransportAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.FoodAllowance).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.PfRate).InclusiveBetween(0, 100);
         RuleFor(x => x.Notes).MaximumLength(2000);
     }
 }
@@ -87,6 +99,13 @@ internal sealed class UpdateEmployeeCommandHandler
         entity.Gender = Enum.Parse<Gender>(cmd.Gender);
         entity.EmploymentType = Enum.Parse<EmploymentType>(cmd.EmploymentType);
         entity.BasicSalary = cmd.BasicSalary;
+        entity.HouseRentAllowance = cmd.HouseRentAllowance;
+        entity.MedicalAllowance = cmd.MedicalAllowance;
+        entity.TransportAllowance = cmd.TransportAllowance;
+        entity.FoodAllowance = cmd.FoodAllowance;
+        entity.IsPfMember = cmd.IsPfMember;
+        entity.PfRate = cmd.PfRate;
+        entity.IsTaxable = cmd.IsTaxable;
         entity.Status = Enum.Parse<EmployeeStatus>(cmd.Status);
         entity.Notes = cmd.Notes;
         entity.IsActive = cmd.IsActive;
