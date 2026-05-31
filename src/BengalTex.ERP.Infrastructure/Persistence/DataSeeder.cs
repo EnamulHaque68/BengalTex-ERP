@@ -42,6 +42,33 @@ public class DataSeeder : IDataSeeder
         await SeedChartOfAccountsAsync(ct);
         await SeedExpenseCategoriesAsync(ct);
         await SeedWastageReasonsAsync(ct);
+        await SeedLeaveTypesAsync(ct);
+    }
+
+    // ─── Leave Types ───────────────────────────────────────────────────────────
+
+    /// <summary>Seeds standard Bangladesh-factory leave types. Idempotent by Code.</summary>
+    private async Task SeedLeaveTypesAsync(CancellationToken ct)
+    {
+        var defs = new (string Code, string Name, bool IsPaid, decimal Entitlement, int? MaxConsec)[]
+        {
+            ("CL", "Casual Leave",   true,  10m, 3),
+            ("SL", "Sick Leave",     true,  14m, null),
+            ("AL", "Annual Leave",   true,  10m, null),
+            ("ML", "Maternity Leave", true, 112m, null),  // BD Labour Law standard
+            ("UL", "Unpaid Leave",   false, 0m,  null),
+        };
+        var existing = (await _db.LeaveTypes.IgnoreQueryFilters().Select(t => t.Code).ToListAsync(ct)).ToHashSet();
+        foreach (var d in defs)
+        {
+            if (existing.Contains(d.Code)) continue;
+            _db.LeaveTypes.Add(new LeaveType
+            {
+                Code = d.Code, Name = d.Name, IsPaid = d.IsPaid,
+                AnnualEntitlement = d.Entitlement, MaxConsecutiveDays = d.MaxConsec, IsActive = true
+            });
+        }
+        await _db.SaveChangesAsync(ct);
     }
 
     // ─── Wastage Reasons ───────────────────────────────────────────────────────
@@ -250,6 +277,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Employees.") ||
             p.StartsWith("Attendance.") ||
             p.StartsWith("Payroll.") ||
+            p.StartsWith("Leaves.") ||
             p == Permissions.Reports.ViewHr ||
             p == Permissions.Reports.Export ||
             p == Permissions.Dashboard.ViewHr));

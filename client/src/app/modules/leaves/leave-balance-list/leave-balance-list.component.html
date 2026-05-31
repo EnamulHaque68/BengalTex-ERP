@@ -1,0 +1,60 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/leaves"><i class="pi pi-arrow-left"></i> Leaves</a>
+      <h2 class="page-title">Leave Balances</h2>
+      <p class="page-subtitle">Per-employee per-type yearly balance &mdash; initialize at year start</p>
+    </div>
+    <div class="header-actions">
+      <label class="year-filter">Year <input pInputText type="number" [(ngModel)]="year" (change)="load()" class="year-input" /></label>
+      <p-select [(ngModel)]="filterEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="fullName,code" placeholder="All employees"
+                styleClass="filter-select" (onChange)="load()" />
+      <p-button label="Initialize Year" icon="pi pi-refresh" *ngIf="canInit"
+                [loading]="initBusy" (click)="initializeYear()" />
+    </div>
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="initMessage">
+    <i class="pi pi-check-circle"></i>{{ initMessage }}
+    <button type="button" class="alert-close" (click)="initMessage = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="balances" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Employee</th><th>Leave Type</th><th>Entitled</th><th>Taken</th><th>Remaining</th><th style="width:90px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-b>
+        <tr>
+          <td class="fw-600">{{ b.employeeName }} <span class="emp-code">{{ b.employeeCode }}</span></td>
+          <td>{{ b.leaveTypeName }} <span class="code-badge">{{ b.leaveTypeCode }}</span></td>
+          <td class="num">{{ b.entitled }}</td>
+          <td class="num taken">{{ b.taken }}</td>
+          <td class="num remaining"><strong>{{ b.remaining }}</strong></td>
+          <td>
+            <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canAdjust" (click)="openAdjust(b)" pTooltip="Adjust" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="6" class="empty-row"><i class="pi pi-chart-bar"></i><span>No balance rows for {{ year }}. Click "Initialize Year".</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="adjustDialogVisible" header="Adjust Balance" [modal]="true" [style]="{ width: '420px' }" [draggable]="false">
+  <div *ngIf="adjustTarget">
+    <p><strong>{{ adjustTarget.employeeName }}</strong> &mdash; {{ adjustTarget.leaveTypeName }} ({{ adjustTarget.year }})</p>
+    <div class="alert alert-error" *ngIf="adjustError"><i class="pi pi-exclamation-circle"></i>{{ adjustError }}</div>
+    <div class="dialog-grid">
+      <div class="field"><label>Entitled</label><p-inputNumber [(ngModel)]="adjustEntitled" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" /></div>
+      <div class="field"><label>Taken</label><p-inputNumber [(ngModel)]="adjustTaken" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" /></div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="adjustDialogVisible = false" [disabled]="adjustBusy" />
+      <p-button label="Save" icon="pi pi-save" [loading]="adjustBusy" (click)="saveAdjust()" />
+    </div>
+  </div>
+</p-dialog>

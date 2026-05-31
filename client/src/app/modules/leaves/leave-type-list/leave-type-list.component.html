@@ -1,0 +1,93 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/leaves"><i class="pi pi-arrow-left"></i> Leaves</a>
+      <h2 class="page-title">Leave Types</h2>
+      <p class="page-subtitle">Casual / Sick / Annual / Unpaid &mdash; annual entitlement per type</p>
+    </div>
+    <div class="header-actions">
+      <label class="inactive-toggle"><p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive</label>
+      <p-button label="Add Type" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="types" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Name</th><th>Paid</th><th>Annual</th><th>Max Consec.</th><th>Status</th><th style="width:110px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-t>
+        <tr>
+          <td><span class="code-badge">{{ t.code }}</span></td>
+          <td class="fw-600">{{ t.name }}</td>
+          <td><p-tag [value]="t.isPaid ? 'Paid' : 'Unpaid'" [severity]="t.isPaid ? 'success' : 'secondary'" /></td>
+          <td class="num">{{ t.annualEntitlement }}</td>
+          <td class="num">{{ t.maxConsecutiveDays ?? '—' }}</td>
+          <td><span class="status-badge" [class.active]="t.isActive" [class.inactive]="!t.isActive">{{ t.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canManage" (click)="openEdit(t)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="canManage" (click)="confirmDelete(t)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="empty-row"><i class="pi pi-calendar"></i><span>No leave types.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'Add Leave Type' : 'Edit Leave Type'"
+          [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code *</label>
+        <input pInputText formControlName="code" placeholder="CL / SL / AL" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Name *</label>
+        <input pInputText formControlName="name" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Annual Entitlement (days) *</label>
+        <p-inputNumber formControlName="annualEntitlement" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Max Consecutive (days)</label>
+        <p-inputNumber formControlName="maxConsecutiveDays" [min]="1" [maxFractionDigits]="0" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field check-field">
+        <label>Paid Leave</label>
+        <p-toggleSwitch formControlName="isPaid" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Description</label>
+        <textarea pTextarea rows="2" formControlName="description" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Leave Type" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.name }}</strong> ({{ deleting.code }})?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
