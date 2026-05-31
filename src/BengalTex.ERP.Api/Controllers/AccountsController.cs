@@ -76,4 +76,10 @@ public class AccountsController : ControllerBase
     [HasPermission(Permissions.Accounting.View)]
     public async Task<IActionResult> BalanceSheet([FromQuery] DateOnly? asOfDate = null, CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetBalanceSheetQuery(asOfDate), ct));
+
+    [HttpGet("cash-flow")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> CashFlow(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetCashFlowStatementQuery(fromDate, toDate), ct));
 }

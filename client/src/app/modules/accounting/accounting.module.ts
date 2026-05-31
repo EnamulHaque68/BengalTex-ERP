@@ -19,6 +19,7 @@ import { TrialBalanceComponent } from './trial-balance/trial-balance.component';
 import { GeneralLedgerComponent } from './general-ledger/general-ledger.component';
 import { ProfitLossComponent } from './profit-loss/profit-loss.component';
 import { BalanceSheetComponent } from './balance-sheet/balance-sheet.component';
+import { CashFlowComponent } from './cash-flow/cash-flow.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -27,11 +28,12 @@ const routes: Routes = [
   { path: 'general-ledger', component: GeneralLedgerComponent },
   { path: 'profit-loss', component: ProfitLossComponent },
   { path: 'balance-sheet', component: BalanceSheetComponent },
+  { path: 'cash-flow', component: CashFlowComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
 @NgModule({
-  declarations: [ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent, GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent],
+  declarations: [ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent, GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
