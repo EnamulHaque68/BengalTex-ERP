@@ -280,6 +280,8 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Leaves.") ||
             p.StartsWith("EmployeeLoans.") ||
             p.StartsWith("FestivalBonuses.") ||
+            p.StartsWith("Compliance.") ||
+            p.StartsWith("Attachments.") ||
             p == Permissions.Reports.ViewHr ||
             p == Permissions.Reports.Export ||
             p == Permissions.Dashboard.ViewHr));

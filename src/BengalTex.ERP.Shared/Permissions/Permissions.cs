@@ -214,6 +214,15 @@ public static class Permissions
         public const string Pay = "FestivalBonuses.Pay";      // mark paid + auto-journal
     }
 
+    public static class Compliance
+    {
+        public const string View = "Compliance.View";
+        public const string ManageCertificates = "Compliance.ManageCertificates";   // create / edit / delete certs
+        public const string ScheduleAudit = "Compliance.ScheduleAudit";             // create audits
+        public const string RecordAudit = "Compliance.RecordAudit";                 // edit audit result + findings
+        public const string ManageCap = "Compliance.ManageCap";                     // edit findings / close CAP items
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";

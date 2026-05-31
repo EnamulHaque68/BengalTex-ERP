@@ -1,0 +1,84 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Compliance Dashboard</h2>
+      <p class="page-subtitle">Certificates, audits &amp; corrective action plan (CAP) at a glance</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/compliance/certificates"><i class="pi pi-id-card"></i> All Certificates</a>
+      <a class="link-btn" routerLink="/compliance/audits"><i class="pi pi-check-square"></i> All Audits</a>
+    </div>
+  </div>
+
+  <ng-container *ngIf="data; else loadingTpl">
+    <div class="kpi-grid">
+      <div class="kpi-card active">
+        <i class="pi pi-check-circle"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.certificatesActive }}</div><div class="kpi-label">Active Certificates</div></div>
+      </div>
+      <div class="kpi-card warn">
+        <i class="pi pi-exclamation-triangle"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.certificatesExpiringSoon }}</div><div class="kpi-label">Expiring Soon (≤60d)</div></div>
+      </div>
+      <div class="kpi-card danger">
+        <i class="pi pi-times-circle"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.certificatesExpired }}</div><div class="kpi-label">Expired</div></div>
+      </div>
+      <div class="kpi-card info">
+        <i class="pi pi-calendar"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.upcomingAudits }}</div><div class="kpi-label">Upcoming Audits (30d)</div></div>
+      </div>
+      <div class="kpi-card neutral">
+        <i class="pi pi-list"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.openFindings }}</div><div class="kpi-label">Open CAP Items</div></div>
+      </div>
+      <div class="kpi-card danger">
+        <i class="pi pi-flag"></i>
+        <div class="kpi-body"><div class="kpi-num">{{ data.overdueFindings }}</div><div class="kpi-label">Overdue CAP</div></div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <p-card styleClass="board-card">
+        <ng-template pTemplate="title">
+          <span><i class="pi pi-id-card"></i> Certificates Needing Attention</span>
+        </ng-template>
+        <div *ngIf="data.expiringCertificates.length === 0" class="empty-state">No certificates expiring soon.</div>
+        <table class="mini-table" *ngIf="data.expiringCertificates.length > 0">
+          <tr *ngFor="let c of data.expiringCertificates">
+            <td class="cert-name">{{ c.name }}</td>
+            <td><small class="muted">{{ c.certificateType }}</small></td>
+            <td class="num">{{ c.expiryDate | date:'mediumDate' }}</td>
+            <td class="num">
+              <span class="days-badge" [class.warn]="c.daysUntilExpiry >= 0 && c.daysUntilExpiry <= 60" [class.danger]="c.daysUntilExpiry < 0">
+                {{ c.daysUntilExpiry < 0 ? 'Expired ' + (-c.daysUntilExpiry) + 'd' : (c.daysUntilExpiry + 'd left') }}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </p-card>
+
+      <p-card styleClass="board-card">
+        <ng-template pTemplate="title">
+          <span><i class="pi pi-flag"></i> Overdue CAP Items</span>
+        </ng-template>
+        <div *ngIf="data.overdueFindingsList.length === 0" class="empty-state">No overdue corrective actions. 🎉</div>
+        <div class="finding-list" *ngIf="data.overdueFindingsList.length > 0">
+          <div class="finding-row" *ngFor="let f of data.overdueFindingsList">
+            <span class="sev-dot" [style.background]="severityColor(f.severity)"></span>
+            <div class="finding-body">
+              <div class="finding-head">
+                <strong>{{ f.severity }}</strong>
+                <span class="muted" *ngIf="f.dueDate">due {{ f.dueDate | date:'mediumDate' }}</span>
+                <span class="muted" *ngIf="f.assignedToEmployeeName">· {{ f.assignedToEmployeeName }}</span>
+              </div>
+              <div class="finding-desc">{{ f.findingDescription }}</div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl><p class="loading">Loading dashboard...</p></ng-template>
+</div>
