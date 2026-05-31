@@ -104,6 +104,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Machine> Machines => Set<Machine>();
     public DbSet<JobCard> JobCards => Set<JobCard>();
     public DbSet<JobCardScan> JobCardScans => Set<JobCardScan>();
+    public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<LeaveApplication> LeaveApplications => Set<LeaveApplication>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

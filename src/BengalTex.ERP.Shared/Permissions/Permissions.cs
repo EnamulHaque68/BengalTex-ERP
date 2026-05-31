@@ -185,6 +185,18 @@ public static class Permissions
         public const string Scan = "JobCards.Scan";    // operator action — Start/Pause/Resume/Complete
     }
 
+    public static class Leaves
+    {
+        public const string View = "Leaves.View";              // see own + team leave
+        public const string Apply = "Leaves.Apply";            // submit own leave application
+        public const string ViewAll = "Leaves.ViewAll";        // HR — see everyone's leave
+        public const string Approve = "Leaves.Approve";        // approve / reject pending applications
+        public const string Cancel = "Leaves.Cancel";          // cancel approved leave (HR / employee for own)
+        public const string ManageTypes = "Leaves.ManageTypes";        // HR — leave type master
+        public const string ManageHolidays = "Leaves.ManageHolidays";  // HR — holiday calendar
+        public const string ManageBalances = "Leaves.ManageBalances";  // HR — initialize / adjust balances
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";
