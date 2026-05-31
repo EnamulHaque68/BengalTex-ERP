@@ -168,6 +168,23 @@ public static class Permissions
         public const string ManageReasons = "Wastage.ManageReasons";
     }
 
+    public static class Machines
+    {
+        public const string View = "Machines.View";
+        public const string Create = "Machines.Create";
+        public const string Edit = "Machines.Edit";
+        public const string Delete = "Machines.Delete";
+    }
+
+    public static class JobCards
+    {
+        public const string View = "JobCards.View";
+        public const string Create = "JobCards.Create";
+        public const string Edit = "JobCards.Edit";
+        public const string Delete = "JobCards.Delete";
+        public const string Scan = "JobCards.Scan";    // operator action — Start/Pause/Resume/Complete
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";

@@ -101,6 +101,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Sample> Samples => Set<Sample>();
     public DbSet<WastageReason> WastageReasons => Set<WastageReason>();
     public DbSet<WastageEntry> WastageEntries => Set<WastageEntry>();
+    public DbSet<Machine> Machines => Set<Machine>();
+    public DbSet<JobCard> JobCards => Set<JobCard>();
+    public DbSet<JobCardScan> JobCardScans => Set<JobCardScan>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -1,0 +1,97 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Machines</h2>
+      <p class="page-subtitle">Production-floor machine master &mdash; referenced by job cards</p>
+    </div>
+    <div class="header-actions">
+      <label class="inactive-toggle">
+        <p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive
+      </label>
+      <p-button label="Add Machine" icon="pi pi-plus" *ngIf="canCreate" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="machines" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Name</th><th>Type</th><th>Location</th>
+          <th>Capacity/hr</th><th>Status</th><th style="width:110px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-m>
+        <tr>
+          <td><span class="code-badge">{{ m.code }}</span></td>
+          <td class="fw-600">{{ m.name }}</td>
+          <td>{{ m.machineType || '—' }}</td>
+          <td>{{ m.location || '—' }}</td>
+          <td class="num">{{ m.capacityPerHour ?? '—' }}</td>
+          <td><span class="status-badge" [class.active]="m.isActive" [class.inactive]="!m.isActive">{{ m.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canEdit" (click)="openEdit(m)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="canDelete" (click)="confirmDelete(m)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="empty-row"><i class="pi pi-cog"></i><span>No machines. Click "Add Machine" to create one.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'Add Machine' : 'Edit Machine'"
+          [modal]="true" [style]="{ width: '560px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code <small>(blank = auto)</small></label>
+        <input pInputText formControlName="code" placeholder="Auto-generated" class="w-full" [readonly]="dialogMode === 'edit'" />
+      </div>
+      <div class="field">
+        <label>Name *</label>
+        <input pInputText formControlName="name" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <input pInputText formControlName="machineType" placeholder="e.g. Sewing, Cutting" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input pInputText formControlName="location" placeholder="e.g. Floor 2 / Line 3" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Capacity / hour</label>
+        <p-inputNumber formControlName="capacityPerHour" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Machine" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.name }}</strong> ({{ deleting.code }})?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

@@ -264,6 +264,8 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Attachments.") ||
             p.StartsWith("Subcontracting.") ||
             p.StartsWith("Wastage.") ||
+            p.StartsWith("Machines.") ||
+            p.StartsWith("JobCards.") ||
             p == Permissions.Approvals.View ||
             p == Permissions.Notifications.View ||
             p == Permissions.Reports.ViewProduction ||

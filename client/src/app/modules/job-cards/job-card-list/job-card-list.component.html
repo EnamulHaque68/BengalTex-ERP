@@ -1,0 +1,167 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Job Cards</h2>
+      <p class="page-subtitle">Production-floor work units &mdash; scan to Start, Pause, Resume, Complete</p>
+    </div>
+    <div class="header-actions">
+      <a class="link-btn" routerLink="/job-cards/machines"><i class="pi pi-cog"></i> Machines</a>
+      <p-button label="Add Job Card" icon="pi pi-plus" *ngIf="canCreate" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="status-board">
+    <div class="status-card" [class.active]="filterStatus === null" (click)="setStatusFilter(null)">
+      <div class="sc-label">All</div>
+      <div class="sc-count">{{ counts.open + counts.inProgress + counts.onHold + counts.completed + counts.cancelled }}</div>
+    </div>
+    <div class="status-card open" [class.active]="filterStatus === 'Open'" (click)="setStatusFilter('Open')">
+      <div class="sc-label">Open</div><div class="sc-count">{{ counts.open }}</div>
+    </div>
+    <div class="status-card in-progress" [class.active]="filterStatus === 'InProgress'" (click)="setStatusFilter('InProgress')">
+      <div class="sc-label">In Progress</div><div class="sc-count">{{ counts.inProgress }}</div>
+    </div>
+    <div class="status-card on-hold" [class.active]="filterStatus === 'OnHold'" (click)="setStatusFilter('OnHold')">
+      <div class="sc-label">On Hold</div><div class="sc-count">{{ counts.onHold }}</div>
+    </div>
+    <div class="status-card completed" [class.active]="filterStatus === 'Completed'" (click)="setStatusFilter('Completed')">
+      <div class="sc-label">Completed</div><div class="sc-count">{{ counts.completed }}</div>
+    </div>
+    <div class="status-card cancelled" [class.active]="filterStatus === 'Cancelled'" (click)="setStatusFilter('Cancelled')">
+      <div class="sc-label">Cancelled</div><div class="sc-count">{{ counts.cancelled }}</div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search by JC code, PO, batch..."
+             (input)="onSearch($any($event.target).value)" />
+    </span>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="cards" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>PO</th><th>Product</th><th>Batch</th>
+          <th>Qty</th><th>Done</th><th>Rej.</th>
+          <th>Machine</th><th>Operator</th>
+          <th>Status</th><th>Active</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-c>
+        <tr (dblclick)="view(c)">
+          <td><span class="code-badge">{{ c.code }}</span></td>
+          <td><a (click)="view(c)" class="link">{{ c.productionOrderCode }}</a></td>
+          <td class="fw-600">{{ c.productName }}</td>
+          <td>{{ c.batchNumber || '—' }}</td>
+          <td class="num">{{ c.quantity }}</td>
+          <td class="num">{{ c.completedQuantity }}</td>
+          <td class="num rej">{{ c.rejectedQuantity }}</td>
+          <td>{{ c.machineName || '—' }}</td>
+          <td>{{ c.operatorName || '—' }}</td>
+          <td><p-tag [value]="c.status" [severity]="statusSeverity(c.status)" /></td>
+          <td class="num">{{ formatMinutes(c.activeMinutes) }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-qrcode" severity="success" [text]="true" size="small"
+                        *ngIf="canScan && c.status !== 'Completed' && c.status !== 'Cancelled'"
+                        (click)="openScan(c)" pTooltip="Scan / Action" />
+              <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                        (click)="view(c)" pTooltip="View / QR" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="12" class="empty-row"><i class="pi pi-qrcode"></i><span>No job cards. Click "Add Job Card" to create one.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create dialog -->
+<p-dialog [(visible)]="dialogVisible" header="Add Job Card" [modal]="true" [style]="{ width: '620px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Production Order *</label>
+        <p-select formControlName="productionOrderId" [options]="productionOrders" optionLabel="code" optionValue="id"
+                  [filter]="true" filterBy="code" placeholder="Select production order"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Batch Number</label>
+        <input pInputText formControlName="batchNumber" placeholder="e.g. Batch-A, Bundle 12" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Quantity *</label>
+        <p-inputNumber formControlName="quantity" [min]="0" [maxFractionDigits]="4" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Machine</label>
+        <p-select formControlName="machineId" [options]="machines" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="name,code,machineType"
+                  placeholder="Pick a machine" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Operator</label>
+        <p-select formControlName="operatorEmployeeId" [options]="operators" optionLabel="fullName" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="fullName,code"
+                  placeholder="Pick an operator" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : 'Create'" icon="pi pi-save"
+                [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Scan dialog -->
+<p-dialog [(visible)]="scanVisible" header="Scan / Action" [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <form [formGroup]="scanForm" (ngSubmit)="doScan()" *ngIf="scanTarget">
+    <div class="alert alert-error" *ngIf="scanError"><i class="pi pi-exclamation-circle"></i>{{ scanError }}</div>
+    <div class="scan-header">
+      <span class="code-badge">{{ scanTarget.code }}</span>
+      <span class="muted">{{ scanTarget.productionOrderCode }} / {{ scanTarget.productName }}</span>
+      <p-tag [value]="scanTarget.status" [severity]="statusSeverity(scanTarget.status)" />
+    </div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Action</label>
+        <p-select formControlName="scanType" [options]="scanActions" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Completed Qty <small>(Complete only)</small></label>
+        <p-inputNumber formControlName="quantity" [min]="0" [maxFractionDigits]="4" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Rejected Qty</label>
+        <p-inputNumber formControlName="rejectedQuantity" [min]="0" [maxFractionDigits]="4" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="scanVisible = false" [disabled]="scanBusy" />
+      <p-button type="submit" [label]="scanBusy ? 'Working...' : 'Apply'" icon="pi pi-check"
+                [loading]="scanBusy" [disabled]="scanForm.invalid || scanBusy" />
+    </div>
+  </form>
+</p-dialog>
