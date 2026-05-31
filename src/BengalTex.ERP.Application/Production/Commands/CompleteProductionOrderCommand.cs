@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Production.Dtos;
 using BengalTex.ERP.Application.Production.Queries;
@@ -29,6 +30,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
     private readonly IStockLotService _lots;
+    private readonly IJournalPostingService _journal;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
@@ -37,6 +39,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         IUnitOfWork uow,
         IStockService stock,
         IStockLotService lots,
+        IJournalPostingService journal,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
@@ -44,6 +47,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         _uow = uow;
         _stock = stock;
         _lots = lots;
+        _journal = journal;
         _currentUser = currentUser;
         _mediator = mediator;
     }
@@ -153,6 +157,21 @@ internal sealed class CompleteProductionOrderCommandHandler
         po.CompletedAt = DateTimeOffset.UtcNow;
         po.CompletedBy = _currentUser.UserName;
         _repo.Update(po);
+
+        // ── Phase 5: auto-journal — move cost from Raw Material to Finished Goods ──
+        // (Only if consumed cost is non-zero — zero-cost RMs would produce a zero-balance entry.)
+        if (totalRmCost > 0m)
+        {
+            await _journal.PostAsync(
+                movementDate,
+                $"Production {po.Code} complete — RM consumed for {po.Product.Name}",
+                "ProductionOrder", po.Id, po.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalRmCost, 0m),
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalRmCost),
+                }, cancellationToken);
+        }
 
         await _uow.SaveChangesAsync(cancellationToken);
 
