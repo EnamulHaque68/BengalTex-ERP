@@ -63,9 +63,9 @@ public class PayrollController : ControllerBase
 
     [HttpPost("{id:long}/mark-paid")]
     [HasPermission(Permissions.Payroll.Process)]
-    public async Task<IActionResult> MarkPaid(long id, CancellationToken ct)
+    public async Task<IActionResult> MarkPaid(long id, [FromBody] MarkPayslipPaidRequest? request, CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new MarkPayslipPaidCommand(id), ct);
+        var result = await _mediator.Send(new MarkPayslipPaidCommand(id, request?.PaymentMethod), ct);
         return Ok(result);
     }
 
@@ -79,6 +79,8 @@ public class PayrollController : ControllerBase
 }
 
 public record GeneratePayrollRequest(int Year, int Month);
+
+public record MarkPayslipPaidRequest(string? PaymentMethod);
 
 public record UpdatePayslipRequest(
     decimal OvertimeAmount,
