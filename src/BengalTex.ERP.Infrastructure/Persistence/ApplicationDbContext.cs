@@ -108,6 +108,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Holiday> Holidays => Set<Holiday>();
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
     public DbSet<LeaveApplication> LeaveApplications => Set<LeaveApplication>();
+    public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
+    public DbSet<FestivalBonus> FestivalBonuses => Set<FestivalBonus>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
