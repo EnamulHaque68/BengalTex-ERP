@@ -24,6 +24,11 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<EmployeeEntity>
         builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
 
         builder.Property(e => e.BasicSalary).HasPrecision(18, 2);
+        builder.Property(e => e.HouseRentAllowance).HasPrecision(18, 2);
+        builder.Property(e => e.MedicalAllowance).HasPrecision(18, 2);
+        builder.Property(e => e.TransportAllowance).HasPrecision(18, 2);
+        builder.Property(e => e.FoodAllowance).HasPrecision(18, 2);
+        builder.Property(e => e.PfRate).HasPrecision(5, 2);
         builder.Property(e => e.Notes).HasMaxLength(2000);
 
         builder.HasIndex(e => e.Code).IsUnique();

@@ -33,6 +33,13 @@ export interface EmployeeDto {
   gender: string;
   employmentType: string;
   basicSalary: number;
+  houseRentAllowance: number;
+  medicalAllowance: number;
+  transportAllowance: number;
+  foodAllowance: number;
+  isPfMember: boolean;
+  pfRate: number;
+  isTaxable: boolean;
   status: string;
   notes: string | null;
   isActive: boolean;
@@ -65,6 +72,13 @@ export interface CreateEmployeeRequest {
   gender: string;
   employmentType: string;
   basicSalary: number;
+  houseRentAllowance: number;
+  medicalAllowance: number;
+  transportAllowance: number;
+  foodAllowance: number;
+  isPfMember: boolean;
+  pfRate: number;
+  isTaxable: boolean;
   notes: string | null;
 }
 
@@ -81,6 +95,13 @@ export interface UpdateEmployeeRequest {
   gender: string;
   employmentType: string;
   basicSalary: number;
+  houseRentAllowance: number;
+  medicalAllowance: number;
+  transportAllowance: number;
+  foodAllowance: number;
+  isPfMember: boolean;
+  pfRate: number;
+  isTaxable: boolean;
   status: string;
   notes: string | null;
   isActive: boolean;

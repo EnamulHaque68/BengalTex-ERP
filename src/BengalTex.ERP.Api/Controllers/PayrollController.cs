@@ -54,7 +54,10 @@ public class PayrollController : ControllerBase
     public async Task<IActionResult> Update(long id, [FromBody] UpdatePayslipRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new UpdatePayslipCommand(
-            id, request.OvertimeAmount, request.Allowances, request.Deductions, request.Notes), ct);
+            id, request.OvertimeAmount, request.Allowances, request.Deductions,
+            request.HouseRent, request.Medical, request.Transport, request.FoodAllowance, request.FestivalBonus,
+            request.PfEmployee, request.PfEmployer, request.IncomeTax, request.LoanDeduction,
+            request.Notes), ct);
         return Ok(result);
     }
 
@@ -81,4 +84,13 @@ public record UpdatePayslipRequest(
     decimal OvertimeAmount,
     decimal Allowances,
     decimal Deductions,
+    decimal HouseRent,
+    decimal Medical,
+    decimal Transport,
+    decimal FoodAllowance,
+    decimal FestivalBonus,
+    decimal PfEmployee,
+    decimal PfEmployer,
+    decimal IncomeTax,
+    decimal LoanDeduction,
     string? Notes);

@@ -29,6 +29,19 @@ public class Employee : BaseEntity
     /// <summary>Monthly basic salary in base currency (BDT). 0 for daily-wage workers paid per attendance.</summary>
     public decimal BasicSalary { get; set; }
 
+    // BD payroll allowance components (fixed monthly amounts in BDT, all default 0)
+    public decimal HouseRentAllowance { get; set; }
+    public decimal MedicalAllowance { get; set; }
+    public decimal TransportAllowance { get; set; }
+    public decimal FoodAllowance { get; set; }
+
+    // Provident Fund: opt-in, contribution = Basic * PfRate% (employee + employer each)
+    public bool IsPfMember { get; set; }
+    public decimal PfRate { get; set; } = 10m;
+
+    // Bangladesh income tax (slab-based on annualised gross). Opt-in per employee.
+    public bool IsTaxable { get; set; }
+
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
     public string? Notes { get; set; }

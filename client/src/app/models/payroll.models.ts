@@ -27,6 +27,17 @@ export interface PayslipDto {
   overtimeAmount: number;
   allowances: number;
   deductions: number;
+  // BD payroll breakdown — earnings
+  houseRent: number;
+  medical: number;
+  transport: number;
+  foodAllowance: number;
+  festivalBonus: number;
+  // BD payroll breakdown — deductions
+  pfEmployee: number;
+  pfEmployer: number;
+  incomeTax: number;
+  loanDeduction: number;
   grossPay: number;
   netPay: number;
   status: string;
@@ -43,5 +54,14 @@ export interface UpdatePayslipRequest {
   overtimeAmount: number;
   allowances: number;
   deductions: number;
+  houseRent: number;
+  medical: number;
+  transport: number;
+  foodAllowance: number;
+  festivalBonus: number;
+  pfEmployee: number;
+  pfEmployer: number;
+  incomeTax: number;
+  loanDeduction: number;
   notes: string | null;
 }

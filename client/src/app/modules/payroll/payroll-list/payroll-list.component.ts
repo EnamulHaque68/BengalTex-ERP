@@ -72,6 +72,15 @@ export class PayrollListComponent implements OnInit {
       overtimeAmount: [0, [Validators.required, Validators.min(0)]],
       allowances: [0, [Validators.required, Validators.min(0)]],
       deductions: [0, [Validators.required, Validators.min(0)]],
+      houseRent: [0, [Validators.min(0)]],
+      medical: [0, [Validators.min(0)]],
+      transport: [0, [Validators.min(0)]],
+      foodAllowance: [0, [Validators.min(0)]],
+      festivalBonus: [0, [Validators.min(0)]],
+      pfEmployee: [0, [Validators.min(0)]],
+      pfEmployer: [0, [Validators.min(0)]],
+      incomeTax: [0, [Validators.min(0)]],
+      loanDeduction: [0, [Validators.min(0)]],
       notes: ['', Validators.maxLength(1000)]
     });
     this.loadEmployees();
@@ -179,17 +188,41 @@ export class PayrollListComponent implements OnInit {
     this.form.reset({
       overtimeAmount: p.overtimeAmount,
       allowances: p.allowances,
-      deductions: p.deductions,
+      // Deductions input on the form represents OTHER deductions only
+      // (absence + adjustments). PF + IncomeTax + Loan add to it in the handler.
+      deductions: Math.max(0, p.deductions - p.pfEmployee - p.incomeTax - p.loanDeduction),
+      houseRent: p.houseRent,
+      medical: p.medical,
+      transport: p.transport,
+      foodAllowance: p.foodAllowance,
+      festivalBonus: p.festivalBonus,
+      pfEmployee: p.pfEmployee,
+      pfEmployer: p.pfEmployer,
+      incomeTax: p.incomeTax,
+      loanDeduction: p.loanDeduction,
       notes: p.notes ?? ''
     });
     this.editVisible = true;
   }
 
-  get previewNet(): number {
+  get previewGross(): number {
     if (!this.editing) return 0;
     const v = this.form.getRawValue();
-    const gross = (this.editing.basicSalary || 0) + (Number(v.allowances) || 0) + (Number(v.overtimeAmount) || 0);
-    return gross - (Number(v.deductions) || 0);
+    return (this.editing.basicSalary || 0)
+      + (Number(v.allowances) || 0) + (Number(v.overtimeAmount) || 0)
+      + (Number(v.houseRent) || 0) + (Number(v.medical) || 0)
+      + (Number(v.transport) || 0) + (Number(v.foodAllowance) || 0)
+      + (Number(v.festivalBonus) || 0);
+  }
+
+  get previewTotalDeductions(): number {
+    const v = this.form.getRawValue();
+    return (Number(v.deductions) || 0) + (Number(v.pfEmployee) || 0)
+      + (Number(v.incomeTax) || 0) + (Number(v.loanDeduction) || 0);
+  }
+
+  get previewNet(): number {
+    return this.previewGross - this.previewTotalDeductions;
   }
 
   saveEdit(): void {
@@ -202,6 +235,15 @@ export class PayrollListComponent implements OnInit {
       overtimeAmount: Number(v.overtimeAmount) || 0,
       allowances: Number(v.allowances) || 0,
       deductions: Number(v.deductions) || 0,
+      houseRent: Number(v.houseRent) || 0,
+      medical: Number(v.medical) || 0,
+      transport: Number(v.transport) || 0,
+      foodAllowance: Number(v.foodAllowance) || 0,
+      festivalBonus: Number(v.festivalBonus) || 0,
+      pfEmployee: Number(v.pfEmployee) || 0,
+      pfEmployer: Number(v.pfEmployer) || 0,
+      incomeTax: Number(v.incomeTax) || 0,
+      loanDeduction: Number(v.loanDeduction) || 0,
       notes: (v.notes as string)?.trim() || null
     }).subscribe({
       next: (res) => this.zone.run(() => {

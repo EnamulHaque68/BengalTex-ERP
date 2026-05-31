@@ -9,11 +9,9 @@ namespace BengalTex.ERP.Application.Payroll.Commands;
 
 /// <summary>
 /// Generates draft payslips for all active employees who don't yet have one for the
-/// given month. Pay is computed from BasicSalary + that month's attendance:
-///   perDay        = Basic / 30
-///   Deductions    = AbsentDays × perDay
-///   OvertimeAmount = OvertimeHours × (Basic / (30 × 8))   (default hourly rate; editable after)
-///   Gross = Basic + Allowances(0) + OvertimeAmount ;  Net = Gross − Deductions
+/// given month. Pay = Basic + Allowances(legacy) + BD components (HouseRent/Medical/Transport/Food)
+/// + OvertimeAmount; Deductions = absence-based + PF (if opted-in) + IncomeTax (if opted-in)
+/// + LoanDeduction (v1b).
 /// </summary>
 public sealed record GeneratePayrollCommand(int Year, int Month) : IRequest<ApiResponse<int>>;
 
@@ -84,11 +82,26 @@ internal sealed class GeneratePayrollCommandHandler
 
             var basic = emp.BasicSalary;
             var perDay = basic / 30m;
-            var deductions = Round(absentDays * perDay);
+            var absenceDeduction = Round(absentDays * perDay);
             var otAmount = Round(otHours * (basic / (30m * 8m)));
             decimal allowances = 0m;
-            var gross = Round(basic + allowances + otAmount);
-            var net = Round(gross - deductions);
+
+            // BD breakdown components (snapshot from Employee)
+            var houseRent = emp.HouseRentAllowance;
+            var medical = emp.MedicalAllowance;
+            var transport = emp.TransportAllowance;
+            var food = emp.FoodAllowance;
+            decimal festivalBonus = 0m;  // managed via separate workflow in v1b
+
+            var gross = Round(basic + allowances + otAmount + houseRent + medical + transport + food + festivalBonus);
+
+            var pfEmployee = emp.IsPfMember ? Round(basic * emp.PfRate / 100m) : 0m;
+            var pfEmployer = pfEmployee;
+            var incomeTax = emp.IsTaxable ? BangladeshIncomeTax.MonthlyTaxOf(gross) : 0m;
+            decimal loanDeduction = 0m;  // v1b feature
+
+            var totalDeductions = Round(absenceDeduction + pfEmployee + incomeTax + loanDeduction);
+            var net = Round(gross - totalDeductions);
 
             await _payslipRepo.AddAsync(new Payslip
             {
@@ -102,7 +115,16 @@ internal sealed class GeneratePayrollCommandHandler
                 OvertimeHours = otHours,
                 OvertimeAmount = otAmount,
                 Allowances = allowances,
-                Deductions = deductions,
+                Deductions = totalDeductions,
+                HouseRent = houseRent,
+                Medical = medical,
+                Transport = transport,
+                FoodAllowance = food,
+                FestivalBonus = festivalBonus,
+                PfEmployee = pfEmployee,
+                PfEmployer = pfEmployer,
+                IncomeTax = incomeTax,
+                LoanDeduction = loanDeduction,
                 GrossPay = gross,
                 NetPay = net,
                 Status = PayslipStatus.Draft
