@@ -257,6 +257,99 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("AuditFindings", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AccountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LedgerAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RoutingNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SwiftCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountNumber");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("LedgerAccountId");
+
+                    b.ToTable("BankAccounts", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Bom", b =>
                 {
                     b.Property<int>("Id")
@@ -1390,6 +1483,139 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("DeliveryNoteLines", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("HeadEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ParentDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HeadEmployeeId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("ParentDepartmentId");
+
+                    b.ToTable("Departments", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Designation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("GradeLevel")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Designations", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -1401,6 +1627,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("BankAccountId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("BasicSalary")
                         .HasPrecision(18, 2)
@@ -1430,9 +1659,15 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Designation")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("DesignationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(200)
@@ -1508,6 +1743,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<int?>("ShiftId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1519,14 +1757,22 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BankAccountId");
+
                     b.HasIndex("Code")
                         .IsUnique();
 
                     b.HasIndex("Department");
 
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DesignationId");
+
                     b.HasIndex("FullName");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("ShiftId");
 
                     b.HasIndex("Status");
 
@@ -4692,6 +4938,83 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("Samples", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Shift", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SecondWeekendDayOfWeek")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("WeekendDayOfWeek")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("Shifts", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockAdjustment", b =>
                 {
                     b.Property<long>("Id")
@@ -7508,6 +7831,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("ComplianceAudit");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankAccount", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Account", "LedgerAccount")
+                        .WithMany()
+                        .HasForeignKey("LedgerAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("LedgerAccount");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Bom", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
@@ -7666,6 +7999,54 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("DeliveryNote");
 
                     b.Navigation("SalesOrderLine");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Department", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Employee", "HeadEmployee")
+                        .WithMany()
+                        .HasForeignKey("HeadEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Department", "ParentDepartment")
+                        .WithMany()
+                        .HasForeignKey("ParentDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("HeadEmployee");
+
+                    b.Navigation("ParentDepartment");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Employee", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Department", "DepartmentEntity")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Designation", "DesignationEntity")
+                        .WithMany()
+                        .HasForeignKey("DesignationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Shift", "Shift")
+                        .WithMany()
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("DepartmentEntity");
+
+                    b.Navigation("DesignationEntity");
+
+                    b.Navigation("Shift");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.EmployeeLoan", b =>
