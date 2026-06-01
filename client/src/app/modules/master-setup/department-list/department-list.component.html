@@ -1,0 +1,89 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/master-setup"><i class="pi pi-arrow-left"></i> Master Setup</a>
+      <h2 class="page-title">Departments</h2>
+      <p class="page-subtitle">Organisational departments with optional hierarchy &amp; head assignment</p>
+    </div>
+    <div class="header-actions">
+      <label class="inactive-toggle"><p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive</label>
+      <p-button label="Add Department" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="items" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Name</th><th>Parent</th><th>Head</th><th>Description</th><th>Status</th><th style="width:110px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-d>
+        <tr>
+          <td><span class="code-badge" *ngIf="d.code">{{ d.code }}</span></td>
+          <td class="fw-600">{{ d.name }}</td>
+          <td>{{ d.parentDepartmentName || '—' }}</td>
+          <td>{{ d.headEmployeeName || '—' }}</td>
+          <td class="muted">{{ d.description || '—' }}</td>
+          <td><span class="status-badge" [class.active]="d.isActive" [class.inactive]="!d.isActive">{{ d.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canManage" (click)="openEdit(d)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="canManage" (click)="confirmDelete(d)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="7" class="empty-row"><i class="pi pi-sitemap"></i><span>No departments.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'Add Department' : 'Edit Department'"
+          [modal]="true" [style]="{ width: '560px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code</label>
+        <input pInputText formControlName="code" placeholder="e.g. PROD" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Name *</label>
+        <input pInputText formControlName="name" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Parent Department</label>
+        <p-select formControlName="parentDepartmentId" [options]="parentOptions" optionLabel="name" optionValue="id"
+                  [showClear]="true" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Head (Employee)</label>
+        <p-select formControlName="headEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="fullName,code" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Description</label>
+        <textarea pTextarea rows="2" formControlName="description" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Department" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.name }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

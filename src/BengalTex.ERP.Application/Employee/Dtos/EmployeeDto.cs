@@ -23,6 +23,11 @@ public record EmployeeDto(
     bool IsPfMember,
     decimal PfRate,
     bool IsTaxable,
+    // Optional master-setup FKs (v1a: free-text Department/Designation columns still populated)
+    int? DepartmentId,
+    int? DesignationId,
+    int? ShiftId,
+    int? BankAccountId,
     string Status,                 // enum as string
     string? Notes,
     bool IsActive);

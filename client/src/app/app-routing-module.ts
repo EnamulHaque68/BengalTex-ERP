@@ -58,7 +58,9 @@ const routes: Routes = [
       { path: 'wastage', loadChildren: () => import('./modules/wastage/wastage.module').then(m => m.WastageModule) },
       { path: 'job-cards', loadChildren: () => import('./modules/job-cards/job-cards.module').then(m => m.JobCardsModule) },
       { path: 'leaves', loadChildren: () => import('./modules/leaves/leaves.module').then(m => m.LeavesModule) },
-      { path: 'loans-bonuses', loadChildren: () => import('./modules/loans-bonuses/loans-bonuses.module').then(m => m.LoansBonusesModule) }
+      { path: 'loans-bonuses', loadChildren: () => import('./modules/loans-bonuses/loans-bonuses.module').then(m => m.LoansBonusesModule) },
+      { path: 'compliance', loadChildren: () => import('./modules/compliance/compliance.module').then(m => m.ComplianceModule) },
+      { path: 'master-setup', loadChildren: () => import('./modules/master-setup/master-setup.module').then(m => m.MasterSetupModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }

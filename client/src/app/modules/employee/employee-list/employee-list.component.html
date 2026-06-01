@@ -216,6 +216,32 @@
         <label>Taxable (BD income tax)</label>
         <p-toggleSwitch formControlName="isTaxable" />
       </div>
+
+      <div class="field col-span-2 section-divider">
+        <h4>Master-Setup Links</h4>
+        <small>Structured links to Department / Designation / Shift / Bank Account masters (optional, additive).</small>
+      </div>
+
+      <div class="field">
+        <label>Department</label>
+        <p-select formControlName="departmentId" [options]="departments" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="name,code" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Designation</label>
+        <p-select formControlName="designationId" [options]="designations" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="name,code" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Shift</label>
+        <p-select formControlName="shiftId" [options]="shifts" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="name,code" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Bank Account</label>
+        <p-select formControlName="bankAccountId" [options]="bankAccounts" optionLabel="accountName" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="accountName,bankName" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
     </div>
 
     <div class="dialog-footer">

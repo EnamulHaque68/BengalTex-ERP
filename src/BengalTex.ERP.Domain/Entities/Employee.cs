@@ -15,6 +15,20 @@ public class Employee : BaseEntity
     public string? Designation { get; set; }
     public string? Department { get; set; }
 
+    // Optional FKs to master tables (v1a: free-text columns above preserved for back-compat;
+    // future v1b can backfill + drop free-text). Restrict on delete to protect employee data.
+    public int? DepartmentId { get; set; }
+    public Department? DepartmentEntity { get; set; }
+
+    public int? DesignationId { get; set; }
+    public Designation? DesignationEntity { get; set; }
+
+    public int? ShiftId { get; set; }
+    public Shift? Shift { get; set; }
+
+    public int? BankAccountId { get; set; }
+    public BankAccount? BankAccount { get; set; }
+
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? NationalId { get; set; }    // Bangladesh NID

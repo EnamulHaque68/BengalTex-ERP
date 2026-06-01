@@ -30,6 +30,10 @@ public sealed record CreateEmployeeCommand(
     bool IsPfMember,
     decimal PfRate,
     bool IsTaxable,
+    int? DepartmentId,
+    int? DesignationId,
+    int? ShiftId,
+    int? BankAccountId,
     string? Notes
 ) : IRequest<ApiResponse<EmployeeDto>>;
 
@@ -117,6 +121,10 @@ internal sealed class CreateEmployeeCommandHandler
             IsPfMember = cmd.IsPfMember,
             PfRate = cmd.PfRate,
             IsTaxable = cmd.IsTaxable,
+            DepartmentId = cmd.DepartmentId,
+            DesignationId = cmd.DesignationId,
+            ShiftId = cmd.ShiftId,
+            BankAccountId = cmd.BankAccountId,
             Status = EmployeeStatus.Active,
             Notes = cmd.Notes,
             IsActive = true

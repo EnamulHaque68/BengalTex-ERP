@@ -1,0 +1,115 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <a class="back-link" routerLink="/master-setup"><i class="pi pi-arrow-left"></i> Master Setup</a>
+      <h2 class="page-title">Bank Accounts</h2>
+      <p class="page-subtitle">Company bank accounts linked to Chart-of-Accounts &mdash; enables future bank reconciliation</p>
+    </div>
+    <div class="header-actions">
+      <label class="inactive-toggle"><p-toggleSwitch [(ngModel)]="includeInactive" (onChange)="load()" /> Show inactive</label>
+      <p-button label="Add Bank Account" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="items" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Account Name</th><th>Bank</th><th>Branch</th><th>A/c Number</th><th>Type</th><th>Currency</th><th>Ledger</th><th>Status</th><th style="width:110px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-b>
+        <tr>
+          <td class="fw-600">{{ b.accountName }}</td>
+          <td>{{ b.bankName }}</td>
+          <td class="muted">{{ b.branchName || '—' }}</td>
+          <td class="mono">{{ b.accountNumber }}</td>
+          <td>{{ b.accountType }}</td>
+          <td class="mono">{{ b.currency }}</td>
+          <td class="ledger-cell">
+            <span *ngIf="b.ledgerAccountCode" class="ledger-pill">{{ b.ledgerAccountCode }} {{ b.ledgerAccountName }}</span>
+            <span *ngIf="!b.ledgerAccountCode" class="muted">—</span>
+          </td>
+          <td><span class="status-badge" [class.active]="b.isActive" [class.inactive]="!b.isActive">{{ b.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canManage" (click)="openEdit(b)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="canManage" (click)="confirmDelete(b)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="9" class="empty-row"><i class="pi pi-building-columns"></i><span>No bank accounts.</span></td></tr></ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'Add Bank Account' : 'Edit Bank Account'"
+          [modal]="true" [style]="{ width: '660px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Account Name *</label>
+        <input pInputText formControlName="accountName" placeholder="e.g. Bengal Tex Operating Account" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Bank Name *</label>
+        <input pInputText formControlName="bankName" placeholder="e.g. Sonali Bank Ltd" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Branch Name</label>
+        <input pInputText formControlName="branchName" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Account Number *</label>
+        <input pInputText formControlName="accountNumber" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Account Type *</label>
+        <p-select formControlName="accountType" [options]="accountTypes" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Routing Number</label>
+        <input pInputText formControlName="routingNumber" class="w-full" />
+      </div>
+      <div class="field">
+        <label>SWIFT Code</label>
+        <input pInputText formControlName="swiftCode" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Currency *</label>
+        <input pInputText formControlName="currency" placeholder="BDT / USD / EUR" class="w-full" />
+      </div>
+      <div class="field check-field" *ngIf="dialogMode === 'edit'">
+        <label>Active</label>
+        <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Linked Ledger Account <small>(for bank reconciliation)</small></label>
+        <p-select formControlName="ledgerAccountId" [options]="ledgerAccounts" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="code,name"
+                  placeholder="Link to Chart-of-Accounts Bank node (1120)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Bank Account" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.accountName }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
