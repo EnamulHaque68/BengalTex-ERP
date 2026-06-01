@@ -46,6 +46,7 @@ internal sealed class CreateLeaveApplicationCommandHandler
     private readonly IRepository<Holiday> _holidayRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
+    private readonly INotificationService _notifications;
 
     public CreateLeaveApplicationCommandHandler(
         IRepository<LeaveApplication, long> repo,
@@ -54,11 +55,12 @@ internal sealed class CreateLeaveApplicationCommandHandler
         IRepository<Domain.Entities.Employee> empRepo,
         IRepository<Holiday> holidayRepo,
         IUnitOfWork uow,
-        INumberingService numbering)
+        INumberingService numbering,
+        INotificationService notifications)
     {
         _repo = repo; _typeRepo = typeRepo; _balRepo = balRepo;
         _empRepo = empRepo; _holidayRepo = holidayRepo;
-        _uow = uow; _numbering = numbering;
+        _uow = uow; _numbering = numbering; _notifications = notifications;
     }
 
     public async Task<ApiResponse<long>> Handle(CreateLeaveApplicationCommand cmd, CancellationToken ct)
@@ -113,6 +115,16 @@ internal sealed class CreateLeaveApplicationCommandHandler
             Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
         };
         await _repo.AddAsync(app, ct);
+
+        // Notify HR Manager — they need to approve. Record-only InApp; caller (this handler) owns SaveChanges.
+        await _notifications.NotifyAsync(
+            NotificationChannels.InApp,
+            recipient: "HRManager",
+            subject: $"Leave application {code} pending approval",
+            body: $"{emp.FullName} ({emp.Code}) submitted a {lt.Name} request for {workingDays} day(s) " +
+                  $"from {cmd.FromDate:yyyy-MM-dd} to {cmd.ToDate:yyyy-MM-dd}.",
+            relatedType: "LeaveApplication", relatedId: 0, ct: ct);
+
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<long>.Ok(app.Id, "Leave application submitted.");
     }

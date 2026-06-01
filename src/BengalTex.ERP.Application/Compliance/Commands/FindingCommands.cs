@@ -1,4 +1,5 @@
 using BengalTex.ERP.Application.Common.Interfaces;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
@@ -37,21 +38,28 @@ internal sealed class AddAuditFindingCommandHandler : IRequestHandler<AddAuditFi
     private readonly IRepository<ComplianceAudit, long> _auditRepo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
+    private readonly INotificationService _notifications;
 
     public AddAuditFindingCommandHandler(
         IRepository<AuditFinding, long> repo,
         IRepository<ComplianceAudit, long> auditRepo,
         IRepository<Domain.Entities.Employee> empRepo,
-        IUnitOfWork uow)
-    { _repo = repo; _auditRepo = auditRepo; _empRepo = empRepo; _uow = uow; }
+        IUnitOfWork uow,
+        INotificationService notifications)
+    { _repo = repo; _auditRepo = auditRepo; _empRepo = empRepo; _uow = uow; _notifications = notifications; }
 
     public async Task<ApiResponse<long>> Handle(AddAuditFindingCommand cmd, CancellationToken ct)
     {
-        if (!await _auditRepo.Query().AnyAsync(a => a.Id == cmd.ComplianceAuditId, ct))
-            return ApiResponse<long>.Fail("Audit not found.");
-        if (cmd.AssignedToEmployeeId is int eid
-            && !await _empRepo.Query().AnyAsync(e => e.Id == eid && e.IsActive, ct))
-            return ApiResponse<long>.Fail("Assigned employee not found or inactive.");
+        var audit = await _auditRepo.GetByIdAsync(cmd.ComplianceAuditId, ct);
+        if (audit is null) return ApiResponse<long>.Fail("Audit not found.");
+
+        Domain.Entities.Employee? assigned = null;
+        if (cmd.AssignedToEmployeeId is int eid)
+        {
+            assigned = await _empRepo.GetByIdAsync(eid, ct);
+            if (assigned is null || !assigned.IsActive)
+                return ApiResponse<long>.Fail("Assigned employee not found or inactive.");
+        }
 
         var f = new AuditFinding
         {
@@ -65,6 +73,20 @@ internal sealed class AddAuditFindingCommandHandler : IRequestHandler<AddAuditFi
             Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
         };
         await _repo.AddAsync(f, ct);
+
+        // Notify the assigned employee — they own the CAP item now.
+        if (assigned is not null)
+        {
+            var dueSuffix = cmd.DueDate.HasValue ? $" Due by {cmd.DueDate.Value:yyyy-MM-dd}." : "";
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp,
+                recipient: assigned.FullName,
+                subject: $"CAP item assigned ({audit.Code})",
+                body: $"A {f.Severity} finding was assigned to you on audit {audit.Code}: " +
+                      $"{f.FindingDescription}.{dueSuffix}",
+                relatedType: "AuditFinding", relatedId: 0, ct: ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<long>.Ok(f.Id, "Finding added.");
     }
