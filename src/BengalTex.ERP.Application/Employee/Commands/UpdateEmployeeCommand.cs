@@ -30,6 +30,10 @@ public sealed record UpdateEmployeeCommand(
     bool IsPfMember,
     decimal PfRate,
     bool IsTaxable,
+    int? DepartmentId,
+    int? DesignationId,
+    int? ShiftId,
+    int? BankAccountId,
     string Status,                 // "Active" | "Inactive" | "Terminated"
     string? Notes,
     bool IsActive
@@ -106,6 +110,10 @@ internal sealed class UpdateEmployeeCommandHandler
         entity.IsPfMember = cmd.IsPfMember;
         entity.PfRate = cmd.PfRate;
         entity.IsTaxable = cmd.IsTaxable;
+        entity.DepartmentId = cmd.DepartmentId;
+        entity.DesignationId = cmd.DesignationId;
+        entity.ShiftId = cmd.ShiftId;
+        entity.BankAccountId = cmd.BankAccountId;
         entity.Status = Enum.Parse<EmployeeStatus>(cmd.Status);
         entity.Notes = cmd.Notes;
         entity.IsActive = cmd.IsActive;

@@ -51,6 +51,7 @@ public class EmployeesController : ControllerBase
             request.HouseRentAllowance, request.MedicalAllowance,
             request.TransportAllowance, request.FoodAllowance,
             request.IsPfMember, request.PfRate, request.IsTaxable,
+            request.DepartmentId, request.DesignationId, request.ShiftId, request.BankAccountId,
             request.Notes
         ), ct);
         return Ok(result);
@@ -68,6 +69,7 @@ public class EmployeesController : ControllerBase
             request.HouseRentAllowance, request.MedicalAllowance,
             request.TransportAllowance, request.FoodAllowance,
             request.IsPfMember, request.PfRate, request.IsTaxable,
+            request.DepartmentId, request.DesignationId, request.ShiftId, request.BankAccountId,
             request.Status, request.Notes, request.IsActive
         ), ct);
         return Ok(result);
@@ -103,6 +105,10 @@ public record CreateEmployeeRequest(
     bool IsPfMember,
     decimal PfRate,
     bool IsTaxable,
+    int? DepartmentId,
+    int? DesignationId,
+    int? ShiftId,
+    int? BankAccountId,
     string? Notes);
 
 public record UpdateEmployeeRequest(
@@ -125,6 +131,10 @@ public record UpdateEmployeeRequest(
     bool IsPfMember,
     decimal PfRate,
     bool IsTaxable,
+    int? DepartmentId,
+    int? DesignationId,
+    int? ShiftId,
+    int? BankAccountId,
     string Status,
     string? Notes,
     bool IsActive);

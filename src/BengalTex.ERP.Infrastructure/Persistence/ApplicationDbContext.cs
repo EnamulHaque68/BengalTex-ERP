@@ -113,6 +113,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Designation> Designations => Set<Designation>();
+    public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

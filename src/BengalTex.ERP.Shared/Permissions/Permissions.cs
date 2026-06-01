@@ -223,6 +223,15 @@ public static class Permissions
         public const string ManageCap = "Compliance.ManageCap";                     // edit findings / close CAP items
     }
 
+    public static class MasterSetup
+    {
+        public const string View = "MasterSetup.View";
+        public const string ManageDepartments = "MasterSetup.ManageDepartments";
+        public const string ManageDesignations = "MasterSetup.ManageDesignations";
+        public const string ManageShifts = "MasterSetup.ManageShifts";
+        public const string ManageBankAccounts = "MasterSetup.ManageBankAccounts";
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";

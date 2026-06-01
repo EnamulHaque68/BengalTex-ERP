@@ -40,6 +40,10 @@ export interface EmployeeDto {
   isPfMember: boolean;
   pfRate: number;
   isTaxable: boolean;
+  departmentId: number | null;
+  designationId: number | null;
+  shiftId: number | null;
+  bankAccountId: number | null;
   status: string;
   notes: string | null;
   isActive: boolean;
@@ -79,6 +83,10 @@ export interface CreateEmployeeRequest {
   isPfMember: boolean;
   pfRate: number;
   isTaxable: boolean;
+  departmentId: number | null;
+  designationId: number | null;
+  shiftId: number | null;
+  bankAccountId: number | null;
   notes: string | null;
 }
 
@@ -102,6 +110,10 @@ export interface UpdateEmployeeRequest {
   isPfMember: boolean;
   pfRate: number;
   isTaxable: boolean;
+  departmentId: number | null;
+  designationId: number | null;
+  shiftId: number | null;
+  bankAccountId: number | null;
   status: string;
   notes: string | null;
   isActive: boolean;

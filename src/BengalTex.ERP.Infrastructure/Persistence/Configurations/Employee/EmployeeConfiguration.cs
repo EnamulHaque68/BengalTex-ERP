@@ -37,6 +37,32 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<EmployeeEntity>
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.IsActive);
 
+        // ── Master-Setup FKs (v1a optional; legacy free-text fields preserved above) ──
+        builder.HasOne(e => e.DepartmentEntity)
+            .WithMany()
+            .HasForeignKey(e => e.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.DesignationEntity)
+            .WithMany()
+            .HasForeignKey(e => e.DesignationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.Shift)
+            .WithMany()
+            .HasForeignKey(e => e.ShiftId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.BankAccount)
+            .WithMany()
+            .HasForeignKey(e => e.BankAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => e.DepartmentId);
+        builder.HasIndex(e => e.DesignationId);
+        builder.HasIndex(e => e.ShiftId);
+        builder.HasIndex(e => e.BankAccountId);
+
         builder.Property(e => e.RowVersion).IsRowVersion();
     }
 }

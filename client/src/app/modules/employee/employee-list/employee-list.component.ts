@@ -1,10 +1,14 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
+import { MasterSetupService } from '../../../services/master-setup.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   EmployeeListItemDto, GENDERS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES
 } from '../../../models/employee.models';
+import {
+  DepartmentDto, DesignationDto, ShiftDto, BankAccountDto
+} from '../../../models/master-setup.models';
 
 @Component({
   selector: 'app-employee-list',
@@ -28,6 +32,12 @@ export class EmployeeListComponent implements OnInit {
   readonly employmentTypes = EMPLOYMENT_TYPES;
   readonly statuses = EMPLOYEE_STATUSES;
 
+  // Master-Setup dropdowns
+  departments: DepartmentDto[] = [];
+  designations: DesignationDto[] = [];
+  shifts: ShiftDto[] = [];
+  bankAccounts: BankAccountDto[] = [];
+
   // Dialog
   dialogVisible = false;
   dialogMode: 'create' | 'edit' = 'create';
@@ -44,6 +54,7 @@ export class EmployeeListComponent implements OnInit {
 
   constructor(
     private service: EmployeeService,
+    private masterSvc: MasterSetupService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -51,7 +62,15 @@ export class EmployeeListComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
+    this.loadMasters();
     this.load();
+  }
+
+  private loadMasters(): void {
+    this.masterSvc.getDepartments(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.departments = res.data; this.cdr.detectChanges(); }) });
+    this.masterSvc.getDesignations(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.designations = res.data; this.cdr.detectChanges(); }) });
+    this.masterSvc.getShifts(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.shifts = res.data; this.cdr.detectChanges(); }) });
+    this.masterSvc.getBankAccounts(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.bankAccounts = res.data; this.cdr.detectChanges(); }) });
   }
 
   private todayIso(): string {
@@ -80,6 +99,10 @@ export class EmployeeListComponent implements OnInit {
       isPfMember: [false],
       pfRate: [10, [Validators.min(0), Validators.max(100)]],
       isTaxable: [false],
+      departmentId: [null as number | null],
+      designationId: [null as number | null],
+      shiftId: [null as number | null],
+      bankAccountId: [null as number | null],
       status: ['Active'],
       notes: ['', Validators.maxLength(2000)],
       isActive: [true]
@@ -151,6 +174,10 @@ export class EmployeeListComponent implements OnInit {
       isPfMember: false,
       pfRate: 10,
       isTaxable: false,
+      departmentId: null,
+      designationId: null,
+      shiftId: null,
+      bankAccountId: null,
       status: 'Active',
       notes: '',
       isActive: true
@@ -189,6 +216,10 @@ export class EmployeeListComponent implements OnInit {
             isPfMember: e.isPfMember,
             pfRate: e.pfRate,
             isTaxable: e.isTaxable,
+            departmentId: e.departmentId,
+            designationId: e.designationId,
+            shiftId: e.shiftId,
+            bankAccountId: e.bankAccountId,
             status: e.status,
             notes: e.notes ?? '',
             isActive: e.isActive
@@ -226,6 +257,10 @@ export class EmployeeListComponent implements OnInit {
       isPfMember: !!v.isPfMember,
       pfRate: Number(v.pfRate) || 0,
       isTaxable: !!v.isTaxable,
+      departmentId: v.departmentId,
+      designationId: v.designationId,
+      shiftId: v.shiftId,
+      bankAccountId: v.bankAccountId,
       notes: (v.notes as string)?.trim() || null
     };
 

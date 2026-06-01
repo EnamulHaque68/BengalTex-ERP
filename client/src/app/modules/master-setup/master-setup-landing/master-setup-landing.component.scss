@@ -1,0 +1,16 @@
+.page-shell { padding: 1.5rem 2rem; }
+.page-header { margin-bottom: 1.5rem;
+  .page-title { margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 700; color: #111827; }
+  .page-subtitle { margin: 0; font-size: 0.875rem; color: #6b7280; }
+}
+.master-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1rem; }
+.master-card { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: white;
+  border: 1px solid #e5e7eb; border-radius: 10px; text-decoration: none; transition: all 0.15s; cursor: pointer;
+  &:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+  .master-icon { font-size: 1.85rem; flex-shrink: 0; }
+  .master-info { flex: 1; min-width: 0;
+    .master-name { display: block; font-weight: 700; color: #111827; font-size: 1rem; }
+    .master-desc { display: block; color: #6b7280; font-size: 0.82rem; margin-top: 0.2rem; }
+  }
+  .master-arrow { color: #9ca3af; }
+}

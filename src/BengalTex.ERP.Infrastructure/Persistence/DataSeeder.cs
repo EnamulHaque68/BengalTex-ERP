@@ -268,6 +268,8 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Banking.") ||
             p.StartsWith("Accounting.") ||
             p.StartsWith("Expenses.") ||
+            p == Permissions.MasterSetup.View ||
+            p == Permissions.MasterSetup.ManageBankAccounts ||
             p == Permissions.Approvals.View ||
             p == Permissions.Notifications.View ||
             p == Permissions.Customers.View ||
@@ -282,6 +284,10 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("FestivalBonuses.") ||
             p.StartsWith("Compliance.") ||
             p.StartsWith("Attachments.") ||
+            p == Permissions.MasterSetup.View ||
+            p == Permissions.MasterSetup.ManageDepartments ||
+            p == Permissions.MasterSetup.ManageDesignations ||
+            p == Permissions.MasterSetup.ManageShifts ||
             p == Permissions.Reports.ViewHr ||
             p == Permissions.Reports.Export ||
             p == Permissions.Dashboard.ViewHr));
