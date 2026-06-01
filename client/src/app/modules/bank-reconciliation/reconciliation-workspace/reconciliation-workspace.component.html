@@ -1,0 +1,174 @@
+<div class="page-shell" *ngIf="statement">
+  <div class="page-header">
+    <div>
+      <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> All Statements</a>
+      <h2 class="page-title">
+        {{ statement.code }} &mdash; {{ statement.bankAccountName }}
+        <p-tag *ngIf="statement.isReconciled" value="Reconciled" severity="success" />
+        <p-tag *ngIf="!statement.isReconciled" value="Open" severity="warn" />
+      </h2>
+      <p class="page-subtitle">Period {{ statement.periodFromDate | date:'mediumDate' }} → {{ statement.periodToDate | date:'mediumDate' }}</p>
+    </div>
+    <div class="header-actions">
+      <p-button *ngIf="canManage && !statement.isReconciled" label="Add Line" icon="pi pi-plus" severity="secondary" (click)="openAddLine()" />
+      <p-button *ngIf="canManage && !statement.isReconciled" label="Mark Reconciled" icon="pi pi-check-circle" severity="success"
+                [disabled]="!statement.balancesMatch" [loading]="rowActionId === statement.id" (click)="reconcile()" />
+    </div>
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="sum-card"><span class="lbl">Opening</span><span class="val">{{ formatCurrency(statement.openingBalance) }}</span></div>
+    <div class="sum-card"><span class="lbl">Matched Σ</span><span class="val" [class.positive]="statement.matchedAmount >= 0" [class.negative]="statement.matchedAmount < 0">{{ formatCurrency(statement.matchedAmount) }}</span></div>
+    <div class="sum-card"><span class="lbl">Computed Closing</span><span class="val">{{ formatCurrency(statement.computedClosing) }}</span></div>
+    <div class="sum-card"><span class="lbl">Statement Closing</span><span class="val">{{ formatCurrency(statement.closingBalance) }}</span></div>
+    <div class="sum-card balance" [class.match]="statement.balancesMatch" [class.mismatch]="!statement.balancesMatch">
+      <span class="lbl">Balance Check</span>
+      <span class="val"><i class="pi" [class.pi-check]="statement.balancesMatch" [class.pi-times]="!statement.balancesMatch"></i>
+        {{ statement.balancesMatch ? 'Match' : 'Mismatch (' + formatCurrency(statement.computedClosing - statement.closingBalance) + ')' }}</span>
+    </div>
+  </div>
+
+  <div class="hint" *ngIf="canManage && !statement.isReconciled && selectedStatementLine">
+    <i class="pi pi-info-circle"></i>
+    Selected: <strong>{{ selectedStatementLine.description }}</strong>
+    ({{ formatCurrency(selectedStatementLine.amount) }}).
+    Click a matching journal line on the right to link them.
+    <button type="button" class="link" (click)="selectedStatementLine = null">Clear selection</button>
+  </div>
+
+  <div class="split-pane">
+    <!-- LEFT: Statement Lines -->
+    <p-card styleClass="pane-card left-pane">
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-list"></i> Statement Lines ({{ statement.lines.length }})</span>
+      </ng-template>
+      <table class="lines-table">
+        <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th style="width:120px">Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let l of statement.lines"
+              [class.selected]="selectedStatementLine?.id === l.id"
+              [class.matched-row]="l.status === 'Matched'"
+              [class.excluded-row]="l.status === 'Excluded'"
+              (click)="selectStatementLine(l)">
+            <td class="num">{{ l.transactionDate | date:'MMM d' }}</td>
+            <td>
+              <div class="desc">{{ l.description }}</div>
+              <div class="ref" *ngIf="l.referenceNumber">{{ l.referenceNumber }}</div>
+              <div class="match-info" *ngIf="l.matchedJournalEntryCode">
+                <i class="pi pi-link"></i> {{ l.matchedJournalEntryCode }}
+              </div>
+            </td>
+            <td class="num" [class.inflow]="l.amount > 0" [class.outflow]="l.amount < 0">
+              {{ formatCurrency(l.amount) }}
+            </td>
+            <td><p-tag [value]="l.status" [severity]="lineStatusSeverity(l.status)" /></td>
+            <td (click)="$event.stopPropagation()">
+              <div class="row-actions" *ngIf="canManage && !statement.isReconciled">
+                <p-button *ngIf="l.status === 'Unmatched'" icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEditLine(l)" pTooltip="Edit" />
+                <p-button *ngIf="l.status === 'Unmatched'" icon="pi pi-ban" severity="warn" [text]="true" size="small" (click)="openExclude(l)" pTooltip="Exclude (bank fee etc.)" />
+                <p-button *ngIf="l.status === 'Matched'" icon="pi pi-times" severity="warn" [text]="true" size="small" [loading]="rowActionId === l.id" (click)="unmatchLine(l)" pTooltip="Unmatch" />
+                <p-button *ngIf="l.status === 'Unmatched'" icon="pi pi-trash" severity="danger" [text]="true" size="small" [loading]="rowActionId === l.id" (click)="deleteLine(l)" pTooltip="Delete" />
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="statement.lines.length === 0"><td colspan="5" class="empty">No lines yet. Add lines from your bank statement.</td></tr>
+        </tbody>
+      </table>
+    </p-card>
+
+    <!-- RIGHT: Unmatched Journal Lines -->
+    <p-card styleClass="pane-card right-pane">
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-book"></i> Unmatched Journal Lines ({{ unmatched.length }})</span>
+      </ng-template>
+      <div *ngIf="unmatched.length === 0" class="empty-pane">
+        <i class="pi pi-check-circle"></i>
+        <p>No unmatched journal lines for this bank account in the period.</p>
+      </div>
+      <table class="lines-table" *ngIf="unmatched.length > 0">
+        <thead><tr><th>Date</th><th>Journal / Source</th><th>Amount</th><th style="width:80px">Match</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let j of unmatched" [class.amount-match]="amountMatches(j)">
+            <td class="num">{{ j.entryDate | date:'MMM d' }}</td>
+            <td>
+              <div class="je-code"><span class="code-badge">{{ j.journalEntryCode }}</span>
+                <span class="src-pill" *ngIf="j.sourceType">{{ j.sourceType }}{{ j.sourceCode ? ' ' + j.sourceCode : '' }}</span>
+              </div>
+              <div class="narration">{{ j.narration }}</div>
+            </td>
+            <td class="num" [class.inflow]="j.amount > 0" [class.outflow]="j.amount < 0">{{ formatCurrency(j.amount) }}</td>
+            <td>
+              <p-button icon="pi pi-link" severity="success" [text]="true" size="small"
+                        [disabled]="!selectedStatementLine || statement.isReconciled || !canManage"
+                        [loading]="rowActionId === j.id"
+                        (click)="matchTo(j)" pTooltip="Match to selected line" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </p-card>
+  </div>
+</div>
+
+<div class="page-shell" *ngIf="loading && !statement"><p class="loading">Loading...</p></div>
+
+<!-- Add/edit line dialog -->
+<p-dialog [(visible)]="lineDialogVisible" [header]="lineDialogMode === 'add' ? 'Add Statement Line' : 'Edit Statement Line'"
+          [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+  <form [formGroup]="lineForm" (ngSubmit)="saveLine()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="lineError"><i class="pi pi-exclamation-circle"></i>{{ lineError }}</div>
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Date *</label>
+        <input pInputText type="date" formControlName="transactionDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Amount * <small>(+ deposit / − withdrawal)</small></label>
+        <p-inputNumber formControlName="amount" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Description *</label>
+        <input pInputText formControlName="description" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Reference Number</label>
+        <input pInputText formControlName="referenceNumber" placeholder="cheque #, txn ref" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="lineDialogVisible = false" [disabled]="lineSaving" />
+      <p-button type="submit" [label]="lineSaving ? 'Saving...' : (lineDialogMode === 'add' ? 'Add' : 'Save')"
+                icon="pi pi-save" [loading]="lineSaving" [disabled]="lineForm.invalid || lineSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Exclude dialog -->
+<p-dialog [(visible)]="excludeDialogVisible" header="Exclude Line" [modal]="true" [style]="{ width: '460px' }">
+  <div *ngIf="excludeTarget">
+    <p>Mark <strong>{{ excludeTarget.description }}</strong> ({{ formatCurrency(excludeTarget.amount) }}) as Excluded?</p>
+    <p class="hint">Excluded lines (typically bank fees / interest with no ledger entry yet) are skipped in the reconciliation match — they don't affect the balance check.</p>
+    <div class="alert alert-error" *ngIf="excludeError"><i class="pi pi-exclamation-circle"></i>{{ excludeError }}</div>
+    <div class="field">
+      <label>Reason / Notes</label>
+      <textarea pTextarea rows="2" [(ngModel)]="excludeNotes" placeholder="e.g. Bank service charge, interest credit" class="w-full"></textarea>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="excludeDialogVisible = false" [disabled]="excludeBusy" />
+      <p-button label="Exclude" icon="pi pi-ban" severity="warn" [loading]="excludeBusy" (click)="doExclude()" />
+    </div>
+  </div>
+</p-dialog>

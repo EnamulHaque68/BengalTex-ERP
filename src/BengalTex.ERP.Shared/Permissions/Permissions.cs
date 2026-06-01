@@ -232,6 +232,12 @@ public static class Permissions
         public const string ManageBankAccounts = "MasterSetup.ManageBankAccounts";
     }
 
+    public static class BankReconciliation
+    {
+        public const string View = "BankReconciliation.View";
+        public const string Manage = "BankReconciliation.Manage";   // create/edit statements + match + reconcile
+    }
+
     public static class Inventory
     {
         public const string View = "Inventory.View";

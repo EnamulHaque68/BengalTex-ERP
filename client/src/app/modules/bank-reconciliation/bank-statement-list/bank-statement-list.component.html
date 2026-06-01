@@ -1,0 +1,112 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Bank Reconciliation</h2>
+      <p class="page-subtitle">Match bank statements to ledger entries &mdash; close monthly books</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="filterBankAccountId" [options]="bankAccounts" optionLabel="accountName" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="accountName,bankName" placeholder="All bank accounts"
+                styleClass="filter-select" (onChange)="load()" />
+      <p-select [(ngModel)]="filterStatus" [options]="[{label:'Unreconciled',value:'unreconciled'},{label:'Reconciled',value:'reconciled'},{label:'All',value:'all'}]"
+                optionLabel="label" optionValue="value" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="New Statement" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, bank..." (input)="onSearch($any($event.target).value)" />
+    </span>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="statements" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPage($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Bank Account</th><th>Period</th>
+          <th>Opening</th><th>Closing</th>
+          <th>Lines</th><th>Matched</th><th>Progress</th>
+          <th>Status</th>
+          <th style="width:100px">Open</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-s>
+        <tr (dblclick)="open(s)">
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td class="fw-600">{{ s.bankAccountName }}</td>
+          <td class="num period">{{ s.periodFromDate | date:'mediumDate' }} → {{ s.periodToDate | date:'mediumDate' }}</td>
+          <td class="num">{{ formatCurrency(s.openingBalance) }}</td>
+          <td class="num">{{ formatCurrency(s.closingBalance) }}</td>
+          <td class="num">{{ s.lineCount }}</td>
+          <td class="num">{{ s.matchedCount }} / {{ s.unmatchedCount }} unmatched</td>
+          <td>
+            <div class="progress-cell">
+              <div class="progress-bar"><div class="bar-fill" [style.width.%]="progressPercent(s)" [class.full]="progressPercent(s) >= 100"></div></div>
+              <span class="pct">{{ progressPercent(s) }}%</span>
+            </div>
+          </td>
+          <td>
+            <p-tag *ngIf="s.isReconciled" value="Reconciled" severity="success" />
+            <p-tag *ngIf="!s.isReconciled" value="Open" severity="warn" />
+          </td>
+          <td>
+            <p-button icon="pi pi-arrow-right" severity="info" [text]="true" size="small" (click)="open(s)" pTooltip="Open" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="10" class="empty-row"><i class="pi pi-building-columns"></i><span>No bank statements. Click "New Statement" to start a reconciliation.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" header="New Bank Statement" [modal]="true" [style]="{ width: '560px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Bank Account *</label>
+        <p-select formControlName="bankAccountId" [options]="bankAccounts" optionLabel="accountName" optionValue="id"
+                  [filter]="true" filterBy="accountName,bankName" placeholder="Pick bank account"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Statement Date *</label>
+        <input pInputText type="date" formControlName="statementDate" class="w-full" />
+      </div>
+      <div class="field"></div>
+      <div class="field">
+        <label>Period From *</label>
+        <input pInputText type="date" formControlName="periodFromDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Period To *</label>
+        <input pInputText type="date" formControlName="periodToDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Opening Balance *</label>
+        <p-inputNumber formControlName="openingBalance" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Closing Balance *</label>
+        <p-inputNumber formControlName="closingBalance" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Creating...' : 'Create & Open'" icon="pi pi-save"
+                [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
