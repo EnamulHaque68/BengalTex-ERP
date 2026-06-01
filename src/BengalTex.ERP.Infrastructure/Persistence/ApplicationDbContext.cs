@@ -117,6 +117,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Designation> Designations => Set<Designation>();
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<BankStatement> BankStatements => Set<BankStatement>();
+    public DbSet<BankStatementLine> BankStatementLines => Set<BankStatementLine>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

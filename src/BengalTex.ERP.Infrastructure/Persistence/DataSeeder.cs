@@ -268,6 +268,7 @@ public class DataSeeder : IDataSeeder
             p.StartsWith("Banking.") ||
             p.StartsWith("Accounting.") ||
             p.StartsWith("Expenses.") ||
+            p.StartsWith("BankReconciliation.") ||
             p == Permissions.MasterSetup.View ||
             p == Permissions.MasterSetup.ManageBankAccounts ||
             p == Permissions.Approvals.View ||
