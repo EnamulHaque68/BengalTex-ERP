@@ -1,4 +1,5 @@
 using BengalTex.ERP.Application.Common.Interfaces;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
@@ -18,9 +19,11 @@ internal sealed class ApproveLeaveApplicationCommandHandler : IRequestHandler<Ap
     private readonly IRepository<LeaveType> _typeRepo;
     private readonly IRepository<AttendanceRecord, long> _attRepo;
     private readonly IRepository<Holiday> _holidayRepo;
+    private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
+    private readonly INotificationService _notifications;
 
     public ApproveLeaveApplicationCommandHandler(
         IRepository<LeaveApplication, long> repo,
@@ -28,13 +31,15 @@ internal sealed class ApproveLeaveApplicationCommandHandler : IRequestHandler<Ap
         IRepository<LeaveType> typeRepo,
         IRepository<AttendanceRecord, long> attRepo,
         IRepository<Holiday> holidayRepo,
+        IRepository<Domain.Entities.Employee> empRepo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
-        IDateTimeProvider clock)
+        IDateTimeProvider clock,
+        INotificationService notifications)
     {
         _repo = repo; _balRepo = balRepo; _typeRepo = typeRepo;
-        _attRepo = attRepo; _holidayRepo = holidayRepo;
-        _uow = uow; _currentUser = currentUser; _clock = clock;
+        _attRepo = attRepo; _holidayRepo = holidayRepo; _empRepo = empRepo;
+        _uow = uow; _currentUser = currentUser; _clock = clock; _notifications = notifications;
     }
 
     public async Task<ApiResponse> Handle(ApproveLeaveApplicationCommand cmd, CancellationToken ct)
@@ -91,6 +96,20 @@ internal sealed class ApproveLeaveApplicationCommandHandler : IRequestHandler<Ap
         app.DecidedAt = _clock.UtcNow;
         app.DecidedBy = _currentUser.UserName ?? _currentUser.UserId;
         _repo.Update(app);
+
+        // Notify the employee — addressed by name (per-user filtering is v1c)
+        var emp = await _empRepo.GetByIdAsync(app.EmployeeId, ct);
+        if (emp is not null)
+        {
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp,
+                recipient: emp.FullName,
+                subject: $"Leave {app.Code} approved",
+                body: $"Your leave request from {app.FromDate:yyyy-MM-dd} to {app.ToDate:yyyy-MM-dd} " +
+                      $"({app.TotalDays} day(s)) has been approved by {app.DecidedBy}.",
+                relatedType: "LeaveApplication", relatedId: app.Id, ct: ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.Ok($"Leave {app.Code} approved.");
     }
@@ -107,14 +126,18 @@ public sealed class RejectLeaveApplicationCommandValidator : AbstractValidator<R
 internal sealed class RejectLeaveApplicationCommandHandler : IRequestHandler<RejectLeaveApplicationCommand, ApiResponse>
 {
     private readonly IRepository<LeaveApplication, long> _repo;
+    private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
+    private readonly INotificationService _notifications;
 
-    public RejectLeaveApplicationCommandHandler(IRepository<LeaveApplication, long> repo, IUnitOfWork uow,
-        ICurrentUserService currentUser, IDateTimeProvider clock)
+    public RejectLeaveApplicationCommandHandler(IRepository<LeaveApplication, long> repo,
+        IRepository<Domain.Entities.Employee> empRepo, IUnitOfWork uow,
+        ICurrentUserService currentUser, IDateTimeProvider clock, INotificationService notifications)
     {
-        _repo = repo; _uow = uow; _currentUser = currentUser; _clock = clock;
+        _repo = repo; _empRepo = empRepo; _uow = uow;
+        _currentUser = currentUser; _clock = clock; _notifications = notifications;
     }
 
     public async Task<ApiResponse> Handle(RejectLeaveApplicationCommand cmd, CancellationToken ct)
@@ -128,6 +151,20 @@ internal sealed class RejectLeaveApplicationCommandHandler : IRequestHandler<Rej
         app.DecidedAt = _clock.UtcNow;
         app.DecidedBy = _currentUser.UserName ?? _currentUser.UserId;
         _repo.Update(app);
+
+        var emp = await _empRepo.GetByIdAsync(app.EmployeeId, ct);
+        if (emp is not null)
+        {
+            var reasonSuffix = string.IsNullOrEmpty(app.RejectionReason) ? "" : $" Reason: {app.RejectionReason}";
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp,
+                recipient: emp.FullName,
+                subject: $"Leave {app.Code} rejected",
+                body: $"Your leave request from {app.FromDate:yyyy-MM-dd} to {app.ToDate:yyyy-MM-dd} " +
+                      $"was rejected by {app.DecidedBy}.{reasonSuffix}",
+                relatedType: "LeaveApplication", relatedId: app.Id, ct: ct);
+        }
+
         await _uow.SaveChangesAsync(ct);
         return ApiResponse.Ok($"Leave {app.Code} rejected.");
     }
