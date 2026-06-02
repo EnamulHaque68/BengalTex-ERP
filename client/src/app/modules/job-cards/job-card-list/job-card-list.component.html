@@ -6,6 +6,8 @@
     </div>
     <div class="header-actions">
       <a class="link-btn" routerLink="/job-cards/machines"><i class="pi pi-cog"></i> Machines</a>
+      <p-button label="Scan QR" icon="pi pi-camera" severity="success" *ngIf="canScan"
+                routerLink="/job-cards/scan" />
       <p-button label="Add Job Card" icon="pi pi-plus" *ngIf="canCreate" (click)="openCreate()" />
     </div>
   </div>
