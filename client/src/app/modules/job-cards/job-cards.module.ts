@@ -19,15 +19,17 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MachineListComponent } from './machine-list/machine-list.component';
 import { JobCardListComponent } from './job-card-list/job-card-list.component';
 import { JobCardDetailComponent } from './job-card-detail/job-card-detail.component';
+import { JobCardScannerComponent } from './job-card-scanner/job-card-scanner.component';
 
 const routes: Routes = [
   { path: '', component: JobCardListComponent },
   { path: 'machines', component: MachineListComponent },
+  { path: 'scan', component: JobCardScannerComponent },
   { path: ':id', component: JobCardDetailComponent }
 ];
 
 @NgModule({
-  declarations: [MachineListComponent, JobCardListComponent, JobCardDetailComponent],
+  declarations: [MachineListComponent, JobCardListComponent, JobCardDetailComponent, JobCardScannerComponent],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
