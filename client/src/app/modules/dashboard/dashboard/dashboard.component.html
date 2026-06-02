@@ -1,0 +1,155 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Factory Dashboard</h2>
+      <p class="page-subtitle">
+        Real-time snapshot of your factory
+        <span *ngIf="lastRefreshed" class="last-refresh">
+          &middot; refreshed {{ lastRefreshed | date:'shortTime' }} (auto every 60s)
+        </span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true" [loading]="loading" (click)="load()" />
+    </div>
+  </div>
+
+  <ng-container *ngIf="data; else loadingTpl">
+
+    <!-- ── HERO STRIP ── -->
+    <div class="hero-grid">
+      <div class="hero-card success">
+        <i class="pi pi-wallet hero-icon"></i>
+        <div class="hero-body">
+          <div class="hero-num">{{ formatCurrencyShort(data.hero.cashAndBankBalance) }}</div>
+          <div class="hero-label">Cash + Bank</div>
+        </div>
+      </div>
+      <div class="hero-card primary">
+        <i class="pi pi-chart-line hero-icon"></i>
+        <div class="hero-body">
+          <div class="hero-num">{{ formatCurrencyShort(data.hero.thisMonthRevenue) }}</div>
+          <div class="hero-label">This Month Revenue</div>
+        </div>
+      </div>
+      <div class="hero-card warn">
+        <i class="pi pi-box hero-icon"></i>
+        <div class="hero-body">
+          <div class="hero-num">{{ formatCurrencyShort(data.hero.totalStockValue) }}</div>
+          <div class="hero-label">Total Stock Value</div>
+        </div>
+      </div>
+      <div class="hero-card info">
+        <i class="pi pi-shopping-cart hero-icon"></i>
+        <div class="hero-body">
+          <div class="hero-num">{{ data.hero.activeOrdersCount }}</div>
+          <div class="hero-label">Active Orders (PO + SO)</div>
+        </div>
+      </div>
+      <div class="hero-card outline ar">
+        <div class="hero-body">
+          <div class="hero-num">{{ formatCurrencyShort(data.hero.outstandingArAmount) }}</div>
+          <div class="hero-label">AR Outstanding</div>
+        </div>
+      </div>
+      <div class="hero-card outline ap">
+        <div class="hero-body">
+          <div class="hero-num">{{ formatCurrencyShort(data.hero.outstandingApAmount) }}</div>
+          <div class="hero-label">AP Outstanding</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROLE SECTIONS ── -->
+    <div class="section-grid">
+
+      <p-card *ngIf="data.sales" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-tags"></i> Sales</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num">{{ data.sales.pendingQuotations }}</span><span class="kpi-label">Pending Quotations</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.sales.openSalesOrders }}</span><span class="kpi-label">Open SOs</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.sales.thisMonthInvoiceCount }}</span><span class="kpi-label">Invoices (month)</span></div>
+          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.sales.thisMonthRevenue) }}</span><span class="kpi-label">Revenue (month)</span></div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="data.procurement" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-shopping-cart"></i> Procurement</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num">{{ data.procurement.openPurchaseOrders }}</span><span class="kpi-label">Open POs</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.procurement.pendingGrns }}</span><span class="kpi-label">Pending GRNs</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.procurement.thisMonthPaymentCount }}</span><span class="kpi-label">Payments (month)</span></div>
+          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.procurement.thisMonthPaymentAmount) }}</span><span class="kpi-label">Paid (month)</span></div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="data.production" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-cog"></i> Production</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num">{{ data.production.activeProductionOrders }}</span><span class="kpi-label">Active Orders</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.production.openJobCards }}</span><span class="kpi-label">Open Job Cards</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.production.inProgressJobCards }}</span><span class="kpi-label">In Progress</span></div>
+          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.production.thisMonthWastageCost) }}</span><span class="kpi-label">Wastage (month)</span></div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="data.hr" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-users"></i> Human Resources</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num">{{ data.hr.activeEmployees }}</span><span class="kpi-label">Active Employees</span></div>
+          <div class="kpi"><span class="kpi-num success">{{ data.hr.presentToday }}</span><span class="kpi-label">Present Today</span></div>
+          <div class="kpi"><span class="kpi-num warn">{{ data.hr.pendingLeaveApplications }}</span><span class="kpi-label">Pending Leaves</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.hr.activeLoans }}</span><span class="kpi-label">Active Loans</span></div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="data.accounting" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-calculator"></i> Accounting</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.accounting.outstandingArAmount) }}</span><span class="kpi-label">AR ({{ data.accounting.outstandingArInvoices }} inv)</span></div>
+          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.accounting.outstandingApAmount) }}</span><span class="kpi-label">AP ({{ data.accounting.outstandingApInvoices }} inv)</span></div>
+          <div class="kpi"><span class="kpi-num warn">{{ data.accounting.unreconciledStatements }}</span><span class="kpi-label">Unreconciled Stmts</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.accounting.thisMonthJournalEntries }}</span><span class="kpi-label">JEs (month)</span></div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="data.compliance" styleClass="section-card">
+        <ng-template pTemplate="title"><span><i class="pi pi-shield"></i> Compliance</span></ng-template>
+        <div class="kpi-row">
+          <div class="kpi"><span class="kpi-num warn">{{ data.compliance.certificatesExpiringSoon }}</span><span class="kpi-label">Expiring (60d)</span></div>
+          <div class="kpi"><span class="kpi-num danger">{{ data.compliance.certificatesExpired }}</span><span class="kpi-label">Expired Certs</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.compliance.upcomingAudits }}</span><span class="kpi-label">Upcoming Audits (30d)</span></div>
+          <div class="kpi"><span class="kpi-num warn">{{ data.compliance.openCapFindings }}</span><span class="kpi-label">Open CAP</span></div>
+          <div class="kpi"><span class="kpi-num danger">{{ data.compliance.overdueCapFindings }}</span><span class="kpi-label">Overdue CAP</span></div>
+        </div>
+      </p-card>
+
+    </div>
+
+    <!-- ── NEEDS ATTENTION ── -->
+    <p-card *ngIf="data.needsAttention.length > 0" styleClass="attention-card">
+      <ng-template pTemplate="title"><span><i class="pi pi-flag"></i> Needs Attention ({{ data.needsAttention.length }})</span></ng-template>
+      <div class="attention-list">
+        <a *ngFor="let item of data.needsAttention"
+           class="attention-row"
+           [routerLink]="routeForItem(item)"
+           [style.background]="severityBg(item.severity)">
+          <span class="sev-bar" [style.background]="severityColor(item.severity)"></span>
+          <div class="att-body">
+            <div class="att-head">
+              <strong>{{ item.title }}</strong>
+              <span class="att-ref" *ngIf="item.reference">{{ item.reference }}</span>
+              <span class="att-date" *ngIf="item.date">{{ item.date | date:'mediumDate' }}</span>
+            </div>
+            <div class="att-detail">{{ item.detail }}</div>
+          </div>
+          <p-tag *ngIf="item.severity" [value]="item.severity"
+                 [severity]="item.severity === 'Critical' ? 'danger' : item.severity === 'Warning' ? 'warn' : 'info'" />
+        </a>
+      </div>
+    </p-card>
+
+  </ng-container>
+
+  <ng-template #loadingTpl><p class="loading">Loading dashboard...</p></ng-template>
+</div>
