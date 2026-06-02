@@ -61,7 +61,8 @@ const routes: Routes = [
       { path: 'loans-bonuses', loadChildren: () => import('./modules/loans-bonuses/loans-bonuses.module').then(m => m.LoansBonusesModule) },
       { path: 'compliance', loadChildren: () => import('./modules/compliance/compliance.module').then(m => m.ComplianceModule) },
       { path: 'master-setup', loadChildren: () => import('./modules/master-setup/master-setup.module').then(m => m.MasterSetupModule) },
-      { path: 'bank-reconciliation', loadChildren: () => import('./modules/bank-reconciliation/bank-reconciliation.module').then(m => m.BankReconciliationModule) }
+      { path: 'bank-reconciliation', loadChildren: () => import('./modules/bank-reconciliation/bank-reconciliation.module').then(m => m.BankReconciliationModule) },
+      { path: 'dashboard', loadChildren: () => import('./modules/dashboard/dashboard.module').then(m => m.DashboardModule) }
     ]
   },
   { path: '**', redirectTo: '/login' }
