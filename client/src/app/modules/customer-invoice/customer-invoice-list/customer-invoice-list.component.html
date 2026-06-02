@@ -100,6 +100,9 @@
                         *ngIf="c.status === 'Draft'"
                         [loading]="rowActionId === c.id"
                         (click)="issue(c)" pTooltip="Issue" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft'"
+                        [routerLink]="['/customer-invoices', c.id, 'print']" pTooltip="Print invoice" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"

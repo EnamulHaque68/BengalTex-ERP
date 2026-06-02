@@ -64,6 +64,8 @@
           <td>
             <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
                       (click)="openView(c)" pTooltip="View" />
+            <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                      [routerLink]="['/vat-challans', c.id, 'print']" pTooltip="Print Mushok 6.3" />
           </td>
         </tr>
       </ng-template>

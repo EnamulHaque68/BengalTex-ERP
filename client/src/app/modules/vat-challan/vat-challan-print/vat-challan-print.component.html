@@ -1,0 +1,126 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to VAT Challans</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="challan && invoice && company; else loadingTpl">
+    <div class="doc">
+      <!-- Mushok 6.3 header -->
+      <div class="mushok-header">
+        <div class="form-id">
+          <div class="govt">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
+          <div class="govt">জাতীয় রাজস্ব বোর্ড</div>
+          <div class="form-no">মূসক-৬.৩ (Mushok-6.3)</div>
+        </div>
+        <div class="title-block">
+          <div class="title">কর চালানপত্র</div>
+          <div class="title-en">TAX INVOICE</div>
+          <div class="form-ref">[বিধি ৪০ এর উপ-বিধি (১) (এর) এর "ক" ও "ছ" দ্রষ্টব্য]</div>
+        </div>
+      </div>
+
+      <!-- Seller info -->
+      <table class="info-grid">
+        <tr>
+          <td class="lbl">নিবন্ধিত ব্যক্তির নাম<br /><small>Name of registered person</small></td>
+          <td class="val">{{ company.name }}</td>
+        </tr>
+        <tr>
+          <td class="lbl">ঠিকানা<br /><small>Address</small></td>
+          <td class="val">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span>, {{ company.city }}, {{ company.district }}</td>
+        </tr>
+        <tr>
+          <td class="lbl">বিআইএন<br /><small>BIN</small></td>
+          <td class="val mono">{{ company.taxNumber || '—' }}</td>
+        </tr>
+      </table>
+
+      <!-- Buyer info -->
+      <table class="info-grid">
+        <tr>
+          <td class="lbl">ক্রেতার নাম<br /><small>Buyer name</small></td>
+          <td class="val">{{ challan.customerName }}</td>
+        </tr>
+        <tr>
+          <td class="lbl">ক্রেতার বিআইএন<br /><small>Buyer BIN</small></td>
+          <td class="val mono">—</td>
+        </tr>
+      </table>
+
+      <!-- Meta -->
+      <table class="info-grid">
+        <tr>
+          <td class="lbl">চালান নং<br /><small>Challan No</small></td>
+          <td class="val mono">{{ challan.code }}</td>
+          <td class="lbl">তারিখ<br /><small>Date</small></td>
+          <td class="val">{{ challan.challanDate | date:'mediumDate' }}</td>
+        </tr>
+        <tr>
+          <td class="lbl">ইনভয়েস নং<br /><small>Invoice No</small></td>
+          <td class="val mono">{{ challan.customerInvoiceCode }}</td>
+          <td class="lbl">VAT হার<br /><small>VAT Rate</small></td>
+          <td class="val">{{ (invoice.vatRate * 100) | number:'1.0-0' }}%</td>
+        </tr>
+      </table>
+
+      <!-- Line items -->
+      <table class="lines">
+        <thead>
+          <tr>
+            <th class="num">ক্রম<br/><small>SL</small></th>
+            <th>পণ্যের বিবরণ<br/><small>Description</small></th>
+            <th class="num">পরিমাণ<br/><small>Qty</small></th>
+            <th>একক<br/><small>UoM</small></th>
+            <th class="num">একক মূল্য<br/><small>Unit Price</small></th>
+            <th class="num">মোট মূল্য<br/><small>Amount</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of invoice.lines; let i = index">
+            <td class="num">{{ i + 1 }}</td>
+            <td>
+              <div class="item-name">{{ l.productName }}</div>
+              <div class="item-code mono">{{ l.productCode }}</div>
+            </td>
+            <td class="num">{{ l.quantity }}</td>
+            <td>{{ l.unitOfMeasureCode }}</td>
+            <td class="num">{{ formatCurrency(l.unitPrice) }}</td>
+            <td class="num">{{ formatCurrency(l.lineTotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Totals -->
+      <div class="totals-row">
+        <div class="words">
+          <div class="lbl">কথায় (Amount in words)</div>
+          <div class="val">{{ amountInWords(challan.totalAmount) }}</div>
+        </div>
+        <div class="totals">
+          <div class="tt-row"><span>মোট মূল্য (Subtotal)</span><span class="mono">{{ formatCurrency(challan.subtotalAmount) }}</span></div>
+          <div class="tt-row"><span>মূসক (VAT)</span><span class="mono">{{ formatCurrency(challan.vatAmount) }}</span></div>
+          <div class="tt-row total"><span>মোট প্রদেয় (Total Payable)</span><span class="mono">{{ formatCurrency(challan.totalAmount) }}</span></div>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <footer class="signatures">
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-label">নিবন্ধিত ব্যক্তির স্বাক্ষর</div>
+          <div class="sig-co">Authorized Signature, {{ company.shortName || company.name }}</div>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-label">ক্রেতার স্বাক্ষর</div>
+          <div class="sig-co">Buyer Signature</div>
+        </div>
+      </footer>
+
+      <div class="doc-footer">Mushok-6.3 (System ref: {{ challan.code }}) — generated {{ challan.challanDate | date:'yyyy-MM-dd' }}</div>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl><p class="loading">Loading challan...</p></ng-template>
+</div>
