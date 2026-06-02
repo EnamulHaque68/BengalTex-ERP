@@ -12,11 +12,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { VatChallanListComponent } from './vat-challan-list/vat-challan-list.component';
+import { VatChallanPrintComponent } from './vat-challan-print/vat-challan-print.component';
 
-const routes: Routes = [{ path: '', component: VatChallanListComponent }];
+const routes: Routes = [
+  { path: '', component: VatChallanListComponent },
+  { path: ':id/print', component: VatChallanPrintComponent }
+];
 
 @NgModule({
-  declarations: [VatChallanListComponent],
+  declarations: [VatChallanListComponent, VatChallanPrintComponent],
   imports: [
     CommonModule, FormsModule,
     RouterModule.forChild(routes),

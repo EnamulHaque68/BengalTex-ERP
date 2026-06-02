@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ReceiptListComponent } from './receipt-list/receipt-list.component';
+import { ReceiptPrintComponent } from './receipt-print/receipt-print.component';
 
-const routes: Routes = [{ path: '', component: ReceiptListComponent }];
+const routes: Routes = [
+  { path: '', component: ReceiptListComponent },
+  { path: ':id/print', component: ReceiptPrintComponent }
+];
 
 @NgModule({
-  declarations: [ReceiptListComponent],
+  declarations: [ReceiptListComponent, ReceiptPrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

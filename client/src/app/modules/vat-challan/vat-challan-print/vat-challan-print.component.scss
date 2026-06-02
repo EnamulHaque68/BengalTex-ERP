@@ -1,0 +1,73 @@
+.print-shell { padding: 1.5rem; background: #f3f4f6; min-height: 100vh; }
+.print-toolbar { display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 0 auto 1rem; gap: 1rem;
+  .back-link { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: #4f46e5; text-decoration: none; cursor: pointer; &:hover { text-decoration: underline; } }
+}
+
+.doc { background: white; max-width: 800px; margin: 0 auto; padding: 2rem 2.25rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  font-family: 'Segoe UI', system-ui, sans-serif; color: #111827; font-size: 0.85rem; line-height: 1.4;
+}
+
+.mushok-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 2px solid #111827;
+  .form-id { font-size: 0.78rem; color: #4b5563;
+    .govt { font-weight: 600; }
+    .form-no { font-weight: 700; color: #111827; margin-top: 0.5rem; font-size: 0.85rem; }
+  }
+  .title-block { flex: 1; text-align: center;
+    .title { font-size: 1.4rem; font-weight: 800; }
+    .title-en { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.1em; margin-top: 0.15rem; }
+    .form-ref { font-size: 0.7rem; color: #6b7280; margin-top: 0.3rem; font-style: italic; }
+  }
+}
+
+.info-grid { width: 100%; border-collapse: collapse; margin-bottom: 0.85rem;
+  td { padding: 0.55rem 0.7rem; border: 1px solid #d1d5db; vertical-align: top;
+    &.lbl { background: #f9fafb; font-size: 0.78rem; font-weight: 600; color: #374151; width: 30%; small { display: block; color: #6b7280; font-weight: 400; font-size: 0.7rem; } }
+    &.val { font-size: 0.9rem; font-weight: 600; color: #111827;
+      &.mono { font-family: monospace; }
+    }
+  }
+}
+
+.lines { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem;
+  thead th { background: #111827; color: white; padding: 0.55rem 0.5rem; text-align: left; font-size: 0.78rem; font-weight: 700;
+    small { display: block; font-size: 0.65rem; opacity: 0.85; font-weight: 400; }
+    &.num { text-align: right; }
+  }
+  tbody td { padding: 0.55rem 0.5rem; border: 1px solid #d1d5db; vertical-align: top;
+    &.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  }
+  .item-name { font-weight: 600; color: #111827; }
+  .item-code { font-size: 0.7rem; color: #9ca3af; font-family: monospace; }
+}
+
+.totals-row { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; margin: 1rem 0;
+  .words { padding: 0.75rem 1rem; border: 1px solid #d1d5db;
+    .lbl { font-size: 0.7rem; color: #6b7280; font-weight: 700; margin-bottom: 0.25rem; }
+    .val { font-style: italic; font-size: 0.9rem; color: #111827; font-weight: 600; }
+  }
+  .totals { background: #f9fafb; border: 1px solid #d1d5db; padding: 0.85rem 1rem;
+    .tt-row { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; font-size: 0.88rem;
+      &.total { border-top: 2px solid #111827; padding-top: 0.55rem; margin-top: 0.4rem; font-weight: 800; font-size: 1.05rem; }
+      .mono { font-family: monospace; }
+    }
+  }
+}
+
+.signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 2.5rem;
+  .sig {
+    .sig-line { border-top: 1px solid #111827; margin-bottom: 0.3rem; height: 30px; }
+    .sig-label { font-size: 0.85rem; color: #111827; font-weight: 600; text-align: center; }
+    .sig-co { font-size: 0.72rem; color: #6b7280; text-align: center; margin-top: 0.15rem; }
+  }
+}
+
+.doc-footer { margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid #f3f4f6; font-size: 0.7rem; color: #9ca3af; text-align: center; }
+.mono { font-family: monospace; }
+.loading { text-align: center; padding: 3rem; color: #9ca3af; }
+
+@media print {
+  .print-shell { padding: 0; background: white; }
+  .no-print { display: none !important; }
+  .doc { box-shadow: none; max-width: none; padding: 1.5cm 1.5cm; margin: 0; }
+  @page { size: A4; margin: 0; }
+}
