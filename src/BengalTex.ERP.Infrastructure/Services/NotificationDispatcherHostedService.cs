@@ -13,6 +13,9 @@ namespace BengalTex.ERP.Infrastructure.Services;
 /// scan ~10 seconds after startup and then every 24 hours. Each scan:
 ///   * Compliance certificates expiring in the next 60 days → notify HRManager
 ///   * Open / InProgress audit findings whose DueDate has passed → notify AssignedToEmployee
+///   * RawMaterial / Product with total stock-on-hand below threshold → notify ProductionManager
+///     (RawMaterial uses MinimumStockLevel; Product uses ReorderLevel; only items with
+///     threshold > 0 trigger — 0 means no alert configured)
 /// Idempotency: a new notification is only created if no prior Notification with the same
 /// (RelatedEntityType, RelatedEntityId) was sent within the last 7 days — prevents spam.
 /// </summary>
@@ -120,6 +123,75 @@ public sealed class NotificationDispatcherHostedService : BackgroundService
                 body: $"{f.Severity} finding on audit {f.AuditCode} was due {f.DueDate:yyyy-MM-dd} " +
                       $"({daysLate} day(s) overdue): {f.FindingDescription}",
                 relatedType: "AuditFinding", relatedId: f.Id, ct: ct);
+            created++;
+        }
+
+        // ── Inventory: raw materials below MinimumStockLevel ──
+        // Sum StockOnHand per RM across all warehouses; compare against the threshold.
+        var rmBelow = await db.RawMaterials
+            .Where(r => r.IsActive && r.MinimumStockLevel > 0m)
+            .Select(r => new
+            {
+                r.Id,
+                r.Code,
+                r.Name,
+                r.MinimumStockLevel,
+                Uom = r.UnitOfMeasure.Code,
+                OnHand = db.StockOnHand
+                    .Where(s => s.RawMaterialId == r.Id)
+                    .Sum(s => (decimal?)s.Quantity) ?? 0m
+            })
+            .Where(x => x.OnHand < x.MinimumStockLevel)
+            .ToListAsync(ct);
+
+        foreach (var r in rmBelow)
+        {
+            var alreadySent = await db.Notifications.AnyAsync(n =>
+                n.RelatedEntityType == "RawMaterial" && n.RelatedEntityId == r.Id
+                && n.CreatedAt >= dedupeCutoff, ct);
+            if (alreadySent) continue;
+
+            await notifications.NotifyAsync(
+                NotificationChannels.InApp, recipient: "ProductionManager",
+                subject: $"Low stock: {r.Name} ({r.Code})",
+                body: $"Raw material '{r.Name}' is below re-order level. " +
+                      $"On-hand: {r.OnHand:0.####} {r.Uom}, threshold: {r.MinimumStockLevel:0.####} {r.Uom}. " +
+                      $"Consider raising a Purchase Order.",
+                relatedType: "RawMaterial", relatedId: r.Id, ct: ct);
+            created++;
+        }
+
+        // ── Inventory: finished products below ReorderLevel ──
+        var prodBelow = await db.Products
+            .Where(p => p.IsActive && p.IsStockItem && p.ReorderLevel > 0m)
+            .Select(p => new
+            {
+                p.Id,
+                p.Code,
+                p.Name,
+                p.ReorderLevel,
+                Uom = p.UnitOfMeasure.Code,
+                OnHand = db.StockOnHand
+                    .Where(s => s.ProductId == p.Id)
+                    .Sum(s => (decimal?)s.Quantity) ?? 0m
+            })
+            .Where(x => x.OnHand < x.ReorderLevel)
+            .ToListAsync(ct);
+
+        foreach (var p in prodBelow)
+        {
+            var alreadySent = await db.Notifications.AnyAsync(n =>
+                n.RelatedEntityType == "Product" && n.RelatedEntityId == p.Id
+                && n.CreatedAt >= dedupeCutoff, ct);
+            if (alreadySent) continue;
+
+            await notifications.NotifyAsync(
+                NotificationChannels.InApp, recipient: "ProductionManager",
+                subject: $"Low stock: {p.Name} ({p.Code})",
+                body: $"Finished product '{p.Name}' is below re-order level. " +
+                      $"On-hand: {p.OnHand:0.####} {p.Uom}, threshold: {p.ReorderLevel:0.####} {p.Uom}. " +
+                      $"Consider raising a Production Order.",
+                relatedType: "Product", relatedId: p.Id, ct: ct);
             created++;
         }
 
