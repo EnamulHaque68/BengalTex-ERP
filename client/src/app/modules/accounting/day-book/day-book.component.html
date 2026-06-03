@@ -1,0 +1,93 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Day Book</h2>
+      <p class="page-subtitle">Every posted journal voucher in the date range, chronologically &mdash; expand to see double-entry legs</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="ledger-head" *ngIf="data">
+    <div><span class="lbl">Period</span><span class="val">{{ data.fromDate }} → {{ data.toDate }}</span></div>
+    <div><span class="lbl">Total Debit</span><span class="val num fw-700">{{ formatCurrency(data.totalDebit) }}</span></div>
+    <div><span class="lbl">Total Credit</span><span class="val num fw-700">{{ formatCurrency(data.totalCredit) }}</span></div>
+    <div><span class="lbl">Entries</span><span class="val">{{ data.entries.length }}</span></div>
+    <div class="ml-auto">
+      <p-button label="Expand all" icon="pi pi-chevron-down" severity="secondary" [text]="true" size="small" (click)="expandAll()" />
+      <p-button label="Collapse" icon="pi pi-chevron-up" severity="secondary" [text]="true" size="small" (click)="collapseAll()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="data">
+    <table class="day-book-table">
+      <thead>
+        <tr>
+          <th style="width:28px"></th>
+          <th>Date</th>
+          <th>Voucher</th>
+          <th>Reference</th>
+          <th>Narration</th>
+          <th>Source</th>
+          <th class="num-h">Total Dr</th>
+          <th class="num-h">Total Cr</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let e of data.entries">
+          <tr class="entry-row" (click)="toggle(e.journalEntryId)">
+            <td class="toggle">
+              <i class="pi" [ngClass]="expanded.has(e.journalEntryId) ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+            </td>
+            <td class="num">{{ e.entryDate }}</td>
+            <td><span class="code-badge">{{ e.journalCode }}</span></td>
+            <td class="muted">{{ e.reference || '—' }}</td>
+            <td class="narr">{{ e.narration || '—' }}</td>
+            <td>
+              <span class="source-badge" *ngIf="e.sourceType">{{ e.sourceType }} <small>{{ e.sourceCode }}</small></span>
+              <span class="muted" *ngIf="!e.sourceType">Manual</span>
+            </td>
+            <td class="num">{{ formatCurrency(e.totalDebit) }}</td>
+            <td class="num">{{ formatCurrency(e.totalCredit) }}</td>
+          </tr>
+          <tr *ngIf="expanded.has(e.journalEntryId)" class="lines-row">
+            <td></td>
+            <td colspan="7">
+              <table class="lines-table">
+                <thead>
+                  <tr><th>Account</th><th>Narration</th><th class="num-h">Debit</th><th class="num-h">Credit</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let l of e.lines">
+                    <td><span class="acc-code">{{ l.accountCode }}</span> {{ l.accountName }}</td>
+                    <td class="muted">{{ l.lineNarration || '—' }}</td>
+                    <td class="num">{{ l.debit ? formatCurrency(l.debit) : '' }}</td>
+                    <td class="num">{{ l.credit ? formatCurrency(l.credit) : '' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="data.entries.length === 0">
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-book"></i>
+            <span>No posted journals in this period.</span>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot *ngIf="data.entries.length > 0">
+        <tr class="totals-row">
+          <td colspan="6" class="ta-right">Period totals</td>
+          <td class="num">{{ formatCurrency(data.totalDebit) }}</td>
+          <td class="num">{{ formatCurrency(data.totalCredit) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </p-card>
+</div>

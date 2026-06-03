@@ -7,7 +7,8 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   AccountDto, CreateAccountRequest, UpdateAccountRequest,
   JournalEntryDto, JournalEntryListItemDto, SaveJournalEntryRequest,
-  TrialBalanceDto, GeneralLedgerDto, ProfitAndLossDto, BalanceSheetDto, CashFlowStatementDto
+  TrialBalanceDto, GeneralLedgerDto, ProfitAndLossDto, BalanceSheetDto, CashFlowStatementDto,
+  CashBookDto, DayBookDto
 } from '../models/accounting.models';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +60,22 @@ export class AccountingService {
   cashFlow(fromDate: string, toDate: string): Observable<ApiResponse<CashFlowStatementDto>> {
     const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
     return this.http.get<ApiResponse<CashFlowStatementDto>>(`${this.accounts}/cash-flow`, { params });
+  }
+
+  cashBook(fromDate: string, toDate: string): Observable<ApiResponse<CashBookDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<CashBookDto>>(`${this.accounts}/cash-book`, { params });
+  }
+
+  bankBook(fromDate: string, toDate: string, bankAccountId?: number): Observable<ApiResponse<CashBookDto>> {
+    let params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    if (bankAccountId) params = params.set('bankAccountId', bankAccountId.toString());
+    return this.http.get<ApiResponse<CashBookDto>>(`${this.accounts}/bank-book`, { params });
+  }
+
+  dayBook(fromDate: string, toDate: string): Observable<ApiResponse<DayBookDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<DayBookDto>>(`${this.accounts}/day-book`, { params });
   }
 
   // ── Journal Vouchers ──

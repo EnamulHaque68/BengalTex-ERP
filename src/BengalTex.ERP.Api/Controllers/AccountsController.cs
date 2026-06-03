@@ -82,4 +82,30 @@ public class AccountsController : ControllerBase
     public async Task<IActionResult> CashFlow(
         [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
         => Ok(await _mediator.Send(new GetCashFlowStatementQuery(fromDate, toDate), ct));
+
+    /// <summary>Cash Book — chronological ledger of seeded Cash account (1110) with running balance.</summary>
+    [HttpGet("cash-book")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> CashBook(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetCashBookQuery(fromDate, toDate), ct));
+
+    /// <summary>
+    /// Bank Book — chronological ledger for one BankAccount entity (via its LedgerAccountId)
+    /// or aggregate over the seeded Bank ledger (1120) when bankAccountId is omitted.
+    /// </summary>
+    [HttpGet("bank-book")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> BankBook(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate,
+        [FromQuery] int? bankAccountId = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetBankBookQuery(bankAccountId, fromDate, toDate), ct));
+
+    /// <summary>Day Book — every posted journal voucher in a date range, with all line legs.</summary>
+    [HttpGet("day-book")]
+    [HasPermission(Permissions.Accounting.View)]
+    public async Task<IActionResult> DayBook(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetDayBookQuery(fromDate, toDate), ct));
 }

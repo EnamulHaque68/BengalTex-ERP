@@ -20,6 +20,9 @@ import { GeneralLedgerComponent } from './general-ledger/general-ledger.componen
 import { ProfitLossComponent } from './profit-loss/profit-loss.component';
 import { BalanceSheetComponent } from './balance-sheet/balance-sheet.component';
 import { CashFlowComponent } from './cash-flow/cash-flow.component';
+import { CashBookComponent } from './cash-book/cash-book.component';
+import { BankBookComponent } from './bank-book/bank-book.component';
+import { DayBookComponent } from './day-book/day-book.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -29,11 +32,18 @@ const routes: Routes = [
   { path: 'profit-loss', component: ProfitLossComponent },
   { path: 'balance-sheet', component: BalanceSheetComponent },
   { path: 'cash-flow', component: CashFlowComponent },
+  { path: 'cash-book', component: CashBookComponent },
+  { path: 'bank-book', component: BankBookComponent },
+  { path: 'day-book', component: DayBookComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
 @NgModule({
-  declarations: [ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent, GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent],
+  declarations: [
+    ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent,
+    GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent,
+    CashBookComponent, BankBookComponent, DayBookComponent
+  ],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
