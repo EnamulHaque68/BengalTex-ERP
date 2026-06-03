@@ -218,3 +218,52 @@ export interface DashboardKpisDto {
   monthStart: string;
   monthEnd: string;
 }
+
+// ─── WIP Report ───────────────────────────────────────────────────────────
+
+export interface WipReportRowDto {
+  productionOrderId: number;
+  code: string;
+  productId: number;
+  productCode: string;
+  productName: string;
+  targetQuantity: number;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  actualStartDate: string | null;
+  daysRunning: number;
+  isOverdue: boolean;
+  totalStages: number;
+  completedStages: number;
+  stageProgressPercent: number;
+  currentStageName: string | null;
+  issueWarehouseName: string;
+  receiveWarehouseName: string;
+}
+
+export interface WipReportDto {
+  asOfDate: string;
+  totalOrdersInProgress: number;
+  totalTargetQuantity: number;
+  rows: WipReportRowDto[];
+}
+
+// ─── Production Summary Report ────────────────────────────────────────────
+
+export interface ProductionSummaryRowDto {
+  productId: number;
+  productCode: string;
+  productName: string;
+  orderCount: number;
+  totalQuantityProduced: number;
+  averageQuantityPerOrder: number;
+  averageCycleTimeDays: number;
+}
+
+export interface ProductionSummaryReportDto {
+  fromDate: string;
+  toDate: string;
+  totalOrdersCompleted: number;
+  totalQuantityProduced: number;
+  rows: ProductionSummaryRowDto[];
+}

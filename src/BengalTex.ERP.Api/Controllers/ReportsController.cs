@@ -91,4 +91,20 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(new GetMarginReportQuery(fromDate, toDate, customerId), ct);
         return Ok(result);
     }
+
+    /// <summary>WIP — every Production Order currently in progress, with stage progress + overdue flag.</summary>
+    [HttpGet("wip")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetWip(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetWipReportQuery(), ct));
+
+    /// <summary>Production summary — per-product output rollup for completed orders in the date window.</summary>
+    [HttpGet("production-summary")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetProductionSummary(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] int? productId = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetProductionSummaryReportQuery(fromDate, toDate, productId), ct));
 }
