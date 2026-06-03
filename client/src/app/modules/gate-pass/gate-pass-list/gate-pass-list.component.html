@@ -1,0 +1,278 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Gate Passes</h2>
+      <p class="page-subtitle">Security log of every in/out movement &mdash; vehicles, materials, visitors. Returnable Out passes track until material comes back.</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="New Gate Pass" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, vehicle, driver, item..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterType" [options]="types" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All types" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+    <input pInputText type="date" [(ngModel)]="filterFromDate" placeholder="From" class="date-input" (change)="load()" />
+    <input pInputText type="date" [(ngModel)]="filterToDate" placeholder="To" class="date-input" (change)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="passes" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Date / Time</th>
+          <th>Type</th>
+          <th>Dir.</th>
+          <th>Vehicle / Visitor</th>
+          <th>Item / Purpose</th>
+          <th>From → To</th>
+          <th>Status</th>
+          <th style="width:200px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-g>
+        <tr [class.overdue-row]="g.isOverdue">
+          <td><span class="code-badge">{{ g.code }}</span></td>
+          <td class="num">
+            {{ g.passDate }}
+            <small class="muted" *ngIf="g.passTime">{{ g.passTime }}</small>
+          </td>
+          <td><span class="type-badge" [ngClass]="typeBadgeClass(g.type)">{{ typeLabel(g.type) }}</span></td>
+          <td><span class="dir-badge" [class.dir-out]="g.direction === 'Out'" [class.dir-in]="g.direction === 'In'">{{ g.direction }}</span></td>
+          <td>
+            <div *ngIf="g.vehicleNumber" class="fw-600">{{ g.vehicleNumber }}<small class="muted" *ngIf="g.driverName"> · {{ g.driverName }}</small></div>
+            <div *ngIf="!g.vehicleNumber && g.visitorName" class="fw-600">{{ g.visitorName }}<small class="muted" *ngIf="g.visitorOrganization"> · {{ g.visitorOrganization }}</small></div>
+            <span *ngIf="!g.vehicleNumber && !g.visitorName" class="muted">—</span>
+          </td>
+          <td class="narr">
+            {{ g.itemDescription || g.visitorPurpose || '—' }}
+            <small class="muted" *ngIf="g.quantity"> · {{ g.quantity }}</small>
+          </td>
+          <td class="muted small">{{ g.fromLocation || '?' }} → {{ g.toLocation || '?' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusBadgeClass(g.status)">{{ g.status }}</span>
+            <i class="pi pi-exclamation-triangle overdue-icon" *ngIf="g.isOverdue" pTooltip="Overdue return"></i>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="g.status === 'Open' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(g)" [pTooltip]="g.status === 'Open' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="g.status === 'Open' && g.type !== 'ReturnableOut'" [loading]="rowActionId === g.id"
+                        (click)="doAction(g, 'close')" pTooltip="Close" />
+              <p-button icon="pi pi-replay" severity="success" [text]="true" size="small"
+                        *ngIf="g.status === 'Open' && g.type === 'ReturnableOut'"
+                        (click)="openReturn(g)" pTooltip="Mark Returned" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="g.status === 'Open'" [loading]="rowActionId === g.id"
+                        (click)="doAction(g, 'cancel')" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="g.status === 'Open'" [loading]="rowActionId === g.id"
+                        (click)="doAction(g, 'delete')" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-shield"></i>
+            <span>No gate passes recorded. Click "New Gate Pass" to log one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Gate Pass' : (dialogMode === 'edit' ? 'Edit Gate Pass' : 'View Gate Pass')"
+          [modal]="true" [style]="{ width: '880px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only Open passes can be edited.
+    </div>
+
+    <p class="section-label">Pass Details</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>Date *</label>
+        <input pInputText type="date" formControlName="passDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Time</label>
+        <input pInputText type="time" formControlName="passTime" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Type *</label>
+        <p-select formControlName="type" [options]="types" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Direction *</label>
+        <p-select formControlName="direction" [options]="directions" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+    </div>
+
+    <!-- Vehicle/Driver block — most types -->
+    <ng-container *ngIf="hasVehicleBlock">
+      <p class="section-label">Vehicle &amp; Driver</p>
+      <div class="form-grid">
+        <div class="field">
+          <label>Vehicle Number</label>
+          <input pInputText formControlName="vehicleNumber" placeholder="DHK-MA-1234" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Driver Name</label>
+          <input pInputText formControlName="driverName" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Driver Phone</label>
+          <input pInputText formControlName="driverPhone" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Driver NID</label>
+          <input pInputText formControlName="driverNidNumber" class="w-full" />
+        </div>
+        <div class="field col-span-2">
+          <label>Transporter / Logistics Company</label>
+          <input pInputText formControlName="transporterName" class="w-full" />
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Visitor block -->
+    <ng-container *ngIf="isVisitor">
+      <p class="section-label">Visitor</p>
+      <div class="form-grid">
+        <div class="field">
+          <label>Visitor Name *</label>
+          <input pInputText formControlName="visitorName" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Visitor Phone</label>
+          <input pInputText formControlName="visitorPhone" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Organization</label>
+          <input pInputText formControlName="visitorOrganization" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Purpose</label>
+          <input pInputText formControlName="visitorPurpose" placeholder="Meeting / Audit / Delivery..." class="w-full" />
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Material block -->
+    <ng-container *ngIf="hasItemBlock">
+      <p class="section-label">Material / Cargo</p>
+      <div class="form-grid">
+        <div class="field col-span-3">
+          <label>Item Description</label>
+          <input pInputText formControlName="itemDescription" placeholder="e.g. 10 cartons of woven labels for Buyer-X" class="w-full" />
+        </div>
+        <div class="field">
+          <label>Quantity</label>
+          <input pInputText formControlName="quantity" placeholder="10 ctn / 500 pcs" class="w-full" />
+        </div>
+      </div>
+    </ng-container>
+
+    <p class="section-label">Routing</p>
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>From Location</label>
+        <input pInputText formControlName="fromLocation" placeholder="Warehouse / Factory zone" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>To Location</label>
+        <input pInputText formControlName="toLocation" placeholder="Destination address / subcontractor" class="w-full" />
+      </div>
+    </div>
+
+    <p class="section-label">Source Reference &amp; Authorization</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>Source Doc Type</label>
+        <input pInputText formControlName="sourceType" placeholder="DeliveryNote, SubcontractOrder..." class="w-full" />
+      </div>
+      <div class="field">
+        <label>Source Doc Code</label>
+        <input pInputText formControlName="sourceCode" placeholder="DN-1234" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Approved By</label>
+        <input pInputText formControlName="approvedByUser" placeholder="Shift in-charge name" class="w-full" />
+      </div>
+      <div class="field" *ngIf="isReturnable">
+        <label>Expected Return Date *</label>
+        <input pInputText type="date" formControlName="expectedReturnDate" class="w-full" />
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field col-span-4">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Issue Pass' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Mark Returned dialog -->
+<p-dialog [(visible)]="returnVisible" header="Mark Returned" [modal]="true" [style]="{ width: '480px' }">
+  <div *ngIf="returnTarget">
+    <p>Mark <strong>{{ returnTarget.code }}</strong> as returned?</p>
+    <div class="alert alert-error" *ngIf="returnError"><i class="pi pi-exclamation-circle"></i>{{ returnError }}</div>
+    <div class="field">
+      <label>Return Notes <small>(damaged / partial / missing details)</small></label>
+      <textarea pInputTextarea rows="3" [(ngModel)]="returnNotes" class="w-full"
+                placeholder="All items received in good condition / 2 cartons short / ..."></textarea>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="returnVisible = false" [disabled]="returning" />
+      <p-button [label]="returning ? 'Saving...' : 'Mark Returned'" icon="pi pi-check-circle" severity="success"
+                [loading]="returning" (click)="doReturn()" />
+    </div>
+  </div>
+</p-dialog>
