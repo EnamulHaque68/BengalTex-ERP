@@ -399,7 +399,7 @@ public static class Permissions
         public const string ViewSales = "Reports.ViewSales";
         public const string ViewPurchase = "Reports.ViewPurchase";
         public const string ViewInventory = "Reports.ViewInventory";
-        public const string ViewProduction = "Reports.ViewProduction";
+        public const string ViewProduction = "Reports.ViewProduction";   // gates WIP + Production Summary
         public const string ViewHr = "Reports.ViewHr";
         public const string ViewFinance = "Reports.ViewFinance";
         public const string Export = "Reports.Export";
