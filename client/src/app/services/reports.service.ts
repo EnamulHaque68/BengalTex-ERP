@@ -10,7 +10,9 @@ import {
   MarginReportDto,
   SalesSummaryReportDto,
   StockSummaryReportDto,
-  VatSummaryReportDto
+  VatSummaryReportDto,
+  WipReportDto,
+  ProductionSummaryReportDto
 } from '../models/reports.models';
 
 @Injectable({ providedIn: 'root' })
@@ -65,5 +67,17 @@ export class ReportsService {
     if (toDate) params = params.set('toDate', toDate);
     if (customerId) params = params.set('customerId', customerId.toString());
     return this.http.get<ApiResponse<MarginReportDto>>(`${this.base}/margin`, { params });
+  }
+
+  getWip(): Observable<ApiResponse<WipReportDto>> {
+    return this.http.get<ApiResponse<WipReportDto>>(`${this.base}/wip`);
+  }
+
+  getProductionSummary(fromDate?: string, toDate?: string, productId?: number): Observable<ApiResponse<ProductionSummaryReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    if (productId) params = params.set('productId', productId.toString());
+    return this.http.get<ApiResponse<ProductionSummaryReportDto>>(`${this.base}/production-summary`, { params });
   }
 }

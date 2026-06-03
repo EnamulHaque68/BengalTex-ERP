@@ -1,0 +1,69 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">WIP &mdash; Work In Progress</h2>
+      <p class="page-subtitle">Every Production Order currently in progress &mdash; days running, stage progress, overdue status</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Refresh" icon="pi pi-refresh" (click)="load()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="summary-strip" *ngIf="report">
+    <div><span class="lbl">As of</span><span class="val">{{ report.asOfDate }}</span></div>
+    <div><span class="lbl">Orders in progress</span><span class="val fw-700">{{ report.totalOrdersInProgress }}</span></div>
+    <div><span class="lbl">Total target qty</span><span class="val num fw-700">{{ formatNumber(report.totalTargetQuantity) }}</span></div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="report">
+    <p-table [value]="report.rows" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>PO</th>
+          <th>Product</th>
+          <th class="num-h">Target Qty</th>
+          <th>Actual Start</th>
+          <th class="num-h">Days Running</th>
+          <th>Planned End</th>
+          <th>Stages</th>
+          <th>Current Stage</th>
+          <th>From → To</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr [class.overdue-row]="r.isOverdue">
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-600">{{ r.productName }} <span class="muted">({{ r.productCode }})</span></td>
+          <td class="num">{{ formatNumber(r.targetQuantity) }}</td>
+          <td class="num">{{ r.actualStartDate || '—' }}</td>
+          <td class="num">
+            <span [class.overdue]="r.isOverdue">{{ r.daysRunning }}</span>
+            <i class="pi pi-exclamation-triangle overdue-icon" *ngIf="r.isOverdue" pTooltip="Past planned end date"></i>
+          </td>
+          <td class="num">{{ r.plannedEndDate || '—' }}</td>
+          <td>
+            <div class="stage-progress" *ngIf="r.totalStages > 0">
+              <div class="stage-bar"><div class="stage-fill" [style.width.%]="r.stageProgressPercent"></div></div>
+              <span class="stage-text">{{ r.completedStages }}/{{ r.totalStages }} ({{ r.stageProgressPercent }}%)</span>
+            </div>
+            <span class="muted" *ngIf="r.totalStages === 0">No routing</span>
+          </td>
+          <td>{{ r.currentStageName || '—' }}</td>
+          <td class="muted small">
+            <i class="pi pi-arrow-right-arrow-left"></i> {{ r.issueWarehouseName }} → {{ r.receiveWarehouseName }}
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-check-circle"></i>
+            <span>No production orders currently in progress.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

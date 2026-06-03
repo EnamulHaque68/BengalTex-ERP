@@ -1,0 +1,65 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Production Summary</h2>
+      <p class="page-subtitle">Per-product output rollup for production orders <strong>completed</strong> in the date window</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-select [(ngModel)]="filterProductId" [options]="products" optionLabel="name" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="code,name"
+                placeholder="All products" appendTo="body" styleClass="prod-select" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="load()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="summary-strip" *ngIf="report">
+    <div><span class="lbl">Period</span><span class="val">{{ report.fromDate }} → {{ report.toDate }}</span></div>
+    <div><span class="lbl">Orders Completed</span><span class="val fw-700">{{ report.totalOrdersCompleted }}</span></div>
+    <div><span class="lbl">Total Qty Produced</span><span class="val num fw-700">{{ formatNumber(report.totalQuantityProduced) }}</span></div>
+    <div><span class="lbl">Products</span><span class="val">{{ report.rows.length }}</span></div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="report">
+    <p-table [value]="report.rows" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Product</th>
+          <th class="num-h">Orders</th>
+          <th class="num-h">Total Qty Produced</th>
+          <th class="num-h">Avg Qty / Order</th>
+          <th class="num-h">Avg Cycle Time (days)</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.productName }} <span class="muted">({{ r.productCode }})</span></td>
+          <td class="num">{{ r.orderCount }}</td>
+          <td class="num fw-700">{{ formatNumber(r.totalQuantityProduced) }}</td>
+          <td class="num">{{ formatNumber(r.averageQuantityPerOrder) }}</td>
+          <td class="num">{{ r.averageCycleTimeDays }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="totals-row" *ngIf="report.rows.length > 0">
+          <td class="ta-right">Total</td>
+          <td class="num">{{ report.totalOrdersCompleted }}</td>
+          <td class="num">{{ formatNumber(report.totalQuantityProduced) }}</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="empty-row">
+            <i class="pi pi-chart-bar"></i>
+            <span>No completed production orders in this period.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

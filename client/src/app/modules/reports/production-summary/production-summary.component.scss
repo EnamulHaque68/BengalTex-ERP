@@ -1,0 +1,5 @@
+@use '../wip-report/wip-report.component.scss';
+.date-input { width: 140px; }
+:host ::ng-deep .prod-select { min-width: 220px; }
+.ta-right { text-align: right; font-weight: 700; }
+.totals-row td { font-weight: 700; border-top: 2px solid #e5e7eb; background: #f9fafb; padding: 0.55rem 0.7rem; }
