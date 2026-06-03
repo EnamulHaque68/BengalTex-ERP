@@ -300,6 +300,8 @@ public static class Permissions
     {
         public const string View = "Payroll.View";        // see payslips
         public const string Process = "Payroll.Process";   // generate / adjust / mark paid / delete
+        public const string ExportBankAdvice = "Payroll.ExportBankAdvice";   // download bank-disbursement CSV
+        public const string ManageSettlement = "Payroll.ManageSettlement";    // create / approve / cancel final settlements
     }
 
     public static class Subcontracting

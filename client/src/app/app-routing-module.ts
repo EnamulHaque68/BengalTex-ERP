@@ -46,6 +46,7 @@ const routes: Routes = [
       { path: 'employees', loadChildren: () => import('./modules/employee/employee.module').then(m => m.EmployeeModule) },
       { path: 'attendance', loadChildren: () => import('./modules/attendance/attendance.module').then(m => m.AttendanceModule) },
       { path: 'payroll', loadChildren: () => import('./modules/payroll/payroll.module').then(m => m.PayrollModule) },
+      { path: 'final-settlements', loadChildren: () => import('./modules/final-settlement/final-settlement.module').then(m => m.FinalSettlementModule) },
       { path: 'subcontract-orders', loadChildren: () => import('./modules/subcontract/subcontract.module').then(m => m.SubcontractModule) },
       { path: 'styles', loadChildren: () => import('./modules/style/style.module').then(m => m.StyleModule) },
       { path: 'letters-of-credit', loadChildren: () => import('./modules/banking/banking.module').then(m => m.BankingModule) },

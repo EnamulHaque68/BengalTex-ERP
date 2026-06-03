@@ -1,0 +1,324 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Final Settlements</h2>
+      <p class="page-subtitle">Full-and-final payout when an employee leaves &mdash; prorated salary, leave encashment, gratuity (BD Labour Act 2006) &minus; loans &amp; deductions</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Bank Advice CSV" icon="pi pi-download" severity="secondary" (click)="openBankAdvice()" pTooltip="Download monthly payroll disbursement CSV for batch bank upload" />
+      <p-button label="New Settlement" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code or employee..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
+              [showClear]="true" [filter]="true" filterBy="code,fullName" placeholder="All employees"
+              styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="settlements" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Employee</th>
+          <th>Reason</th>
+          <th>Last Working</th>
+          <th>Years</th>
+          <th>Gross</th>
+          <th>Deductions</th>
+          <th>Net Payable</th>
+          <th>Status</th>
+          <th style="width:200px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td><span class="code-badge">{{ s.code }}</span></td>
+          <td class="fw-600">{{ s.employeeName }} <span class="emp-code">{{ s.employeeCode }}</span></td>
+          <td>{{ reasonLabel(s.reason) }}</td>
+          <td class="num">{{ s.lastWorkingDate }}</td>
+          <td class="num">{{ s.yearsOfService }}</td>
+          <td class="num">{{ formatCurrency(s.grossPayable) }}</td>
+          <td class="num deduction">{{ formatCurrency(s.totalDeductions) }}</td>
+          <td class="num fw-700 net">{{ formatCurrency(s.netPayable) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusBadgeClass(s.status)">{{ s.status }}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                        (click)="openView(s)" pTooltip="View" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="s.status === 'Draft'" [loading]="rowActionId === s.id"
+                        (click)="approve(s)" pTooltip="Approve (employee → inactive)" />
+              <p-button icon="pi pi-money-bill" severity="success" [text]="true" size="small"
+                        *ngIf="s.status === 'Approved'"
+                        (click)="openMarkPaid(s)" pTooltip="Mark paid (closes loans)" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="s.status === 'Draft' || s.status === 'Approved'"
+                        (click)="openCancel(s)" pTooltip="Cancel" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="empty-row">
+            <i class="pi pi-user-minus"></i>
+            <span>No final settlements yet. Click "New Settlement" to start one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create dialog -->
+<p-dialog [(visible)]="createVisible" header="New Final Settlement" [modal]="true"
+          [style]="{ width: '820px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="createError">
+      <i class="pi pi-exclamation-circle"></i>{{ createError }}
+    </div>
+
+    <p class="section-title">Employee &amp; Dates</p>
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Employee *</label>
+        <p-select formControlName="employeeId" [options]="employees"
+                  optionLabel="fullName" optionValue="id" [filter]="true" filterBy="code,fullName"
+                  placeholder="Select employee" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Reason *</label>
+        <p-select formControlName="reason" [options]="reasons" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Last Working Date *</label>
+        <input pInputText type="date" formControlName="lastWorkingDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Settlement Date *</label>
+        <input pInputText type="date" formControlName="settlementDate" class="w-full" />
+      </div>
+      <div class="field calc-action">
+        <label>&nbsp;</label>
+        <p-button label="Calculate" icon="pi pi-refresh" severity="secondary" [text]="true"
+                  [loading]="calculating"
+                  [disabled]="!form.get('employeeId')?.value || !form.get('lastWorkingDate')?.value"
+                  (click)="recalculate()" />
+      </div>
+    </div>
+
+    <div class="preview-strip" *ngIf="preview">
+      <div><span class="lbl">Joining</span><strong>{{ preview.joiningDate }}</strong></div>
+      <div><span class="lbl">Basic Salary</span><strong>{{ formatCurrency(preview.basicSalary) }}</strong></div>
+      <div><span class="lbl">Years of Service</span><strong>{{ preview.yearsOfService }}</strong></div>
+    </div>
+
+    <p class="section-title">Earnings (BDT)</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>Prorated Days</label>
+        <p-inputNumber formControlName="proratedDays" [min]="0" [max]="31" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Prorated Salary</label>
+        <p-inputNumber formControlName="proratedSalary" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Leave Encash. Days</label>
+        <p-inputNumber formControlName="leaveEncashmentDays" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Leave Encash. Amount</label>
+        <p-inputNumber formControlName="leaveEncashmentAmount" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Gratuity <small>(30/60 days basic × yrs)</small></label>
+        <p-inputNumber formControlName="gratuityAmount" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Other Earnings</label>
+        <p-inputNumber formControlName="otherEarnings" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+    </div>
+
+    <p class="section-title">Deductions (BDT)</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>Outstanding Loan</label>
+        <p-inputNumber formControlName="outstandingLoan" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Other Deductions</label>
+        <p-inputNumber formControlName="otherDeductions" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"
+                  placeholder="Reason details, conditions, handover notes..."></textarea>
+      </div>
+    </div>
+
+    <div class="totals-panel">
+      <div class="line"><span>Gross Payable</span><strong>{{ formatCurrency(previewGross) }}</strong></div>
+      <div class="line deduction"><span>Total Deductions</span><strong>&minus; {{ formatCurrency(previewTotalDeductions) }}</strong></div>
+      <div class="line net"><span>Net Payable</span><strong>{{ formatCurrency(previewNet) }}</strong></div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="createVisible = false" [disabled]="createSaving" />
+      <p-button type="submit" [label]="createSaving ? 'Saving...' : 'Create Draft'" icon="pi pi-save"
+                [loading]="createSaving" [disabled]="form.invalid || createSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- View dialog -->
+<p-dialog [(visible)]="viewVisible" header="Final Settlement" [modal]="true"
+          [style]="{ width: '720px' }">
+  <div *ngIf="viewing" class="view-grid">
+    <div class="row"><span class="lbl">Code</span><span class="val"><span class="code-badge">{{ viewing.code }}</span></span></div>
+    <div class="row"><span class="lbl">Employee</span><span class="val fw-600">{{ viewing.employeeName }} <span class="emp-code">{{ viewing.employeeCode }}</span></span></div>
+    <div class="row"><span class="lbl">Reason</span><span class="val">{{ reasonLabel(viewing.reason) }}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val"><span class="status-badge" [ngClass]="statusBadgeClass(viewing.status)">{{ viewing.status }}</span></span></div>
+    <div class="row"><span class="lbl">Joining</span><span class="val">{{ viewing.joiningDate }}</span></div>
+    <div class="row"><span class="lbl">Last Working</span><span class="val">{{ viewing.lastWorkingDate }}</span></div>
+    <div class="row"><span class="lbl">Settlement Date</span><span class="val">{{ viewing.settlementDate }}</span></div>
+    <div class="row"><span class="lbl">Years of Service</span><span class="val">{{ viewing.yearsOfService }}</span></div>
+    <div class="row"><span class="lbl">Basic Salary</span><span class="val">{{ formatCurrency(viewing.basicSalary) }}</span></div>
+
+    <div class="section">Earnings</div>
+    <div class="row"><span class="lbl">Prorated Salary</span><span class="val">{{ formatCurrency(viewing.proratedSalary) }} <small>({{ viewing.proratedDays }} days)</small></span></div>
+    <div class="row"><span class="lbl">Leave Encashment</span><span class="val">{{ formatCurrency(viewing.leaveEncashmentAmount) }} <small>({{ viewing.leaveEncashmentDays }} days)</small></span></div>
+    <div class="row"><span class="lbl">Gratuity</span><span class="val">{{ formatCurrency(viewing.gratuityAmount) }}</span></div>
+    <div class="row"><span class="lbl">Other Earnings</span><span class="val">{{ formatCurrency(viewing.otherEarnings) }}</span></div>
+    <div class="row total"><span class="lbl">Gross Payable</span><span class="val">{{ formatCurrency(viewing.grossPayable) }}</span></div>
+
+    <div class="section">Deductions</div>
+    <div class="row"><span class="lbl">Outstanding Loan</span><span class="val">{{ formatCurrency(viewing.outstandingLoan) }}</span></div>
+    <div class="row"><span class="lbl">Other Deductions</span><span class="val">{{ formatCurrency(viewing.otherDeductions) }}</span></div>
+    <div class="row total"><span class="lbl">Total Deductions</span><span class="val">&minus; {{ formatCurrency(viewing.totalDeductions) }}</span></div>
+
+    <div class="row net"><span class="lbl">Net Payable</span><span class="val">{{ formatCurrency(viewing.netPayable) }}</span></div>
+
+    <ng-container *ngIf="viewing.approvedAt">
+      <div class="section">Approval &amp; Payment</div>
+      <div class="row"><span class="lbl">Approved At</span><span class="val">{{ viewing.approvedAt | date:'medium' }} <small *ngIf="viewing.approvedByUser">by {{ viewing.approvedByUser }}</small></span></div>
+      <div class="row" *ngIf="viewing.paidAt"><span class="lbl">Paid At</span><span class="val">{{ viewing.paidAt | date:'medium' }}</span></div>
+      <div class="row" *ngIf="viewing.paymentMethod"><span class="lbl">Payment Method</span><span class="val">{{ paymentMethodLabel(viewing.paymentMethod) }}</span></div>
+      <div class="row" *ngIf="viewing.paymentReference"><span class="lbl">Reference</span><span class="val">{{ viewing.paymentReference }}</span></div>
+    </ng-container>
+
+    <ng-container *ngIf="viewing.notes">
+      <div class="section">Notes</div>
+      <div class="row"><span class="val notes">{{ viewing.notes }}</span></div>
+    </ng-container>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewVisible = false" />
+  </div>
+</p-dialog>
+
+<!-- Mark Paid dialog -->
+<p-dialog [(visible)]="payVisible" header="Mark Settlement Paid" [modal]="true" [style]="{ width: '460px' }">
+  <form [formGroup]="payForm" (ngSubmit)="doMarkPaid()" *ngIf="payTarget">
+    <p class="hint">Marking <strong>{{ payTarget.code }}</strong> ({{ formatCurrency(payTarget.netPayable) }}) as paid will close all of <strong>{{ payTarget.employeeName }}</strong>'s active loans.</p>
+    <div class="alert alert-error" *ngIf="payError"><i class="pi pi-exclamation-circle"></i>{{ payError }}</div>
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Payment Method *</label>
+        <p-select formControlName="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Reference <small>(cheque #, txn ID, bank reference)</small></label>
+        <input pInputText formControlName="paymentReference" class="w-full" placeholder="(optional)" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="payVisible = false" [disabled]="paying" />
+      <p-button type="submit" [label]="paying ? 'Saving...' : 'Mark Paid'" icon="pi pi-check"
+                [loading]="paying" [disabled]="payForm.invalid || paying" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Cancel confirm -->
+<p-dialog [(visible)]="cancelVisible" header="Cancel Settlement" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="cancelTarget">
+    <p>Cancel settlement <strong>{{ cancelTarget.code }}</strong>?</p>
+    <p class="hint" *ngIf="cancelTarget.status === 'Approved'">
+      <i class="pi pi-info-circle"></i> Employee will be reactivated.
+    </p>
+    <div class="alert alert-error" *ngIf="cancelError"><i class="pi pi-exclamation-circle"></i>{{ cancelError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Close" severity="secondary" [text]="true" (click)="cancelVisible = false" [disabled]="cancelling" />
+      <p-button label="Cancel Settlement" icon="pi pi-ban" severity="warn"
+                [loading]="cancelling" (click)="doCancel()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Bank Advice download dialog -->
+<p-dialog [(visible)]="bankAdviceVisible" header="Bank Advice CSV" [modal]="true" [style]="{ width: '420px' }">
+  <p class="hint">Downloads a CSV of all payslips for the chosen month with bank account details &mdash; suitable for batch upload to your bank's EFT/BEFTN portal.</p>
+  <div class="alert alert-error" *ngIf="bankAdviceError"><i class="pi pi-exclamation-circle"></i>{{ bankAdviceError }}</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Year</label>
+      <input pInputText type="number" [(ngModel)]="bankAdviceYear" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Month</label>
+      <p-select [(ngModel)]="bankAdviceMonth"
+                [options]="[
+                  {label:'January',value:1},{label:'February',value:2},{label:'March',value:3},
+                  {label:'April',value:4},{label:'May',value:5},{label:'June',value:6},
+                  {label:'July',value:7},{label:'August',value:8},{label:'September',value:9},
+                  {label:'October',value:10},{label:'November',value:11},{label:'December',value:12}
+                ]"
+                optionLabel="label" optionValue="value"
+                appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="bankAdviceVisible = false" [disabled]="bankAdviceLoading" />
+    <p-button label="Download" icon="pi pi-download" [loading]="bankAdviceLoading" (click)="downloadBankAdvice()" />
+  </div>
+</p-dialog>

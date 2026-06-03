@@ -1,7 +1,10 @@
+using System.Globalization;
+using System.Text;
 using BengalTex.ERP.Api.Authorization;
 using BengalTex.ERP.Application.Common.Models;
 using BengalTex.ERP.Application.Payroll.Commands;
 using BengalTex.ERP.Application.Payroll.Queries;
+using BengalTex.ERP.Shared.Common;
 using BengalTex.ERP.Shared.Permissions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -75,6 +78,45 @@ public class PayrollController : ControllerBase
     {
         var result = await _mediator.Send(new DeletePayslipCommand(id), ct);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Download bank-disbursement CSV for a payroll month. Format suits Bangladesh
+    /// EFT batch upload (BEFTN-friendly columns: bank, branch, account#, routing#, amount).
+    /// </summary>
+    [HttpGet("bank-advice")]
+    [HasPermission(Permissions.Payroll.ExportBankAdvice)]
+    public async Task<IActionResult> BankAdvice(
+        [FromQuery] int year, [FromQuery] int month, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetBankAdviceQuery(year, month), ct);
+        if (!result.Success || result.Data is null) return Ok(result);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("EmployeeCode,EmployeeName,BankName,BranchName,AccountNumber,RoutingNumber,NetPay");
+        foreach (var r in result.Data)
+        {
+            sb.Append(Csv(r.EmployeeCode)).Append(',')
+              .Append(Csv(r.EmployeeName)).Append(',')
+              .Append(Csv(r.BankName)).Append(',')
+              .Append(Csv(r.BranchName)).Append(',')
+              .Append(Csv(r.AccountNumber)).Append(',')
+              .Append(Csv(r.RoutingNumber)).Append(',')
+              .Append(r.NetPay.ToString("0.00", CultureInfo.InvariantCulture))
+              .AppendLine();
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        var fileName = $"BankAdvice-{year:0000}-{month:00}.csv";
+        return File(bytes, "text/csv", fileName);
+    }
+
+    private static string Csv(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        var needsQuote = value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r');
+        var escaped = value.Replace("\"", "\"\"");
+        return needsQuote ? $"\"{escaped}\"" : escaped;
     }
 }
 
