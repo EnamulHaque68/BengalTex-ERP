@@ -81,6 +81,8 @@
             <div class="row-actions">
               <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
                         (click)="openView(p)" pTooltip="View" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        [routerLink]="['/payments', p.id, 'print']" pTooltip="Print payment voucher" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         (click)="confirmDelete(p)" pTooltip="Delete (reverses invoice)" />
             </div>

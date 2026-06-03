@@ -110,6 +110,9 @@
                         *ngIf="canCancel(p)"
                         [loading]="rowActionId === p.id"
                         (click)="cancel(p)" pTooltip="Cancel" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        *ngIf="p.status !== 'Draft'"
+                        [routerLink]="['/purchase-orders', p.id, 'print']" pTooltip="Print PO" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="canDelete(p)"
                         (click)="confirmDelete(p)" pTooltip="Delete" />

@@ -13,11 +13,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { QuotationListComponent } from './quotation-list/quotation-list.component';
+import { QuotationPrintComponent } from './quotation-print/quotation-print.component';
 
-const routes: Routes = [{ path: '', component: QuotationListComponent }];
+const routes: Routes = [
+  { path: '', component: QuotationListComponent },
+  { path: ':id/print', component: QuotationPrintComponent }
+];
 
 @NgModule({
-  declarations: [QuotationListComponent],
+  declarations: [QuotationListComponent, QuotationPrintComponent],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
