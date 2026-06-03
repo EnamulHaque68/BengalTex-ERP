@@ -110,6 +110,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<LeaveApplication> LeaveApplications => Set<LeaveApplication>();
     public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
     public DbSet<FestivalBonus> FestivalBonuses => Set<FestivalBonus>();
+    public DbSet<FinalSettlement> FinalSettlements => Set<FinalSettlement>();
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();
