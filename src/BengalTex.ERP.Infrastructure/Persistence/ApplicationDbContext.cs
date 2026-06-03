@@ -111,6 +111,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
     public DbSet<FestivalBonus> FestivalBonuses => Set<FestivalBonus>();
     public DbSet<FinalSettlement> FinalSettlements => Set<FinalSettlement>();
+    public DbSet<ProformaInvoice> ProformaInvoices => Set<ProformaInvoice>();
+    public DbSet<ProformaInvoiceLine> ProformaInvoiceLines => Set<ProformaInvoiceLine>();
+    public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+    public DbSet<DebitNote> DebitNotes => Set<DebitNote>();
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();

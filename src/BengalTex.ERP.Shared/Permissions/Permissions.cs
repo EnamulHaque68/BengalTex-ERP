@@ -269,6 +269,34 @@ public static class Permissions
         public const string Post = "Returns.Post";
     }
 
+    public static class ProformaInvoices
+    {
+        public const string View = "ProformaInvoices.View";
+        public const string Create = "ProformaInvoices.Create";
+        public const string Edit = "ProformaInvoices.Edit";
+        public const string Delete = "ProformaInvoices.Delete";
+        public const string Send = "ProformaInvoices.Send";         // send / accept / expire / cancel
+        public const string Convert = "ProformaInvoices.Convert";    // create real CustomerInvoice from accepted Proforma
+    }
+
+    public static class CreditNotes
+    {
+        public const string View = "CreditNotes.View";
+        public const string Create = "CreditNotes.Create";
+        public const string Edit = "CreditNotes.Edit";
+        public const string Delete = "CreditNotes.Delete";
+        public const string Issue = "CreditNotes.Issue";             // issue / cancel — posts/reverses journal + AR settle
+    }
+
+    public static class DebitNotes
+    {
+        public const string View = "DebitNotes.View";
+        public const string Create = "DebitNotes.Create";
+        public const string Edit = "DebitNotes.Edit";
+        public const string Delete = "DebitNotes.Delete";
+        public const string Issue = "DebitNotes.Issue";              // issue / cancel — posts/reverses journal + AP settle
+    }
+
     public static class Qc
     {
         public const string View = "Qc.View";

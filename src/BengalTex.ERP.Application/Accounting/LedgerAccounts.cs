@@ -16,7 +16,9 @@ public static class LedgerAccounts
     public const string VatPayable = "2120";       // output VAT
     public const string SalaryPayable = "2130";
     public const string SalesRevenue = "4100";
+    public const string SalesReturnsAllowances = "4150";   // contra-revenue: debited by Credit Notes
     public const string CostOfGoodsSold = "5100";
+    public const string PurchaseReturnsAllowances = "5150"; // contra-expense: credited by Debit Notes
     public const string SalaryExpense = "5200";
     public const string AdministrativeExpense = "5400";   // default expense account for unmapped categories
 }
