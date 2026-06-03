@@ -142,6 +142,15 @@ public static class Permissions
         public const string Convert = "PurchaseRequisitions.Convert";  // create PO from approved PR
     }
 
+    public static class GatePasses
+    {
+        public const string View = "GatePasses.View";
+        public const string Create = "GatePasses.Create";
+        public const string Edit = "GatePasses.Edit";
+        public const string Delete = "GatePasses.Delete";
+        public const string Close = "GatePasses.Close";   // close / mark returned / cancel
+    }
+
     public static class GoodsReceipts
     {
         public const string View = "GoodsReceipts.View";
