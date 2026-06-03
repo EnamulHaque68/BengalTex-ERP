@@ -1,0 +1,83 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Goods Receipts</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="grn && company; else loadingTpl">
+    <div class="doc">
+      <header class="doc-header">
+        <div class="brand">
+          <img *ngIf="company.logoUrl" [src]="company.logoUrl" alt="Logo" class="logo" />
+          <div>
+            <div class="co-name">{{ company.name }}</div>
+            <div class="co-line">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span></div>
+            <div class="co-line">{{ company.city }}, {{ company.district }} {{ company.postalCode }}</div>
+          </div>
+        </div>
+        <div class="doc-title">
+          <div class="title">GOODS RECEIPT NOTE</div>
+          <div class="title-sub">Material inward</div>
+        </div>
+      </header>
+
+      <div class="meta-strip">
+        <div class="meta"><div class="lbl">GRN #</div><div class="val mono">{{ grn.code }}</div></div>
+        <div class="meta"><div class="lbl">Receive Date</div><div class="val">{{ grn.receiveDate | date:'mediumDate' }}</div></div>
+        <div class="meta"><div class="lbl">PO Ref</div><div class="val mono">{{ grn.purchaseOrderCode }}</div></div>
+        <div class="meta"><div class="lbl">Warehouse</div><div class="val">{{ grn.receivingWarehouseName }}</div></div>
+        <div class="meta" *ngIf="grn.supplierDeliveryRef"><div class="lbl">Supplier Ref</div><div class="val mono">{{ grn.supplierDeliveryRef }}</div></div>
+        <div class="meta"><div class="lbl">Status</div><div class="val">{{ grn.status }}</div></div>
+      </div>
+
+      <section class="party-block">
+        <div class="lbl">RECEIVED FROM</div>
+        <div class="name">{{ grn.supplierName }}</div>
+      </section>
+
+      <table class="lines">
+        <thead>
+          <tr><th class="num">#</th><th>Item</th><th class="num">Ordered</th><th class="num">Received</th><th>UoM</th><th>Lot / Batch</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of grn.lines; let i = index">
+            <td class="num">{{ i + 1 }}</td>
+            <td>
+              <div class="item-name">{{ l.rawMaterialName }}</div>
+              <div class="item-code mono">{{ l.rawMaterialCode }}</div>
+              <div class="item-notes" *ngIf="l.lineNotes">{{ l.lineNotes }}</div>
+            </td>
+            <td class="num">{{ l.orderedQuantity }}</td>
+            <td class="num"><strong>{{ l.receivedQuantity }}</strong></td>
+            <td>{{ l.unitOfMeasureCode }}</td>
+            <td class="mono">
+              <span *ngIf="l.lotNumber">{{ l.lotNumber }}</span>
+              <span *ngIf="!l.lotNumber">—</span>
+              <div class="item-notes" *ngIf="l.shade">Shade: {{ l.shade }}</div>
+              <div class="item-notes" *ngIf="l.expiryDate">Exp: {{ l.expiryDate | date:'mediumDate' }}</div>
+            </td>
+          </tr>
+          <tr class="totals-line">
+            <td colspan="3" class="num"><strong>Total Received</strong></td>
+            <td class="num"><strong>{{ totalQty() }}</strong></td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="notes" *ngIf="grn.notes">
+        <div class="lbl">Notes</div>
+        <div class="val">{{ grn.notes }}</div>
+      </section>
+
+      <footer class="signatures three">
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Received By</div><div class="sig-co" *ngIf="grn.postedBy">{{ grn.postedBy }}</div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Quality Check</div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Store Keeper</div></div>
+      </footer>
+
+      <div class="doc-footer">GRN {{ grn.code }} dated {{ grn.receiveDate | date:'yyyy-MM-dd' }}</div>
+    </div>
+  </ng-container>
+  <ng-template #loadingTpl><p class="loading">Loading goods receipt...</p></ng-template>
+</div>

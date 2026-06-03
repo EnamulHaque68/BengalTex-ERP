@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { SupplierInvoiceListComponent } from './supplier-invoice-list/supplier-invoice-list.component';
+import { SupplierInvoicePrintComponent } from './supplier-invoice-print/supplier-invoice-print.component';
 
-const routes: Routes = [{ path: '', component: SupplierInvoiceListComponent }];
+const routes: Routes = [
+  { path: '', component: SupplierInvoiceListComponent },
+  { path: ':id/print', component: SupplierInvoicePrintComponent }
+];
 
 @NgModule({
-  declarations: [SupplierInvoiceListComponent],
+  declarations: [SupplierInvoiceListComponent, SupplierInvoicePrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

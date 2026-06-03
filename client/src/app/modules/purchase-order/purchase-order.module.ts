@@ -14,12 +14,16 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { PurchaseOrderListComponent } from './purchase-order-list/purchase-order-list.component';
+import { PurchaseOrderPrintComponent } from './purchase-order-print/purchase-order-print.component';
 import { SharedModule } from '../../shared/shared.module';
 
-const routes: Routes = [{ path: '', component: PurchaseOrderListComponent }];
+const routes: Routes = [
+  { path: '', component: PurchaseOrderListComponent },
+  { path: ':id/print', component: PurchaseOrderPrintComponent }
+];
 
 @NgModule({
-  declarations: [PurchaseOrderListComponent],
+  declarations: [PurchaseOrderListComponent, PurchaseOrderPrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

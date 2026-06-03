@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DeliveryNoteListComponent } from './delivery-note-list/delivery-note-list.component';
+import { DeliveryNotePrintComponent } from './delivery-note-print/delivery-note-print.component';
 
-const routes: Routes = [{ path: '', component: DeliveryNoteListComponent }];
+const routes: Routes = [
+  { path: '', component: DeliveryNoteListComponent },
+  { path: ':id/print', component: DeliveryNotePrintComponent }
+];
 
 @NgModule({
-  declarations: [DeliveryNoteListComponent],
+  declarations: [DeliveryNoteListComponent, DeliveryNotePrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

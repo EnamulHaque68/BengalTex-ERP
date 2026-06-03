@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { PaymentListComponent } from './payment-list/payment-list.component';
+import { PaymentPrintComponent } from './payment-print/payment-print.component';
 
-const routes: Routes = [{ path: '', component: PaymentListComponent }];
+const routes: Routes = [
+  { path: '', component: PaymentListComponent },
+  { path: ':id/print', component: PaymentPrintComponent }
+];
 
 @NgModule({
-  declarations: [PaymentListComponent],
+  declarations: [PaymentListComponent, PaymentPrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

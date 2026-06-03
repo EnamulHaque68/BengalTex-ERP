@@ -1,0 +1,83 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Delivery Notes</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="dn && company; else loadingTpl">
+    <div class="doc">
+      <header class="doc-header">
+        <div class="brand">
+          <img *ngIf="company.logoUrl" [src]="company.logoUrl" alt="Logo" class="logo" />
+          <div>
+            <div class="co-name">{{ company.name }}</div>
+            <div class="co-line">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span></div>
+            <div class="co-line">{{ company.city }}, {{ company.district }} {{ company.postalCode }}</div>
+            <div class="co-line"><span *ngIf="company.phone">{{ company.phone }}</span></div>
+          </div>
+        </div>
+        <div class="doc-title">
+          <div class="title">DELIVERY CHALLAN</div>
+          <div class="title-sub">Goods dispatch note</div>
+        </div>
+      </header>
+
+      <div class="meta-strip">
+        <div class="meta"><div class="lbl">Challan #</div><div class="val mono">{{ dn.code }}</div></div>
+        <div class="meta"><div class="lbl">Dispatch Date</div><div class="val">{{ dn.dispatchDate | date:'mediumDate' }}</div></div>
+        <div class="meta"><div class="lbl">SO Ref</div><div class="val mono">{{ dn.salesOrderCode }}</div></div>
+        <div class="meta"><div class="lbl">Warehouse</div><div class="val">{{ dn.dispatchWarehouseName }}</div></div>
+        <div class="meta"><div class="lbl">Status</div><div class="val">{{ dn.status }}</div></div>
+      </div>
+
+      <section class="party-block">
+        <div class="lbl">DELIVER TO</div>
+        <div class="name">{{ dn.customerName }}</div>
+        <div class="sub" *ngIf="dn.deliveryAddress">{{ dn.deliveryAddress }}</div>
+      </section>
+
+      <div class="meta-strip" *ngIf="dn.vehicleNumber || dn.driverContact">
+        <div class="meta" *ngIf="dn.vehicleNumber"><div class="lbl">Vehicle</div><div class="val mono">{{ dn.vehicleNumber }}</div></div>
+        <div class="meta" *ngIf="dn.driverContact"><div class="lbl">Driver Contact</div><div class="val">{{ dn.driverContact }}</div></div>
+      </div>
+
+      <table class="lines">
+        <thead>
+          <tr><th class="num">#</th><th>Item</th><th class="num">Ordered</th><th class="num">Dispatched</th><th>UoM</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of dn.lines; let i = index">
+            <td class="num">{{ i + 1 }}</td>
+            <td>
+              <div class="item-name">{{ l.productName }}</div>
+              <div class="item-code mono">{{ l.productCode }}</div>
+              <div class="item-notes" *ngIf="l.lineNotes">{{ l.lineNotes }}</div>
+            </td>
+            <td class="num">{{ l.orderedQuantity }}</td>
+            <td class="num"><strong>{{ l.dispatchedQuantity }}</strong></td>
+            <td>{{ l.unitOfMeasureCode }}</td>
+          </tr>
+          <tr class="totals-line">
+            <td colspan="3" class="num"><strong>Total Quantity</strong></td>
+            <td class="num"><strong>{{ totalQty() }}</strong></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="notes" *ngIf="dn.notes">
+        <div class="lbl">Notes</div>
+        <div class="val">{{ dn.notes }}</div>
+      </section>
+
+      <footer class="signatures three">
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Dispatched By</div><div class="sig-co" *ngIf="dn.postedBy">{{ dn.postedBy }}</div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Driver</div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Received By (Customer)</div></div>
+      </footer>
+
+      <div class="doc-footer">DC {{ dn.code }} dated {{ dn.dispatchDate | date:'yyyy-MM-dd' }}</div>
+    </div>
+  </ng-container>
+  <ng-template #loadingTpl><p class="loading">Loading delivery note...</p></ng-template>
+</div>

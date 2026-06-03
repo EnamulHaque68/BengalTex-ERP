@@ -1,0 +1,88 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Supplier Invoices</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="inv && company; else loadingTpl">
+    <div class="doc">
+      <header class="doc-header">
+        <div class="brand">
+          <img *ngIf="company.logoUrl" [src]="company.logoUrl" alt="Logo" class="logo" />
+          <div>
+            <div class="co-name">{{ company.name }}</div>
+            <div class="co-line">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span></div>
+            <div class="co-line">{{ company.city }}, {{ company.district }} {{ company.postalCode }}</div>
+            <div class="co-line"><span *ngIf="company.taxNumber">BIN: {{ company.taxNumber }}</span></div>
+          </div>
+        </div>
+        <div class="doc-title">
+          <div class="title">SUPPLIER INVOICE</div>
+          <div class="title-sub">Internal copy</div>
+        </div>
+      </header>
+
+      <div class="meta-strip">
+        <div class="meta"><div class="lbl">Internal #</div><div class="val mono">{{ inv.code }}</div></div>
+        <div class="meta" *ngIf="inv.supplierInvoiceNumber"><div class="lbl">Supplier Inv #</div><div class="val mono">{{ inv.supplierInvoiceNumber }}</div></div>
+        <div class="meta"><div class="lbl">Invoice Date</div><div class="val">{{ inv.invoiceDate | date:'mediumDate' }}</div></div>
+        <div class="meta"><div class="lbl">Due Date</div><div class="val">{{ inv.dueDate | date:'mediumDate' }}</div></div>
+        <div class="meta"><div class="lbl">PO Ref</div><div class="val mono">{{ inv.purchaseOrderCode }}</div></div>
+        <div class="meta"><div class="lbl">Status</div><div class="val">{{ inv.status }}</div></div>
+      </div>
+
+      <section class="party-block">
+        <div class="lbl">SUPPLIER</div>
+        <div class="name">{{ inv.supplierName }}</div>
+        <div class="sub mono">{{ inv.supplierCode }}</div>
+      </section>
+
+      <table class="lines">
+        <thead>
+          <tr><th class="num">#</th><th>Item</th><th class="num">Qty</th><th>UoM</th><th class="num">Unit Price</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of inv.lines; let i = index">
+            <td class="num">{{ i + 1 }}</td>
+            <td>
+              <div class="item-name">{{ l.rawMaterialName }}</div>
+              <div class="item-code mono">{{ l.rawMaterialCode }}</div>
+              <div class="item-notes" *ngIf="l.lineNotes">{{ l.lineNotes }}</div>
+            </td>
+            <td class="num">{{ l.quantity }}</td>
+            <td>{{ l.unitOfMeasureCode }}</td>
+            <td class="num">{{ formatCurrency(l.unitPrice, inv.currencyCode) }}</td>
+            <td class="num">{{ formatCurrency(l.lineTotal, inv.currencyCode) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-row">
+        <div class="words">
+          <div class="lbl">Amount in Words</div>
+          <div class="val">{{ amountInWords(inv.totalAmount, inv.currencyCode === 'BDT' ? 'Taka' : inv.currencyCode) }}</div>
+        </div>
+        <div class="totals">
+          <div class="tt-row"><span>Subtotal</span><span class="mono">{{ formatCurrency(inv.subtotalAmount, inv.currencyCode) }}</span></div>
+          <div class="tt-row" *ngIf="inv.vatRate > 0"><span>VAT @ {{ vatRateText(inv.vatRate) }}</span><span class="mono">{{ formatCurrency(inv.vatAmount, inv.currencyCode) }}</span></div>
+          <div class="tt-row total"><span>TOTAL</span><span class="mono">{{ formatCurrency(inv.totalAmount, inv.currencyCode) }}</span></div>
+          <div class="tt-row" *ngIf="inv.amountPaid > 0"><span>Paid</span><span class="mono">{{ formatCurrency(inv.amountPaid, inv.currencyCode) }}</span></div>
+          <div class="tt-row" *ngIf="inv.amountDue > 0"><span>Balance Due</span><span class="mono">{{ formatCurrency(inv.amountDue, inv.currencyCode) }}</span></div>
+        </div>
+      </div>
+
+      <section class="notes" *ngIf="inv.notes">
+        <div class="lbl">Notes</div>
+        <div class="val">{{ inv.notes }}</div>
+      </section>
+
+      <footer class="signatures">
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Approved By</div><div class="sig-co" *ngIf="inv.approvedBy">{{ inv.approvedBy }}</div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Accountant</div></div>
+      </footer>
+
+      <div class="doc-footer">Supplier Invoice {{ inv.code }} dated {{ inv.invoiceDate | date:'yyyy-MM-dd' }}</div>
+    </div>
+  </ng-container>
+  <ng-template #loadingTpl><p class="loading">Loading invoice...</p></ng-template>
+</div>

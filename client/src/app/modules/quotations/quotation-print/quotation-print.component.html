@@ -1,0 +1,91 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Quotations</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="quote && company; else loadingTpl">
+    <div class="doc">
+      <header class="doc-header">
+        <div class="brand">
+          <img *ngIf="company.logoUrl" [src]="company.logoUrl" alt="Logo" class="logo" />
+          <div>
+            <div class="co-name">{{ company.name }}</div>
+            <div class="co-line">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span></div>
+            <div class="co-line">{{ company.city }}, {{ company.district }} {{ company.postalCode }}, {{ company.country }}</div>
+            <div class="co-line">
+              <span *ngIf="company.phone">Phone: {{ company.phone }}</span>
+              <span *ngIf="company.email"> &middot; Email: {{ company.email }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-title">
+          <div class="title">QUOTATION</div>
+          <div class="title-sub" *ngIf="quote.version > 1">Revision v{{ quote.version }}</div>
+        </div>
+      </header>
+
+      <div class="meta-strip">
+        <div class="meta"><div class="lbl">Quotation #</div><div class="val mono">{{ quote.code }}</div></div>
+        <div class="meta"><div class="lbl">Date</div><div class="val">{{ quote.quotationDate | date:'mediumDate' }}</div></div>
+        <div class="meta" *ngIf="quote.validUntil"><div class="lbl">Valid Until</div><div class="val">{{ quote.validUntil | date:'mediumDate' }}</div></div>
+        <div class="meta" *ngIf="quote.customerReference"><div class="lbl">Customer Ref</div><div class="val mono">{{ quote.customerReference }}</div></div>
+        <div class="meta"><div class="lbl">Status</div><div class="val">{{ quote.status }}</div></div>
+      </div>
+
+      <section class="party-block">
+        <div class="lbl">QUOTED TO</div>
+        <div class="name">{{ quote.customerName }}</div>
+      </section>
+
+      <table class="lines">
+        <thead>
+          <tr><th class="num">#</th><th>Description</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of quote.lines; let i = index">
+            <td class="num">{{ i + 1 }}</td>
+            <td>
+              <div class="item-name">{{ l.productName }}</div>
+              <div class="item-code mono">{{ l.productCode }}</div>
+              <div class="item-notes" *ngIf="l.description">{{ l.description }}</div>
+            </td>
+            <td class="num">{{ l.quantity }}</td>
+            <td class="num">{{ formatCurrency(l.unitPrice, quote.currencyCode) }}</td>
+            <td class="num">{{ formatCurrency(l.lineTotal, quote.currencyCode) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-row">
+        <div class="words">
+          <div class="lbl">Amount in Words</div>
+          <div class="val">{{ amountInWords(quote.totalAmount, quote.currencyCode === 'BDT' ? 'Taka' : quote.currencyCode) }}</div>
+        </div>
+        <div class="totals">
+          <div class="tt-row total"><span>TOTAL</span><span class="mono">{{ formatCurrency(quote.totalAmount, quote.currencyCode) }}</span></div>
+        </div>
+      </div>
+
+      <section class="notes" *ngIf="quote.notes">
+        <div class="lbl">Notes / Terms</div>
+        <div class="val">{{ quote.notes }}</div>
+      </section>
+
+      <footer class="signatures">
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-label">Authorized Signature</div>
+          <div class="sig-co">For {{ company.shortName || company.name }}</div>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-label">Customer Acceptance</div>
+        </div>
+      </footer>
+
+      <div class="doc-footer">Quotation valid until acceptance. System reference {{ quote.code }} ({{ quote.quotationDate | date:'yyyy-MM-dd' }})</div>
+    </div>
+  </ng-container>
+  <ng-template #loadingTpl><p class="loading">Loading quotation...</p></ng-template>
+</div>

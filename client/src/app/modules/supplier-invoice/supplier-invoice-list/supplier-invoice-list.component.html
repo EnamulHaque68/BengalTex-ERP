@@ -106,6 +106,9 @@
                         *ngIf="canCancel(s)"
                         [loading]="rowActionId === s.id"
                         (click)="cancel(s)" pTooltip="Cancel" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        *ngIf="s.status !== 'Draft'"
+                        [routerLink]="['/supplier-invoices', s.id, 'print']" pTooltip="Print supplier bill" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="canDelete(s)"
                         (click)="confirmDelete(s)" pTooltip="Delete" />

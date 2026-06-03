@@ -93,6 +93,9 @@
                         *ngIf="g.status === 'Draft'"
                         [loading]="rowActionId === g.id"
                         (click)="post(g)" pTooltip="Post (commit to PO)" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        *ngIf="g.status !== 'Draft'"
+                        [routerLink]="['/goods-receipts', g.id, 'print']" pTooltip="Print GRN" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="g.status === 'Draft'"
                         (click)="confirmDelete(g)" pTooltip="Delete" />
