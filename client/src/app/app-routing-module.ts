@@ -22,6 +22,7 @@ const routes: Routes = [
       { path: 'products', loadChildren: () => import('./modules/product/product.module').then(m => m.ProductModule) },
       { path: 'raw-materials', loadChildren: () => import('./modules/raw-material/raw-material.module').then(m => m.RawMaterialModule) },
       { path: 'boms', loadChildren: () => import('./modules/bom/bom.module').then(m => m.BomModule) },
+      { path: 'purchase-requisitions', loadChildren: () => import('./modules/purchase-requisition/purchase-requisition.module').then(m => m.PurchaseRequisitionModule) },
       { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-order/purchase-order.module').then(m => m.PurchaseOrderModule) },
       { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
       { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) },

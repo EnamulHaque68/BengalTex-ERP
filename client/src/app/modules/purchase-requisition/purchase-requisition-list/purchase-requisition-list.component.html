@@ -1,0 +1,330 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Purchase Requisitions</h2>
+      <p class="page-subtitle">Department-initiated requests for raw materials &mdash; approval gate before a Purchase Order is raised</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="New Requisition" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, requester, department..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="prs" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Date</th>
+          <th>Needed By</th>
+          <th>Department</th>
+          <th>Requested By</th>
+          <th>Estimated Total</th>
+          <th>Status</th>
+          <th>Converted PO</th>
+          <th style="width:220px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td><span class="code-badge">{{ p.code }}</span></td>
+          <td class="num">{{ p.requisitionDate }}</td>
+          <td class="num">{{ p.neededByDate || '—' }}</td>
+          <td>{{ p.departmentName || p.departmentText || '—' }}</td>
+          <td>{{ p.requestedBy || '—' }}</td>
+          <td class="num fw-700">{{ formatCurrency(p.estimatedTotal) }}</td>
+          <td><span class="status-badge" [ngClass]="statusBadgeClass(p.status)">{{ p.status }}</span></td>
+          <td>
+            <span *ngIf="p.convertedPurchaseOrderCode" class="code-badge alt">{{ p.convertedPurchaseOrderCode }}</span>
+            <span *ngIf="!p.convertedPurchaseOrderCode" class="muted">—</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="p.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(p)" [pTooltip]="p.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-send" severity="info" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'" [loading]="rowActionId === p.id"
+                        (click)="submit(p)" pTooltip="Submit for approval" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="p.status === 'Submitted'"
+                        (click)="openDecision(p, 'approve')" pTooltip="Approve" />
+              <p-button icon="pi pi-times-circle" severity="danger" [text]="true" size="small"
+                        *ngIf="p.status === 'Submitted'"
+                        (click)="openDecision(p, 'reject')" pTooltip="Reject" />
+              <p-button icon="pi pi-arrow-right" severity="success" [text]="true" size="small"
+                        *ngIf="p.status === 'Approved'"
+                        (click)="openConvert(p)" pTooltip="Convert to PO" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="p.status !== 'Converted' && p.status !== 'Cancelled' && p.status !== 'Rejected'"
+                        (click)="openCancel(p)" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft'"
+                        (click)="openDelete(p)" pTooltip="Delete draft" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-clipboard"></i>
+            <span>No purchase requisitions yet. Click "New Requisition" to start one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Purchase Requisition' : (dialogMode === 'edit' ? 'Edit Requisition' : 'View Requisition')"
+          [modal]="true" [style]="{ width: '960px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only Draft requisitions can be edited.
+    </div>
+
+    <p class="section-label">Header</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>Requisition Date *</label>
+        <input pInputText type="date" formControlName="requisitionDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Needed By</label>
+        <input pInputText type="date" formControlName="neededByDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <p-select formControlName="departmentId" [options]="departments"
+                  optionLabel="name" optionValue="id" [showClear]="true"
+                  placeholder="Pick from master..." appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Or Department (free-text)</label>
+        <input pInputText formControlName="departmentText" placeholder="e.g. Production - Cutting" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Requested By</label>
+        <input pInputText formControlName="requestedBy" placeholder="Name or employee code" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Purpose</label>
+        <input pInputText formControlName="purpose" placeholder="Why is this material needed? PO/Job context..." class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Lines</p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="prod-col">Raw Material</th>
+            <th class="unit-col">Unit</th>
+            <th class="num-col">Quantity</th>
+            <th class="num-col">Est. Unit Price</th>
+            <th class="num-col">Line Total</th>
+            <th>Notes</th>
+            <th style="width:40px" *ngIf="dialogMode !== 'view'"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="rawMaterialId" [options]="rawMaterials" optionLabel="name" optionValue="id"
+                        [filter]="true" filterBy="code,name" appendTo="body" styleClass="grid-product" />
+            </td>
+            <td class="unit-cell">{{ rmUnit($any(lineCtrl.get('rawMaterialId')?.value)) }}</td>
+            <td>
+              <p-inputNumber formControlName="quantity" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td>
+              <p-inputNumber formControlName="estimatedUnitPrice" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td>
+              <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
+            </td>
+            <td *ngIf="dialogMode !== 'view'">
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="removeLine(i)" *ngIf="lines.length > 1" />
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="total-label">Estimated Total (indicative)</td>
+            <td class="num grand-total">{{ formatCurrency(formTotal) }}</td>
+            <td></td><td *ngIf="dialogMode !== 'view'"></td>
+          </tr>
+        </tfoot>
+      </table>
+      <p-button label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true"
+                (click)="addLine()" *ngIf="dialogMode !== 'view'" />
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Decision (Approve / Reject) -->
+<p-dialog [(visible)]="decisionVisible"
+          [header]="decisionAction === 'approve' ? 'Approve Requisition' : 'Reject Requisition'"
+          [modal]="true" [style]="{ width: '480px' }">
+  <div *ngIf="decisionTarget">
+    <p>{{ decisionAction === 'approve' ? 'Approve' : 'Reject' }} <strong>{{ decisionTarget.code }}</strong>
+       ({{ formatCurrency(decisionTarget.estimatedTotal) }})?</p>
+    <div class="alert alert-error" *ngIf="decisionError"><i class="pi pi-exclamation-circle"></i>{{ decisionError }}</div>
+    <div class="field">
+      <label>Decision notes <small>(optional)</small></label>
+      <textarea pInputTextarea rows="3" [(ngModel)]="decisionNotes" class="w-full"
+                placeholder="Reason / context for the decision..."></textarea>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="decisionVisible = false" [disabled]="decisionSaving" />
+      <p-button [label]="decisionSaving ? 'Saving...' : (decisionAction === 'approve' ? 'Approve' : 'Reject')"
+                [icon]="decisionAction === 'approve' ? 'pi pi-check' : 'pi pi-times'"
+                [severity]="decisionAction === 'approve' ? 'success' : 'danger'"
+                [loading]="decisionSaving" (click)="doDecision()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Cancel -->
+<p-dialog [(visible)]="cancelVisible" header="Cancel Requisition" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="cancelTarget">
+    <p>Cancel <strong>{{ cancelTarget.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="cancelError"><i class="pi pi-exclamation-circle"></i>{{ cancelError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Close" severity="secondary" [text]="true" (click)="cancelVisible = false" [disabled]="cancelling" />
+      <p-button label="Cancel Requisition" icon="pi pi-ban" severity="warn"
+                [loading]="cancelling" (click)="doCancel()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Delete -->
+<p-dialog [(visible)]="deleteVisible" header="Delete Draft" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleteTarget">
+    <p>Delete draft requisition <strong>{{ deleteTarget.code }}</strong>?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Convert to PO -->
+<p-dialog [(visible)]="convertVisible" header="Convert to Purchase Order" [modal]="true" [style]="{ width: '960px' }">
+  <form [formGroup]="convertForm" (ngSubmit)="doConvert()" *ngIf="convertTarget">
+    <p class="hint">Creates a real <strong>Purchase Order</strong> from <strong>{{ convertTarget.code }}</strong>. Pick the supplier &amp; final unit prices &mdash; estimated prices are pre-filled.</p>
+    <div class="alert alert-error" *ngIf="convertError"><i class="pi pi-exclamation-circle"></i>{{ convertError }}</div>
+
+    <p class="section-label">PO Header</p>
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Supplier *</label>
+        <p-select formControlName="supplierId" [options]="suppliers"
+                  optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name"
+                  placeholder="Select supplier" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Currency *</label>
+        <p-select formControlName="currencyId" [options]="currencies"
+                  optionLabel="code" optionValue="id" appendTo="body" class="w-full" styleClass="w-full"
+                  (onChange)="onConvertCurrencyChange($event)" />
+      </div>
+      <div class="field">
+        <label>Exchange Rate (BDT)</label>
+        <p-inputNumber formControlName="exchangeRate" [min]="0.000001" [maxFractionDigits]="6"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Order Date *</label>
+        <input pInputText type="date" formControlName="orderDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Expected Delivery</label>
+        <input pInputText type="date" formControlName="expectedDeliveryDate" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Delivery Warehouse</label>
+        <p-select formControlName="deliveryWarehouseId" [options]="warehouses"
+                  optionLabel="name" optionValue="id" [showClear]="true"
+                  placeholder="(use supplier default)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-4">
+        <label>PO Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p class="section-label">Lines &mdash; finalize unit prices</p>
+    <div formArrayName="linePrices">
+      <table class="line-grid">
+        <thead>
+          <tr><th>Raw Material</th><th class="unit-col">Unit</th><th class="num-col">Quantity</th><th class="num-col">Unit Price *</th><th class="num-col">Line Total</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lc of convertLines.controls; let i = index" [formGroupName]="i">
+            <td>{{ $any(lc.get('rawMaterialName')?.value) }} <span class="emp-code">{{ $any(lc.get('rawMaterialCode')?.value) }}</span></td>
+            <td class="unit-cell">{{ $any(lc.get('unit')?.value) }}</td>
+            <td class="num">{{ $any(lc.get('quantity')?.value) }}</td>
+            <td>
+              <p-inputNumber formControlName="unitPrice" [min]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+            </td>
+            <td class="num fw-600">{{ formatCurrency(($any(lc.get('quantity')?.value) || 0) * ($any(lc.get('unitPrice')?.value) || 0)) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="convertVisible = false" [disabled]="converting" />
+      <p-button type="submit" [label]="converting ? 'Converting...' : 'Convert to PO'" icon="pi pi-arrow-right"
+                [loading]="converting" [disabled]="convertForm.invalid || converting" />
+    </div>
+  </form>
+</p-dialog>
