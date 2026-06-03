@@ -178,12 +178,14 @@ public class DataSeeder : IDataSeeder
             // ── Income (4000) ──
             ("4000", "Income", AccountType.Income, true, null),
             ("4100", "Sales Revenue", AccountType.Income, false, "4000"),
+            ("4150", "Sales Returns & Allowances", AccountType.Income, false, "4000"),
             ("4200", "Other Income", AccountType.Income, false, "4000"),
             ("4300", "Exchange Gain", AccountType.Income, false, "4000"),
 
             // ── Expenses (5000) ──
             ("5000", "Expenses", AccountType.Expense, true, null),
             ("5100", "Cost of Goods Sold", AccountType.Expense, false, "5000"),
+            ("5150", "Purchase Returns & Allowances", AccountType.Expense, false, "5000"),
             ("5200", "Salary & Wages", AccountType.Expense, false, "5000"),
             ("5300", "Factory Overhead", AccountType.Expense, false, "5000"),
             ("5400", "Administrative Expense", AccountType.Expense, false, "5000"),

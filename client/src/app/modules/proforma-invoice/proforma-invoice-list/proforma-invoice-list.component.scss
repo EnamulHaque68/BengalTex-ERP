@@ -1,0 +1,178 @@
+.page-shell {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  .page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+  .page-subtitle { margin: 0.15rem 0 0; color: #64748b; font-size: 0.85rem; max-width: 90ch; }
+
+  .header-actions { display: flex; gap: 0.5rem; }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+
+  .search-wrap {
+    position: relative;
+    flex: 0 0 280px;
+    i { position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+    input { padding-left: 1.9rem; width: 100%; }
+  }
+  :host ::ng-deep .filter-select { min-width: 220px; }
+  :host ::ng-deep .filter-select-sm { min-width: 160px; }
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  position: relative;
+
+  &.alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  &.alert-error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  &.alert-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+  .alert-close {
+    position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; font-size: 1.1rem; color: inherit; opacity: 0.6;
+    &:hover { opacity: 1; }
+  }
+}
+
+:host ::ng-deep .table-card .p-card-body { padding: 0.5rem; }
+:host ::ng-deep .table-card .p-card-content { padding: 0; }
+
+.code-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  background: #eef2ff;
+  color: #4338ca;
+  border-radius: 4px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  &.alt { background: #dcfce7; color: #166534; }
+}
+
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: #94a3b8; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  &.draft     { background: #f1f5f9; color: #475569; }
+  &.sent      { background: #e0e7ff; color: #4338ca; }
+  &.accepted  { background: #dbeafe; color: #1d4ed8; }
+  &.expired   { background: #fef3c7; color: #92400e; }
+  &.cancelled { background: #fee2e2; color: #991b1b; }
+  &.converted { background: #dcfce7; color: #166534; }
+}
+
+.row-actions { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+
+.empty-row {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #94a3b8;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+  span { display: block; }
+}
+
+// ── Dialog ─────────────────────────────────────────────────────────────────
+
+.section-label {
+  margin: 1.1rem 0 0.5rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.3rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.7rem 0.85rem;
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    label {
+      font-size: 0.78rem;
+      color: #475569;
+      font-weight: 600;
+      small { font-weight: 400; color: #94a3b8; margin-left: 0.25rem; }
+    }
+  }
+
+  .col-span-2 { grid-column: span 2; }
+}
+
+.lines-wrap {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.line-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td {
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 0.78rem; }
+
+  .num, .num-col { text-align: right; }
+  .unit-cell { color: #64748b; font-size: 0.8rem; }
+  .total-label { text-align: right; font-weight: 600; color: #334155; }
+  .grand-label { font-size: 0.95rem; }
+  .grand-total { font-weight: 700; font-size: 1rem; color: #047857; }
+
+  :host ::ng-deep .grid-product { width: 100%; }
+  :host ::ng-deep .grid-num { width: 100%; text-align: right; }
+  .line-notes-input { width: 100%; padding: 0.3rem; border: 1px solid #e2e8f0; border-radius: 4px; }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.hint {
+  margin: 0 0 0.7rem;
+  color: #64748b;
+  font-size: 0.85rem;
+}

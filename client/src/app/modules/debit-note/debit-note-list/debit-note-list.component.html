@@ -1,0 +1,178 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Debit Notes</h2>
+      <p class="page-subtitle">Non-stock adjustments that REDUCE what we owe a supplier &mdash; price corrections, discounts, allowances. For physical returns use Supplier Returns instead.</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="New Debit Note" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, supplier, invoice..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="notes" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Supplier</th>
+          <th>Against Invoice</th>
+          <th>Issue Date</th>
+          <th>Reason</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-n>
+        <tr>
+          <td><span class="code-badge">{{ n.code }}</span></td>
+          <td class="fw-600">{{ n.supplierName }}</td>
+          <td><span class="code-badge alt">{{ n.supplierInvoiceCode }}</span></td>
+          <td class="num">{{ n.issueDate }}</td>
+          <td>{{ reasonLabel(n.reason) }}</td>
+          <td class="num fw-700">{{ formatCurrency(n.amount, n.currencyCode) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusBadgeClass(n.status)">{{ n.status }}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="n.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(n)" [pTooltip]="n.status === 'Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="n.status === 'Draft'" [loading]="rowActionId === n.id"
+                        (click)="issue(n)" pTooltip="Issue (posts journal + reduces AP)" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="n.status === 'Issued'"
+                        (click)="openCancel(n)" pTooltip="Cancel (reverses adjustment)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="n.status === 'Draft'"
+                        (click)="openDelete(n)" pTooltip="Delete draft" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-file-edit"></i>
+            <span>No debit notes yet. Click "New Debit Note" to start one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Debit Note' : (dialogMode === 'edit' ? 'Edit Debit Note' : 'View Debit Note')"
+          [modal]="true" [style]="{ width: '540px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError">
+      <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
+    </div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only draft debit notes can be edited.
+    </div>
+
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Supplier Invoice *</label>
+        <p-select formControlName="supplierInvoiceId" [options]="invoices"
+                  optionLabel="code" optionValue="id"
+                  [filter]="true" filterBy="code,supplierName"
+                  placeholder="Select an Approved / Partially-Paid / Paid invoice"
+                  appendTo="body" class="w-full" styleClass="w-full"
+                  (onChange)="onInvoiceChange($event)" />
+        <div class="outstanding-hint" *ngIf="selectedInvoice">
+          <div><span class="lbl">Supplier:</span> <strong>{{ selectedInvoice.supplierName }}</strong></div>
+          <div><span class="lbl">Invoice Total:</span> {{ formatCurrency(selectedInvoice.totalAmount, selectedInvoice.currencyCode) }}</div>
+          <div class="outstanding-line"><span class="lbl">Outstanding:</span>
+            <strong>{{ formatCurrency(selectedInvoice.amountDue, selectedInvoice.currencyCode) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Issue Date *</label>
+        <input pInputText type="date" formControlName="issueDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Reason *</label>
+        <p-select formControlName="reason" [options]="reasons" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Amount *</label>
+        <p-inputNumber formControlName="amount" [min]="0.01" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"
+                  placeholder="Reason details, internal reference..."></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving"
+                [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="cancelVisible" header="Cancel Debit Note" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="cancelTarget">
+    <p>Cancel <strong>{{ cancelTarget.code }}</strong> ({{ formatCurrency(cancelTarget.amount, cancelTarget.currencyCode) }})?</p>
+    <p class="warn-note"><i class="pi pi-exclamation-triangle"></i> Supplier invoice <strong>{{ cancelTarget.supplierInvoiceCode }}</strong> will be re-credited and a reversal journal entry will be posted.</p>
+    <div class="alert alert-error" *ngIf="cancelError"><i class="pi pi-exclamation-circle"></i>{{ cancelError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Close" severity="secondary" [text]="true" (click)="cancelVisible = false" [disabled]="cancelling" />
+      <p-button label="Cancel Debit Note" icon="pi pi-ban" severity="warn"
+                [loading]="cancelling" (click)="doCancel()" />
+    </div>
+  </div>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteVisible" header="Delete Draft" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleteTarget">
+    <p>Delete draft debit note <strong>{{ deleteTarget.code }}</strong>? (Soft delete.)</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteVisible = false" [disabled]="deleting" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
