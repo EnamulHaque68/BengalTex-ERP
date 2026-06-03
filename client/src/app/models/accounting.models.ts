@@ -201,3 +201,56 @@ export interface CashFlowStatementDto {
   netCashChange: number;
   closingCashBalance: number;
 }
+
+// ── Cash Book / Bank Book (Reports v2) ──
+export interface CashBookLineDto {
+  entryDate: string;
+  journalCode: string;
+  narration: string | null;
+  receipt: number;
+  payment: number;
+  runningBalance: number;
+}
+
+export interface CashBookDto {
+  accountCode: string;
+  accountName: string;
+  fromDate: string;
+  toDate: string;
+  openingBalance: number;
+  totalReceipts: number;
+  totalPayments: number;
+  closingBalance: number;
+  lines: CashBookLineDto[];
+}
+
+// ── Day Book (Reports v2) ──
+export interface DayBookLineDto {
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+  lineNarration: string | null;
+}
+
+export interface DayBookEntryDto {
+  journalEntryId: number;
+  journalCode: string;
+  entryDate: string;
+  reference: string | null;
+  narration: string | null;
+  sourceType: string | null;
+  sourceCode: string | null;
+  totalDebit: number;
+  totalCredit: number;
+  lines: DayBookLineDto[];
+}
+
+export interface DayBookDto {
+  fromDate: string;
+  toDate: string;
+  totalDebit: number;
+  totalCredit: number;
+  entries: DayBookEntryDto[];
+}
