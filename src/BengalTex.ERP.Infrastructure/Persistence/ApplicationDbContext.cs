@@ -115,6 +115,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ProformaInvoiceLine> ProformaInvoiceLines => Set<ProformaInvoiceLine>();
     public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
     public DbSet<DebitNote> DebitNotes => Set<DebitNote>();
+    public DbSet<PurchaseRequisition> PurchaseRequisitions => Set<PurchaseRequisition>();
+    public DbSet<PurchaseRequisitionLine> PurchaseRequisitionLines => Set<PurchaseRequisitionLine>();
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();

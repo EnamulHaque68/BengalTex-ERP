@@ -131,6 +131,17 @@ public static class Permissions
         public const string Approve = "PurchaseOrders.Approve";
     }
 
+    public static class PurchaseRequisitions
+    {
+        public const string View = "PurchaseRequisitions.View";
+        public const string Create = "PurchaseRequisitions.Create";
+        public const string Edit = "PurchaseRequisitions.Edit";
+        public const string Delete = "PurchaseRequisitions.Delete";
+        public const string Submit = "PurchaseRequisitions.Submit";    // submit / cancel
+        public const string Decide = "PurchaseRequisitions.Decide";    // approve / reject
+        public const string Convert = "PurchaseRequisitions.Convert";  // create PO from approved PR
+    }
+
     public static class GoodsReceipts
     {
         public const string View = "GoodsReceipts.View";
