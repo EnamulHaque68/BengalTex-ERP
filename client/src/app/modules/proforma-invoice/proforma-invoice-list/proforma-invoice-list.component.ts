@@ -54,6 +54,12 @@ export class ProformaInvoiceListComponent implements OnInit {
   deleteVisible = false; deleteTarget: ProformaInvoiceDto | null = null;
   deleting = false; deleteError = '';
 
+  // Email dialog
+  emailDlgOpen = false;
+  emailSourceId = 0;
+  openEmail(row: { id: number }): void { this.emailSourceId = row.id; this.emailDlgOpen = true; }
+  onEmailSent(ev: { sourceCode: string }): void { this.actionMessage = `Email sent for ${ev.sourceCode}.`; this.cdr.detectChanges(); }
+
   // Convert dialog
   convertVisible = false;
   convertTarget: ProformaInvoiceDto | null = null;

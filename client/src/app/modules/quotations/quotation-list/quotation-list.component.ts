@@ -23,7 +23,22 @@ export class QuotationListComponent implements OnInit {
   parameters: PagedQueryParameters = { page: 1, pageSize: 25, search: '' };
   searchTimer: any = null;
   actionError = '';
+  actionMessage = '';
   rowActionId: number | null = null;
+
+  // Email dialog
+  emailDlgOpen = false;
+  emailSourceId = 0;
+
+  openEmail(row: { id: number }): void {
+    this.emailSourceId = row.id;
+    this.emailDlgOpen = true;
+  }
+
+  onEmailSent(ev: { sourceCode: string }): void {
+    this.actionMessage = `Email sent for ${ev.sourceCode}.`;
+    this.cdr.detectChanges();
+  }
 
   readonly statuses = QUOTATION_STATUSES;
   customers: any[] = [];

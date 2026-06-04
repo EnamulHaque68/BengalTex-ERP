@@ -14,6 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { QuotationListComponent } from './quotation-list/quotation-list.component';
 import { QuotationPrintComponent } from './quotation-print/quotation-print.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   { path: '', component: QuotationListComponent },
@@ -26,7 +27,7 @@ const routes: Routes = [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
-    InputTextModule, InputNumberModule, SelectModule, TooltipModule
+    InputTextModule, InputNumberModule, SelectModule, TooltipModule, SharedModule
   ]
 })
 export class QuotationsModule {}

@@ -103,6 +103,9 @@
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         *ngIf="c.status !== 'Draft'"
                         [routerLink]="['/customer-invoices', c.id, 'print']" pTooltip="Print invoice" />
+              <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft'"
+                        (click)="openEmail(c)" pTooltip="Send via email" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"
@@ -122,6 +125,12 @@
             <span>No customer invoices. Click "Add Invoice" to raise one against an SO.</span>
           </td>
         </tr>
+
+<app-send-email-dialog
+  [(visible)]="emailDlgOpen"
+  [sourceType]="'CustomerInvoice'"
+  [sourceId]="emailSourceId"
+  (sent)="onEmailSent($event)"></app-send-email-dialog>
       </ng-template>
     </p-table>
   </p-card>

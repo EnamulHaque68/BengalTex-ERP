@@ -113,6 +113,9 @@
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         *ngIf="p.status !== 'Draft'"
                         [routerLink]="['/purchase-orders', p.id, 'print']" pTooltip="Print PO" />
+              <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small"
+                        *ngIf="p.status !== 'Draft'"
+                        (click)="openEmail(p)" pTooltip="Send via email" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="canDelete(p)"
                         (click)="confirmDelete(p)" pTooltip="Delete" />
@@ -313,3 +316,9 @@
     </div>
   </div>
 </p-dialog>
+
+<app-send-email-dialog
+  [(visible)]="emailDlgOpen"
+  [sourceType]="'PurchaseOrder'"
+  [sourceId]="emailSourceId"
+  (sent)="onEmailSent($event)"></app-send-email-dialog>

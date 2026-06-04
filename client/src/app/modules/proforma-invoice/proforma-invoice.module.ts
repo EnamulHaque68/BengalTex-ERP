@@ -14,6 +14,7 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ProformaInvoiceListComponent } from './proforma-invoice-list/proforma-invoice-list.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [{ path: '', component: ProformaInvoiceListComponent }];
 
@@ -23,7 +24,7 @@ const routes: Routes = [{ path: '', component: ProformaInvoiceListComponent }];
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
-    InputTextModule, InputNumberModule, TextareaModule, SelectModule, TooltipModule
+    InputTextModule, InputNumberModule, TextareaModule, SelectModule, TooltipModule, SharedModule
   ]
 })
 export class ProformaInvoiceModule {}
