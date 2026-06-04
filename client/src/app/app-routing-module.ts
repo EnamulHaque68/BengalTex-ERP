@@ -26,6 +26,7 @@ const routes: Routes = [
       { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-order/purchase-order.module').then(m => m.PurchaseOrderModule) },
       { path: 'gate-passes', loadChildren: () => import('./modules/gate-pass/gate-pass.module').then(m => m.GatePassModule) },
       { path: 'emails', loadChildren: () => import('./modules/emails/emails.module').then(m => m.EmailsModule) },
+      { path: 'fixed-assets', loadChildren: () => import('./modules/fixed-asset/fixed-asset.module').then(m => m.FixedAssetModule) },
       { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
       { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) },
       { path: 'stock-on-hand', loadChildren: () => import('./modules/stock-on-hand/stock-on-hand.module').then(m => m.StockOnHandModule) },

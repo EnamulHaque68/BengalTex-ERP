@@ -12,6 +12,8 @@ public static class LedgerAccounts
     public const string RawMaterialInventory = "1140";
     public const string FinishedGoodsInventory = "1150";
     public const string VatReceivable = "1170";   // input VAT
+    public const string MachineryEquipment = "1210";       // gross fixed-asset cost (existed)
+    public const string AccumulatedDepreciation = "1215";  // contra-asset; credited each month
     public const string AccountsPayable = "2110";
     public const string VatPayable = "2120";       // output VAT
     public const string SalaryPayable = "2130";
@@ -20,5 +22,8 @@ public static class LedgerAccounts
     public const string CostOfGoodsSold = "5100";
     public const string PurchaseReturnsAllowances = "5150"; // contra-expense: credited by Debit Notes
     public const string SalaryExpense = "5200";
+    public const string DepreciationExpense = "5320";      // posted by AssetDepreciation monthly run
     public const string AdministrativeExpense = "5400";   // default expense account for unmapped categories
+    public const string GainOnAssetDisposal = "4400";      // credited when disposal proceeds > NBV
+    public const string LossOnAssetDisposal = "5350";      // debited when disposal proceeds < NBV
 }

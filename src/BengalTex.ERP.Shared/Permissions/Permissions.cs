@@ -157,6 +157,16 @@ public static class Permissions
         public const string Send = "Emails.Send";   // send a document via email
     }
 
+    public static class FixedAssets
+    {
+        public const string View = "FixedAssets.View";
+        public const string Create = "FixedAssets.Create";
+        public const string Edit = "FixedAssets.Edit";
+        public const string Delete = "FixedAssets.Delete";
+        public const string Depreciate = "FixedAssets.Depreciate";   // post monthly run
+        public const string Dispose = "FixedAssets.Dispose";          // dispose / write-off
+    }
+
     public static class GoodsReceipts
     {
         public const string View = "GoodsReceipts.View";
