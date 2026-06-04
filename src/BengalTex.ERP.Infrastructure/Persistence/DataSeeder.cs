@@ -158,6 +158,7 @@ public class DataSeeder : IDataSeeder
             ("1180", "Advance to Suppliers", AccountType.Asset, false, "1100"),
             ("1200", "Fixed Assets", AccountType.Asset, true, "1000"),
             ("1210", "Machinery & Equipment", AccountType.Asset, false, "1200"),
+            ("1215", "Accumulated Depreciation", AccountType.Asset, false, "1200"),
 
             // ── Liabilities (2000) ──
             ("2000", "Liabilities", AccountType.Liability, true, null),
@@ -181,6 +182,7 @@ public class DataSeeder : IDataSeeder
             ("4150", "Sales Returns & Allowances", AccountType.Income, false, "4000"),
             ("4200", "Other Income", AccountType.Income, false, "4000"),
             ("4300", "Exchange Gain", AccountType.Income, false, "4000"),
+            ("4400", "Gain on Asset Disposal", AccountType.Income, false, "4000"),
 
             // ── Expenses (5000) ──
             ("5000", "Expenses", AccountType.Expense, true, null),
@@ -188,6 +190,8 @@ public class DataSeeder : IDataSeeder
             ("5150", "Purchase Returns & Allowances", AccountType.Expense, false, "5000"),
             ("5200", "Salary & Wages", AccountType.Expense, false, "5000"),
             ("5300", "Factory Overhead", AccountType.Expense, false, "5000"),
+            ("5320", "Depreciation Expense", AccountType.Expense, false, "5000"),
+            ("5350", "Loss on Asset Disposal", AccountType.Expense, false, "5000"),
             ("5400", "Administrative Expense", AccountType.Expense, false, "5000"),
             ("5500", "Selling & Distribution Expense", AccountType.Expense, false, "5000"),
             ("5600", "Bank Charges", AccountType.Expense, false, "5000"),

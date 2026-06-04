@@ -1,0 +1,216 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Fixed Assets</h2>
+      <p class="page-subtitle">Capital asset register &mdash; machinery, vehicles, furniture. Monthly straight-line depreciation auto-posts to GL.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/fixed-assets/depreciation-runs"><p-button label="Depreciation Runs" icon="pi pi-history" severity="secondary" [text]="true" /></a>
+      <p-button label="Run Depreciation" icon="pi pi-cog" severity="warn" (click)="openRun()" />
+      <p-button label="New Asset" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, name, location..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterCategory" [options]="categories" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All categories" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="assets" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Acq Date</th>
+          <th class="num-h">Acq Cost</th>
+          <th class="num-h">Acc Dep.</th>
+          <th class="num-h">Net Book Value</th>
+          <th class="num-h">Monthly</th>
+          <th>Last Dep.</th>
+          <th>Status</th>
+          <th style="width:170px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-a>
+        <tr>
+          <td><span class="code-badge">{{ a.code }}</span></td>
+          <td class="fw-600">{{ a.name }} <small class="muted" *ngIf="a.location">· {{ a.location }}</small></td>
+          <td>{{ categoryLabel(a.category) }}</td>
+          <td class="num">{{ a.acquisitionDate }}</td>
+          <td class="num">{{ formatCurrency(a.acquisitionCost) }}</td>
+          <td class="num dep">{{ formatCurrency(a.accumulatedDepreciation) }}</td>
+          <td class="num fw-700 nbv">{{ formatCurrency(a.netBookValue) }}</td>
+          <td class="num">{{ formatCurrency(a.monthlyDepreciation) }}</td>
+          <td class="num">{{ ymLabel(a.lastDepreciationYearMonth) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusBadgeClass(a.status)">{{ a.status }}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="a.status === 'Active' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(a)" [pTooltip]="a.status === 'Active' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="a.status === 'Active'"
+                        (click)="openDispose(a)" pTooltip="Dispose / Write off" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="a.status === 'Active' && a.accumulatedDepreciation === 0"
+                        (click)="doDelete(a)" pTooltip="Delete (only if no depreciation posted)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="11" class="empty-row">
+            <i class="pi pi-cog"></i>
+            <span>No fixed assets yet. Click "New Asset" to register one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'New Fixed Asset' : (dialogMode === 'edit' ? 'Edit Asset' : 'View Asset')"
+          [modal]="true" [style]="{ width: '720px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only Active assets can be edited.
+    </div>
+
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Asset Name *</label>
+        <input pInputText formControlName="name" placeholder="e.g. Brother Sewing Machine #12" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Category *</label>
+        <p-select formControlName="category" [options]="categories" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input pInputText formControlName="location" placeholder="Cutting Floor / Office" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Acquisition Date *</label>
+        <input pInputText type="date" formControlName="acquisitionDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Useful Life (years) *</label>
+        <p-inputNumber formControlName="usefulLifeYears" [min]="1" [max]="60" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Acquisition Cost (BDT) *</label>
+        <p-inputNumber formControlName="acquisitionCost" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Salvage Value (BDT) <small>(residual at end of life)</small></label>
+        <p-inputNumber formControlName="salvageValue" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2 preview-strip">
+        <span class="lbl">Estimated Monthly Depreciation</span>
+        <strong>{{ formatCurrency(monthlyPreview()) }}</strong>
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Register' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Dispose dialog -->
+<p-dialog [(visible)]="disposeVisible" header="Dispose / Write-Off Asset"
+          [modal]="true" [style]="{ width: '560px' }">
+  <form [formGroup]="disposeForm" (ngSubmit)="doDispose()" *ngIf="disposeTarget">
+    <p class="hint">Disposing <strong>{{ disposeTarget.code }} {{ disposeTarget.name }}</strong>. NBV: <strong>{{ formatCurrency(disposeTarget.netBookValue) }}</strong>.</p>
+    <p class="hint"><i class="pi pi-info-circle"></i> Journal posts Dr Cash + Acc Dep / Cr Asset + Gain or Loss. Write-off treats proceeds as 0.</p>
+    <div class="alert alert-error" *ngIf="disposeError"><i class="pi pi-exclamation-circle"></i>{{ disposeError }}</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Disposal Date *</label>
+        <input pInputText type="date" formControlName="disposalDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Disposal Proceeds (BDT)</label>
+        <p-inputNumber formControlName="disposalProceeds" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2 checkbox-row">
+        <label><input type="checkbox" formControlName="isWriteOff" /> Write off (no proceeds, full loss to expense)</label>
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"
+                  placeholder="Sale to junk merchant / scrap / theft write-off..."></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="disposeVisible = false" [disabled]="disposing" />
+      <p-button type="submit" [label]="disposing ? 'Posting...' : 'Dispose'" icon="pi pi-ban" severity="warn"
+                [loading]="disposing" [disabled]="disposeForm.invalid || disposing" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Run Depreciation dialog -->
+<p-dialog [(visible)]="runVisible" header="Run Monthly Depreciation" [modal]="true" [style]="{ width: '440px' }">
+  <p class="hint">Computes straight-line depreciation for every Active asset acquired on or before the month end. Posts ONE consolidated journal entry (Dr 5320 Dep Expense / Cr 1215 Accumulated Depreciation).</p>
+  <p class="hint"><i class="pi pi-exclamation-triangle"></i> Cannot post twice for the same month.</p>
+  <div class="alert alert-error" *ngIf="runError"><i class="pi pi-exclamation-circle"></i>{{ runError }}</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Year</label>
+      <p-inputNumber [(ngModel)]="runYear" [min]="2000" [max]="2100"
+                     [useGrouping]="false" inputStyleClass="w-full" styleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Month</label>
+      <p-inputNumber [(ngModel)]="runMonth" [min]="1" [max]="12"
+                     inputStyleClass="w-full" styleClass="w-full" />
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="runVisible = false" [disabled]="running" />
+    <p-button [label]="running ? 'Posting...' : 'Post Depreciation'" icon="pi pi-cog" severity="warn"
+              [loading]="running" (click)="doRun()" />
+  </div>
+</p-dialog>

@@ -1,0 +1,90 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Depreciation Runs</h2>
+      <p class="page-subtitle">History of monthly depreciation postings &mdash; auto-journal entries are linked via Source = AssetDepreciationRun</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/fixed-assets/assets"><p-button label="← Back to Assets" severity="secondary" [text]="true" /></a>
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="runs" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Run #</th>
+          <th>Period</th>
+          <th>Run Date</th>
+          <th class="num-h">Total Depreciation</th>
+          <th class="num-h">Asset Count</th>
+          <th>Posted By</th>
+          <th style="width:80px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-600">{{ r.year }}-{{ r.month | number:'2.0' }}</td>
+          <td class="num">{{ r.runDate }}</td>
+          <td class="num fw-700">{{ formatCurrency(r.totalAmount) }}</td>
+          <td class="num">{{ r.assetCount }}</td>
+          <td>{{ r.postedByUser || '—' }}</td>
+          <td>
+            <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                      (click)="openView(r)" pTooltip="View lines" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="empty-row">
+            <i class="pi pi-history"></i>
+            <span>No depreciation runs yet.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="viewVisible" header="Depreciation Run Details"
+          [modal]="true" [style]="{ width: '900px' }">
+  <div *ngIf="viewLoading" class="loading">Loading…</div>
+  <div *ngIf="viewing && !viewLoading" class="view-wrap">
+    <div class="summary-strip">
+      <div><span class="lbl">Run #</span><span class="val"><span class="code-badge">{{ viewing.code }}</span></span></div>
+      <div><span class="lbl">Period</span><span class="val">{{ viewing.year }}-{{ viewing.month | number:'2.0' }}</span></div>
+      <div><span class="lbl">Run Date</span><span class="val">{{ viewing.runDate }}</span></div>
+      <div><span class="lbl">Total</span><span class="val fw-700">{{ formatCurrency(viewing.totalAmount) }}</span></div>
+      <div><span class="lbl">Assets</span><span class="val">{{ viewing.assetCount }}</span></div>
+    </div>
+    <p-table [value]="viewing.lines" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Asset Code</th>
+          <th>Asset Name</th>
+          <th class="num-h">Depreciation</th>
+          <th class="num-h">Acc Dep After</th>
+          <th class="num-h">NBV After</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-l>
+        <tr>
+          <td><span class="code-badge">{{ l.fixedAssetCode }}</span></td>
+          <td class="fw-600">{{ l.fixedAssetName }}</td>
+          <td class="num">{{ formatCurrency(l.monthlyDepreciation) }}</td>
+          <td class="num">{{ formatCurrency(l.accumulatedAfter) }}</td>
+          <td class="num fw-600">{{ formatCurrency(l.netBookValueAfter) }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewVisible = false" />
+  </div>
+</p-dialog>
