@@ -43,6 +43,12 @@ public class PayrollController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Enriched payslip for the printable salary-slip page (employee + bank + company).</summary>
+    [HttpGet("{id:long}/print-data")]
+    [HasPermission(Permissions.Payroll.View)]
+    public async Task<IActionResult> GetForPrint(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetPayslipForPrintQuery(id), ct));
+
     /// <summary>Generate draft payslips for all active employees for a month.</summary>
     [HttpPost("generate")]
     [HasPermission(Permissions.Payroll.Process)]

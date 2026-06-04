@@ -1,0 +1,116 @@
+<div class="print-shell">
+  <div class="print-toolbar no-print">
+    <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Payroll</a>
+    <p-button label="Print / Save as PDF" icon="pi pi-print" (click)="print()" />
+  </div>
+
+  <ng-container *ngIf="slip; else loadingTpl">
+    <div class="doc">
+      <header class="doc-header">
+        <div class="brand">
+          <img *ngIf="slip.companyLogoUrl" [src]="slip.companyLogoUrl" alt="Logo" class="logo" />
+          <div>
+            <div class="co-name">{{ slip.companyName }}</div>
+            <div class="co-line">{{ slip.companyAddressLine1 }}<span *ngIf="slip.companyAddressLine2">, {{ slip.companyAddressLine2 }}</span></div>
+            <div class="co-line">{{ slip.companyCity }}<span *ngIf="slip.companyDistrict">, {{ slip.companyDistrict }}</span> {{ slip.companyPostalCode }}</div>
+            <div class="co-line">
+              <span *ngIf="slip.companyPhone">{{ slip.companyPhone }}</span>
+              <span *ngIf="slip.companyEmail"> &middot; {{ slip.companyEmail }}</span>
+            </div>
+            <div class="co-line muted" *ngIf="slip.companyTaxNumber">BIN/TIN: {{ slip.companyTaxNumber }}</div>
+          </div>
+        </div>
+        <div class="doc-title">
+          <div class="title">SALARY SLIP</div>
+          <div class="title-sub">{{ slip.monthName }} {{ slip.year }}</div>
+        </div>
+      </header>
+
+      <div class="meta-strip">
+        <div class="meta"><div class="lbl">Slip #</div><div class="val mono">{{ slip.payslipCode }}</div></div>
+        <div class="meta"><div class="lbl">Period</div><div class="val">{{ slip.monthName }} {{ slip.year }}</div></div>
+        <div class="meta"><div class="lbl">Status</div><div class="val">{{ slip.status }}</div></div>
+        <div class="meta" *ngIf="slip.paidAt"><div class="lbl">Paid On</div><div class="val">{{ slip.paidAt | date:'mediumDate' }}</div></div>
+      </div>
+
+      <section class="emp-block">
+        <div class="emp-grid">
+          <div><span class="lbl">Employee</span><strong>{{ slip.employeeName }}</strong></div>
+          <div><span class="lbl">Employee Code</span><strong class="mono">{{ slip.employeeCode }}</strong></div>
+          <div *ngIf="slip.designation"><span class="lbl">Designation</span><strong>{{ slip.designation }}</strong></div>
+          <div *ngIf="slip.department"><span class="lbl">Department</span><strong>{{ slip.department }}</strong></div>
+          <div *ngIf="slip.joiningDate"><span class="lbl">Joining Date</span><strong>{{ slip.joiningDate }}</strong></div>
+          <div *ngIf="slip.employmentType"><span class="lbl">Employment Type</span><strong>{{ slip.employmentType }}</strong></div>
+          <div *ngIf="slip.employeePhone"><span class="lbl">Phone</span><strong>{{ slip.employeePhone }}</strong></div>
+          <div *ngIf="slip.employeeNationalId"><span class="lbl">NID</span><strong class="mono">{{ slip.employeeNationalId }}</strong></div>
+        </div>
+      </section>
+
+      <section class="attendance-strip">
+        <div><span class="lbl">Present</span><strong>{{ slip.presentDays }}</strong></div>
+        <div><span class="lbl">Absent</span><strong>{{ slip.absentDays }}</strong></div>
+        <div><span class="lbl">Leave</span><strong>{{ slip.leaveDays }}</strong></div>
+        <div><span class="lbl">OT Hours</span><strong>{{ slip.overtimeHours }}</strong></div>
+      </section>
+
+      <section class="earnings-deductions">
+        <div class="col">
+          <h4>Earnings</h4>
+          <table class="lines">
+            <tr><td>Basic Salary</td><td class="num">{{ formatCurrency(slip.basicSalary) }}</td></tr>
+            <tr *ngIf="slip.houseRent > 0"><td>House Rent</td><td class="num">{{ formatCurrency(slip.houseRent) }}</td></tr>
+            <tr *ngIf="slip.medical > 0"><td>Medical</td><td class="num">{{ formatCurrency(slip.medical) }}</td></tr>
+            <tr *ngIf="slip.transport > 0"><td>Transport</td><td class="num">{{ formatCurrency(slip.transport) }}</td></tr>
+            <tr *ngIf="slip.foodAllowance > 0"><td>Food Allowance</td><td class="num">{{ formatCurrency(slip.foodAllowance) }}</td></tr>
+            <tr *ngIf="slip.allowances > 0"><td>Other Allowances</td><td class="num">{{ formatCurrency(slip.allowances) }}</td></tr>
+            <tr *ngIf="slip.overtimeAmount > 0"><td>Overtime</td><td class="num">{{ formatCurrency(slip.overtimeAmount) }}</td></tr>
+            <tr *ngIf="slip.festivalBonus > 0"><td>Festival Bonus</td><td class="num">{{ formatCurrency(slip.festivalBonus) }}</td></tr>
+            <tr class="total"><td><strong>Gross Pay</strong></td><td class="num"><strong>{{ formatCurrency(slip.grossPay) }}</strong></td></tr>
+          </table>
+        </div>
+        <div class="col">
+          <h4>Deductions</h4>
+          <table class="lines">
+            <tr *ngIf="slip.pfEmployee > 0"><td>PF (Employee)</td><td class="num">{{ formatCurrency(slip.pfEmployee) }}</td></tr>
+            <tr *ngIf="slip.incomeTax > 0"><td>Income Tax</td><td class="num">{{ formatCurrency(slip.incomeTax) }}</td></tr>
+            <tr *ngIf="slip.loanDeduction > 0"><td>Loan EMI</td><td class="num">{{ formatCurrency(slip.loanDeduction) }}</td></tr>
+            <tr *ngIf="slip.otherDeductions > 0"><td>Absence / Other</td><td class="num">{{ formatCurrency(slip.otherDeductions) }}</td></tr>
+            <tr *ngIf="slip.totalDeductions === 0"><td class="muted">No deductions</td><td></td></tr>
+            <tr class="total"><td><strong>Total Deductions</strong></td><td class="num"><strong>{{ formatCurrency(slip.totalDeductions) }}</strong></td></tr>
+          </table>
+          <p class="muted small" *ngIf="slip.pfEmployer > 0">PF (Employer) {{ formatCurrency(slip.pfEmployer) }} — contributed separately, not deducted from net.</p>
+        </div>
+      </section>
+
+      <div class="net-pay-box">
+        <div class="net-label">NET PAY</div>
+        <div class="net-amount mono">{{ formatCurrency(slip.netPay) }}</div>
+        <div class="net-words">{{ amountInWords(slip.netPay) }}</div>
+      </div>
+
+      <section class="bank-block" *ngIf="slip.bankAccountNumber">
+        <div class="lbl">Salary Paid To</div>
+        <div>
+          <strong>{{ slip.bankName }}</strong>
+          <span *ngIf="slip.bankBranch"> &middot; {{ slip.bankBranch }}</span>
+          <span> &middot; A/C </span><strong class="mono">{{ slip.bankAccountNumber }}</strong>
+        </div>
+      </section>
+
+      <section class="notes" *ngIf="slip.notes">
+        <div class="lbl">Notes</div>
+        <div class="val">{{ slip.notes }}</div>
+      </section>
+
+      <footer class="signatures three">
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Prepared By<br/><small>HR / Payroll</small></div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Authorised By<br/><small>Management</small></div></div>
+        <div class="sig"><div class="sig-line"></div><div class="sig-label">Received By<br/><small>{{ slip.employeeName }}</small></div></div>
+      </footer>
+
+      <div class="doc-footer">Salary slip {{ slip.payslipCode }} &middot; {{ slip.monthName }} {{ slip.year }} &middot; computer-generated, no manual signature required</div>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl><p class="loading">Loading salary slip...</p></ng-template>
+</div>

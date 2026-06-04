@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { PayrollListComponent } from './payroll-list/payroll-list.component';
+import { PayslipPrintComponent } from './payslip-print/payslip-print.component';
 
-const routes: Routes = [{ path: '', component: PayrollListComponent }];
+const routes: Routes = [
+  { path: '', component: PayrollListComponent },
+  { path: ':id/print', component: PayslipPrintComponent }
+];
 
 @NgModule({
-  declarations: [PayrollListComponent],
+  declarations: [PayrollListComponent, PayslipPrintComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),
