@@ -57,8 +57,9 @@ namespace BengalTex.ERP.Infrastructure.Persistence.Migrations
                         name: "FK_MachineMaintenances_MachineMaintenances_RecurringSeriesAnchorId",
                         column: x => x.RecurringSeriesAnchorId,
                         principalTable: "MachineMaintenances",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
+                        // SQL Server disallows cascading SetNull on self-referencing FKs (cyclic
+                        // cascade protection). Using NoAction = SQL default; app enforces.
                     table.ForeignKey(
                         name: "FK_MachineMaintenances_Machines_MachineId",
                         column: x => x.MachineId,

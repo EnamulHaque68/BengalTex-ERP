@@ -9928,8 +9928,7 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasOne("BengalTex.ERP.Domain.Entities.MachineMaintenance", "RecurringSeriesAnchor")
                         .WithMany()
-                        .HasForeignKey("RecurringSeriesAnchorId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("RecurringSeriesAnchorId");
 
                     b.Navigation("Machine");
 
