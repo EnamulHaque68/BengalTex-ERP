@@ -65,3 +65,57 @@ export interface UpdatePayslipRequest {
   loanDeduction: number;
   notes: string | null;
 }
+
+export interface PayslipPrintDto {
+  id: number;
+  payslipCode: string;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  designation: string | null;
+  department: string | null;
+  employeePhone: string | null;
+  employeeNationalId: string | null;
+  joiningDate: string | null;
+  employmentType: string | null;
+  year: number;
+  month: number;
+  monthName: string;
+  presentDays: number;
+  absentDays: number;
+  leaveDays: number;
+  overtimeHours: number;
+  basicSalary: number;
+  houseRent: number;
+  medical: number;
+  transport: number;
+  foodAllowance: number;
+  festivalBonus: number;
+  allowances: number;
+  overtimeAmount: number;
+  grossPay: number;
+  pfEmployee: number;
+  pfEmployer: number;
+  incomeTax: number;
+  loanDeduction: number;
+  otherDeductions: number;
+  totalDeductions: number;
+  netPay: number;
+  status: string;
+  paidAt: string | null;
+  notes: string | null;
+  bankName: string | null;
+  bankBranch: string | null;
+  bankAccountNumber: string | null;
+  companyName: string;
+  companyShortName: string | null;
+  companyAddressLine1: string | null;
+  companyAddressLine2: string | null;
+  companyCity: string | null;
+  companyDistrict: string | null;
+  companyPostalCode: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  companyTaxNumber: string | null;
+  companyLogoUrl: string | null;
+}

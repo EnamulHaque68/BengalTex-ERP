@@ -80,6 +80,8 @@
               <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'" [loading]="rowActionId === p.id"
                         (click)="markPaid(p)" pTooltip="Mark paid" />
+              <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
+                        [routerLink]="['/payroll', p.id, 'print']" pTooltip="Print salary slip" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'" (click)="confirmDelete(p)" pTooltip="Delete" />
               <span class="paid-note" *ngIf="p.status === 'Paid'">Paid</span>

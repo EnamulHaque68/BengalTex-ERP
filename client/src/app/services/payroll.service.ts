@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
-  PayslipDto, GeneratePayrollRequest, UpdatePayslipRequest
+  PayslipDto, GeneratePayrollRequest, UpdatePayslipRequest, PayslipPrintDto
 } from '../models/payroll.models';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +34,10 @@ export class PayrollService {
 
   getById(id: number): Observable<ApiResponse<PayslipDto>> {
     return this.http.get<ApiResponse<PayslipDto>>(`${this.base}/${id}`);
+  }
+
+  getForPrint(id: number): Observable<ApiResponse<PayslipPrintDto>> {
+    return this.http.get<ApiResponse<PayslipPrintDto>>(`${this.base}/${id}/print-data`);
   }
 
   generate(data: GeneratePayrollRequest): Observable<ApiResponse<number>> {
