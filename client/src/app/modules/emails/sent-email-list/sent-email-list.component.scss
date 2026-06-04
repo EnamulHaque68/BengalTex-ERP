@@ -1,0 +1,45 @@
+.page-shell { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+  .page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+  .page-subtitle { margin: 0.15rem 0 0; color: #64748b; font-size: 0.85rem; }
+  .header-actions { display: flex; gap: 0.5rem; }
+}
+.filter-bar {
+  display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+  .search-wrap {
+    position: relative; flex: 0 0 320px;
+    i { position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+    input { padding-left: 1.9rem; width: 100%; }
+  }
+  :host ::ng-deep .filter-select { min-width: 200px; }
+  :host ::ng-deep .filter-select-sm { min-width: 140px; }
+}
+:host ::ng-deep .table-card .p-card-body { padding: 0.5rem; }
+:host ::ng-deep .table-card .p-card-content { padding: 0; }
+.code-badge {
+  display: inline-block; padding: 0.1rem 0.45rem; background: #eef2ff; color: #4338ca;
+  border-radius: 4px; font-family: monospace; font-size: 0.78rem; font-weight: 600; margin-left: 0.4rem;
+}
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.narr { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-badge {
+  display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+  &.sent   { background: #dcfce7; color: #166534; }
+  &.failed { background: #fee2e2; color: #991b1b; }
+}
+.failed-row { background: #fef2f2; }
+.failed-row:hover { background: #fee2e2 !important; }
+.empty-row { text-align: center; padding: 2.5rem 1rem; color: #94a3b8;
+  i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+}
+.view-grid {
+  display: flex; flex-direction: column; gap: 0.35rem;
+  .row { display: flex; gap: 1rem; padding: 0.35rem 0; font-size: 0.88rem;
+    .lbl { flex: 0 0 110px; color: #64748b; }
+    .val { flex: 1; color: #0f172a; }
+    .val.err-msg { color: #b91c1c; font-family: monospace; font-size: 0.8rem; }
+  }
+}
+.dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;
+  padding-top: 0.8rem; border-top: 1px solid #e2e8f0; }

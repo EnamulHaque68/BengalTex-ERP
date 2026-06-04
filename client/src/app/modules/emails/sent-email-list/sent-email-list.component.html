@@ -1,0 +1,89 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Sent Emails</h2>
+      <p class="page-subtitle">Audit log of every outbound email sent via the email gateway</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Refresh" icon="pi pi-refresh" (click)="load()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search subject, recipient, source code..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterSourceType" [options]="sourceTypes" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All sources" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="emails" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Sent At</th>
+          <th>Sent By</th>
+          <th>Source</th>
+          <th>Doc Code</th>
+          <th>To</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th style="width:60px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-e>
+        <tr [class.failed-row]="e.status === 'Failed'">
+          <td class="num">{{ e.sentAt | date:'short' }}</td>
+          <td>{{ e.sentByUser }}</td>
+          <td>{{ sourceTypeLabel(e.sourceType) }}</td>
+          <td><span class="code-badge" *ngIf="e.sourceCode">{{ e.sourceCode }}</span></td>
+          <td class="narr">{{ e.toAddresses }}</td>
+          <td class="narr">{{ e.subject }}</td>
+          <td>
+            <span class="status-badge" [class.sent]="e.status === 'Sent'" [class.failed]="e.status === 'Failed'">
+              {{ e.status }}
+            </span>
+          </td>
+          <td>
+            <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
+                      (click)="openView(e)" pTooltip="View details" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-envelope"></i>
+            <span>No emails sent yet.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="viewVisible" header="Email Details" [modal]="true" [style]="{ width: '640px' }">
+  <div *ngIf="viewing" class="view-grid">
+    <div class="row"><span class="lbl">Sent At</span><span class="val">{{ viewing.sentAt | date:'medium' }}</span></div>
+    <div class="row"><span class="lbl">Sent By</span><span class="val">{{ viewing.sentByUser }}</span></div>
+    <div class="row"><span class="lbl">Source</span><span class="val">{{ sourceTypeLabel(viewing.sourceType) }} <span class="code-badge" *ngIf="viewing.sourceCode">{{ viewing.sourceCode }}</span></span></div>
+    <div class="row"><span class="lbl">To</span><span class="val">{{ viewing.toAddresses }}</span></div>
+    <div class="row" *ngIf="viewing.ccAddresses"><span class="lbl">Cc</span><span class="val">{{ viewing.ccAddresses }}</span></div>
+    <div class="row"><span class="lbl">Subject</span><span class="val">{{ viewing.subject }}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val">
+      <span class="status-badge" [class.sent]="viewing.status === 'Sent'" [class.failed]="viewing.status === 'Failed'">{{ viewing.status }}</span>
+    </span></div>
+    <div class="row" *ngIf="viewing.errorMessage"><span class="lbl">Error</span><span class="val err-msg">{{ viewing.errorMessage }}</span></div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="viewVisible = false" />
+  </div>
+</p-dialog>

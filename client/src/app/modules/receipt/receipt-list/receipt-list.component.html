@@ -228,3 +228,9 @@
     </div>
   </div>
 </p-dialog>
+
+<app-send-email-dialog
+  [(visible)]="emailDlgOpen"
+  [sourceType]="'Receipt'"
+  [sourceId]="emailSourceId"
+  (sent)="onEmailSent($event)"></app-send-email-dialog>

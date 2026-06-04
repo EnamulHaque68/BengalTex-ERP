@@ -15,6 +15,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { ReceiptListComponent } from './receipt-list/receipt-list.component';
 import { ReceiptPrintComponent } from './receipt-print/receipt-print.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   { path: '', component: ReceiptListComponent },
@@ -28,7 +29,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule
+    TooltipModule, SharedModule
   ]
 })
 export class ReceiptModule {}

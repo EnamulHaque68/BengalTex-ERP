@@ -84,6 +84,9 @@
               <p-button icon="pi pi-arrow-right" severity="success" [text]="true" size="small"
                         *ngIf="p.status === 'Accepted'"
                         (click)="openConvert(p)" pTooltip="Convert to Customer Invoice" />
+              <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small"
+                        *ngIf="p.status === 'Sent' || p.status === 'Accepted'"
+                        (click)="openEmail(p)" pTooltip="Send via email" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="p.status !== 'Converted' && p.status !== 'Cancelled'"
                         (click)="openCancel(p)" pTooltip="Cancel" />
@@ -288,3 +291,9 @@
     </div>
   </form>
 </p-dialog>
+
+<app-send-email-dialog
+  [(visible)]="emailDlgOpen"
+  [sourceType]="'ProformaInvoice'"
+  [sourceId]="emailSourceId"
+  (sent)="onEmailSent($event)"></app-send-email-dialog>

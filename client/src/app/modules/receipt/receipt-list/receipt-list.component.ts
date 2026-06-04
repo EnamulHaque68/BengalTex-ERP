@@ -32,6 +32,13 @@ export class ReceiptListComponent implements OnInit {
   filterCustomerId: number | null = null;
   filterPaymentMethod: string | null = null;
   actionError = '';
+  actionMessage = '';
+
+  // Email dialog
+  emailDlgOpen = false;
+  emailSourceId = 0;
+  openEmail(row: { id: number }): void { this.emailSourceId = row.id; this.emailDlgOpen = true; }
+  onEmailSent(ev: { sourceCode: string }): void { this.actionMessage = `Email sent for ${ev.sourceCode}.`; this.cdr.detectChanges(); }
 
   parameters: PagedQueryParameters = { page: 1, pageSize: 25, search: '' };
   searchTimer: any = null;

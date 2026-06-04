@@ -41,6 +41,7 @@
               <p-button icon="pi pi-arrow-right" severity="help" [text]="true" size="small" *ngIf="q.status === 'Accepted' && canConvert" [loading]="rowActionId === q.id" (click)="convert(q)" pTooltip="Convert to Sales Order" />
               <p-button icon="pi pi-copy" severity="secondary" [text]="true" size="small" *ngIf="canCreate && (q.status === 'Sent' || q.status === 'Rejected' || q.status === 'Accepted' || q.status === 'Expired')" [loading]="rowActionId === q.id" (click)="revise(q)" pTooltip="Revise (new version)" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small" *ngIf="q.status !== 'Draft'" [routerLink]="['/quotations', q.id, 'print']" pTooltip="Print quotation" />
+              <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small" *ngIf="q.status !== 'Draft'" (click)="openEmail(q)" pTooltip="Send via email" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="q.status === 'Draft' && canCreate" (click)="confirmDelete(q)" pTooltip="Delete" />
             </div>
           </td>
@@ -50,6 +51,12 @@
     </p-table>
   </p-card>
 </div>
+
+<app-send-email-dialog
+  [(visible)]="emailDlgOpen"
+  [sourceType]="'Quotation'"
+  [sourceId]="emailSourceId"
+  (sent)="onEmailSent($event)"></app-send-email-dialog>
 
 <p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'New Quotation' : (dialogMode==='edit' ? 'Edit Quotation' : ('Quotation ' + (loaded?.code || '')))" [modal]="true" [style]="{ width: '1080px' }" [draggable]="false">
   <form [formGroup]="form" (ngSubmit)="save()">

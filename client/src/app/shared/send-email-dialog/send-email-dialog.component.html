@@ -1,0 +1,48 @@
+<p-dialog [visible]="visible" (visibleChange)="visible = $event; visibleChange.emit($event)"
+          [header]="'Send Email' + (sourceCode ? ' — ' + sourceCode : '')"
+          [modal]="true" [style]="{ width: '900px' }" [draggable]="false">
+
+  <div class="loading" *ngIf="loading">
+    <i class="pi pi-spin pi-spinner"></i> Loading document preview…
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <div class="email-form" *ngIf="!loading">
+    <div class="field">
+      <label>To * <small>(comma or semicolon separated)</small></label>
+      <input pInputText [(ngModel)]="to" placeholder="customer@example.com" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Cc</label>
+      <input pInputText [(ngModel)]="cc" placeholder="(optional)" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Subject *</label>
+      <input pInputText [(ngModel)]="subject" class="w-full" />
+    </div>
+
+    <div class="field">
+      <div class="body-header">
+        <label>Body</label>
+        <div class="body-actions">
+          <p-button [label]="showRawHtml ? 'Show Preview' : 'Edit HTML'"
+                    [icon]="showRawHtml ? 'pi pi-eye' : 'pi pi-code'"
+                    severity="secondary" [text]="true" size="small"
+                    (click)="showRawHtml = !showRawHtml" />
+        </div>
+      </div>
+      <div class="body-preview" *ngIf="!showRawHtml" [innerHTML]="htmlBody"></div>
+      <textarea *ngIf="showRawHtml" [(ngModel)]="htmlBody" rows="14" class="raw-html"></textarea>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="close()" [disabled]="sending" />
+    <p-button [label]="sending ? 'Sending...' : 'Send Email'" icon="pi pi-send"
+              [loading]="sending" [disabled]="!to || !subject || !htmlBody || sending"
+              (click)="send()" />
+  </div>
+</p-dialog>

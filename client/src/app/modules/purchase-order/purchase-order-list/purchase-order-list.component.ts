@@ -53,6 +53,21 @@ export class PurchaseOrderListComponent implements OnInit {
   // Row action (approve / send / cancel) in-flight id
   rowActionId: number | null = null;
 
+  // Email dialog
+  emailDlgOpen = false;
+  emailSourceId = 0;
+  actionMessage = '';
+
+  openEmail(row: { id: number }): void {
+    this.emailSourceId = row.id;
+    this.emailDlgOpen = true;
+  }
+
+  onEmailSent(ev: { sourceCode: string }): void {
+    this.actionMessage = `Email sent for ${ev.sourceCode}.`;
+    this.cdr.detectChanges();
+  }
+
   constructor(
     private poService: PurchaseOrderService,
     private supplierService: SupplierService,

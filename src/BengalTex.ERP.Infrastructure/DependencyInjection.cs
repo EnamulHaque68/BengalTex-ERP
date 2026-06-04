@@ -42,6 +42,7 @@ public static class DependencyInjection
             services.AddScoped<IEmailSender, SmtpEmailSender>();
         else
             services.AddScoped<IEmailSender, DevEmailSender>();
+        services.AddScoped<IDocumentEmailService, DocumentEmailService>();
 
         // Auth services
         services.AddScoped<IIdentityService, IdentityService>();

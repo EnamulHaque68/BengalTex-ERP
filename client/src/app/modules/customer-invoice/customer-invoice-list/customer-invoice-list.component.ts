@@ -48,6 +48,21 @@ export class CustomerInvoiceListComponent implements OnInit {
   dialogSaving = false;
   dialogError = '';
   editingId: number | null = null;
+
+  // Email dialog
+  emailDlgOpen = false;
+  emailSourceId = 0;
+  actionMessage = '';
+
+  openEmail(row: { id: number }): void {
+    this.emailSourceId = row.id;
+    this.emailDlgOpen = true;
+  }
+
+  onEmailSent(ev: { sourceCode: string }): void {
+    this.actionMessage = `Email sent for ${ev.sourceCode}.`;
+    this.cdr.detectChanges();
+  }
   form!: FormGroup;
 
   deleteDialogVisible = false;

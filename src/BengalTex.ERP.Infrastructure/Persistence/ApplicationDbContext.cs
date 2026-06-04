@@ -118,6 +118,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<PurchaseRequisition> PurchaseRequisitions => Set<PurchaseRequisition>();
     public DbSet<PurchaseRequisitionLine> PurchaseRequisitionLines => Set<PurchaseRequisitionLine>();
     public DbSet<GatePass> GatePasses => Set<GatePass>();
+    public DbSet<SentEmail> SentEmails => Set<SentEmail>();
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();

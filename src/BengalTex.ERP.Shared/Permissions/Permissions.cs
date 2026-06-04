@@ -151,6 +151,12 @@ public static class Permissions
         public const string Close = "GatePasses.Close";   // close / mark returned / cancel
     }
 
+    public static class Emails
+    {
+        public const string View = "Emails.View";   // see sent log
+        public const string Send = "Emails.Send";   // send a document via email
+    }
+
     public static class GoodsReceipts
     {
         public const string View = "GoodsReceipts.View";
