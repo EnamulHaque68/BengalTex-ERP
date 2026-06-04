@@ -41,9 +41,11 @@ public class MachineMaintenanceConfiguration : IEntityTypeConfiguration<Domain.E
             .HasForeignKey(m => m.PerformedByEmployeeId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Self-referencing FK uses NoAction — SQL Server disallows cascading SetNull on
+        // self-references (cyclic cascade protection). App-level enforcement only.
         builder.HasOne(m => m.RecurringSeriesAnchor).WithMany()
             .HasForeignKey(m => m.RecurringSeriesAnchorId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Property(m => m.RowVersion).IsRowVersion();
     }
