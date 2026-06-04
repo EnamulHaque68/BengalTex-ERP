@@ -1,0 +1,219 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Machine Maintenance</h2>
+      <p class="page-subtitle">Schedule, track, and log every preventive/corrective maintenance on production machines. Recurring PMs auto-spawn the next occurrence on completion.</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Schedule Maintenance" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search code, description, machine..."
+             (input)="onSearchChange($any($event.target).value)" />
+    </span>
+    <p-select [(ngModel)]="filterMachineId" [options]="machines" optionLabel="name" optionValue="id"
+              [showClear]="true" [filter]="true" filterBy="code,name" placeholder="All machines"
+              styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterType" [options]="types" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All types" styleClass="filter-select" (onChange)="load()" />
+    <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+  </div>
+
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="records" [loading]="loading" [paginator]="true"
+             [rows]="parameters.pageSize || 25" [totalRecords]="totalCount" [lazy]="true"
+             (onLazyLoad)="onPageChange($event)"
+             [first]="((parameters.page || 1) - 1) * (parameters.pageSize || 25)"
+             [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Machine</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Scheduled</th>
+          <th>Completed</th>
+          <th class="num-h">Downtime</th>
+          <th class="num-h">Total Cost</th>
+          <th>Status</th>
+          <th style="width:200px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-m>
+        <tr [class.overdue-row]="m.isOverdue">
+          <td><span class="code-badge">{{ m.code }}</span></td>
+          <td class="fw-600">{{ m.machineName }} <span class="muted">({{ m.machineCode }})</span>
+            <div class="muted small" *ngIf="m.machineLocation">{{ m.machineLocation }}</div>
+          </td>
+          <td>
+            <span class="type-badge" [ngClass]="typeBadgeClass(m.type)">{{ typeLabel(m.type) }}</span>
+            <i class="pi pi-refresh recurring-icon" *ngIf="m.isRecurring" pTooltip="Recurring every {{ m.intervalDays }} days"></i>
+          </td>
+          <td class="narr">{{ m.description }}</td>
+          <td class="num">
+            {{ m.scheduledDate }}
+            <i class="pi pi-exclamation-triangle overdue-icon" *ngIf="m.isOverdue" pTooltip="Overdue"></i>
+          </td>
+          <td class="num">{{ m.completedDate || '—' }}</td>
+          <td class="num">{{ m.downtimeHours != null ? (m.downtimeHours + ' hr') : '—' }}</td>
+          <td class="num fw-700">{{ m.totalCost > 0 ? formatCurrency(m.totalCost) : '—' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusBadgeClass(m.status)">{{ m.status }}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="m.status === 'Scheduled' ? 'pi pi-pencil' : 'pi pi-eye'"
+                        severity="secondary" [text]="true" size="small"
+                        (click)="openEdit(m)" [pTooltip]="m.status === 'Scheduled' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-play" severity="info" [text]="true" size="small"
+                        *ngIf="m.status === 'Scheduled'" [loading]="rowActionId === m.id"
+                        (click)="doAction(m, 'start')" pTooltip="Start" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="m.status === 'Scheduled' || m.status === 'InProgress'"
+                        (click)="openComplete(m)" pTooltip="Complete (log cost + notes)" />
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="m.status !== 'Completed' && m.status !== 'Cancelled'" [loading]="rowActionId === m.id"
+                        (click)="doAction(m, 'cancel')" pTooltip="Cancel" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                        *ngIf="m.status === 'Scheduled'" [loading]="rowActionId === m.id"
+                        (click)="doAction(m, 'delete')" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="empty-row">
+            <i class="pi pi-wrench"></i>
+            <span>No maintenance records yet. Click "Schedule Maintenance" to create one.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Schedule / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible"
+          [header]="dialogMode === 'create' ? 'Schedule Maintenance' : (dialogMode === 'edit' ? 'Edit Maintenance' : 'View Maintenance')"
+          [modal]="true" [style]="{ width: '720px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+    <div class="alert alert-info" *ngIf="dialogMode === 'view'">
+      <i class="pi pi-lock"></i>Read-only — only Scheduled records can be edited.
+    </div>
+
+    <div class="form-grid">
+      <div class="field col-span-2">
+        <label>Machine *</label>
+        <p-select formControlName="machineId" [options]="machines"
+                  optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name"
+                  placeholder="Select machine" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Type *</label>
+        <p-select formControlName="type" [options]="types" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Scheduled Date *</label>
+        <input pInputText type="date" formControlName="scheduledDate" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Description *</label>
+        <input pInputText formControlName="description" placeholder="e.g. Quarterly oil change + belt inspection" class="w-full" />
+      </div>
+      <div class="field col-span-2 checkbox-row">
+        <label><input type="checkbox" formControlName="isRecurring" /> Recurring maintenance (auto-spawn next on completion)</label>
+      </div>
+      <div class="field" *ngIf="form.get('isRecurring')?.value">
+        <label>Interval (days) *</label>
+        <p-inputNumber formControlName="intervalDays" [min]="1" [max]="3650"
+                       [useGrouping]="false" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pInputTextarea rows="2" formControlName="notes" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
+                (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" *ngIf="dialogMode !== 'view'"
+                [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Schedule' : 'Save')"
+                icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Complete dialog -->
+<p-dialog [(visible)]="completeVisible" header="Complete Maintenance" [modal]="true" [style]="{ width: '720px' }">
+  <form [formGroup]="completeForm" (ngSubmit)="doComplete()" *ngIf="completeTarget">
+    <p class="hint">Completing <strong>{{ completeTarget.code }}</strong> — {{ completeTarget.description }}.
+      <span *ngIf="completeTarget.isRecurring"> Next occurrence will be auto-scheduled in {{ completeTarget.intervalDays }} days.</span></p>
+    <div class="alert alert-error" *ngIf="completeError"><i class="pi pi-exclamation-circle"></i>{{ completeError }}</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Completed Date *</label>
+        <input pInputText type="date" formControlName="completedDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Downtime (hours)</label>
+        <p-inputNumber formControlName="downtimeHours" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Performed By (free text)</label>
+        <input pInputText formControlName="performedBy" placeholder="Vendor name / technician" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Or Employee (internal)</label>
+        <p-select formControlName="performedByEmployeeId" [options]="employees"
+                  optionLabel="fullName" optionValue="id" [showClear]="true" [filter]="true" filterBy="code,fullName"
+                  placeholder="Internal technician" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Service Cost (BDT)</label>
+        <p-inputNumber formControlName="serviceCost" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Parts Cost (BDT)</label>
+        <p-inputNumber formControlName="partsCost" [min]="0" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Parts Replaced</label>
+        <input pInputText formControlName="partsReplaced" placeholder="belt, bearing, oil filter..." class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Completion Notes</label>
+        <textarea pInputTextarea rows="3" formControlName="completionNotes" class="w-full"
+                  placeholder="Findings, follow-up needed, observations..."></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="completeVisible = false" [disabled]="completing" />
+      <p-button type="submit" [label]="completing ? 'Saving...' : 'Mark Completed'" icon="pi pi-check-circle"
+                severity="success" [loading]="completing" [disabled]="completeForm.invalid || completing" />
+    </div>
+  </form>
+</p-dialog>

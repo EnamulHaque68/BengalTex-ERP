@@ -167,6 +167,15 @@ public static class Permissions
         public const string Dispose = "FixedAssets.Dispose";          // dispose / write-off
     }
 
+    public static class MachineMaintenance
+    {
+        public const string View = "MachineMaintenance.View";
+        public const string Create = "MachineMaintenance.Create";    // schedule
+        public const string Edit = "MachineMaintenance.Edit";
+        public const string Delete = "MachineMaintenance.Delete";
+        public const string Complete = "MachineMaintenance.Complete";  // mark in-progress / completed / cancelled
+    }
+
     public static class GoodsReceipts
     {
         public const string View = "GoodsReceipts.View";
