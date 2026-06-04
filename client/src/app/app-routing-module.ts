@@ -27,6 +27,7 @@ const routes: Routes = [
       { path: 'gate-passes', loadChildren: () => import('./modules/gate-pass/gate-pass.module').then(m => m.GatePassModule) },
       { path: 'emails', loadChildren: () => import('./modules/emails/emails.module').then(m => m.EmailsModule) },
       { path: 'fixed-assets', loadChildren: () => import('./modules/fixed-asset/fixed-asset.module').then(m => m.FixedAssetModule) },
+      { path: 'machine-maintenance', loadChildren: () => import('./modules/machine-maintenance/machine-maintenance.module').then(m => m.MachineMaintenanceModule) },
       { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
       { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) },
       { path: 'stock-on-hand', loadChildren: () => import('./modules/stock-on-hand/stock-on-hand.module').then(m => m.StockOnHandModule) },

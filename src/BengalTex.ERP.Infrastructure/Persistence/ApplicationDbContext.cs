@@ -122,6 +122,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<AssetDepreciationRun> AssetDepreciationRuns => Set<AssetDepreciationRun>();
     public DbSet<AssetDepreciationRunLine> AssetDepreciationRunLines => Set<AssetDepreciationRunLine>();
+    public DbSet<MachineMaintenance> MachineMaintenances => Set<MachineMaintenance>();
     public DbSet<ComplianceCertificate> ComplianceCertificates => Set<ComplianceCertificate>();
     public DbSet<ComplianceAudit> ComplianceAudits => Set<ComplianceAudit>();
     public DbSet<AuditFinding> AuditFindings => Set<AuditFinding>();
