@@ -1,0 +1,119 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Productivity Report</h2>
+      <p class="page-subtitle">Per-operator or per-machine throughput, units-per-hour, reject rate &mdash; from Job Card data in the date window</p>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button type="button" [class.active]="view === 'operator'" (click)="switchView('operator')">
+          <i class="pi pi-user"></i> Operators
+        </button>
+        <button type="button" [class.active]="view === 'machine'" (click)="switchView('machine')">
+          <i class="pi pi-cog"></i> Machines
+        </button>
+      </div>
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <!-- Operator view -->
+  <ng-container *ngIf="view === 'operator' && operatorReport">
+    <div class="summary-strip">
+      <div><span class="lbl">Period</span><span class="val">{{ operatorReport.fromDate }} → {{ operatorReport.toDate }}</span></div>
+      <div><span class="lbl">Operators Active</span><span class="val fw-700">{{ operatorReport.totalOperatorsActive }}</span></div>
+      <div><span class="lbl">Total Units</span><span class="val num fw-700">{{ formatNumber(operatorReport.grandTotalCompletedQuantity) }}</span></div>
+      <div><span class="lbl">Total Hours</span><span class="val num">{{ hoursFromMinutes(operatorReport.grandTotalActiveMinutes) }}</span></div>
+      <div><span class="lbl">Avg Units/Hour</span><span class="val num fw-700 highlight">{{ formatNumber(operatorReport.averageUnitsPerHour) }}</span></div>
+    </div>
+
+    <p-card styleClass="table-card">
+      <p-table [value]="operatorReport.rows" [rowHover]="true" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Operator</th>
+            <th>Department</th>
+            <th class="num-h">Cards (Done / In Prog)</th>
+            <th class="num-h">Completed Qty</th>
+            <th class="num-h">Rejected</th>
+            <th class="num-h">Active Hrs</th>
+            <th class="num-h">Units/Hour</th>
+            <th class="num-h">Reject %</th>
+            <th class="num-h">Pass %</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr>
+            <td class="fw-600">{{ r.employeeName }} <span class="emp-code">{{ r.employeeCode }}</span>
+              <div class="muted small" *ngIf="r.designation">{{ r.designation }}</div>
+            </td>
+            <td>{{ r.department || '—' }}</td>
+            <td class="num">{{ r.completedCards }} / {{ r.inProgressCards }}</td>
+            <td class="num fw-700">{{ formatNumber(r.totalCompletedQuantity) }}</td>
+            <td class="num reject">{{ formatNumber(r.totalRejectedQuantity) }}</td>
+            <td class="num">{{ hoursFromMinutes(r.totalActiveMinutes) }}</td>
+            <td class="num" [ngClass]="uphClass(r.unitsPerHour, operatorReport.averageUnitsPerHour)">
+              {{ formatNumber(r.unitsPerHour) }}
+            </td>
+            <td class="num" [ngClass]="rejectRateClass(r.rejectRatePercent)">{{ formatNumber(r.rejectRatePercent) }}%</td>
+            <td class="num">{{ formatNumber(r.efficiencyPercent) }}%</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="9" class="empty-row"><i class="pi pi-users"></i><span>No operator activity in this period.</span></td></tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </ng-container>
+
+  <!-- Machine view -->
+  <ng-container *ngIf="view === 'machine' && machineReport">
+    <div class="summary-strip">
+      <div><span class="lbl">Period</span><span class="val">{{ machineReport.fromDate }} → {{ machineReport.toDate }}</span></div>
+      <div><span class="lbl">Machines Active</span><span class="val fw-700">{{ machineReport.totalMachinesActive }}</span></div>
+      <div><span class="lbl">Total Units</span><span class="val num fw-700">{{ formatNumber(machineReport.grandTotalCompletedQuantity) }}</span></div>
+      <div><span class="lbl">Total Hours</span><span class="val num">{{ hoursFromMinutes(machineReport.grandTotalActiveMinutes) }}</span></div>
+      <div><span class="lbl">Avg Units/Hour</span><span class="val num fw-700 highlight">{{ formatNumber(machineReport.averageUnitsPerHour) }}</span></div>
+    </div>
+
+    <p-card styleClass="table-card">
+      <p-table [value]="machineReport.rows" [rowHover]="true" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Machine</th>
+            <th>Type</th>
+            <th>Location</th>
+            <th class="num-h">Cards (Done / In Prog)</th>
+            <th class="num-h">Completed Qty</th>
+            <th class="num-h">Rejected</th>
+            <th class="num-h">Active Hrs</th>
+            <th class="num-h">Units/Hour</th>
+            <th class="num-h">Reject %</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr>
+            <td class="fw-600">{{ r.machineName }} <span class="emp-code">{{ r.machineCode }}</span></td>
+            <td>{{ r.machineType || '—' }}</td>
+            <td class="muted">{{ r.location || '—' }}</td>
+            <td class="num">{{ r.completedCards }} / {{ r.inProgressCards }}</td>
+            <td class="num fw-700">{{ formatNumber(r.totalCompletedQuantity) }}</td>
+            <td class="num reject">{{ formatNumber(r.totalRejectedQuantity) }}</td>
+            <td class="num">{{ hoursFromMinutes(r.totalActiveMinutes) }}</td>
+            <td class="num" [ngClass]="uphClass(r.unitsPerHour, machineReport.averageUnitsPerHour)">
+              {{ formatNumber(r.unitsPerHour) }}
+            </td>
+            <td class="num" [ngClass]="rejectRateClass(r.rejectRatePercent)">{{ formatNumber(r.rejectRatePercent) }}%</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="9" class="empty-row"><i class="pi pi-cog"></i><span>No machine activity in this period.</span></td></tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </ng-container>
+</div>

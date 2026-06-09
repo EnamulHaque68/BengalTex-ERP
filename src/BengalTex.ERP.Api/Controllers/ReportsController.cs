@@ -107,4 +107,22 @@ public class ReportsController : ControllerBase
         [FromQuery] int? productId = null,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetProductionSummaryReportQuery(fromDate, toDate, productId), ct));
+
+    /// <summary>Operator productivity — per-employee rollup of completed Job Card output, reject rate, units-per-hour.</summary>
+    [HttpGet("operator-productivity")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetOperatorProductivity(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetOperatorProductivityReportQuery(fromDate, toDate), ct));
+
+    /// <summary>Machine productivity — per-machine rollup of throughput, reject rate, units-per-hour.</summary>
+    [HttpGet("machine-productivity")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetMachineProductivity(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetMachineProductivityReportQuery(fromDate, toDate), ct));
 }
