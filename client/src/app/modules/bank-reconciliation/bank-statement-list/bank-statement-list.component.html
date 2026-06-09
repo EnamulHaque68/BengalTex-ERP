@@ -10,6 +10,7 @@
                 styleClass="filter-select" (onChange)="load()" />
       <p-select [(ngModel)]="filterStatus" [options]="[{label:'Unreconciled',value:'unreconciled'},{label:'Reconciled',value:'reconciled'},{label:'All',value:'all'}]"
                 optionLabel="label" optionValue="value" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="Import CSV" icon="pi pi-upload" severity="secondary" *ngIf="canManage" (click)="openImport()" />
       <p-button label="New Statement" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
     </div>
   </div>
@@ -107,6 +108,105 @@
       <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
       <p-button type="submit" [label]="dialogSaving ? 'Creating...' : 'Create & Open'" icon="pi pi-save"
                 [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="importVisible" header="Import Bank Statement from CSV" [modal]="true"
+          [style]="{ width: '880px' }" [draggable]="false">
+  <form [formGroup]="importForm" (ngSubmit)="doImport()" autocomplete="off">
+    <p class="hint">
+      Upload your bank's CSV/Excel export. Auto-detects common header names:
+      Date / Description / Reference / Amount (or Debit + Credit columns).
+      Period dates auto-fill from the earliest/latest transaction.
+    </p>
+    <div class="alert alert-error" *ngIf="importError"><i class="pi pi-exclamation-circle"></i>{{ importError }}</div>
+
+    <div class="csv-upload-row">
+      <label class="csv-file-input">
+        <i class="pi pi-upload"></i>
+        <span>{{ importFileName || 'Choose CSV file...' }}</span>
+        <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
+      </label>
+      <span class="parsed-summary" *ngIf="importLines.length > 0">
+        <strong>{{ importLines.length }}</strong> rows parsed
+        &middot; In: <strong class="inflow">{{ formatCurrency(importInflowTotal) }}</strong>
+        &middot; Out: <strong class="outflow">{{ formatCurrency(importOutflowTotal) }}</strong>
+        &middot; Net: <strong>{{ formatCurrency(importNetChange) }}</strong>
+      </span>
+    </div>
+
+    <div class="alert alert-warn" *ngIf="importWarnings.length > 0">
+      <i class="pi pi-exclamation-triangle"></i>
+      <strong>{{ importWarnings.length }} warning(s)</strong> — some rows skipped:
+      <ul><li *ngFor="let w of importWarnings.slice(0, 5)">{{ w }}</li>
+        <li *ngIf="importWarnings.length > 5">... +{{ importWarnings.length - 5 }} more</li>
+      </ul>
+    </div>
+
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Bank Account *</label>
+        <p-select formControlName="bankAccountId" [options]="bankAccounts"
+                  optionLabel="accountName" optionValue="id"
+                  [filter]="true" filterBy="accountName,bankName" placeholder="Pick bank account"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Statement Date *</label>
+        <input pInputText type="date" formControlName="statementDate" class="w-full" />
+      </div>
+      <div class="field"></div>
+      <div class="field">
+        <label>Period From *</label>
+        <input pInputText type="date" formControlName="periodFromDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Period To *</label>
+        <input pInputText type="date" formControlName="periodToDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Opening Balance <small>(0 → auto from prior statement)</small></label>
+        <p-inputNumber formControlName="openingBalance" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Closing Balance <small>(0 → auto = opening + Σ amounts)</small></label>
+        <p-inputNumber formControlName="closingBalance" [maxFractionDigits]="2"
+                       inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <textarea pTextarea rows="2" formControlName="notes" class="w-full"
+                  placeholder="Optional — source file name, period notes..."></textarea>
+      </div>
+    </div>
+
+    <div *ngIf="importLines.length > 0" class="preview-block">
+      <h4>Preview <small>(first 10 rows)</small></h4>
+      <table class="preview-table">
+        <thead>
+          <tr><th>Date</th><th>Description</th><th>Reference</th><th class="num-h">Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of importLines.slice(0, 10)" [class.inflow-row]="l.amount > 0" [class.outflow-row]="l.amount < 0">
+            <td class="num">{{ l.transactionDate }}</td>
+            <td class="narr">{{ l.description }}</td>
+            <td class="muted">{{ l.referenceNumber || '—' }}</td>
+            <td class="num fw-600">{{ formatCurrency(l.amount) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted small" *ngIf="importLines.length > 10">+ {{ importLines.length - 10 }} more rows...</p>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="importVisible = false" [disabled]="importSaving" />
+      <p-button type="submit"
+                [label]="importSaving ? 'Importing...' : ('Import ' + importLines.length + ' transactions')"
+                icon="pi pi-upload" [loading]="importSaving"
+                [disabled]="importForm.invalid || importSaving || importLines.length === 0" />
     </div>
   </form>
 </p-dialog>
