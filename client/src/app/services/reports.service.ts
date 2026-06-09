@@ -14,7 +14,8 @@ import {
   WipReportDto,
   ProductionSummaryReportDto,
   OperatorProductivityReportDto,
-  MachineProductivityReportDto
+  MachineProductivityReportDto,
+  BuyerOrderBookReportDto
 } from '../models/reports.models';
 
 @Injectable({ providedIn: 'root' })
@@ -95,5 +96,11 @@ export class ReportsService {
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
     return this.http.get<ApiResponse<MachineProductivityReportDto>>(`${this.base}/machine-productivity`, { params });
+  }
+
+  getBuyerOrderBook(customerId?: number): Observable<ApiResponse<BuyerOrderBookReportDto>> {
+    let params = new HttpParams();
+    if (customerId) params = params.set('customerId', customerId.toString());
+    return this.http.get<ApiResponse<BuyerOrderBookReportDto>>(`${this.base}/buyer-order-book`, { params });
   }
 }

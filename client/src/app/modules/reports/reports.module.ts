@@ -19,6 +19,7 @@ import { MarginReportComponent } from './margin-report/margin-report.component';
 import { WipReportComponent } from './wip-report/wip-report.component';
 import { ProductionSummaryComponent } from './production-summary/production-summary.component';
 import { ProductivityReportComponent } from './productivity-report/productivity-report.component';
+import { BuyerOrderBookComponent } from './buyer-order-book/buyer-order-book.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
@@ -30,7 +31,8 @@ const routes: Routes = [
   { path: 'margin', component: MarginReportComponent },
   { path: 'wip', component: WipReportComponent },
   { path: 'production-summary', component: ProductionSummaryComponent },
-  { path: 'productivity', component: ProductivityReportComponent }
+  { path: 'productivity', component: ProductivityReportComponent },
+  { path: 'buyer-order-book', component: BuyerOrderBookComponent }
 ];
 
 @NgModule({
@@ -43,7 +45,8 @@ const routes: Routes = [
     MarginReportComponent,
     WipReportComponent,
     ProductionSummaryComponent,
-    ProductivityReportComponent
+    ProductivityReportComponent,
+    BuyerOrderBookComponent
   ],
   imports: [
     CommonModule, FormsModule,

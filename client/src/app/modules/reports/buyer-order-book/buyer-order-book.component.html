@@ -1,0 +1,125 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Buyer Order Book</h2>
+      <p class="page-subtitle">Per-buyer snapshot of active sales orders &mdash; total value, dispatched, pending, overdue, and outstanding invoice balance</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="filterCustomerId" [options]="customers"
+                optionLabel="name" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="code,name"
+                placeholder="All buyers" appendTo="body" styleClass="buyer-select"
+                (onChange)="run()" />
+      <p-button label="Refresh" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="summary-strip" *ngIf="report">
+    <div><span class="lbl">As of</span><span class="val">{{ report.asOfDate }}</span></div>
+    <div><span class="lbl">Active Buyers</span><span class="val fw-700">{{ report.totalBuyersWithActiveOrders }}</span></div>
+    <div><span class="lbl">Active Orders</span><span class="val fw-700">{{ report.totalActiveOrders }}</span></div>
+    <div><span class="lbl">Overdue</span><span class="val fw-700" [class.bad]="report.totalOverdueOrders > 0">{{ report.totalOverdueOrders }}</span></div>
+    <div><span class="lbl">Order Book</span><span class="val num fw-700">{{ formatCurrency(report.grandTotalOrderValueBdt) }}</span></div>
+    <div><span class="lbl">Dispatched</span><span class="val num good">{{ formatCurrency(report.grandDispatchedValueBdt) }}</span></div>
+    <div><span class="lbl">Pending</span><span class="val num warn">{{ formatCurrency(report.grandPendingValueBdt) }}</span></div>
+    <div><span class="lbl">AR Outstanding</span><span class="val num fw-700">{{ formatCurrency(report.grandOutstandingInvoiceBdt) }}</span></div>
+    <div class="ml-auto">
+      <p-button label="Expand all" icon="pi pi-chevron-down" severity="secondary" [text]="true" size="small" (click)="expandAll()" />
+      <p-button label="Collapse" icon="pi pi-chevron-up" severity="secondary" [text]="true" size="small" (click)="collapseAll()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="report">
+    <table class="buyer-table">
+      <thead>
+        <tr>
+          <th style="width:28px"></th>
+          <th>Customer</th>
+          <th class="num-h">Active Orders</th>
+          <th class="num-h">Overdue</th>
+          <th class="num-h">Order Book (BDT)</th>
+          <th class="num-h">Dispatched</th>
+          <th class="num-h">Pending</th>
+          <th class="num-h">AR Outstanding</th>
+          <th>Credit Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of report.rows">
+          <tr class="buyer-row" (click)="toggle(r.customerId)" [class.overdue]="r.overdueOrderCount > 0">
+            <td class="toggle">
+              <i class="pi" [ngClass]="expanded.has(r.customerId) ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+            </td>
+            <td class="fw-700">{{ r.customerName }} <span class="cust-code">{{ r.customerCode }}</span></td>
+            <td class="num fw-600">{{ r.activeOrderCount }}</td>
+            <td class="num" [class.bad]="r.overdueOrderCount > 0">{{ r.overdueOrderCount }}</td>
+            <td class="num fw-700">{{ formatCurrency(r.totalOrderValueBdt) }}</td>
+            <td class="num good">{{ formatCurrency(r.dispatchedValueBdt) }}</td>
+            <td class="num warn">{{ formatCurrency(r.pendingValueBdt) }}</td>
+            <td class="num">{{ formatCurrency(r.outstandingInvoiceBdt) }}</td>
+            <td>
+              <ng-container *ngIf="r.creditLimit; else noLimit">
+                <div class="credit-cell">
+                  <div class="credit-bar"><div class="credit-fill" [style.width.%]="creditUsagePercent(r)" [ngClass]="creditClass(creditUsagePercent(r))"></div></div>
+                  <span class="pct" [ngClass]="creditClass(creditUsagePercent(r))">{{ creditUsagePercent(r) }}%</span>
+                </div>
+              </ng-container>
+              <ng-template #noLimit><span class="muted small">no limit set</span></ng-template>
+            </td>
+          </tr>
+          <tr *ngIf="expanded.has(r.customerId)" class="orders-row">
+            <td></td>
+            <td colspan="8">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>SO Code</th>
+                    <th>Order Date</th>
+                    <th>Required By</th>
+                    <th>Buyer PO Ref</th>
+                    <th>Status</th>
+                    <th class="num-h">Ordered Qty</th>
+                    <th class="num-h">Dispatched</th>
+                    <th class="num-h">Pending</th>
+                    <th class="num-h">Completion</th>
+                    <th class="num-h">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let o of r.orders" [class.overdue-line]="o.isOverdue">
+                    <td><a [routerLink]="['/sales-orders']" class="so-link"><span class="code-badge">{{ o.code }}</span></a></td>
+                    <td class="num">{{ o.orderDate }}</td>
+                    <td class="num">
+                      {{ o.requiredDeliveryDate || '—' }}
+                      <i class="pi pi-exclamation-triangle overdue-icon" *ngIf="o.isOverdue" pTooltip="Overdue"></i>
+                    </td>
+                    <td class="muted">{{ o.customerPoRef || '—' }}</td>
+                    <td><span class="status-badge">{{ o.status }}</span></td>
+                    <td class="num">{{ formatNumber(o.orderedQuantity) }}</td>
+                    <td class="num good">{{ formatNumber(o.dispatchedQuantity) }}</td>
+                    <td class="num warn">{{ formatNumber(o.pendingQuantity) }}</td>
+                    <td class="num">
+                      <div class="comp-cell">
+                        <div class="comp-bar"><div class="comp-fill" [style.width.%]="o.completionPercent"></div></div>
+                        <span class="pct">{{ o.completionPercent }}%</span>
+                      </div>
+                    </td>
+                    <td class="num fw-600">{{ o.currencyCode }} {{ formatNumber(o.totalAmount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="report.rows.length === 0">
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-shopping-bag"></i>
+            <span>No active sales orders.</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </p-card>
+</div>
