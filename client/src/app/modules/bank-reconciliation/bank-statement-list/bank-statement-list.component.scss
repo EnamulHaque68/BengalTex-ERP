@@ -27,3 +27,49 @@
 .w-full { width: 100%; }
 .alert { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.85rem; &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; } }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; }
+
+.hint { margin: 0 0 0.85rem; color: #64748b; font-size: 0.85rem; line-height: 1.5; }
+.alert.alert-warn {
+  background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+  ul { margin: 0.4rem 0 0 1.25rem; padding: 0; font-size: 0.82rem; li { margin: 0.1rem 0; } }
+}
+
+.csv-upload-row {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 0.7rem; margin-bottom: 0.85rem;
+  background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px;
+  .csv-file-input {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1rem; background: #4338ca; color: #fff;
+    border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
+    &:hover { background: #3730a3; }
+    input[type=file] { display: none; }
+    i { font-size: 0.95rem; }
+  }
+  .parsed-summary {
+    font-size: 0.85rem; color: #475569;
+    strong { color: #0f172a; }
+    .inflow { color: #047857; }
+    .outflow { color: #b45309; }
+  }
+}
+
+.preview-block {
+  margin-top: 1rem;
+  h4 { margin: 0 0 0.5rem; font-size: 0.92rem; color: #1e293b; font-weight: 600;
+    small { color: #94a3b8; font-weight: 400; margin-left: 0.3rem; }
+  }
+  .preview-table {
+    width: 100%; border-collapse: collapse; font-size: 0.82rem;
+    thead th { background: #f1f5f9; padding: 0.4rem 0.6rem; text-align: left; color: #475569; border-bottom: 1px solid #cbd5e1; }
+    .num-h { text-align: right; }
+    tbody td { padding: 0.35rem 0.6rem; border-bottom: 1px solid #f1f5f9; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .narr { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .muted { color: #94a3b8; }
+    .fw-600 { font-weight: 600; }
+    .inflow-row { background: #ecfdf5; }
+    .outflow-row { background: #fef3c7; }
+  }
+  .muted.small { font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem; }
+}

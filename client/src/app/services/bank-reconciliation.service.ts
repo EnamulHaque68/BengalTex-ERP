@@ -7,7 +7,8 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   BankStatementListItemDto, BankStatementDto,
   UnmatchedJournalLineDto,
-  CreateBankStatementRequest, UpdateBankStatementRequest, SaveStatementLineRequest
+  CreateBankStatementRequest, UpdateBankStatementRequest, SaveStatementLineRequest,
+  ImportBankStatementRequest
 } from '../models/bank-reconciliation.models';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +35,9 @@ export class BankReconciliationService {
   }
   create(data: CreateBankStatementRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(this.base, data);
+  }
+  importCsv(data: ImportBankStatementRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/import-csv`, data);
   }
   update(id: number, data: UpdateBankStatementRequest): Observable<ApiResponse<null>> {
     return this.http.put<ApiResponse<null>>(`${this.base}/${id}`, data);

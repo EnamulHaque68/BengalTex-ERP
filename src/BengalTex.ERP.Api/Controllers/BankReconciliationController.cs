@@ -43,6 +43,17 @@ public class BankStatementsController : ControllerBase
             req.BankAccountId, req.StatementDate, req.PeriodFromDate, req.PeriodToDate,
             req.OpeningBalance, req.ClosingBalance, req.Notes), ct));
 
+    /// <summary>
+    /// Bulk import: creates a BankStatement + all its lines from a parsed CSV payload.
+    /// Frontend parses the CSV (Date / Description / Reference / Amount) and sends structured rows.
+    /// Pass OpeningBalance = 0 to auto-derive from prior statement; pass ClosingBalance = 0 to
+    /// auto-compute as opening + Σ amounts.
+    /// </summary>
+    [HttpPost("import-csv")]
+    [HasPermission(Permissions.BankReconciliation.Manage)]
+    public async Task<IActionResult> ImportCsv([FromBody] ImportBankStatementCommand cmd, CancellationToken ct)
+        => Ok(await _mediator.Send(cmd, ct));
+
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.BankReconciliation.Manage)]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateBankStatementRequest req, CancellationToken ct)

@@ -97,3 +97,21 @@ export interface SaveStatementLineRequest {
   amount: number;
   notes: string | null;
 }
+
+export interface ImportBankStatementLineInput {
+  transactionDate: string;
+  description: string;
+  referenceNumber: string | null;
+  amount: number;          // signed: + inflow, − outflow
+}
+
+export interface ImportBankStatementRequest {
+  bankAccountId: number;
+  statementDate: string;
+  periodFromDate: string;
+  periodToDate: string;
+  openingBalance: number;  // 0 = auto-derive from prior statement
+  closingBalance: number;  // 0 = auto-compute = opening + Σ amounts
+  notes: string | null;
+  lines: ImportBankStatementLineInput[];
+}

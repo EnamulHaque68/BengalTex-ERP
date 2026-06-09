@@ -5,8 +5,11 @@ import { BankReconciliationService } from '../../../services/bank-reconciliation
 import { MasterSetupService } from '../../../services/master-setup.service';
 import { AuthService } from '../../../services/auth.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { BankStatementListItemDto } from '../../../models/bank-reconciliation.models';
+import {
+  BankStatementListItemDto, ImportBankStatementLineInput
+} from '../../../models/bank-reconciliation.models';
 import { BankAccountDto } from '../../../models/master-setup.models';
+import { parseBankCsv } from '../../../shared/csv-parser.util';
 
 @Component({
   selector: 'app-bank-statement-list',
@@ -32,6 +35,15 @@ export class BankStatementListComponent implements OnInit {
   dialogError = '';
   form!: FormGroup;
 
+  // CSV import
+  importVisible = false;
+  importSaving = false;
+  importError = '';
+  importWarnings: string[] = [];
+  importFileName: string | null = null;
+  importLines: ImportBankStatementLineInput[] = [];
+  importForm!: FormGroup;
+
   constructor(
     private svc: BankReconciliationService,
     private masterSvc: MasterSetupService,
@@ -51,6 +63,15 @@ export class BankStatementListComponent implements OnInit {
       periodToDate: [this.todayIso(), Validators.required],
       openingBalance: [0, Validators.required],
       closingBalance: [0, Validators.required],
+      notes: ['', Validators.maxLength(2000)]
+    });
+    this.importForm = this.fb.group({
+      bankAccountId: [null as number | null, Validators.required],
+      statementDate: [this.todayIso(), Validators.required],
+      periodFromDate: [this.monthStartIso(), Validators.required],
+      periodToDate: [this.todayIso(), Validators.required],
+      openingBalance: [0],
+      closingBalance: [0],
       notes: ['', Validators.maxLength(2000)]
     });
     this.masterSvc.getBankAccounts(false).subscribe({
@@ -122,6 +143,98 @@ export class BankStatementListComponent implements OnInit {
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 2 }).format(amount || 0);
+  }
+
+  // ── CSV Import ───────────────────────────────────────────────────────────
+
+  openImport(): void {
+    this.importError = '';
+    this.importWarnings = [];
+    this.importFileName = null;
+    this.importLines = [];
+    this.importForm.reset({
+      bankAccountId: null, statementDate: this.todayIso(),
+      periodFromDate: this.monthStartIso(), periodToDate: this.todayIso(),
+      openingBalance: 0, closingBalance: 0, notes: ''
+    });
+    this.importVisible = true;
+  }
+
+  onFileSelected(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importFileName = file.name;
+    this.importError = '';
+    this.importWarnings = [];
+    const reader = new FileReader();
+    reader.onload = () => this.zone.run(() => {
+      const text = String(reader.result ?? '');
+      const result = parseBankCsv(text);
+      if (result.headerError) {
+        this.importError = result.headerError;
+        this.importLines = [];
+      } else {
+        this.importLines = result.lines;
+        this.importWarnings = result.warnings;
+        // Auto-derive period from earliest/latest transaction date if user hasn't touched
+        if (result.lines.length > 0) {
+          const dates = result.lines.map(l => l.transactionDate).sort();
+          this.importForm.patchValue({
+            periodFromDate: dates[0],
+            periodToDate: dates[dates.length - 1],
+            statementDate: dates[dates.length - 1]
+          });
+        }
+      }
+      this.cdr.detectChanges();
+    });
+    reader.readAsText(file);
+  }
+
+  get importInflowTotal(): number {
+    return this.importLines.filter(l => l.amount > 0).reduce((s, l) => s + l.amount, 0);
+  }
+  get importOutflowTotal(): number {
+    return this.importLines.filter(l => l.amount < 0).reduce((s, l) => s + Math.abs(l.amount), 0);
+  }
+  get importNetChange(): number {
+    return this.importLines.reduce((s, l) => s + l.amount, 0);
+  }
+
+  doImport(): void {
+    if (this.importForm.invalid || this.importSaving || this.importLines.length === 0) return;
+    this.importSaving = true;
+    this.importError = '';
+    this.cdr.detectChanges();
+    const v = this.importForm.getRawValue();
+    this.svc.importCsv({
+      bankAccountId: v.bankAccountId,
+      statementDate: v.statementDate,
+      periodFromDate: v.periodFromDate,
+      periodToDate: v.periodToDate,
+      openingBalance: Number(v.openingBalance) || 0,
+      closingBalance: Number(v.closingBalance) || 0,
+      notes: (v.notes as string)?.trim() || null,
+      lines: this.importLines
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.importSaving = false;
+        if (res.success) {
+          this.importVisible = false;
+          if (res.data) this.router.navigate(['/bank-reconciliation', res.data]);
+          else this.load();
+        } else {
+          this.importError = res.message || 'Import failed.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (e) => this.zone.run(() => {
+        this.importSaving = false;
+        this.importError = e?.error?.message || 'Import failed.';
+        this.cdr.detectChanges();
+      })
+    });
   }
 
   progressPercent(s: BankStatementListItemDto): number {
