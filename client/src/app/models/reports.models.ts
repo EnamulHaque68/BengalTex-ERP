@@ -320,3 +320,51 @@ export interface MachineProductivityReportDto {
   averageUnitsPerHour: number;
   rows: MachineProductivityRowDto[];
 }
+
+// ─── Buyer Order Book ─────────────────────────────────────────────────────
+
+export interface BuyerOrderBookSalesOrderDto {
+  salesOrderId: number;
+  code: string;
+  orderDate: string;
+  requiredDeliveryDate: string | null;
+  customerPoRef: string | null;
+  status: string;
+  currencyCode: string;
+  exchangeRate: number;
+  totalAmount: number;            // in SO currency
+  baseTotalAmount: number;        // BDT
+  orderedQuantity: number;
+  dispatchedQuantity: number;
+  pendingQuantity: number;
+  completionPercent: number;
+  isOverdue: boolean;
+}
+
+export interface BuyerOrderBookRowDto {
+  customerId: number;
+  customerCode: string;
+  customerName: string;
+  creditPeriodDays: number | null;
+  creditLimit: number | null;
+  activeOrderCount: number;
+  overdueOrderCount: number;
+  totalOrderValueBdt: number;
+  dispatchedValueBdt: number;
+  pendingValueBdt: number;
+  outstandingInvoiceBdt: number;
+  orders: BuyerOrderBookSalesOrderDto[];
+}
+
+export interface BuyerOrderBookReportDto {
+  asOfDate: string;
+  customerIdFilter: number | null;
+  totalBuyersWithActiveOrders: number;
+  totalActiveOrders: number;
+  totalOverdueOrders: number;
+  grandTotalOrderValueBdt: number;
+  grandDispatchedValueBdt: number;
+  grandPendingValueBdt: number;
+  grandOutstandingInvoiceBdt: number;
+  rows: BuyerOrderBookRowDto[];
+}

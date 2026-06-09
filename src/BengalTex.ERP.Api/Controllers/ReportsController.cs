@@ -125,4 +125,12 @@ public class ReportsController : ControllerBase
         [FromQuery] DateOnly? toDate = null,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetMachineProductivityReportQuery(fromDate, toDate), ct));
+
+    /// <summary>Buyer order book — per-customer rollup of active sales orders + outstanding invoices.</summary>
+    [HttpGet("buyer-order-book")]
+    [HasPermission(Permissions.Reports.ViewSales)]
+    public async Task<IActionResult> GetBuyerOrderBook(
+        [FromQuery] int? customerId = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetBuyerOrderBookReportQuery(customerId), ct));
 }
