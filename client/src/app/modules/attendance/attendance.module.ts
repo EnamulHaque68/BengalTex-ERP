@@ -14,11 +14,15 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { AttendanceListComponent } from './attendance-list/attendance-list.component';
+import { SelfCheckInComponent } from './self-check-in/self-check-in.component';
 
-const routes: Routes = [{ path: '', component: AttendanceListComponent }];
+const routes: Routes = [
+  { path: '', component: AttendanceListComponent },
+  { path: 'check-in', component: SelfCheckInComponent }
+];
 
 @NgModule({
-  declarations: [AttendanceListComponent],
+  declarations: [AttendanceListComponent, SelfCheckInComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

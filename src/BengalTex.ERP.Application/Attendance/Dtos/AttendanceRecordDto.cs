@@ -11,4 +11,8 @@ public sealed record AttendanceRecordDto(
     string? CheckInTime,
     string? CheckOutTime,
     decimal OvertimeHours,
-    string? Notes);
+    string? Notes,
+    double? CheckInLatitude,
+    double? CheckInLongitude,
+    double? CheckInDistanceMeters,
+    bool? CheckInWithinFence);

@@ -69,6 +69,19 @@ public class AttendanceController : ControllerBase
         var result = await _mediator.Send(new DeleteAttendanceCommand(id), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Self-service check-in for the logged-in user. Optional GPS coordinates are validated
+    /// against the user's factory geo-fence (out-of-fence flagged but not blocked).
+    /// </summary>
+    [HttpPost("check-in")]
+    [HasPermission(Permissions.Attendance.CheckIn)]
+    public async Task<IActionResult> SelfCheckIn([FromBody] SelfCheckInRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SelfCheckInCommand(
+            request.Latitude, request.Longitude, request.Notes), ct);
+        return Ok(result);
+    }
 }
 
 public record CreateAttendanceRequest(
@@ -86,3 +99,5 @@ public record UpdateAttendanceRequest(
     string? CheckOutTime,
     decimal OvertimeHours,
     string? Notes);
+
+public record SelfCheckInRequest(double? Latitude, double? Longitude, string? Notes);

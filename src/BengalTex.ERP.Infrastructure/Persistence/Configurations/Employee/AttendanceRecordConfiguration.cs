@@ -16,6 +16,9 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
         builder.Property(a => a.OvertimeHours).HasPrecision(9, 2);
         builder.Property(a => a.Notes).HasMaxLength(1000);
 
+        // Geo-fence: SQL Server stores double as float(53) by default — fine for lat/lng/meters
+        builder.HasIndex(a => a.CheckInWithinFence);
+
         // One attendance row per employee per date
         builder.HasIndex(a => new { a.EmployeeId, a.AttendanceDate }).IsUnique();
         builder.HasIndex(a => a.AttendanceDate);
