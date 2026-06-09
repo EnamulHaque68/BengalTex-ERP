@@ -12,7 +12,9 @@ import {
   StockSummaryReportDto,
   VatSummaryReportDto,
   WipReportDto,
-  ProductionSummaryReportDto
+  ProductionSummaryReportDto,
+  OperatorProductivityReportDto,
+  MachineProductivityReportDto
 } from '../models/reports.models';
 
 @Injectable({ providedIn: 'root' })
@@ -79,5 +81,19 @@ export class ReportsService {
     if (toDate) params = params.set('toDate', toDate);
     if (productId) params = params.set('productId', productId.toString());
     return this.http.get<ApiResponse<ProductionSummaryReportDto>>(`${this.base}/production-summary`, { params });
+  }
+
+  getOperatorProductivity(fromDate?: string, toDate?: string): Observable<ApiResponse<OperatorProductivityReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    return this.http.get<ApiResponse<OperatorProductivityReportDto>>(`${this.base}/operator-productivity`, { params });
+  }
+
+  getMachineProductivity(fromDate?: string, toDate?: string): Observable<ApiResponse<MachineProductivityReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    return this.http.get<ApiResponse<MachineProductivityReportDto>>(`${this.base}/machine-productivity`, { params });
   }
 }

@@ -18,6 +18,7 @@ import { VatSummaryComponent } from './vat-summary/vat-summary.component';
 import { MarginReportComponent } from './margin-report/margin-report.component';
 import { WipReportComponent } from './wip-report/wip-report.component';
 import { ProductionSummaryComponent } from './production-summary/production-summary.component';
+import { ProductivityReportComponent } from './productivity-report/productivity-report.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
@@ -28,7 +29,8 @@ const routes: Routes = [
   { path: 'vat-summary', component: VatSummaryComponent },
   { path: 'margin', component: MarginReportComponent },
   { path: 'wip', component: WipReportComponent },
-  { path: 'production-summary', component: ProductionSummaryComponent }
+  { path: 'production-summary', component: ProductionSummaryComponent },
+  { path: 'productivity', component: ProductivityReportComponent }
 ];
 
 @NgModule({
@@ -40,7 +42,8 @@ const routes: Routes = [
     VatSummaryComponent,
     MarginReportComponent,
     WipReportComponent,
-    ProductionSummaryComponent
+    ProductionSummaryComponent,
+    ProductivityReportComponent
   ],
   imports: [
     CommonModule, FormsModule,

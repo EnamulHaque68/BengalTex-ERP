@@ -267,3 +267,56 @@ export interface ProductionSummaryReportDto {
   totalQuantityProduced: number;
   rows: ProductionSummaryRowDto[];
 }
+
+// ─── Operator / Machine Productivity Reports ──────────────────────────────
+
+export interface OperatorProductivityRowDto {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  department: string | null;
+  designation: string | null;
+  completedCards: number;
+  inProgressCards: number;
+  totalCompletedQuantity: number;
+  totalRejectedQuantity: number;
+  totalActiveMinutes: number;
+  unitsPerHour: number;
+  rejectRatePercent: number;
+  efficiencyPercent: number;
+}
+
+export interface OperatorProductivityReportDto {
+  fromDate: string;
+  toDate: string;
+  totalOperatorsActive: number;
+  grandTotalCompletedQuantity: number;
+  grandTotalActiveMinutes: number;
+  averageUnitsPerHour: number;
+  rows: OperatorProductivityRowDto[];
+}
+
+export interface MachineProductivityRowDto {
+  machineId: number;
+  machineCode: string;
+  machineName: string;
+  machineType: string | null;
+  location: string | null;
+  completedCards: number;
+  inProgressCards: number;
+  totalCompletedQuantity: number;
+  totalRejectedQuantity: number;
+  totalActiveMinutes: number;
+  unitsPerHour: number;
+  rejectRatePercent: number;
+}
+
+export interface MachineProductivityReportDto {
+  fromDate: string;
+  toDate: string;
+  totalMachinesActive: number;
+  grandTotalCompletedQuantity: number;
+  grandTotalActiveMinutes: number;
+  averageUnitsPerHour: number;
+  rows: MachineProductivityRowDto[];
+}
