@@ -20,6 +20,11 @@ export interface AttendanceRecordDto {
   checkOutTime: string | null;
   overtimeHours: number;
   notes: string | null;
+  // Geo-fence verification
+  checkInLatitude: number | null;
+  checkInLongitude: number | null;
+  checkInDistanceMeters: number | null;
+  checkInWithinFence: boolean | null;
 }
 
 export interface CreateAttendanceRequest {
@@ -37,5 +42,11 @@ export interface UpdateAttendanceRequest {
   checkInTime: string | null;
   checkOutTime: string | null;
   overtimeHours: number;
+  notes: string | null;
+}
+
+export interface SelfCheckInRequest {
+  latitude: number | null;
+  longitude: number | null;
   notes: string | null;
 }

@@ -58,7 +58,9 @@ internal sealed class GetAttendanceRecordsQueryHandler
             .Select(a => new AttendanceRecordDto(
                 a.Id, a.EmployeeId, a.Employee.Code, a.Employee.FullName,
                 a.AttendanceDate, a.Status.ToString(),
-                a.CheckInTime, a.CheckOutTime, a.OvertimeHours, a.Notes))
+                a.CheckInTime, a.CheckOutTime, a.OvertimeHours, a.Notes,
+                a.CheckInLatitude, a.CheckInLongitude,
+                a.CheckInDistanceMeters, a.CheckInWithinFence))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<AttendanceRecordDto>.Create(

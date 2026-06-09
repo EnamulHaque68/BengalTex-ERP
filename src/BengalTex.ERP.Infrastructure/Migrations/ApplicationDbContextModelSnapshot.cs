@@ -248,9 +248,21 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<DateOnly>("AttendanceDate")
                         .HasColumnType("date");
 
+                    b.Property<double?>("CheckInDistanceMeters")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLongitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("CheckInTime")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool?>("CheckInWithinFence")
+                        .HasColumnType("bit");
 
                     b.Property<string>("CheckOutTime")
                         .HasMaxLength(10)
@@ -302,6 +314,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AttendanceDate");
+
+                    b.HasIndex("CheckInWithinFence");
 
                     b.HasIndex("EmployeeId", "AttendanceDate")
                         .IsUnique();
@@ -9928,7 +9942,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasOne("BengalTex.ERP.Domain.Entities.MachineMaintenance", "RecurringSeriesAnchor")
                         .WithMany()
-                        .HasForeignKey("RecurringSeriesAnchorId");
+                        .HasForeignKey("RecurringSeriesAnchorId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Machine");
 

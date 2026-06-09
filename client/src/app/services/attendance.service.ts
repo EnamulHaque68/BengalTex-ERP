@@ -7,7 +7,8 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   AttendanceRecordDto,
   CreateAttendanceRequest,
-  UpdateAttendanceRequest
+  UpdateAttendanceRequest,
+  SelfCheckInRequest
 } from '../models/attendance.models';
 
 @Injectable({ providedIn: 'root' })
@@ -48,5 +49,9 @@ export class AttendanceService {
 
   delete(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`);
+  }
+
+  selfCheckIn(data: SelfCheckInRequest): Observable<ApiResponse<AttendanceRecordDto>> {
+    return this.http.post<ApiResponse<AttendanceRecordDto>>(`${this.base}/check-in`, data);
   }
 }
