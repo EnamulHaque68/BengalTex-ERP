@@ -36,6 +36,8 @@ builder.Host.UseSerilog((ctx, lc) => lc
 // ============================================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Application"));
+builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.AuditLogRetentionOptions>(
+    builder.Configuration.GetSection("AuditLogRetention"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -339,6 +341,13 @@ RecurringJob.AddOrUpdate<OutboxProcessor>(
     OutboxProcessor.RecurringJobId,
     x => x.ProcessAsync(CancellationToken.None),
     "*/30 * * * * *"); // 6-field cron: every 30 seconds
+
+// Audit log retention — purges AuditLogEntries older than configured retention (default 365 days)
+// nightly at 02:30 local time. Set AuditLogRetention:RetentionDays to 0 to disable.
+RecurringJob.AddOrUpdate<AuditLogRetentionJob>(
+    AuditLogRetentionJob.RecurringJobId,
+    x => x.RunAsync(CancellationToken.None),
+    "30 2 * * *"); // 5-field cron: every day at 02:30
 
 // ============================================
 // RUN
