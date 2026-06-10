@@ -33,7 +33,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             .OrderBy(l => l.SortOrder)
             .Select(l => new CustomerInvoiceLineDto(
                 l.Id, l.ProductId, l.Product.Code, l.Product.Name,
-                l.Product.UnitOfMeasure.Code,
+                l.Product.UnitOfMeasure.Code, l.Product.HsCode,
                 l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
                 l.SortOrder, l.LineNotes))
             .ToList();
@@ -51,6 +51,9 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             inv.IssuedAt, inv.IssuedBy, inv.Notes,
             inv.VatChallan?.Code,
             inv.EpbFormNumber, inv.LcNumber, inv.ShipmentDate,
+            inv.IncoTerm, inv.PortOfLoading, inv.PortOfDischarge, inv.VesselName,
+            inv.CountryOfDestination, inv.ShippingMarks,
+            inv.TotalPackages, inv.GrossWeightKg, inv.NetWeightKg,
             lines);
 
         return ApiResponse<CustomerInvoiceDto>.Ok(dto);

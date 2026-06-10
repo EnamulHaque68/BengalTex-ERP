@@ -20,6 +20,16 @@ public class CustomerInvoiceConfiguration : IEntityTypeConfiguration<CustomerInv
         builder.Property(c => c.LcNumber).HasMaxLength(50);
         builder.HasIndex(c => c.EpbFormNumber);
         builder.HasIndex(c => c.ShipmentDate);
+
+        // Export shipping document fields (Commercial Invoice / Packing List)
+        builder.Property(c => c.IncoTerm).HasMaxLength(20);
+        builder.Property(c => c.PortOfLoading).HasMaxLength(100);
+        builder.Property(c => c.PortOfDischarge).HasMaxLength(100);
+        builder.Property(c => c.VesselName).HasMaxLength(100);
+        builder.Property(c => c.CountryOfDestination).HasMaxLength(100);
+        builder.Property(c => c.ShippingMarks).HasMaxLength(1000);
+        builder.Property(c => c.GrossWeightKg).HasPrecision(12, 3);
+        builder.Property(c => c.NetWeightKg).HasPrecision(12, 3);
         builder.Property(c => c.VatRate).HasPrecision(7, 4);
         builder.Property(c => c.SubtotalAmount).HasPrecision(18, 4);
         builder.Property(c => c.VatAmount).HasPrecision(18, 4);

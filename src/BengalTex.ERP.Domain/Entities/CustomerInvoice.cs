@@ -75,6 +75,26 @@ public class CustomerInvoice : BaseTransactionalEntity
     /// <summary>Physical shipment date — when goods cleared the port. Separate from invoice date.</summary>
     public DateOnly? ShipmentDate { get; set; }
 
+    // ── Export shipping document fields (Commercial Invoice / Packing List) ──
+    /// <summary>Incoterm — FOB / CFR / CIF / EXW / DAP / etc. Free text (e.g. "FOB Chattogram").</summary>
+    public string? IncoTerm { get; set; }
+    /// <summary>Port of loading — typically "Chattogram, Bangladesh" or "Dhaka (Air)".</summary>
+    public string? PortOfLoading { get; set; }
+    /// <summary>Port of discharge — buyer-side destination port.</summary>
+    public string? PortOfDischarge { get; set; }
+    /// <summary>Vessel name / flight number (free text).</summary>
+    public string? VesselName { get; set; }
+    /// <summary>Country of final destination — override of Customer.Country if different.</summary>
+    public string? CountryOfDestination { get; set; }
+    /// <summary>Shipping marks &amp; numbers block (free text — appears verbatim on cartons).</summary>
+    public string? ShippingMarks { get; set; }
+    /// <summary>Total number of cartons / packages in the shipment.</summary>
+    public int? TotalPackages { get; set; }
+    /// <summary>Gross weight in kilograms (boxes included).</summary>
+    public decimal? GrossWeightKg { get; set; }
+    /// <summary>Net weight in kilograms (goods only).</summary>
+    public decimal? NetWeightKg { get; set; }
+
     public ICollection<CustomerInvoiceLine> Lines { get; set; } = new List<CustomerInvoiceLine>();
 
     /// <summary>

@@ -30,6 +30,16 @@ public record CustomerInvoiceDto(
     string? EpbFormNumber,
     string? LcNumber,
     DateOnly? ShipmentDate,
+    // Export shipping document fields (Commercial Invoice / Packing List)
+    string? IncoTerm,
+    string? PortOfLoading,
+    string? PortOfDischarge,
+    string? VesselName,
+    string? CountryOfDestination,
+    string? ShippingMarks,
+    int? TotalPackages,
+    decimal? GrossWeightKg,
+    decimal? NetWeightKg,
     IReadOnlyList<CustomerInvoiceLineDto> Lines);
 
 public record CustomerInvoiceLineDto(
@@ -38,6 +48,7 @@ public record CustomerInvoiceLineDto(
     string ProductCode,
     string ProductName,
     string UnitOfMeasureCode,
+    string? HsCode,                      // for export Commercial Invoice / Packing List
     decimal Quantity,
     decimal UnitPrice,
     decimal LineTotal,                   // Quantity × UnitPrice

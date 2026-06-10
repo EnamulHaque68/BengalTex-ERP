@@ -110,6 +110,12 @@
                         *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
                         (click)="openMarkExported(c)"
                         [pTooltip]="c.epbFormNumber ? 'Form-EXP recorded: ' + c.epbFormNumber : 'Record Form-EXP / shipment for EPB'" />
+              <p-button icon="pi pi-file" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        (click)="openCommercialInvoice(c)" pTooltip="Print Commercial Invoice (export)" />
+              <p-button icon="pi pi-box" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        (click)="openPackingList(c)" pTooltip="Print Packing List (export)" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"
@@ -297,28 +303,76 @@
   </div>
 </p-dialog>
 
-<!-- Mark as Exported (EPB Form-N) -->
-<p-dialog [(visible)]="exportDlgVisible" header="Record Export Details (EPB Form-N)"
-          [modal]="true" [style]="{ width: '520px' }">
+<!-- Mark as Exported (EPB Form-N + shipping document fields) -->
+<p-dialog [(visible)]="exportDlgVisible" header="Record Export Details (EPB / Commercial Invoice / Packing List)"
+          [modal]="true" [style]="{ width: '720px' }">
   <div *ngIf="exportTarget" class="export-dlg">
     <p class="hint">
-      Record the bank-issued Form-EXP number and shipment date for
+      Record EPB Form-N + shipping-document details for
       <strong>{{ exportTarget.code }}</strong> ({{ exportTarget.customerName }}).
-      These show up on the EPB Export Register report.
+      Used by the EPB Export Register report and the Commercial Invoice / Packing List prints.
     </p>
     <div class="alert alert-error" *ngIf="exportError"><i class="pi pi-exclamation-circle"></i>{{ exportError }}</div>
 
-    <div class="field">
-      <label>Form-EXP # <small>(issued by your bank)</small></label>
-      <input pInputText [(ngModel)]="exportForm.epbFormNumber" maxlength="50" placeholder="e.g. EXP-2026-1234" />
+    <h4 class="export-section">EPB / Bank</h4>
+    <div class="export-grid">
+      <div class="field">
+        <label>Form-EXP # <small>(issued by your bank)</small></label>
+        <input pInputText [(ngModel)]="exportForm.epbFormNumber" maxlength="50" placeholder="e.g. EXP-2026-1234" />
+      </div>
+      <div class="field">
+        <label>LC # <small>(if shipped against LC)</small></label>
+        <input pInputText [(ngModel)]="exportForm.lcNumber" maxlength="50" placeholder="(optional)" />
+      </div>
+      <div class="field">
+        <label>Shipment Date</label>
+        <input pInputText type="date" [(ngModel)]="exportForm.shipmentDate" />
+      </div>
+    </div>
+
+    <h4 class="export-section">Shipping Terms</h4>
+    <div class="export-grid">
+      <div class="field">
+        <label>Incoterm</label>
+        <input pInputText [(ngModel)]="exportForm.incoTerm" maxlength="20" placeholder="e.g. FOB Chattogram" />
+      </div>
+      <div class="field">
+        <label>Port of Loading</label>
+        <input pInputText [(ngModel)]="exportForm.portOfLoading" maxlength="100" placeholder="e.g. Chattogram, Bangladesh" />
+      </div>
+      <div class="field">
+        <label>Port of Discharge</label>
+        <input pInputText [(ngModel)]="exportForm.portOfDischarge" maxlength="100" placeholder="e.g. Hamburg" />
+      </div>
+      <div class="field">
+        <label>Vessel / Flight</label>
+        <input pInputText [(ngModel)]="exportForm.vesselName" maxlength="100" placeholder="(optional)" />
+      </div>
+      <div class="field">
+        <label>Country of Destination</label>
+        <input pInputText [(ngModel)]="exportForm.countryOfDestination" maxlength="100" placeholder="(defaults to buyer's country)" />
+      </div>
+    </div>
+
+    <h4 class="export-section">Packing</h4>
+    <div class="export-grid">
+      <div class="field">
+        <label>Total Packages</label>
+        <input pInputText type="number" min="0" [(ngModel)]="exportForm.totalPackages" placeholder="0" />
+      </div>
+      <div class="field">
+        <label>Gross Weight (kg)</label>
+        <input pInputText type="number" min="0" step="0.001" [(ngModel)]="exportForm.grossWeightKg" placeholder="0.000" />
+      </div>
+      <div class="field">
+        <label>Net Weight (kg)</label>
+        <input pInputText type="number" min="0" step="0.001" [(ngModel)]="exportForm.netWeightKg" placeholder="0.000" />
+      </div>
     </div>
     <div class="field">
-      <label>LC # <small>(if shipped against LC)</small></label>
-      <input pInputText [(ngModel)]="exportForm.lcNumber" maxlength="50" placeholder="(optional)" />
-    </div>
-    <div class="field">
-      <label>Shipment Date</label>
-      <input pInputText type="date" [(ngModel)]="exportForm.shipmentDate" />
+      <label>Shipping Marks &amp; Numbers</label>
+      <textarea pInputTextarea rows="3" [(ngModel)]="exportForm.shippingMarks" maxlength="1000"
+                placeholder="Carton marking block — e.g. buyer code / PO / style / colour / size run / made in Bangladesh"></textarea>
     </div>
 
     <div class="dialog-footer">

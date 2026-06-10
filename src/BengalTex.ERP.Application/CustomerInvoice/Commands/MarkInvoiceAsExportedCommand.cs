@@ -8,16 +8,26 @@ using MediatR;
 namespace BengalTex.ERP.Application.CustomerInvoice.Commands;
 
 /// <summary>
-/// Sets the BD export-reporting fields on a non-Draft, non-Cancelled CustomerInvoice:
-/// Form-EXP number (issued by bank for FX repatriation), LC reference, and physical
-/// shipment date. Editable at any post-Draft stage — the fields are informational
-/// for EPB Form-N reporting and don't affect the invoice's own lifecycle.
+/// Sets the BD export-reporting + shipping-document fields on a non-Draft, non-Cancelled
+/// CustomerInvoice. Form-EXP / LC / ShipmentDate are for EPB Form-N audit reporting;
+/// IncoTerm / ports / vessel / packages / weights / shipping marks drive the
+/// Commercial Invoice + Packing List printables. Editable at any post-Draft stage —
+/// these fields don't affect the invoice's own AR lifecycle.
 /// </summary>
 public sealed record MarkInvoiceAsExportedCommand(
     long Id,
     string? EpbFormNumber,
     string? LcNumber,
-    DateOnly? ShipmentDate
+    DateOnly? ShipmentDate,
+    string? IncoTerm,
+    string? PortOfLoading,
+    string? PortOfDischarge,
+    string? VesselName,
+    string? CountryOfDestination,
+    string? ShippingMarks,
+    int? TotalPackages,
+    decimal? GrossWeightKg,
+    decimal? NetWeightKg
 ) : IRequest<ApiResponse<CustomerInvoiceDto>>;
 
 public sealed class MarkInvoiceAsExportedCommandValidator : AbstractValidator<MarkInvoiceAsExportedCommand>
@@ -27,6 +37,15 @@ public sealed class MarkInvoiceAsExportedCommandValidator : AbstractValidator<Ma
         RuleFor(x => x.Id).GreaterThan(0);
         RuleFor(x => x.EpbFormNumber).MaximumLength(50);
         RuleFor(x => x.LcNumber).MaximumLength(50);
+        RuleFor(x => x.IncoTerm).MaximumLength(20);
+        RuleFor(x => x.PortOfLoading).MaximumLength(100);
+        RuleFor(x => x.PortOfDischarge).MaximumLength(100);
+        RuleFor(x => x.VesselName).MaximumLength(100);
+        RuleFor(x => x.CountryOfDestination).MaximumLength(100);
+        RuleFor(x => x.ShippingMarks).MaximumLength(1000);
+        RuleFor(x => x.TotalPackages).GreaterThanOrEqualTo(0).When(x => x.TotalPackages.HasValue);
+        RuleFor(x => x.GrossWeightKg).GreaterThanOrEqualTo(0).When(x => x.GrossWeightKg.HasValue);
+        RuleFor(x => x.NetWeightKg).GreaterThanOrEqualTo(0).When(x => x.NetWeightKg.HasValue);
     }
 }
 
@@ -54,13 +73,24 @@ internal sealed class MarkInvoiceAsExportedCommandHandler
         if (inv.Status == Domain.Entities.CustomerInvoiceStatus.Cancelled)
             return ApiResponse<CustomerInvoiceDto>.Fail("Cannot record export details on a cancelled invoice.");
 
-        inv.EpbFormNumber = string.IsNullOrWhiteSpace(cmd.EpbFormNumber) ? null : cmd.EpbFormNumber.Trim();
-        inv.LcNumber = string.IsNullOrWhiteSpace(cmd.LcNumber) ? null : cmd.LcNumber.Trim();
+        inv.EpbFormNumber = Trim(cmd.EpbFormNumber);
+        inv.LcNumber = Trim(cmd.LcNumber);
         inv.ShipmentDate = cmd.ShipmentDate;
+        inv.IncoTerm = Trim(cmd.IncoTerm);
+        inv.PortOfLoading = Trim(cmd.PortOfLoading);
+        inv.PortOfDischarge = Trim(cmd.PortOfDischarge);
+        inv.VesselName = Trim(cmd.VesselName);
+        inv.CountryOfDestination = Trim(cmd.CountryOfDestination);
+        inv.ShippingMarks = Trim(cmd.ShippingMarks);
+        inv.TotalPackages = cmd.TotalPackages;
+        inv.GrossWeightKg = cmd.GrossWeightKg;
+        inv.NetWeightKg = cmd.NetWeightKg;
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(ct);
 
         return await _mediator.Send(new GetCustomerInvoiceByIdQuery(cmd.Id), ct);
     }
+
+    private static string? Trim(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

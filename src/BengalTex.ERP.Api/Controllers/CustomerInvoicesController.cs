@@ -93,12 +93,28 @@ public class CustomerInvoicesController : ControllerBase
     public async Task<IActionResult> MarkExported(long id, [FromBody] MarkExportedRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new MarkInvoiceAsExportedCommand(
-            id, request.EpbFormNumber, request.LcNumber, request.ShipmentDate), ct);
+            id,
+            request.EpbFormNumber, request.LcNumber, request.ShipmentDate,
+            request.IncoTerm, request.PortOfLoading, request.PortOfDischarge,
+            request.VesselName, request.CountryOfDestination, request.ShippingMarks,
+            request.TotalPackages, request.GrossWeightKg, request.NetWeightKg), ct);
         return Ok(result);
     }
 }
 
-public record MarkExportedRequest(string? EpbFormNumber, string? LcNumber, DateOnly? ShipmentDate);
+public record MarkExportedRequest(
+    string? EpbFormNumber,
+    string? LcNumber,
+    DateOnly? ShipmentDate,
+    string? IncoTerm,
+    string? PortOfLoading,
+    string? PortOfDischarge,
+    string? VesselName,
+    string? CountryOfDestination,
+    string? ShippingMarks,
+    int? TotalPackages,
+    decimal? GrossWeightKg,
+    decimal? NetWeightKg);
 
 public record CreateCustomerInvoiceRequest(
     long SalesOrderId,

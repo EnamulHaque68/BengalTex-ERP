@@ -244,3 +244,24 @@
     &:hover { opacity: 1; }
   }
 }
+
+.export-dlg {
+  .hint { font-size: 0.85rem; color: #4b5563; margin-bottom: 0.75rem; }
+  .export-section {
+    margin: 1rem 0 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px dashed #e5e7eb;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7c3aed;
+  }
+  .export-section:first-of-type { margin-top: 0; }
+  .export-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem 1rem;
+  }
+  textarea { width: 100%; min-height: 60px; font-family: inherit; font-size: 0.85rem; }
+}
