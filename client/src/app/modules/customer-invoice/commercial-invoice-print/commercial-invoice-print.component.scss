@@ -1,0 +1,82 @@
+// Reuse shared print-document styles + add export-specific blocks.
+@use '../customer-invoice-print/customer-invoice-print.component.scss';
+
+.parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  .party {
+    padding: 0.75rem 0.9rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    .lbl { font-size: 0.65rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+    .party-name { font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 0.3rem; }
+    .party-line { font-size: 0.78rem; color: #4b5563; line-height: 1.45; }
+  }
+}
+
+.shipping-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.85rem;
+  padding: 0.75rem;
+  background: #eef2ff;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  .meta { display: flex; flex-direction: column; gap: 0.15rem;
+    .lbl { font-size: 0.62rem; color: #4f46e5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .val { font-size: 0.85rem; font-weight: 600; color: #111827; }
+  }
+}
+
+.lines tfoot .foot-row td {
+  background: #f9fafb;
+  border-top: 2px solid #111827;
+  border-bottom: none;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.packing-summary {
+  padding: 0.65rem 0.85rem;
+  background: #f0fdf4;
+  border: 1px dashed #6ee7b7;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  .lbl { font-size: 0.65rem; color: #065f46; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+  .packing-grid {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #064e3b;
+    span { color: #047857; margin-right: 0.25rem; }
+  }
+}
+
+.shipping-marks {
+  margin-bottom: 1rem;
+  .lbl { font-size: 0.65rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+  .marks-block {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #78350f;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+}
+
+.declaration {
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e5e7eb;
+  .lbl { font-size: 0.65rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+  p { margin: 0; font-size: 0.8rem; color: #4b5563; font-style: italic; }
+}

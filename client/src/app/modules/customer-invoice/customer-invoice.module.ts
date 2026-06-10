@@ -15,15 +15,24 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { CustomerInvoiceListComponent } from './customer-invoice-list/customer-invoice-list.component';
 import { CustomerInvoicePrintComponent } from './customer-invoice-print/customer-invoice-print.component';
+import { CommercialInvoicePrintComponent } from './commercial-invoice-print/commercial-invoice-print.component';
+import { PackingListPrintComponent } from './packing-list-print/packing-list-print.component';
 import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   { path: '', component: CustomerInvoiceListComponent },
-  { path: ':id/print', component: CustomerInvoicePrintComponent }
+  { path: ':id/print', component: CustomerInvoicePrintComponent },
+  { path: ':id/print-commercial', component: CommercialInvoicePrintComponent },
+  { path: ':id/print-packing', component: PackingListPrintComponent }
 ];
 
 @NgModule({
-  declarations: [CustomerInvoiceListComponent, CustomerInvoicePrintComponent],
+  declarations: [
+    CustomerInvoiceListComponent,
+    CustomerInvoicePrintComponent,
+    CommercialInvoicePrintComponent,
+    PackingListPrintComponent
+  ],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

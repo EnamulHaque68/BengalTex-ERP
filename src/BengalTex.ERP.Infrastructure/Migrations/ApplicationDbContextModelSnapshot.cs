@@ -1431,6 +1431,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("CountryOfDestination")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1460,6 +1464,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 6)
                         .HasColumnType("decimal(18,6)");
 
+                    b.Property<decimal?>("GrossWeightKg")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
+                    b.Property<string>("IncoTerm")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
 
@@ -1483,9 +1495,21 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("NetWeightKg")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PortOfDischarge")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PortOfLoading")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -1498,6 +1522,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<DateOnly?>("ShipmentDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("ShippingMarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1512,6 +1540,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<int?>("TotalPackages")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("VatAmount")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -1519,6 +1550,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<decimal>("VatRate")
                         .HasPrecision(7, 4)
                         .HasColumnType("decimal(7,4)");
+
+                    b.Property<string>("VesselName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 

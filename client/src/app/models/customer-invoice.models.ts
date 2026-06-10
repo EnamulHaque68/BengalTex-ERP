@@ -14,6 +14,7 @@ export interface CustomerInvoiceLineDto {
   productCode: string;
   productName: string;
   unitOfMeasureCode: string;
+  hsCode: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
@@ -50,6 +51,16 @@ export interface CustomerInvoiceDto {
   epbFormNumber: string | null;
   lcNumber: string | null;
   shipmentDate: string | null;
+  // Export shipping fields (Commercial Invoice / Packing List)
+  incoTerm: string | null;
+  portOfLoading: string | null;
+  portOfDischarge: string | null;
+  vesselName: string | null;
+  countryOfDestination: string | null;
+  shippingMarks: string | null;
+  totalPackages: number | null;
+  grossWeightKg: number | null;
+  netWeightKg: number | null;
   lines: CustomerInvoiceLineDto[];
 }
 
@@ -81,6 +92,15 @@ export interface MarkExportedRequest {
   epbFormNumber: string | null;
   lcNumber: string | null;
   shipmentDate: string | null;
+  incoTerm: string | null;
+  portOfLoading: string | null;
+  portOfDischarge: string | null;
+  vesselName: string | null;
+  countryOfDestination: string | null;
+  shippingMarks: string | null;
+  totalPackages: number | null;
+  grossWeightKg: number | null;
+  netWeightKg: number | null;
 }
 
 export interface CustomerInvoiceLineInput {

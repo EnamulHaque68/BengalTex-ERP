@@ -64,24 +64,55 @@ export class CustomerInvoiceListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Export details (EPB Form-N) dialog
+  // Export details (EPB Form-N + Commercial Invoice + Packing List) dialog
   exportDlgVisible = false;
   exportSaving = false;
   exportError = '';
   exportTarget: CustomerInvoiceListItemDto | null = null;
-  exportForm: { epbFormNumber: string; lcNumber: string; shipmentDate: string } = {
-    epbFormNumber: '', lcNumber: '', shipmentDate: ''
+  exportForm = {
+    epbFormNumber: '', lcNumber: '', shipmentDate: '',
+    incoTerm: '', portOfLoading: '', portOfDischarge: '',
+    vesselName: '', countryOfDestination: '', shippingMarks: '',
+    totalPackages: null as number | null,
+    grossWeightKg: null as number | null,
+    netWeightKg: null as number | null
   };
 
   openMarkExported(row: CustomerInvoiceListItemDto): void {
     this.exportTarget = row;
     this.exportError = '';
+    // Defaults; full record fetched below for editing prior shipping data.
     this.exportForm = {
       epbFormNumber: row.epbFormNumber ?? '',
       lcNumber: '',
-      shipmentDate: row.shipmentDate ?? ''
+      shipmentDate: row.shipmentDate ?? '',
+      incoTerm: '', portOfLoading: 'Chattogram, Bangladesh', portOfDischarge: '',
+      vesselName: '', countryOfDestination: '', shippingMarks: '',
+      totalPackages: null, grossWeightKg: null, netWeightKg: null
     };
     this.exportDlgVisible = true;
+    this.invService.getById(row.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) {
+          const d = res.data;
+          this.exportForm = {
+            epbFormNumber: d.epbFormNumber ?? '',
+            lcNumber: d.lcNumber ?? '',
+            shipmentDate: d.shipmentDate ?? '',
+            incoTerm: d.incoTerm ?? '',
+            portOfLoading: d.portOfLoading ?? 'Chattogram, Bangladesh',
+            portOfDischarge: d.portOfDischarge ?? '',
+            vesselName: d.vesselName ?? '',
+            countryOfDestination: d.countryOfDestination ?? '',
+            shippingMarks: d.shippingMarks ?? '',
+            totalPackages: d.totalPackages,
+            grossWeightKg: d.grossWeightKg,
+            netWeightKg: d.netWeightKg
+          };
+          this.cdr.detectChanges();
+        }
+      })
+    });
   }
 
   saveExport(): void {
@@ -89,10 +120,20 @@ export class CustomerInvoiceListComponent implements OnInit {
     this.exportSaving = true;
     this.exportError = '';
     this.cdr.detectChanges();
+    const f = this.exportForm;
     this.invService.markExported(this.exportTarget.id, {
-      epbFormNumber: this.exportForm.epbFormNumber?.trim() || null,
-      lcNumber: this.exportForm.lcNumber?.trim() || null,
-      shipmentDate: this.exportForm.shipmentDate || null
+      epbFormNumber: f.epbFormNumber?.trim() || null,
+      lcNumber: f.lcNumber?.trim() || null,
+      shipmentDate: f.shipmentDate || null,
+      incoTerm: f.incoTerm?.trim() || null,
+      portOfLoading: f.portOfLoading?.trim() || null,
+      portOfDischarge: f.portOfDischarge?.trim() || null,
+      vesselName: f.vesselName?.trim() || null,
+      countryOfDestination: f.countryOfDestination?.trim() || null,
+      shippingMarks: f.shippingMarks?.trim() || null,
+      totalPackages: f.totalPackages ?? null,
+      grossWeightKg: f.grossWeightKg ?? null,
+      netWeightKg: f.netWeightKg ?? null
     }).subscribe({
       next: (res) => this.zone.run(() => {
         this.exportSaving = false;
@@ -111,6 +152,14 @@ export class CustomerInvoiceListComponent implements OnInit {
         this.cdr.detectChanges();
       })
     });
+  }
+
+  openCommercialInvoice(row: CustomerInvoiceListItemDto): void {
+    window.open(`/customer-invoices/${row.id}/print-commercial`, '_blank');
+  }
+
+  openPackingList(row: CustomerInvoiceListItemDto): void {
+    window.open(`/customer-invoices/${row.id}/print-packing`, '_blank');
   }
 
   form!: FormGroup;
