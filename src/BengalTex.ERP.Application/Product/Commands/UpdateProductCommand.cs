@@ -16,6 +16,7 @@ public sealed record UpdateProductCommand(
     string? Size,
     string? Color,
     string? Material,
+    string? HsCode,                 // BD HS code for export classification
     decimal SalesPrice,
     decimal ReorderLevel,
     bool IsStockItem,
@@ -36,6 +37,7 @@ public sealed class UpdateProductCommandValidator : AbstractValidator<UpdateProd
         RuleFor(x => x.Size).MaximumLength(50);
         RuleFor(x => x.Color).MaximumLength(50);
         RuleFor(x => x.Material).MaximumLength(100);
+        RuleFor(x => x.HsCode).MaximumLength(20);
         RuleFor(x => x.SalesPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ReorderLevel).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ImageUrl).MaximumLength(500);
@@ -85,6 +87,7 @@ internal sealed class UpdateProductCommandHandler
         entity.Size = cmd.Size;
         entity.Color = cmd.Color;
         entity.Material = cmd.Material;
+        entity.HsCode = string.IsNullOrWhiteSpace(cmd.HsCode) ? null : cmd.HsCode.Trim();
         entity.SalesPrice = cmd.SalesPrice;
         entity.ReorderLevel = cmd.ReorderLevel;
         entity.IsStockItem = cmd.IsStockItem;
@@ -99,7 +102,7 @@ internal sealed class UpdateProductCommandHandler
             entity.Id, entity.Code, entity.Name, entity.Specification,
             entity.ProductCategoryId, category.Name,
             entity.UnitOfMeasureId, uom.Code,
-            entity.Size, entity.Color, entity.Material,
+            entity.Size, entity.Color, entity.Material, entity.HsCode,
             entity.SalesPrice, entity.ReorderLevel, entity.WeightedAverageCost, entity.IsStockItem,
             entity.ImageUrl, entity.Notes, entity.IsActive);
 

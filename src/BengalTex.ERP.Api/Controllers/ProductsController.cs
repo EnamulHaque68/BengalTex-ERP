@@ -45,7 +45,7 @@ public class ProductsController : ControllerBase
         var result = await _mediator.Send(new CreateProductCommand(
             request.Code, request.Name, request.Specification,
             request.ProductCategoryId, request.UnitOfMeasureId,
-            request.Size, request.Color, request.Material,
+            request.Size, request.Color, request.Material, request.HsCode,
             request.SalesPrice, request.ReorderLevel, request.IsStockItem,
             request.ImageUrl, request.Notes
         ), ct);
@@ -59,7 +59,7 @@ public class ProductsController : ControllerBase
         var result = await _mediator.Send(new UpdateProductCommand(
             id, request.Name, request.Specification,
             request.ProductCategoryId, request.UnitOfMeasureId,
-            request.Size, request.Color, request.Material,
+            request.Size, request.Color, request.Material, request.HsCode,
             request.SalesPrice, request.ReorderLevel, request.IsStockItem,
             request.ImageUrl, request.Notes, request.IsActive
         ), ct);
@@ -84,6 +84,7 @@ public record CreateProductRequest(
     string? Size,
     string? Color,
     string? Material,
+    string? HsCode,
     decimal SalesPrice,
     decimal ReorderLevel,
     bool IsStockItem,
@@ -98,6 +99,7 @@ public record UpdateProductRequest(
     string? Size,
     string? Color,
     string? Material,
+    string? HsCode,
     decimal SalesPrice,
     decimal ReorderLevel,
     bool IsStockItem,
