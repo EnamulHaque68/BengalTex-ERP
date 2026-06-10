@@ -12,6 +12,7 @@ public record ProductDto(
     string? Size,
     string? Color,
     string? Material,
+    string? HsCode,                  // BD HS code for export (EPB / Commercial Invoice / Packing List)
     decimal SalesPrice,
     decimal ReorderLevel,
     decimal WeightedAverageCost,     // system-maintained production cost (Phase 14)

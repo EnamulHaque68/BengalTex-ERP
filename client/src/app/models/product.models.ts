@@ -35,6 +35,7 @@ export interface ProductDto {
   size: string | null;
   color: string | null;
   material: string | null;
+  hsCode: string | null;
   salesPrice: number;
   reorderLevel: number;
   weightedAverageCost: number;        // system-maintained production cost (Phase 14)
@@ -66,6 +67,7 @@ export interface CreateProductRequest {
   size: string | null;
   color: string | null;
   material: string | null;
+  hsCode: string | null;
   salesPrice: number;
   reorderLevel: number;
   isStockItem: boolean;
@@ -81,6 +83,7 @@ export interface UpdateProductRequest {
   size: string | null;
   color: string | null;
   material: string | null;
+  hsCode: string | null;
   salesPrice: number;
   reorderLevel: number;
   isStockItem: boolean;

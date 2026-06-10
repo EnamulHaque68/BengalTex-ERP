@@ -67,6 +67,7 @@ export class ProductListComponent implements OnInit {
       size: ['', Validators.maxLength(50)],
       color: ['', Validators.maxLength(50)],
       material: ['', Validators.maxLength(100)],
+      hsCode: ['', Validators.maxLength(20)],
       salesPrice: [0, [Validators.required, Validators.min(0)]],
       reorderLevel: [0, [Validators.required, Validators.min(0)]],
       isStockItem: [true],
@@ -137,7 +138,7 @@ export class ProductListComponent implements OnInit {
       code: '', name: '', specification: '',
       productCategoryId: this.filterCategoryId ?? this.categories[0]?.id ?? null,
       unitOfMeasureId: this.units[0]?.id ?? null,
-      size: '', color: '', material: '',
+      size: '', color: '', material: '', hsCode: '',
       salesPrice: 0, reorderLevel: 0, isStockItem: true,
       imageUrl: '', notes: '', isActive: true
     });
@@ -165,6 +166,7 @@ export class ProductListComponent implements OnInit {
               size: p.size ?? '',
               color: p.color ?? '',
               material: p.material ?? '',
+              hsCode: p.hsCode ?? '',
               salesPrice: p.salesPrice,
               reorderLevel: p.reorderLevel,
               isStockItem: p.isStockItem,
@@ -197,6 +199,7 @@ export class ProductListComponent implements OnInit {
       size: v.size || null,
       color: v.color || null,
       material: v.material || null,
+      hsCode: v.hsCode ? (v.hsCode as string).trim() : null,
       salesPrice: Number(v.salesPrice) || 0,
       reorderLevel: Number(v.reorderLevel) || 0,
       isStockItem: v.isStockItem,
