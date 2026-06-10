@@ -1452,6 +1452,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("EpbFormNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<decimal>("ExchangeRate")
                         .HasPrecision(18, 6)
                         .HasColumnType("decimal(18,6)");
@@ -1468,6 +1472,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("IssuedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LcNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("datetimeoffset");
@@ -1487,6 +1495,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<long>("SalesOrderId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("ShipmentDate")
+                        .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1520,9 +1531,13 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("DueDate");
 
+                    b.HasIndex("EpbFormNumber");
+
                     b.HasIndex("InvoiceDate");
 
                     b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("ShipmentDate");
 
                     b.HasIndex("Status");
 
@@ -4521,6 +4536,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("HsCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -4589,6 +4608,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("HsCode");
 
                     b.HasIndex("IsActive");
 

@@ -50,6 +50,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             inv.TotalAmount * inv.ExchangeRate,
             inv.IssuedAt, inv.IssuedBy, inv.Notes,
             inv.VatChallan?.Code,
+            inv.EpbFormNumber, inv.LcNumber, inv.ShipmentDate,
             lines);
 
         return ApiResponse<CustomerInvoiceDto>.Ok(dto);

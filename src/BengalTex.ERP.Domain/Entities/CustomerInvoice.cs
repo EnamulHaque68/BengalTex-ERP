@@ -67,6 +67,14 @@ public class CustomerInvoice : BaseTransactionalEntity
 
     public string? Notes { get; set; }
 
+    // ── BD export reporting fields (EPB / Form-N / Form-EXP) ────────────────
+    /// <summary>Form-EXP number issued by the exporter's bank (foreign-exchange declaration).</summary>
+    public string? EpbFormNumber { get; set; }
+    /// <summary>Letter-of-Credit reference (free text; for non-LC exports, leave null).</summary>
+    public string? LcNumber { get; set; }
+    /// <summary>Physical shipment date — when goods cleared the port. Separate from invoice date.</summary>
+    public DateOnly? ShipmentDate { get; set; }
+
     public ICollection<CustomerInvoiceLine> Lines { get; set; } = new List<CustomerInvoiceLine>();
 
     /// <summary>

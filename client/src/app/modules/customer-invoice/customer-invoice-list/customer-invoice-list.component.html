@@ -106,6 +106,10 @@
               <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small"
                         *ngIf="c.status !== 'Draft'"
                         (click)="openEmail(c)" pTooltip="Send via email" />
+              <p-button icon="pi pi-globe" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        (click)="openMarkExported(c)"
+                        [pTooltip]="c.epbFormNumber ? 'Form-EXP recorded: ' + c.epbFormNumber : 'Record Form-EXP / shipment for EPB'" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"
@@ -289,6 +293,39 @@
                 (click)="deleteDialogVisible = false" [disabled]="deleting" />
       <p-button label="Delete" icon="pi pi-trash" severity="danger"
                 [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Mark as Exported (EPB Form-N) -->
+<p-dialog [(visible)]="exportDlgVisible" header="Record Export Details (EPB Form-N)"
+          [modal]="true" [style]="{ width: '520px' }">
+  <div *ngIf="exportTarget" class="export-dlg">
+    <p class="hint">
+      Record the bank-issued Form-EXP number and shipment date for
+      <strong>{{ exportTarget.code }}</strong> ({{ exportTarget.customerName }}).
+      These show up on the EPB Export Register report.
+    </p>
+    <div class="alert alert-error" *ngIf="exportError"><i class="pi pi-exclamation-circle"></i>{{ exportError }}</div>
+
+    <div class="field">
+      <label>Form-EXP # <small>(issued by your bank)</small></label>
+      <input pInputText [(ngModel)]="exportForm.epbFormNumber" maxlength="50" placeholder="e.g. EXP-2026-1234" />
+    </div>
+    <div class="field">
+      <label>LC # <small>(if shipped against LC)</small></label>
+      <input pInputText [(ngModel)]="exportForm.lcNumber" maxlength="50" placeholder="(optional)" />
+    </div>
+    <div class="field">
+      <label>Shipment Date</label>
+      <input pInputText type="date" [(ngModel)]="exportForm.shipmentDate" />
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="exportDlgVisible = false" [disabled]="exportSaving" />
+      <p-button [label]="exportSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
+                [loading]="exportSaving" (click)="saveExport()" />
     </div>
   </div>
 </p-dialog>

@@ -1,0 +1,79 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">EPB Export Register</h2>
+      <p class="page-subtitle">Foreign-currency customer invoices in Form-N shape &mdash; for Bangladesh Export Promotion Bureau reporting</p>
+    </div>
+    <div class="header-actions">
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <label class="chk">
+        <input type="checkbox" [(ngModel)]="pendingFormExpOnly" />
+        Pending Form-EXP only
+      </label>
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+      <p-button label="Download CSV" icon="pi pi-download" severity="secondary"
+                (click)="downloadCsv()" [disabled]="!report || report.rows.length === 0" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="summary-strip" *ngIf="report">
+    <div><span class="lbl">Period</span><span class="val">{{ report.fromDate }} → {{ report.toDate }}</span></div>
+    <div><span class="lbl">Export Invoices</span><span class="val fw-700">{{ report.totalInvoices }}</span></div>
+    <div><span class="lbl">Pending Form-EXP</span>
+      <span class="val fw-700" [class.bad]="report.invoicesPendingFormExp > 0">{{ report.invoicesPendingFormExp }}</span>
+    </div>
+    <div><span class="lbl">FOB Total (BDT)</span><span class="val num fw-700">{{ formatCurrency(report.grandFobBdt) }}</span></div>
+    <div><span class="lbl">Grand Total (BDT)</span><span class="val num fw-700 highlight">{{ formatCurrency(report.grandTotalBdt) }}</span></div>
+  </div>
+
+  <p-card styleClass="table-card" *ngIf="report">
+    <p-table [value]="report.rows" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Invoice</th>
+          <th>Invoice Date</th>
+          <th>Shipment Date</th>
+          <th>Form-EXP #</th>
+          <th>LC #</th>
+          <th>Buyer</th>
+          <th>Country</th>
+          <th class="num-h">FX Rate</th>
+          <th class="num-h">FOB (FX)</th>
+          <th class="num-h">FOB (BDT)</th>
+          <th class="num-h">Total (BDT)</th>
+          <th>HS Codes</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr [class.pending-row]="!r.epbFormNumber">
+          <td><span class="code-badge">{{ r.invoiceCode }}</span></td>
+          <td class="num">{{ r.invoiceDate }}</td>
+          <td class="num" [class.muted]="!r.shipmentDate">{{ r.shipmentDate || 'pending' }}</td>
+          <td>
+            <span *ngIf="r.epbFormNumber" class="form-exp">{{ r.epbFormNumber }}</span>
+            <span *ngIf="!r.epbFormNumber" class="muted">
+              <i class="pi pi-exclamation-triangle"></i> not recorded
+            </span>
+          </td>
+          <td class="muted">{{ r.lcNumber || '—' }}</td>
+          <td class="fw-600">{{ r.customerName }} <span class="emp-code">{{ r.customerCode }}</span></td>
+          <td>{{ r.countryOfDestination }}</td>
+          <td class="num">{{ r.exchangeRate | number:'1.4-4' }}</td>
+          <td class="num">{{ r.currencyCode }} {{ formatNumber(r.fobAmountForeign) }}</td>
+          <td class="num">{{ formatCurrency(r.fobAmountBdt) }}</td>
+          <td class="num fw-700">{{ formatCurrency(r.totalAmountBdt) }}</td>
+          <td class="muted small">{{ r.hsCodesSummary || '—' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="12" class="empty-row">
+          <i class="pi pi-globe"></i>
+          <span>No foreign-currency invoices in this period. Issue an invoice on an SO with non-BDT currency to see it here.</span>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

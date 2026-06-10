@@ -133,4 +133,14 @@ public class ReportsController : ControllerBase
         [FromQuery] int? customerId = null,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetBuyerOrderBookReportQuery(customerId), ct));
+
+    /// <summary>EPB Export Register — every foreign-currency invoice in the date range, in Form-N shape.</summary>
+    [HttpGet("epb-export-register")]
+    [HasPermission(Permissions.Reports.ViewSales)]
+    public async Task<IActionResult> GetEpbExportRegister(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] bool pendingFormExpOnly = false,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetEpbExportRegisterQuery(fromDate, toDate, pendingFormExpOnly), ct));
 }

@@ -8,7 +8,8 @@ import {
   CreateCustomerInvoiceRequest,
   CustomerInvoiceDto,
   CustomerInvoiceListItemDto,
-  UpdateCustomerInvoiceRequest
+  UpdateCustomerInvoiceRequest,
+  MarkExportedRequest
 } from '../models/customer-invoice.models';
 
 @Injectable({ providedIn: 'root' })
@@ -57,5 +58,9 @@ export class CustomerInvoiceService {
 
   cancel(id: number): Observable<ApiResponse<CustomerInvoiceDto>> {
     return this.http.post<ApiResponse<CustomerInvoiceDto>>(`${this.base}/${id}/cancel`, {});
+  }
+
+  markExported(id: number, data: MarkExportedRequest): Observable<ApiResponse<CustomerInvoiceDto>> {
+    return this.http.post<ApiResponse<CustomerInvoiceDto>>(`${this.base}/${id}/mark-exported`, data);
   }
 }

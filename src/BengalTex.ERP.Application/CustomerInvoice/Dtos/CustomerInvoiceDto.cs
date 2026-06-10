@@ -26,6 +26,10 @@ public record CustomerInvoiceDto(
     string? IssuedBy,
     string? Notes,
     string? VatChallanCode,              // populated when challan auto-issued
+    // BD export reporting (foreign-currency invoices)
+    string? EpbFormNumber,
+    string? LcNumber,
+    DateOnly? ShipmentDate,
     IReadOnlyList<CustomerInvoiceLineDto> Lines);
 
 public record CustomerInvoiceLineDto(
@@ -59,4 +63,7 @@ public record CustomerInvoiceListItemDto(
     decimal AmountPaid,
     decimal AmountDue,
     decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
-    int LineCount);
+    int LineCount,
+    // BD export reporting
+    string? EpbFormNumber,
+    DateOnly? ShipmentDate);
