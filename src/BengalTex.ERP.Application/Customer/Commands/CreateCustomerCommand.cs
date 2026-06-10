@@ -28,6 +28,7 @@ public sealed record CreateCustomerCommand(
     string Category,               // "A" | "B" | "C"
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,
     string? Notes
 ) : IRequest<ApiResponse<CustomerDto>>;
 
@@ -118,6 +119,7 @@ internal sealed class CreateCustomerCommandHandler
             Category = Enum.Parse<CustomerCategory>(cmd.Category),
             CreditLimit = cmd.CreditLimit,
             CreditPeriodDays = cmd.CreditPeriodDays,
+            IsExport = cmd.IsExport,
             Notes = cmd.Notes,
             IsActive = true
         };

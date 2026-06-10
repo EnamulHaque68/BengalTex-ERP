@@ -22,6 +22,7 @@ export interface CustomerDto {
   category: CustomerCategoryName;
   creditLimit: number;
   creditPeriodDays: number;
+  isExport: boolean;
   notes: string | null;
   isActive: boolean;
 }
@@ -37,6 +38,7 @@ export interface CustomerListItemDto {
   category: CustomerCategoryName;
   creditLimit: number;
   creditPeriodDays: number;
+  isExport: boolean;
   isActive: boolean;
 }
 
@@ -59,6 +61,7 @@ export interface CreateCustomerRequest {
   category: CustomerCategoryName;
   creditLimit: number;
   creditPeriodDays: number;
+  isExport: boolean;
   notes: string | null;
 }
 
@@ -80,6 +83,7 @@ export interface UpdateCustomerRequest {
   category: CustomerCategoryName;
   creditLimit: number;
   creditPeriodDays: number;
+  isExport: boolean;
   notes: string | null;
   isActive: boolean;
 }

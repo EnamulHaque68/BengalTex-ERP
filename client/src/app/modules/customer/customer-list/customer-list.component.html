@@ -55,7 +55,10 @@
       <ng-template pTemplate="body" let-c>
         <tr>
           <td><span class="code-badge">{{ c.code }}</span></td>
-          <td class="fw-600">{{ c.name }}</td>
+          <td class="fw-600">
+            {{ c.name }}
+            <span *ngIf="c.isExport" class="export-pill" pTooltip="Export buyer — invoices appear on EPB Register">EXPORT</span>
+          </td>
           <td>{{ c.contactPerson || '—' }}</td>
           <td>{{ c.phone || '—' }}</td>
           <td>{{ c.city }}</td>
@@ -219,6 +222,16 @@
       <div class="field">
         <label>Credit Period (days)</label>
         <p-inputNumber formControlName="creditPeriodDays" [showButtons]="true" [min]="0" [max]="365" class="w-full" />
+      </div>
+
+      <div class="field col-span-2">
+        <label class="toggle-label">
+          <p-toggleswitch formControlName="isExport" />
+          <span>
+            Export buyer
+            <small class="muted">— invoices appear on EPB Export Register + show Commercial Invoice / Packing List buttons regardless of payment currency</small>
+          </span>
+        </label>
       </div>
 
       <div class="field col-span-2">

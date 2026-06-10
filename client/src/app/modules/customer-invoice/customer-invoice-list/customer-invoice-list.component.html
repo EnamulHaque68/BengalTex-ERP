@@ -107,17 +107,17 @@
                         *ngIf="c.status !== 'Draft'"
                         (click)="openEmail(c)" pTooltip="Send via email" />
               <p-button icon="pi pi-globe" severity="info" [text]="true" size="small"
-                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
                         (click)="openMarkExported(c)"
                         [pTooltip]="c.epbFormNumber ? 'Form-EXP recorded: ' + c.epbFormNumber : 'Record Form-EXP / shipment for EPB'" />
               <p-button icon="pi pi-file" severity="info" [text]="true" size="small"
-                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
                         (click)="openCommercialInvoice(c)" pTooltip="Print Commercial Invoice (export)" />
               <p-button icon="pi pi-box" severity="info" [text]="true" size="small"
-                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
                         (click)="openPackingList(c)" pTooltip="Print Packing List (export)" />
               <p-button icon="pi pi-table" severity="info" [text]="true" size="small"
-                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
                         (click)="openLinePacking(c)" pTooltip="Set per-line packing breakdown" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"

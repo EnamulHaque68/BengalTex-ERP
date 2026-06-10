@@ -1359,6 +1359,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsExport")
+                        .HasColumnType("bit");
+
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1408,6 +1411,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("IsExport");
 
                     b.HasIndex("Name");
 

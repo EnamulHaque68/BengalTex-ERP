@@ -78,6 +78,7 @@ export class CustomerListComponent implements OnInit {
       category: ['B' as CustomerCategoryName, Validators.required],
       creditLimit: [0, [Validators.required, Validators.min(0)]],
       creditPeriodDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
+      isExport: [false],
 
       notes: ['', Validators.maxLength(2000)],
       isActive: [true]
@@ -130,6 +131,7 @@ export class CustomerListComponent implements OnInit {
       category: 'B',
       creditLimit: 0,
       creditPeriodDays: 0,
+      isExport: false,
       notes: '',
       isActive: true
     });
@@ -167,6 +169,7 @@ export class CustomerListComponent implements OnInit {
               category: c.category,
               creditLimit: c.creditLimit,
               creditPeriodDays: c.creditPeriodDays,
+              isExport: c.isExport,
               notes: c.notes ?? '',
               isActive: c.isActive
             });
@@ -206,6 +209,7 @@ export class CustomerListComponent implements OnInit {
       category: v.category as CustomerCategoryName,
       creditLimit: Number(v.creditLimit) || 0,
       creditPeriodDays: Number(v.creditPeriodDays) || 0,
+      isExport: !!v.isExport,
       notes: v.notes || null
     };
 
