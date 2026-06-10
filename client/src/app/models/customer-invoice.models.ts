@@ -47,6 +47,9 @@ export interface CustomerInvoiceDto {
   issuedBy: string | null;
   notes: string | null;
   vatChallanCode: string | null;        // populated when auto-issued
+  epbFormNumber: string | null;
+  lcNumber: string | null;
+  shipmentDate: string | null;
   lines: CustomerInvoiceLineDto[];
 }
 
@@ -70,6 +73,14 @@ export interface CustomerInvoiceListItemDto {
   amountDue: number;
   baseTotalAmount: number;              // BDT
   lineCount: number;
+  epbFormNumber: string | null;
+  shipmentDate: string | null;
+}
+
+export interface MarkExportedRequest {
+  epbFormNumber: string | null;
+  lcNumber: string | null;
+  shipmentDate: string | null;
 }
 
 export interface CustomerInvoiceLineInput {

@@ -63,6 +63,56 @@ export class CustomerInvoiceListComponent implements OnInit {
     this.actionMessage = `Email sent for ${ev.sourceCode}.`;
     this.cdr.detectChanges();
   }
+
+  // Export details (EPB Form-N) dialog
+  exportDlgVisible = false;
+  exportSaving = false;
+  exportError = '';
+  exportTarget: CustomerInvoiceListItemDto | null = null;
+  exportForm: { epbFormNumber: string; lcNumber: string; shipmentDate: string } = {
+    epbFormNumber: '', lcNumber: '', shipmentDate: ''
+  };
+
+  openMarkExported(row: CustomerInvoiceListItemDto): void {
+    this.exportTarget = row;
+    this.exportError = '';
+    this.exportForm = {
+      epbFormNumber: row.epbFormNumber ?? '',
+      lcNumber: '',
+      shipmentDate: row.shipmentDate ?? ''
+    };
+    this.exportDlgVisible = true;
+  }
+
+  saveExport(): void {
+    if (!this.exportTarget || this.exportSaving) return;
+    this.exportSaving = true;
+    this.exportError = '';
+    this.cdr.detectChanges();
+    this.invService.markExported(this.exportTarget.id, {
+      epbFormNumber: this.exportForm.epbFormNumber?.trim() || null,
+      lcNumber: this.exportForm.lcNumber?.trim() || null,
+      shipmentDate: this.exportForm.shipmentDate || null
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.exportSaving = false;
+        if (res.success) {
+          this.exportDlgVisible = false;
+          this.actionMessage = `Export details saved for ${this.exportTarget?.code}.`;
+          this.load();
+        } else {
+          this.exportError = res.message || 'Save failed.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (e) => this.zone.run(() => {
+        this.exportSaving = false;
+        this.exportError = e?.error?.message || 'Save failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
   form!: FormGroup;
 
   deleteDialogVisible = false;

@@ -1,0 +1,46 @@
+@use '../wip-report/wip-report.component.scss';
+
+.date-input { width: 140px; }
+
+.chk {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.65rem; background: #f1f5f9; border-radius: 6px;
+  font-size: 0.84rem; color: #475569; cursor: pointer;
+  input { margin: 0; }
+}
+
+.summary-strip .bad { color: #b91c1c; }
+.highlight { color: #1e3a8a; }
+
+.code-badge {
+  background: #e0e7ff; color: #3730a3;
+  padding: 0.1rem 0.45rem; border-radius: 4px;
+  font-size: 0.74rem; font-weight: 700; font-family: monospace;
+}
+
+.emp-code {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  background: #f1f5f9; color: #475569;
+  border-radius: 3px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.72rem;
+}
+
+.form-exp {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  background: #ecfdf5; color: #047857;
+  border-radius: 4px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.78rem; font-weight: 700;
+}
+
+.muted { color: #94a3b8;
+  i { margin-right: 0.25rem; color: #f59e0b; }
+}
+.muted.small { font-size: 0.78rem; }
+
+.pending-row { background: #fffbeb; }
+.pending-row:hover { background: #fef3c7 !important; }

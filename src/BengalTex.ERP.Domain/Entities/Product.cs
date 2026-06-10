@@ -27,6 +27,9 @@ public class Product : BaseEntity
     public string? Color { get; set; }
     public string? Material { get; set; }
 
+    /// <summary>BD HS (Harmonised System) code for export classification — required on EPB Form-N.</summary>
+    public string? HsCode { get; set; }
+
     public decimal SalesPrice { get; set; }
     public decimal ReorderLevel { get; set; }
 

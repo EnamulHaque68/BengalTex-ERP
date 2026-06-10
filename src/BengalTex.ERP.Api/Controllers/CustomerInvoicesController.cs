@@ -83,7 +83,22 @@ public class CustomerInvoicesController : ControllerBase
         var result = await _mediator.Send(new CancelCustomerInvoiceCommand(id), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Record BD export-reporting details (Form-EXP #, LC #, shipment date) for EPB Form-N.
+    /// Allowed at any post-Draft, non-Cancelled state.
+    /// </summary>
+    [HttpPost("{id:long}/mark-exported")]
+    [HasPermission(Permissions.Invoices.Edit)]
+    public async Task<IActionResult> MarkExported(long id, [FromBody] MarkExportedRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new MarkInvoiceAsExportedCommand(
+            id, request.EpbFormNumber, request.LcNumber, request.ShipmentDate), ct);
+        return Ok(result);
+    }
 }
+
+public record MarkExportedRequest(string? EpbFormNumber, string? LcNumber, DateOnly? ShipmentDate);
 
 public record CreateCustomerInvoiceRequest(
     long SalesOrderId,

@@ -20,6 +20,7 @@ import { WipReportComponent } from './wip-report/wip-report.component';
 import { ProductionSummaryComponent } from './production-summary/production-summary.component';
 import { ProductivityReportComponent } from './productivity-report/productivity-report.component';
 import { BuyerOrderBookComponent } from './buyer-order-book/buyer-order-book.component';
+import { EpbExportRegisterComponent } from './epb-export-register/epb-export-register.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
@@ -32,7 +33,8 @@ const routes: Routes = [
   { path: 'wip', component: WipReportComponent },
   { path: 'production-summary', component: ProductionSummaryComponent },
   { path: 'productivity', component: ProductivityReportComponent },
-  { path: 'buyer-order-book', component: BuyerOrderBookComponent }
+  { path: 'buyer-order-book', component: BuyerOrderBookComponent },
+  { path: 'epb-export-register', component: EpbExportRegisterComponent }
 ];
 
 @NgModule({
@@ -46,7 +48,8 @@ const routes: Routes = [
     WipReportComponent,
     ProductionSummaryComponent,
     ProductivityReportComponent,
-    BuyerOrderBookComponent
+    BuyerOrderBookComponent,
+    EpbExportRegisterComponent
   ],
   imports: [
     CommonModule, FormsModule,

@@ -368,3 +368,37 @@ export interface BuyerOrderBookReportDto {
   grandOutstandingInvoiceBdt: number;
   rows: BuyerOrderBookRowDto[];
 }
+
+// ─── EPB Export Register ──────────────────────────────────────────────────
+
+export interface EpbExportRegisterRowDto {
+  invoiceId: number;
+  invoiceCode: string;
+  invoiceDate: string;
+  shipmentDate: string | null;
+  epbFormNumber: string | null;
+  lcNumber: string | null;
+  customerId: number;
+  customerCode: string;
+  customerName: string;
+  countryOfDestination: string;
+  salesOrderCode: string;
+  currencyCode: string;
+  exchangeRate: number;
+  fobAmountForeign: number;     // pre-VAT
+  fobAmountBdt: number;
+  totalAmountForeign: number;   // gross
+  totalAmountBdt: number;
+  status: string;
+  hsCodesSummary: string | null;
+}
+
+export interface EpbExportRegisterReportDto {
+  fromDate: string;
+  toDate: string;
+  totalInvoices: number;
+  invoicesPendingFormExp: number;
+  grandFobBdt: number;
+  grandTotalBdt: number;
+  rows: EpbExportRegisterRowDto[];
+}

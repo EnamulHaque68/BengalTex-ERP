@@ -17,6 +17,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<ProductEntity>
         builder.Property(p => p.Size).HasMaxLength(50);
         builder.Property(p => p.Color).HasMaxLength(50);
         builder.Property(p => p.Material).HasMaxLength(100);
+        builder.Property(p => p.HsCode).HasMaxLength(20);
+        builder.HasIndex(p => p.HsCode);
 
         builder.Property(p => p.SalesPrice).HasPrecision(18, 4);
         builder.Property(p => p.ReorderLevel).HasPrecision(18, 4);
