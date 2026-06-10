@@ -122,6 +122,20 @@ public class CustomerInvoiceLine : BaseTransactionalEntity
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }
+
+    // ── Export packing breakdown (Packing List) ────────────────────────────
+    // All nullable — domestic invoices ignore these; export invoices fill them in
+    // via the "Set Line Packing" dialog after Issue.
+    /// <summary>Starting carton number this line ships in (e.g. 1 in "C1-20").</summary>
+    public int? CartonNumberFrom { get; set; }
+    /// <summary>Ending carton number this line ships in (e.g. 20 in "C1-20").</summary>
+    public int? CartonNumberTo { get; set; }
+    /// <summary>Pieces per carton.</summary>
+    public int? UnitsPerCarton { get; set; }
+    /// <summary>Net weight of just this line's goods, in kilograms.</summary>
+    public decimal? NetWeightKgPerLine { get; set; }
+    /// <summary>Gross weight (goods + packaging) of just this line, in kilograms.</summary>
+    public decimal? GrossWeightKgPerLine { get; set; }
 }
 
 public enum CustomerInvoiceStatus

@@ -1587,6 +1587,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<int?>("CartonNumberFrom")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CartonNumberTo")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1602,6 +1608,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("GrossWeightKgPerLine")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1614,6 +1624,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("NetWeightKgPerLine")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -1634,6 +1648,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("UnitsPerCarton")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

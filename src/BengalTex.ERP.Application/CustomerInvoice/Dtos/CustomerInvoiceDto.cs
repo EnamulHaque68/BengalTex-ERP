@@ -53,7 +53,13 @@ public record CustomerInvoiceLineDto(
     decimal UnitPrice,
     decimal LineTotal,                   // Quantity × UnitPrice
     int SortOrder,
-    string? LineNotes);
+    string? LineNotes,
+    // Per-line export packing breakdown (Packing List)
+    int? CartonNumberFrom,
+    int? CartonNumberTo,
+    int? UnitsPerCarton,
+    decimal? NetWeightKgPerLine,
+    decimal? GrossWeightKgPerLine);
 
 public record CustomerInvoiceListItemDto(
     long Id,

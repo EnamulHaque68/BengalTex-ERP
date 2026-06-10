@@ -111,7 +111,10 @@
             <th>HS Code</th>
             <th class="num">Qty</th>
             <th>UoM</th>
-            <th>Packing</th>
+            <th class="num">Cartons</th>
+            <th class="num">Units / Ctn</th>
+            <th class="num">Net Wt (kg)</th>
+            <th class="num">Gross Wt (kg)</th>
           </tr>
         </thead>
         <tbody>
@@ -125,7 +128,10 @@
             <td class="mono">{{ l.hsCode || '—' }}</td>
             <td class="num">{{ l.quantity }}</td>
             <td>{{ l.unitOfMeasureCode }}</td>
-            <td class="packing-cell"><em>As per shipping marks</em></td>
+            <td class="num">{{ cartonRange(l) }}</td>
+            <td class="num">{{ l.unitsPerCarton ?? '—' }}</td>
+            <td class="num">{{ l.netWeightKgPerLine ?? '—' }}</td>
+            <td class="num">{{ l.grossWeightKgPerLine ?? '—' }}</td>
           </tr>
         </tbody>
         <tfoot>
@@ -135,7 +141,10 @@
             <td></td>
             <td class="num"><strong>{{ totalQty() }}</strong></td>
             <td></td>
+            <td class="num"><strong>{{ totalCartons() || '—' }}</strong></td>
             <td></td>
+            <td class="num"><strong>{{ totalNetWeight() || '—' }}</strong></td>
+            <td class="num"><strong>{{ totalGrossWeight() || '—' }}</strong></td>
           </tr>
         </tfoot>
       </table>

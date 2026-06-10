@@ -265,3 +265,16 @@
   }
   textarea { width: 100%; min-height: 60px; font-family: inherit; font-size: 0.85rem; }
 }
+
+.packing-grid-table {
+  margin: 0.5rem 0 1rem;
+  .prod-cell { font-size: 0.85rem; font-weight: 500; color: #111827; }
+  .prod-code-cell { font-size: 0.7rem; font-family: monospace; color: #9ca3af; margin-top: 0.1rem; }
+  .cell-input {
+    width: 90px;
+    padding: 0.25rem 0.45rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+  }
+}

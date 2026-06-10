@@ -100,7 +100,18 @@ public class CustomerInvoicesController : ControllerBase
             request.TotalPackages, request.GrossWeightKg, request.NetWeightKg), ct);
         return Ok(result);
     }
+
+    /// <summary>Bulk-set per-line packing breakdown (carton numbers, units/carton, weights).</summary>
+    [HttpPost("{id:long}/set-lines-packing")]
+    [HasPermission(Permissions.Invoices.Edit)]
+    public async Task<IActionResult> SetLinesPacking(long id, [FromBody] SetLinesPackingRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SetInvoiceLinesPackingCommand(id, request.Lines), ct);
+        return Ok(result);
+    }
 }
+
+public record SetLinesPackingRequest(IReadOnlyList<InvoiceLinePackingInput> Lines);
 
 public record MarkExportedRequest(
     string? EpbFormNumber,

@@ -86,6 +86,10 @@ public class CustomerInvoiceLineConfiguration : IEntityTypeConfiguration<Custome
         builder.Property(l => l.UnitPrice).HasPrecision(18, 4);
         builder.Property(l => l.LineNotes).HasMaxLength(1000);
 
+        // Per-line export packing breakdown
+        builder.Property(l => l.NetWeightKgPerLine).HasPrecision(12, 3);
+        builder.Property(l => l.GrossWeightKgPerLine).HasPrecision(12, 3);
+
         builder.HasIndex(l => l.CustomerInvoiceId);
         builder.HasIndex(l => l.ProductId);
 

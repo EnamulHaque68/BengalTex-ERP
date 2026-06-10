@@ -20,6 +20,25 @@ export interface CustomerInvoiceLineDto {
   lineTotal: number;
   sortOrder: number;
   lineNotes: string | null;
+  // Per-line export packing
+  cartonNumberFrom: number | null;
+  cartonNumberTo: number | null;
+  unitsPerCarton: number | null;
+  netWeightKgPerLine: number | null;
+  grossWeightKgPerLine: number | null;
+}
+
+export interface InvoiceLinePackingInput {
+  lineId: number;
+  cartonNumberFrom: number | null;
+  cartonNumberTo: number | null;
+  unitsPerCarton: number | null;
+  netWeightKgPerLine: number | null;
+  grossWeightKgPerLine: number | null;
+}
+
+export interface SetLinesPackingRequest {
+  lines: InvoiceLinePackingInput[];
 }
 
 export interface CustomerInvoiceDto {
