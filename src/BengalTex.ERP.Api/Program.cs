@@ -117,6 +117,32 @@ builder.Services
 builder.Services.AddSignalR();
 
 // ============================================
+// HSTS (HTTP Strict Transport Security)
+// ============================================
+// Only emitted over HTTPS in non-Development environments. 1-year max-age, includeSubDomains.
+// Browsers will refuse plain-HTTP for the entire host for 1 year after the first HTTPS visit.
+builder.Services.AddHsts(options =>
+{
+    options.Preload = false;             // Toggle once domain is on the HSTS preload list.
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
+// ============================================
+// REQUEST BODY SIZE CAP
+// ============================================
+// Defaults are ~28 MB on Kestrel / ~30 MB on IIS. Bump explicitly to 50 MB so document
+// attachments (BL copy, audit certificates, large CSV imports) fit, but cap so a hostile
+// client can't OOM us with a 4 GB stream.
+builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(o =>
+    o.Limits.MaxRequestBodySize = 50L * 1024 * 1024);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = 50L * 1024 * 1024;
+    o.ValueLengthLimit = int.MaxValue;
+});
+
+// ============================================
 // RATE LIMITING (brute-force / credential-stuffing protection)
 // ============================================
 // Per-IP fixed window on the public auth endpoints (login / forgot- / reset-password).
@@ -237,6 +263,10 @@ app.UseSerilogRequestLogging();
 // 2. Global exception handler (catches everything below)
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// 2b. Security headers (stamped on every response — must be early so OnStarting fires
+//     before the status line is sent for every code path below).
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // 3. Swagger (Development only)
 if (app.Environment.IsDevelopment())
 {
@@ -246,6 +276,11 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bengal TEX ERP API v1");
         c.RoutePrefix = "swagger";
     });
+}
+else
+{
+    // 3b. HSTS (production only — never emit it in dev so localhost can use plain HTTP)
+    app.UseHsts();
 }
 
 // 4. HTTPS redirect
