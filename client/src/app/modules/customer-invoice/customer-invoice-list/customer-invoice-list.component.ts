@@ -162,6 +162,78 @@ export class CustomerInvoiceListComponent implements OnInit {
     window.open(`/customer-invoices/${row.id}/print-packing`, '_blank');
   }
 
+  // ─── Line packing breakdown dialog ──────────────────────────────────────
+  packingDlgVisible = false;
+  packingSaving = false;
+  packingError = '';
+  packingTarget: CustomerInvoiceListItemDto | null = null;
+  packingLines: Array<{
+    lineId: number; productCode: string; productName: string; uom: string; quantity: number;
+    cartonNumberFrom: number | null; cartonNumberTo: number | null;
+    unitsPerCarton: number | null;
+    netWeightKgPerLine: number | null; grossWeightKgPerLine: number | null;
+  }> = [];
+
+  openLinePacking(row: CustomerInvoiceListItemDto): void {
+    this.packingTarget = row;
+    this.packingError = '';
+    this.packingLines = [];
+    this.packingDlgVisible = true;
+    this.invService.getById(row.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) {
+          this.packingLines = res.data.lines.map(l => ({
+            lineId: l.id,
+            productCode: l.productCode,
+            productName: l.productName,
+            uom: l.unitOfMeasureCode,
+            quantity: l.quantity,
+            cartonNumberFrom: l.cartonNumberFrom,
+            cartonNumberTo: l.cartonNumberTo,
+            unitsPerCarton: l.unitsPerCarton,
+            netWeightKgPerLine: l.netWeightKgPerLine,
+            grossWeightKgPerLine: l.grossWeightKgPerLine
+          }));
+          this.cdr.detectChanges();
+        }
+      })
+    });
+  }
+
+  saveLinePacking(): void {
+    if (!this.packingTarget || this.packingSaving) return;
+    this.packingSaving = true;
+    this.packingError = '';
+    this.cdr.detectChanges();
+    const payload = {
+      lines: this.packingLines.map(l => ({
+        lineId: l.lineId,
+        cartonNumberFrom: l.cartonNumberFrom ?? null,
+        cartonNumberTo: l.cartonNumberTo ?? null,
+        unitsPerCarton: l.unitsPerCarton ?? null,
+        netWeightKgPerLine: l.netWeightKgPerLine ?? null,
+        grossWeightKgPerLine: l.grossWeightKgPerLine ?? null
+      }))
+    };
+    this.invService.setLinesPacking(this.packingTarget.id, payload).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.packingSaving = false;
+        if (res.success) {
+          this.packingDlgVisible = false;
+          this.actionMessage = `Line packing saved for ${this.packingTarget?.code}.`;
+        } else {
+          this.packingError = res.message || 'Save failed.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (e) => this.zone.run(() => {
+        this.packingSaving = false;
+        this.packingError = e?.error?.message || 'Save failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
   form!: FormGroup;
 
   deleteDialogVisible = false;

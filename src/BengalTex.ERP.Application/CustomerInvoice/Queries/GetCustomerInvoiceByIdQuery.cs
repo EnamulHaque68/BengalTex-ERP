@@ -35,7 +35,9 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
                 l.Id, l.ProductId, l.Product.Code, l.Product.Name,
                 l.Product.UnitOfMeasure.Code, l.Product.HsCode,
                 l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
-                l.SortOrder, l.LineNotes))
+                l.SortOrder, l.LineNotes,
+                l.CartonNumberFrom, l.CartonNumberTo, l.UnitsPerCarton,
+                l.NetWeightKgPerLine, l.GrossWeightKgPerLine))
             .ToList();
 
         var dto = new CustomerInvoiceDto(

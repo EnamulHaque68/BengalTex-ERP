@@ -66,4 +66,26 @@ export class PackingListPrintComponent implements OnInit {
   totalQty(): number {
     return (this.invoice?.lines ?? []).reduce((s, l) => s + (l.quantity || 0), 0);
   }
+
+  cartonRange(l: { cartonNumberFrom: number | null; cartonNumberTo: number | null }): string {
+    if (l.cartonNumberFrom === null && l.cartonNumberTo === null) return '—';
+    if (l.cartonNumberFrom !== null && l.cartonNumberTo !== null && l.cartonNumberFrom !== l.cartonNumberTo)
+      return `C${l.cartonNumberFrom}–C${l.cartonNumberTo}`;
+    return `C${l.cartonNumberFrom ?? l.cartonNumberTo}`;
+  }
+
+  totalCartons(): number {
+    return (this.invoice?.lines ?? []).reduce((s, l) => {
+      if (l.cartonNumberFrom === null || l.cartonNumberTo === null) return s;
+      return s + (l.cartonNumberTo - l.cartonNumberFrom + 1);
+    }, 0);
+  }
+
+  totalNetWeight(): number {
+    return Math.round((this.invoice?.lines ?? []).reduce((s, l) => s + (l.netWeightKgPerLine ?? 0), 0) * 1000) / 1000;
+  }
+
+  totalGrossWeight(): number {
+    return Math.round((this.invoice?.lines ?? []).reduce((s, l) => s + (l.grossWeightKgPerLine ?? 0), 0) * 1000) / 1000;
+  }
 }

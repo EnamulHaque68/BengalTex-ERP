@@ -9,7 +9,8 @@ import {
   CustomerInvoiceDto,
   CustomerInvoiceListItemDto,
   UpdateCustomerInvoiceRequest,
-  MarkExportedRequest
+  MarkExportedRequest,
+  SetLinesPackingRequest
 } from '../models/customer-invoice.models';
 
 @Injectable({ providedIn: 'root' })
@@ -62,5 +63,9 @@ export class CustomerInvoiceService {
 
   markExported(id: number, data: MarkExportedRequest): Observable<ApiResponse<CustomerInvoiceDto>> {
     return this.http.post<ApiResponse<CustomerInvoiceDto>>(`${this.base}/${id}/mark-exported`, data);
+  }
+
+  setLinesPacking(id: number, data: SetLinesPackingRequest): Observable<ApiResponse<CustomerInvoiceDto>> {
+    return this.http.post<ApiResponse<CustomerInvoiceDto>>(`${this.base}/${id}/set-lines-packing`, data);
   }
 }

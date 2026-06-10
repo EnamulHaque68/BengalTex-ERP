@@ -116,6 +116,9 @@
               <p-button icon="pi pi-box" severity="info" [text]="true" size="small"
                         *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
                         (click)="openPackingList(c)" pTooltip="Print Packing List (export)" />
+              <p-button icon="pi pi-table" severity="info" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && c.currencyCode !== 'BDT'"
+                        (click)="openLinePacking(c)" pTooltip="Set per-line packing breakdown" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"
@@ -380,6 +383,56 @@
                 (click)="exportDlgVisible = false" [disabled]="exportSaving" />
       <p-button [label]="exportSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
                 [loading]="exportSaving" (click)="saveExport()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Set Line Packing Breakdown -->
+<p-dialog [(visible)]="packingDlgVisible" header="Set Per-Line Packing Breakdown"
+          [modal]="true" [style]="{ width: '960px' }">
+  <div *ngIf="packingTarget" class="export-dlg">
+    <p class="hint">
+      Fill in carton numbering, units per carton, and per-line weights for
+      <strong>{{ packingTarget.code }}</strong> ({{ packingTarget.customerName }}).
+      These appear on the Packing List and Commercial Invoice per-line detail.
+    </p>
+    <div class="alert alert-error" *ngIf="packingError"><i class="pi pi-exclamation-circle"></i>{{ packingError }}</div>
+
+    <table class="line-grid packing-grid-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th class="num-col">Qty</th>
+          <th>UoM</th>
+          <th class="num-col">Carton From</th>
+          <th class="num-col">Carton To</th>
+          <th class="num-col">Units / Carton</th>
+          <th class="num-col">Net Wt (kg)</th>
+          <th class="num-col">Gross Wt (kg)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of packingLines">
+          <td>
+            <div class="prod-cell">{{ l.productName }}</div>
+            <div class="prod-code-cell">{{ l.productCode }}</div>
+          </td>
+          <td class="num">{{ l.quantity }}</td>
+          <td class="unit-cell">{{ l.uom }}</td>
+          <td class="num"><input pInputText type="number" min="0" [(ngModel)]="l.cartonNumberFrom" class="cell-input" /></td>
+          <td class="num"><input pInputText type="number" min="0" [(ngModel)]="l.cartonNumberTo" class="cell-input" /></td>
+          <td class="num"><input pInputText type="number" min="0" [(ngModel)]="l.unitsPerCarton" class="cell-input" /></td>
+          <td class="num"><input pInputText type="number" min="0" step="0.001" [(ngModel)]="l.netWeightKgPerLine" class="cell-input" /></td>
+          <td class="num"><input pInputText type="number" min="0" step="0.001" [(ngModel)]="l.grossWeightKgPerLine" class="cell-input" /></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="packingDlgVisible = false" [disabled]="packingSaving" />
+      <p-button [label]="packingSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
+                [loading]="packingSaving" (click)="saveLinePacking()" />
     </div>
   </div>
 </p-dialog>
