@@ -38,6 +38,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<CustomerEntity>
         builder.HasIndex(c => c.Name);
         builder.HasIndex(c => c.Category);
         builder.HasIndex(c => c.IsActive);
+        builder.HasIndex(c => c.IsExport);
 
         builder.Property(c => c.RowVersion).IsRowVersion();
     }

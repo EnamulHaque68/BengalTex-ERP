@@ -31,6 +31,7 @@ public sealed record UpdateCustomerCommand(
     string Category,
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,
     string? Notes,
     bool IsActive
 ) : IRequest<ApiResponse<CustomerDto>>;
@@ -103,6 +104,7 @@ internal sealed class UpdateCustomerCommandHandler
         entity.Category = Enum.Parse<CustomerCategory>(cmd.Category);
         entity.CreditLimit = cmd.CreditLimit;
         entity.CreditPeriodDays = cmd.CreditPeriodDays;
+        entity.IsExport = cmd.IsExport;
         entity.Notes = cmd.Notes;
         entity.IsActive = cmd.IsActive;
 

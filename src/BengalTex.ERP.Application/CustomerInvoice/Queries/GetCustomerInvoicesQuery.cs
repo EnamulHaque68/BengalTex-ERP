@@ -77,7 +77,8 @@ internal sealed class GetCustomerInvoicesQueryHandler
                 c.TotalAmount, c.AmountPaid, c.TotalAmount - c.AmountPaid,
                 c.TotalAmount * c.ExchangeRate,
                 c.Lines.Count,
-                c.EpbFormNumber, c.ShipmentDate))
+                c.EpbFormNumber, c.ShipmentDate,
+                c.Customer.IsExport))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<CustomerInvoiceListItemDto>.Create(

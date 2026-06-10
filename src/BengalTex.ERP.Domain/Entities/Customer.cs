@@ -34,6 +34,14 @@ public class Customer : BaseEntity
     public decimal CreditLimit { get; set; }              // 0 = no credit allowed
     public int CreditPeriodDays { get; set; }             // 0 / 30 / 60 / 90, etc.
 
+    /// <summary>
+    /// True = this customer's invoices are considered export (Form-N / Commercial Invoice / Packing List
+    /// flows apply regardless of payment currency). False = derived from invoice currency
+    /// (any non-BDT invoice is treated as export). Use for: BDT-paid export buyers, re-export
+    /// gateway middlemen, etc.
+    /// </summary>
+    public bool IsExport { get; set; }
+
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
 }

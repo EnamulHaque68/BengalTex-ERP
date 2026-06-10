@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore;
 namespace BengalTex.ERP.Application.Reports.Queries;
 
 /// <summary>
-/// EPB Export Register — lists every foreign-currency (non-BDT) CustomerInvoice issued in
-/// the date range, in the shape Bangladesh's Export Promotion Bureau Form-N needs. Foreign
-/// currency is detected by `Currency.IsBaseCurrency = false` (so any non-BDT counts as
-/// "export" for v1; refine to a Customer.IsExport flag in v1b if required). Default window
+/// EPB Export Register — lists every export CustomerInvoice issued in the date range, in
+/// the shape Bangladesh's Export Promotion Bureau Form-N needs. An invoice counts as export
+/// when EITHER the customer is flagged `IsExport = true` (handles BDT-paid exports / re-export
+/// gateways) OR the invoice currency is non-BDT (`!Currency.IsBaseCurrency`). Default window
 /// = trailing 30 days. Drives both the on-screen report and CSV export.
 /// </summary>
 public sealed record GetEpbExportRegisterQuery(
@@ -36,7 +36,7 @@ internal sealed class GetEpbExportRegisterQueryHandler
         var query = _invRepo.Query()
             .Where(i => i.Status != CustomerInvoiceStatus.Draft
                      && i.Status != CustomerInvoiceStatus.Cancelled
-                     && !i.Currency.IsBaseCurrency               // foreign currency → export
+                     && (i.Customer.IsExport || !i.Currency.IsBaseCurrency)   // explicit flag OR foreign currency
                      && i.InvoiceDate >= fromDate
                      && i.InvoiceDate <= toDate);
 

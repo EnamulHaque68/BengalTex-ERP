@@ -105,6 +105,7 @@ export interface CustomerInvoiceListItemDto {
   lineCount: number;
   epbFormNumber: string | null;
   shipmentDate: string | null;
+  customerIsExport: boolean;
 }
 
 export interface MarkExportedRequest {

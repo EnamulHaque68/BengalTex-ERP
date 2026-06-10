@@ -83,4 +83,5 @@ public record CustomerInvoiceListItemDto(
     int LineCount,
     // BD export reporting
     string? EpbFormNumber,
-    DateOnly? ShipmentDate);
+    DateOnly? ShipmentDate,
+    bool CustomerIsExport);

@@ -21,6 +21,7 @@ public record CustomerDto(
     string Category,            // Enum as string: "A", "B", "C"
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,              // explicit "export buyer" flag (additive to currency heuristic)
     string? Notes,
     bool IsActive);
 
@@ -36,4 +37,5 @@ public record CustomerListItemDto(
     string Category,
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,
     bool IsActive);

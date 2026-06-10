@@ -46,7 +46,7 @@ public class CustomersController : ControllerBase
             request.Code, request.Name, request.ContactPerson, request.Phone, request.Email, request.Website,
             request.AddressLine1, request.AddressLine2, request.City, request.District, request.PostalCode, request.Country,
             request.BinNumber, request.VatNumber, request.TinNumber,
-            request.Category, request.CreditLimit, request.CreditPeriodDays, request.Notes
+            request.Category, request.CreditLimit, request.CreditPeriodDays, request.IsExport, request.Notes
         ), ct);
         return Ok(result);
     }
@@ -59,7 +59,7 @@ public class CustomersController : ControllerBase
             id, request.Name, request.ContactPerson, request.Phone, request.Email, request.Website,
             request.AddressLine1, request.AddressLine2, request.City, request.District, request.PostalCode, request.Country,
             request.BinNumber, request.VatNumber, request.TinNumber,
-            request.Category, request.CreditLimit, request.CreditPeriodDays, request.Notes, request.IsActive
+            request.Category, request.CreditLimit, request.CreditPeriodDays, request.IsExport, request.Notes, request.IsActive
         ), ct);
         return Ok(result);
     }
@@ -92,6 +92,7 @@ public record CreateCustomerRequest(
     string Category,
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,
     string? Notes);
 
 public record UpdateCustomerRequest(
@@ -112,5 +113,6 @@ public record UpdateCustomerRequest(
     string Category,
     decimal CreditLimit,
     int CreditPeriodDays,
+    bool IsExport,
     string? Notes,
     bool IsActive);
