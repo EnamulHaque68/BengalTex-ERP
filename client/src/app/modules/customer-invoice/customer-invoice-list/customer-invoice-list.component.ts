@@ -222,6 +222,58 @@ export class CustomerInvoiceListComponent implements OnInit {
     });
   }
 
+  // ─── Email Export Bundle dialog ────────────────────────────────────────
+  bundleDlgVisible = false;
+  bundleSending = false;
+  bundleError = '';
+  bundleTarget: CustomerInvoiceListItemDto | null = null;
+  bundleForm = { toAddresses: '', ccAddresses: '', subject: '', htmlBody: '' };
+
+  openEmailExportBundle(row: CustomerInvoiceListItemDto): void {
+    this.bundleTarget = row;
+    this.bundleError = '';
+    this.bundleForm = {
+      toAddresses: '',
+      ccAddresses: '',
+      subject: `Export documents — ${row.code}`,
+      htmlBody:
+        `<p>Dear ${row.customerName},</p>` +
+        `<p>Please find attached the Commercial Invoice and Packing List for shipment <strong>${row.code}</strong>.</p>` +
+        `<p>Kindly acknowledge receipt and revert in case of any discrepancy.</p>` +
+        `<p>Regards,<br/>Export Team</p>`
+    };
+    this.bundleDlgVisible = true;
+  }
+
+  sendExportBundle(): void {
+    if (!this.bundleTarget || this.bundleSending) return;
+    this.bundleSending = true;
+    this.bundleError = '';
+    this.cdr.detectChanges();
+    this.invService.emailExportBundle(this.bundleTarget.id, {
+      toAddresses: this.bundleForm.toAddresses.trim(),
+      ccAddresses: this.bundleForm.ccAddresses.trim() || null,
+      subject: this.bundleForm.subject.trim(),
+      htmlBody: this.bundleForm.htmlBody
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.bundleSending = false;
+        if (res.success) {
+          this.bundleDlgVisible = false;
+          this.actionMessage = `Export bundle sent for ${this.bundleTarget?.code}.`;
+        } else {
+          this.bundleError = res.message || 'Send failed.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (e) => this.zone.run(() => {
+        this.bundleSending = false;
+        this.bundleError = e?.error?.message || 'Send failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
   saveLinePacking(): void {
     if (!this.packingTarget || this.packingSaving) return;
     this.packingSaving = true;

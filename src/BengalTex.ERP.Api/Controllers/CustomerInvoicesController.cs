@@ -111,7 +111,22 @@ public class CustomerInvoicesController : ControllerBase
         var result = await _mediator.Send(new SetInvoiceLinesPackingCommand(id, request.Lines), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Email the buyer the export-document bundle: Commercial Invoice + Packing List as
+    /// two attached PDFs. Logs to SentEmail with SourceType="ExportBundle".
+    /// </summary>
+    [HttpPost("{id:long}/email-export-bundle")]
+    [HasPermission(Permissions.Emails.Send)]
+    public async Task<IActionResult> EmailExportBundle(long id, [FromBody] EmailExportBundleRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SendExportBundleEmailCommand(
+            id, request.ToAddresses, request.CcAddresses, request.Subject, request.HtmlBody), ct);
+        return Ok(result);
+    }
 }
+
+public record EmailExportBundleRequest(string ToAddresses, string? CcAddresses, string Subject, string HtmlBody);
 
 public record SetLinesPackingRequest(IReadOnlyList<InvoiceLinePackingInput> Lines);
 

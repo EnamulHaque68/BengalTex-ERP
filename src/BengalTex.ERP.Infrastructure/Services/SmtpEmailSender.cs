@@ -20,7 +20,15 @@ public class SmtpEmailSender : IEmailSender
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
         => SendAsync(new[] { to }, subject, htmlBody, ct);
 
-    public async Task SendAsync(IEnumerable<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
+    public Task SendAsync(IEnumerable<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
+        => SendAsync(toAddresses, subject, htmlBody, Array.Empty<EmailAttachment>(), ct);
+
+    public async Task SendAsync(
+        IEnumerable<string> toAddresses,
+        string subject,
+        string htmlBody,
+        IReadOnlyList<EmailAttachment> attachments,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_settings.Host))
             throw new InvalidOperationException("Email:Host is not configured for the SMTP sender.");
@@ -35,13 +43,30 @@ public class SmtpEmailSender : IEmailSender
         foreach (var to in toAddresses)
             message.To.Add(to);
 
-        using var client = new SmtpClient(_settings.Host, _settings.Port)
+        // MailMessage owns the disposal of its Attachments; MemoryStreams must outlive Send,
+        // so collect them locally and dispose after SendMailAsync returns.
+        var streams = new List<MemoryStream>(attachments.Count);
+        foreach (var a in attachments)
         {
-            EnableSsl = _settings.UseSsl
-        };
-        if (!string.IsNullOrEmpty(_settings.Username))
-            client.Credentials = new NetworkCredential(_settings.Username, _settings.Password);
+            var stream = new MemoryStream(a.Content, writable: false);
+            streams.Add(stream);
+            message.Attachments.Add(new System.Net.Mail.Attachment(stream, a.FileName, a.ContentType));
+        }
 
-        await client.SendMailAsync(message, ct);
+        try
+        {
+            using var client = new SmtpClient(_settings.Host, _settings.Port)
+            {
+                EnableSsl = _settings.UseSsl
+            };
+            if (!string.IsNullOrEmpty(_settings.Username))
+                client.Credentials = new NetworkCredential(_settings.Username, _settings.Password);
+
+            await client.SendMailAsync(message, ct);
+        }
+        finally
+        {
+            foreach (var s in streams) s.Dispose();
+        }
     }
 }

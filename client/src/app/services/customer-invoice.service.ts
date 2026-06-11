@@ -68,4 +68,8 @@ export class CustomerInvoiceService {
   setLinesPacking(id: number, data: SetLinesPackingRequest): Observable<ApiResponse<CustomerInvoiceDto>> {
     return this.http.post<ApiResponse<CustomerInvoiceDto>>(`${this.base}/${id}/set-lines-packing`, data);
   }
+
+  emailExportBundle(id: number, data: { toAddresses: string; ccAddresses: string | null; subject: string; htmlBody: string; }): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/${id}/email-export-bundle`, data);
+  }
 }

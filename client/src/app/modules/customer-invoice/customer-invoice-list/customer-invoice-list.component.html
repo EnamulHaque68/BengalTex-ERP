@@ -119,6 +119,9 @@
               <p-button icon="pi pi-table" severity="info" [text]="true" size="small"
                         *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
                         (click)="openLinePacking(c)" pTooltip="Set per-line packing breakdown" />
+              <p-button icon="pi pi-send" severity="success" [text]="true" size="small"
+                        *ngIf="c.status !== 'Draft' && c.status !== 'Cancelled' && (c.currencyCode !== 'BDT' || c.customerIsExport)"
+                        (click)="openEmailExportBundle(c)" pTooltip="Email Export Bundle (CI + Packing List PDFs)" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(c)"
                         [loading]="rowActionId === c.id"
@@ -458,6 +461,44 @@
                 (click)="packingDlgVisible = false" [disabled]="packingSaving" />
       <p-button [label]="packingSaving ? 'Saving...' : 'Save'" icon="pi pi-save"
                 [loading]="packingSaving" (click)="saveLinePacking()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Email Export Bundle (CI + Packing List PDFs) -->
+<p-dialog [(visible)]="bundleDlgVisible" header="Email Export Bundle (Commercial Invoice + Packing List)"
+          [modal]="true" [style]="{ width: '640px' }">
+  <div *ngIf="bundleTarget" class="export-dlg">
+    <p class="hint">
+      The buyer will receive two attached PDFs generated fresh from the current invoice data:
+      <strong>Commercial-Invoice-{{ bundleTarget.code }}.pdf</strong> and
+      <strong>Packing-List-{{ bundleTarget.code }}.pdf</strong>.
+      Each send is logged to the Sent Email audit trail.
+    </p>
+    <div class="alert alert-error" *ngIf="bundleError"><i class="pi pi-exclamation-circle"></i>{{ bundleError }}</div>
+
+    <div class="field">
+      <label>To <small>(comma or semicolon separated)</small></label>
+      <input pInputText [(ngModel)]="bundleForm.toAddresses" maxlength="500" placeholder="buyer@example.com" />
+    </div>
+    <div class="field">
+      <label>Cc <small>(optional)</small></label>
+      <input pInputText [(ngModel)]="bundleForm.ccAddresses" maxlength="500" placeholder="merchandiser@yourcompany.com" />
+    </div>
+    <div class="field">
+      <label>Subject</label>
+      <input pInputText [(ngModel)]="bundleForm.subject" maxlength="300" />
+    </div>
+    <div class="field">
+      <label>Body <small>(HTML allowed)</small></label>
+      <textarea pInputTextarea rows="6" [(ngModel)]="bundleForm.htmlBody"></textarea>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="bundleDlgVisible = false" [disabled]="bundleSending" />
+      <p-button [label]="bundleSending ? 'Sending...' : 'Send'" icon="pi pi-send" severity="success"
+                [loading]="bundleSending" (click)="sendExportBundle()" />
     </div>
   </div>
 </p-dialog>
