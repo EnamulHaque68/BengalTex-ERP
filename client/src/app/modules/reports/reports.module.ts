@@ -22,6 +22,7 @@ import { ProductivityReportComponent } from './productivity-report/productivity-
 import { BuyerOrderBookComponent } from './buyer-order-book/buyer-order-book.component';
 import { EpbExportRegisterComponent } from './epb-export-register/epb-export-register.component';
 import { CustomerStatementComponent } from './customer-statement/customer-statement.component';
+import { SupplierStatementComponent } from './supplier-statement/supplier-statement.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
@@ -36,7 +37,8 @@ const routes: Routes = [
   { path: 'productivity', component: ProductivityReportComponent },
   { path: 'buyer-order-book', component: BuyerOrderBookComponent },
   { path: 'epb-export-register', component: EpbExportRegisterComponent },
-  { path: 'customer-statement', component: CustomerStatementComponent }
+  { path: 'customer-statement', component: CustomerStatementComponent },
+  { path: 'supplier-statement', component: SupplierStatementComponent }
 ];
 
 @NgModule({
@@ -52,7 +54,8 @@ const routes: Routes = [
     ProductivityReportComponent,
     BuyerOrderBookComponent,
     EpbExportRegisterComponent,
-    CustomerStatementComponent
+    CustomerStatementComponent,
+    SupplierStatementComponent
   ],
   imports: [
     CommonModule, FormsModule,

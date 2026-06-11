@@ -153,4 +153,14 @@ public class ReportsController : ControllerBase
         [FromQuery] DateOnly? toDate = null,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetCustomerStatementQuery(customerId, fromDate, toDate), ct));
+
+    /// <summary>Supplier Statement of Account — opening payable + chronological invoices/payments + running balance + closing (AP mirror).</summary>
+    [HttpGet("supplier-statement")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetSupplierStatement(
+        [FromQuery] int supplierId,
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetSupplierStatementQuery(supplierId, fromDate, toDate), ct));
 }
