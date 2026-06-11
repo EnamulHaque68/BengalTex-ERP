@@ -54,3 +54,15 @@
   .summary-strip { break-inside: avoid; }
   @page { size: A4; margin: 1.2cm; }
 }
+
+.email-dlg {
+  .hint { font-size: 0.85rem; color: #4b5563; margin-bottom: 0.75rem; }
+  .field { margin-bottom: 0.75rem;
+    label { display: block; font-size: 0.8125rem; font-weight: 500; color: #374151; margin-bottom: 0.35rem;
+      small { color: #9ca3af; font-weight: 400; }
+    }
+    input { width: 100%; }
+    .body-area { width: 100%; min-height: 120px; font-family: inherit; font-size: 0.85rem; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; }
+  }
+  .dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; }
+}

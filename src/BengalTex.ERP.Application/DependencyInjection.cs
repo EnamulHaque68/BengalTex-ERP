@@ -29,6 +29,9 @@ public static class DependencyInjection
         services.AddSingleton(typeAdapterConfig);
         services.AddScoped<IMapper, ServiceMapper>();
 
+        // Shared plumbing for statement-email handlers (render + send + audit)
+        services.AddScoped<Reports.Commands.StatementEmailDispatcher>();
+
         return services;
     }
 }

@@ -17,6 +17,8 @@
       <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
       <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
       <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" [disabled]="!report" />
+      <p-button label="Email PDF" icon="pi pi-send" severity="success"
+                (click)="openEmailStatement()" [disabled]="!report" />
       <p-button label="Download CSV" icon="pi pi-download" severity="secondary"
                 (click)="downloadCsv()" [disabled]="!report || report.lines.length === 0" />
     </div>
@@ -95,3 +97,40 @@
     </div>
   </ng-container>
 </div>
+
+<!-- Email Statement (PDF attached) -->
+<p-dialog [(visible)]="emailDlgVisible" header="Email Statement (PDF attached)"
+          [modal]="true" [style]="{ width: '620px' }">
+  <div *ngIf="report" class="email-dlg">
+    <p class="hint">
+      The recipient receives the statement as an attached PDF rendered fresh for
+      <strong>{{ report.customerName }}</strong> ({{ report.fromDate }} → {{ report.toDate }}).
+      Each send is logged to the Sent Email audit trail.
+    </p>
+    <div class="alert alert-error" *ngIf="emailError"><i class="pi pi-exclamation-circle"></i>{{ emailError }}</div>
+
+    <div class="field">
+      <label>To <small>(comma or semicolon separated)</small></label>
+      <input pInputText [(ngModel)]="emailForm.toAddresses" maxlength="500" placeholder="accounts@buyer.com" />
+    </div>
+    <div class="field">
+      <label>Cc <small>(optional)</small></label>
+      <input pInputText [(ngModel)]="emailForm.ccAddresses" maxlength="500" />
+    </div>
+    <div class="field">
+      <label>Subject</label>
+      <input pInputText [(ngModel)]="emailForm.subject" maxlength="300" />
+    </div>
+    <div class="field">
+      <label>Body <small>(HTML allowed)</small></label>
+      <textarea rows="6" [(ngModel)]="emailForm.htmlBody" class="body-area"></textarea>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true"
+                (click)="emailDlgVisible = false" [disabled]="emailSending" />
+      <p-button [label]="emailSending ? 'Sending...' : 'Send'" icon="pi pi-send" severity="success"
+                [loading]="emailSending" (click)="sendStatementEmail()" />
+    </div>
+  </div>
+</p-dialog>
