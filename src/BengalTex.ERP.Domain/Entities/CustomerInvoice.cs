@@ -94,6 +94,12 @@ public class CustomerInvoice : BaseTransactionalEntity
     public decimal? GrossWeightKg { get; set; }
     /// <summary>Net weight in kilograms (goods only).</summary>
     public decimal? NetWeightKg { get; set; }
+    /// <summary>Container number (sea freight) — e.g. "MSCU1234567".</summary>
+    public string? ContainerNumber { get; set; }
+    /// <summary>Customs / carrier seal number on the container.</summary>
+    public string? SealNumber { get; set; }
+    /// <summary>Truck / wagon number that hauled the goods to port.</summary>
+    public string? TruckNumber { get; set; }
 
     public ICollection<CustomerInvoiceLine> Lines { get; set; } = new List<CustomerInvoiceLine>();
 

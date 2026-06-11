@@ -97,7 +97,8 @@ public class CustomerInvoicesController : ControllerBase
             request.EpbFormNumber, request.LcNumber, request.ShipmentDate,
             request.IncoTerm, request.PortOfLoading, request.PortOfDischarge,
             request.VesselName, request.CountryOfDestination, request.ShippingMarks,
-            request.TotalPackages, request.GrossWeightKg, request.NetWeightKg), ct);
+            request.TotalPackages, request.GrossWeightKg, request.NetWeightKg,
+            request.ContainerNumber, request.SealNumber, request.TruckNumber), ct);
         return Ok(result);
     }
 
@@ -125,7 +126,10 @@ public record MarkExportedRequest(
     string? ShippingMarks,
     int? TotalPackages,
     decimal? GrossWeightKg,
-    decimal? NetWeightKg);
+    decimal? NetWeightKg,
+    string? ContainerNumber,
+    string? SealNumber,
+    string? TruckNumber);
 
 public record CreateCustomerInvoiceRequest(
     long SalesOrderId,

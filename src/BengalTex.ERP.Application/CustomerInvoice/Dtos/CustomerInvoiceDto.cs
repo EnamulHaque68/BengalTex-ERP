@@ -40,6 +40,9 @@ public record CustomerInvoiceDto(
     int? TotalPackages,
     decimal? GrossWeightKg,
     decimal? NetWeightKg,
+    string? ContainerNumber,
+    string? SealNumber,
+    string? TruckNumber,
     IReadOnlyList<CustomerInvoiceLineDto> Lines);
 
 public record CustomerInvoiceLineDto(

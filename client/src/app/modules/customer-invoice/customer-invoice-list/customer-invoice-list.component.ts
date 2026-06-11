@@ -75,7 +75,8 @@ export class CustomerInvoiceListComponent implements OnInit {
     vesselName: '', countryOfDestination: '', shippingMarks: '',
     totalPackages: null as number | null,
     grossWeightKg: null as number | null,
-    netWeightKg: null as number | null
+    netWeightKg: null as number | null,
+    containerNumber: '', sealNumber: '', truckNumber: ''
   };
 
   openMarkExported(row: CustomerInvoiceListItemDto): void {
@@ -88,7 +89,8 @@ export class CustomerInvoiceListComponent implements OnInit {
       shipmentDate: row.shipmentDate ?? '',
       incoTerm: '', portOfLoading: 'Chattogram, Bangladesh', portOfDischarge: '',
       vesselName: '', countryOfDestination: '', shippingMarks: '',
-      totalPackages: null, grossWeightKg: null, netWeightKg: null
+      totalPackages: null, grossWeightKg: null, netWeightKg: null,
+      containerNumber: '', sealNumber: '', truckNumber: ''
     };
     this.exportDlgVisible = true;
     this.invService.getById(row.id).subscribe({
@@ -107,7 +109,10 @@ export class CustomerInvoiceListComponent implements OnInit {
             shippingMarks: d.shippingMarks ?? '',
             totalPackages: d.totalPackages,
             grossWeightKg: d.grossWeightKg,
-            netWeightKg: d.netWeightKg
+            netWeightKg: d.netWeightKg,
+            containerNumber: d.containerNumber ?? '',
+            sealNumber: d.sealNumber ?? '',
+            truckNumber: d.truckNumber ?? ''
           };
           this.cdr.detectChanges();
         }
@@ -133,7 +138,10 @@ export class CustomerInvoiceListComponent implements OnInit {
       shippingMarks: f.shippingMarks?.trim() || null,
       totalPackages: f.totalPackages ?? null,
       grossWeightKg: f.grossWeightKg ?? null,
-      netWeightKg: f.netWeightKg ?? null
+      netWeightKg: f.netWeightKg ?? null,
+      containerNumber: f.containerNumber?.trim() || null,
+      sealNumber: f.sealNumber?.trim() || null,
+      truckNumber: f.truckNumber?.trim() || null
     }).subscribe({
       next: (res) => this.zone.run(() => {
         this.exportSaving = false;

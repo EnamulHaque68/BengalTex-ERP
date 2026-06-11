@@ -27,7 +27,10 @@ public sealed record MarkInvoiceAsExportedCommand(
     string? ShippingMarks,
     int? TotalPackages,
     decimal? GrossWeightKg,
-    decimal? NetWeightKg
+    decimal? NetWeightKg,
+    string? ContainerNumber,
+    string? SealNumber,
+    string? TruckNumber
 ) : IRequest<ApiResponse<CustomerInvoiceDto>>;
 
 public sealed class MarkInvoiceAsExportedCommandValidator : AbstractValidator<MarkInvoiceAsExportedCommand>
@@ -46,6 +49,9 @@ public sealed class MarkInvoiceAsExportedCommandValidator : AbstractValidator<Ma
         RuleFor(x => x.TotalPackages).GreaterThanOrEqualTo(0).When(x => x.TotalPackages.HasValue);
         RuleFor(x => x.GrossWeightKg).GreaterThanOrEqualTo(0).When(x => x.GrossWeightKg.HasValue);
         RuleFor(x => x.NetWeightKg).GreaterThanOrEqualTo(0).When(x => x.NetWeightKg.HasValue);
+        RuleFor(x => x.ContainerNumber).MaximumLength(50);
+        RuleFor(x => x.SealNumber).MaximumLength(50);
+        RuleFor(x => x.TruckNumber).MaximumLength(50);
     }
 }
 
@@ -85,6 +91,9 @@ internal sealed class MarkInvoiceAsExportedCommandHandler
         inv.TotalPackages = cmd.TotalPackages;
         inv.GrossWeightKg = cmd.GrossWeightKg;
         inv.NetWeightKg = cmd.NetWeightKg;
+        inv.ContainerNumber = Trim(cmd.ContainerNumber);
+        inv.SealNumber = Trim(cmd.SealNumber);
+        inv.TruckNumber = Trim(cmd.TruckNumber);
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(ct);

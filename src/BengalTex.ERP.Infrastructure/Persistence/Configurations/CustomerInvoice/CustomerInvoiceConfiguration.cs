@@ -30,6 +30,9 @@ public class CustomerInvoiceConfiguration : IEntityTypeConfiguration<CustomerInv
         builder.Property(c => c.ShippingMarks).HasMaxLength(1000);
         builder.Property(c => c.GrossWeightKg).HasPrecision(12, 3);
         builder.Property(c => c.NetWeightKg).HasPrecision(12, 3);
+        builder.Property(c => c.ContainerNumber).HasMaxLength(50);
+        builder.Property(c => c.SealNumber).HasMaxLength(50);
+        builder.Property(c => c.TruckNumber).HasMaxLength(50);
         builder.Property(c => c.VatRate).HasPrecision(7, 4);
         builder.Property(c => c.SubtotalAmount).HasPrecision(18, 4);
         builder.Property(c => c.VatAmount).HasPrecision(18, 4);

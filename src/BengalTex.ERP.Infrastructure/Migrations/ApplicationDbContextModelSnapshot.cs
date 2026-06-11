@@ -1436,6 +1436,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("ContainerNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("CountryOfDestination")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1525,6 +1529,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<long>("SalesOrderId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("SealNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateOnly?>("ShipmentDate")
                         .HasColumnType("date");
 
@@ -1547,6 +1555,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<int?>("TotalPackages")
                         .HasColumnType("int");
+
+                    b.Property<string>("TruckNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("VatAmount")
                         .HasPrecision(18, 4)
