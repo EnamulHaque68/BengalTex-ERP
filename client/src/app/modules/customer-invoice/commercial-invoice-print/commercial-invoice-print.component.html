@@ -111,6 +111,18 @@
           <div class="lbl">Currency</div>
           <div class="val">{{ invoice.currencyCode }}</div>
         </div>
+        <div class="meta" *ngIf="invoice.containerNumber">
+          <div class="lbl">Container #</div>
+          <div class="val mono">{{ invoice.containerNumber }}</div>
+        </div>
+        <div class="meta" *ngIf="invoice.sealNumber">
+          <div class="lbl">Seal #</div>
+          <div class="val mono">{{ invoice.sealNumber }}</div>
+        </div>
+        <div class="meta" *ngIf="invoice.truckNumber">
+          <div class="lbl">Truck / Wagon #</div>
+          <div class="val mono">{{ invoice.truckNumber }}</div>
+        </div>
       </div>
 
       <!-- Line items -->

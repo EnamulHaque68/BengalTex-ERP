@@ -80,6 +80,9 @@ export interface CustomerInvoiceDto {
   totalPackages: number | null;
   grossWeightKg: number | null;
   netWeightKg: number | null;
+  containerNumber: string | null;
+  sealNumber: string | null;
+  truckNumber: string | null;
   lines: CustomerInvoiceLineDto[];
 }
 
@@ -121,6 +124,9 @@ export interface MarkExportedRequest {
   totalPackages: number | null;
   grossWeightKg: number | null;
   netWeightKg: number | null;
+  containerNumber: string | null;
+  sealNumber: string | null;
+  truckNumber: string | null;
 }
 
 export interface CustomerInvoiceLineInput {

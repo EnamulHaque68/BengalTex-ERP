@@ -56,6 +56,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             inv.IncoTerm, inv.PortOfLoading, inv.PortOfDischarge, inv.VesselName,
             inv.CountryOfDestination, inv.ShippingMarks,
             inv.TotalPackages, inv.GrossWeightKg, inv.NetWeightKg,
+            inv.ContainerNumber, inv.SealNumber, inv.TruckNumber,
             lines);
 
         return ApiResponse<CustomerInvoiceDto>.Ok(dto);

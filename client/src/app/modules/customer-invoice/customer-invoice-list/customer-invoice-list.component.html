@@ -355,6 +355,18 @@
         <label>Country of Destination</label>
         <input pInputText [(ngModel)]="exportForm.countryOfDestination" maxlength="100" placeholder="(defaults to buyer's country)" />
       </div>
+      <div class="field">
+        <label>Container #</label>
+        <input pInputText [(ngModel)]="exportForm.containerNumber" maxlength="50" placeholder="e.g. MSCU1234567" />
+      </div>
+      <div class="field">
+        <label>Seal #</label>
+        <input pInputText [(ngModel)]="exportForm.sealNumber" maxlength="50" placeholder="Customs seal" />
+      </div>
+      <div class="field">
+        <label>Truck / Wagon #</label>
+        <input pInputText [(ngModel)]="exportForm.truckNumber" maxlength="50" placeholder="e.g. DH-METRO-GA-1234" />
+      </div>
     </div>
 
     <h4 class="export-section">Packing</h4>
