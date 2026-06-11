@@ -402,3 +402,30 @@ export interface EpbExportRegisterReportDto {
   grandTotalBdt: number;
   rows: EpbExportRegisterRowDto[];
 }
+
+// ─── Customer Statement of Account ─────────────────────────────────────────
+
+export interface CustomerStatementLineDto {
+  date: string;
+  type: string;                  // "Invoice" | "Receipt"
+  reference: string;
+  documentRef: string | null;    // SO code for invoices, payment method for receipts
+  debit: number;                 // BDT
+  credit: number;
+  runningBalance: number;
+}
+
+export interface CustomerStatementReportDto {
+  fromDate: string;
+  toDate: string;
+  customerId: number;
+  customerCode: string;
+  customerName: string;
+  customerEmail: string | null;
+  openingBalance: number;
+  totalDebits: number;
+  totalCredits: number;
+  closingBalance: number;
+  lineCount: number;
+  lines: CustomerStatementLineDto[];
+}

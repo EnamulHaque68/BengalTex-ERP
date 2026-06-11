@@ -1,0 +1,56 @@
+@use '../report-shared' as *;
+
+.statement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin: 1rem 0 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+
+  .customer-name { margin: 0 0 0.3rem; font-size: 1.1rem; font-weight: 700; color: #111827; }
+  .muted { font-size: 0.78rem; color: #6b7280; }
+
+  .period-block { text-align: right;
+    .lbl { font-size: 0.65rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; }
+    .val { font-size: 0.95rem; font-weight: 600; color: #111827; }
+  }
+}
+
+.statement-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  thead th { text-align: left; background: #f3f4f6; padding: 0.55rem 0.7rem; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #4b5563;
+    &.num-h { text-align: right; }
+  }
+  tbody td { padding: 0.5rem 0.7rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+    &.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  }
+
+  .opening-row td, .closing-row td { background: #eef2ff; border-bottom: 2px solid #c7d2fe; font-weight: 600; }
+  .closing-row td { border-bottom: none; border-top: 2px solid #6366f1; }
+
+  .invoice-row { background: white; }
+  .receipt-row { background: #f0fdf4; }
+
+  .line-type { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+    &.invoice { background: #fee2e2; color: #991b1b; }
+    &.receipt { background: #dcfce7; color: #166534; }
+  }
+  .good { color: #059669; }
+  .highlight { color: #4338ca; }
+}
+
+.footer-note { margin-top: 0.75rem; text-align: right; color: #6b7280; font-style: italic; }
+
+// Print
+@media print {
+  .no-print { display: none !important; }
+  .page-shell { padding: 0; background: white; }
+  .statement-header { background: white; border: 1px solid #e5e7eb; }
+  .summary-strip { break-inside: avoid; }
+  @page { size: A4; margin: 1.2cm; }
+}
