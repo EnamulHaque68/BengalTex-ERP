@@ -429,3 +429,30 @@ export interface CustomerStatementReportDto {
   lineCount: number;
   lines: CustomerStatementLineDto[];
 }
+
+// ─── Supplier Statement of Account ─────────────────────────────────────────
+
+export interface SupplierStatementLineDto {
+  date: string;
+  type: string;                  // "Invoice" | "Payment"
+  reference: string;
+  documentRef: string | null;    // PO code (+ supplier invoice #) for invoices, payment method for payments
+  debit: number;                 // BDT — payment (payable down)
+  credit: number;                // BDT — invoice (payable up)
+  runningBalance: number;        // BDT payable; > 0 = we owe them
+}
+
+export interface SupplierStatementReportDto {
+  fromDate: string;
+  toDate: string;
+  supplierId: number;
+  supplierCode: string;
+  supplierName: string;
+  supplierEmail: string | null;
+  openingBalance: number;
+  totalCredits: number;
+  totalDebits: number;
+  closingBalance: number;
+  lineCount: number;
+  lines: SupplierStatementLineDto[];
+}

@@ -17,7 +17,8 @@ import {
   MachineProductivityReportDto,
   BuyerOrderBookReportDto,
   EpbExportRegisterReportDto,
-  CustomerStatementReportDto
+  CustomerStatementReportDto,
+  SupplierStatementReportDto
 } from '../models/reports.models';
 
 @Injectable({ providedIn: 'root' })
@@ -119,5 +120,12 @@ export class ReportsService {
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
     return this.http.get<ApiResponse<CustomerStatementReportDto>>(`${this.base}/customer-statement`, { params });
+  }
+
+  getSupplierStatement(supplierId: number, fromDate?: string, toDate?: string): Observable<ApiResponse<SupplierStatementReportDto>> {
+    let params = new HttpParams().set('supplierId', supplierId.toString());
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    return this.http.get<ApiResponse<SupplierStatementReportDto>>(`${this.base}/supplier-statement`, { params });
   }
 }
