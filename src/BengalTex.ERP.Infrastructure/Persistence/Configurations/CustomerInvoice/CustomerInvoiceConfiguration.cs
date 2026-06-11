@@ -33,6 +33,11 @@ public class CustomerInvoiceConfiguration : IEntityTypeConfiguration<CustomerInv
         builder.Property(c => c.ContainerNumber).HasMaxLength(50);
         builder.Property(c => c.SealNumber).HasMaxLength(50);
         builder.Property(c => c.TruckNumber).HasMaxLength(50);
+
+        builder.HasOne(c => c.BeneficiaryBankAccount)
+            .WithMany()
+            .HasForeignKey(c => c.BeneficiaryBankAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(c => c.VatRate).HasPrecision(7, 4);
         builder.Property(c => c.SubtotalAmount).HasPrecision(18, 4);
         builder.Property(c => c.VatAmount).HasPrecision(18, 4);

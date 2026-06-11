@@ -3,6 +3,8 @@ import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '
 import { CustomerInvoiceService } from '../../../services/customer-invoice.service';
 import { SalesOrderService } from '../../../services/sales-order.service';
 import { CustomerService } from '../../../services/customer.service';
+import { MasterSetupService } from '../../../services/master-setup.service';
+import { BankAccountDto } from '../../../models/master-setup.models';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   CINV_STATUSES,
@@ -76,7 +78,8 @@ export class CustomerInvoiceListComponent implements OnInit {
     totalPackages: null as number | null,
     grossWeightKg: null as number | null,
     netWeightKg: null as number | null,
-    containerNumber: '', sealNumber: '', truckNumber: ''
+    containerNumber: '', sealNumber: '', truckNumber: '',
+    beneficiaryBankAccountId: null as number | null
   };
 
   openMarkExported(row: CustomerInvoiceListItemDto): void {
@@ -90,9 +93,18 @@ export class CustomerInvoiceListComponent implements OnInit {
       incoTerm: '', portOfLoading: 'Chattogram, Bangladesh', portOfDischarge: '',
       vesselName: '', countryOfDestination: '', shippingMarks: '',
       totalPackages: null, grossWeightKg: null, netWeightKg: null,
-      containerNumber: '', sealNumber: '', truckNumber: ''
+      containerNumber: '', sealNumber: '', truckNumber: '',
+      beneficiaryBankAccountId: null
     };
     this.exportDlgVisible = true;
+    if (this.bankAccounts.length === 0) {
+      this.masterSetup.getBankAccounts(false).subscribe({
+        next: (res) => this.zone.run(() => {
+          if (res.success && res.data) this.bankAccounts = res.data;
+          this.cdr.detectChanges();
+        })
+      });
+    }
     this.invService.getById(row.id).subscribe({
       next: (res) => this.zone.run(() => {
         if (res.success && res.data) {
@@ -112,7 +124,8 @@ export class CustomerInvoiceListComponent implements OnInit {
             netWeightKg: d.netWeightKg,
             containerNumber: d.containerNumber ?? '',
             sealNumber: d.sealNumber ?? '',
-            truckNumber: d.truckNumber ?? ''
+            truckNumber: d.truckNumber ?? '',
+            beneficiaryBankAccountId: d.beneficiaryBankAccountId ?? null
           };
           this.cdr.detectChanges();
         }
@@ -141,7 +154,8 @@ export class CustomerInvoiceListComponent implements OnInit {
       netWeightKg: f.netWeightKg ?? null,
       containerNumber: f.containerNumber?.trim() || null,
       sealNumber: f.sealNumber?.trim() || null,
-      truckNumber: f.truckNumber?.trim() || null
+      truckNumber: f.truckNumber?.trim() || null,
+      beneficiaryBankAccountId: f.beneficiaryBankAccountId ?? null
     }).subscribe({
       next: (res) => this.zone.run(() => {
         this.exportSaving = false;
@@ -251,10 +265,13 @@ export class CustomerInvoiceListComponent implements OnInit {
 
   rowActionId: number | null = null;
 
+  bankAccounts: BankAccountDto[] = [];
+
   constructor(
     private invService: CustomerInvoiceService,
     private soService: SalesOrderService,
     private customerService: CustomerService,
+    private masterSetup: MasterSetupService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef

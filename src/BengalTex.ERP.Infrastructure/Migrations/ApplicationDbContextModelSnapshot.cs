@@ -1431,6 +1431,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<int?>("BeneficiaryBankAccountId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1573,6 +1576,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BeneficiaryBankAccountId");
 
                     b.HasIndex("Code")
                         .IsUnique();
@@ -9575,6 +9580,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.BankAccount", "BeneficiaryBankAccount")
+                        .WithMany()
+                        .HasForeignKey("BeneficiaryBankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
@@ -9592,6 +9602,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("SalesOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("BeneficiaryBankAccount");
 
                     b.Navigation("Currency");
 

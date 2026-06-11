@@ -30,7 +30,8 @@ public sealed record MarkInvoiceAsExportedCommand(
     decimal? NetWeightKg,
     string? ContainerNumber,
     string? SealNumber,
-    string? TruckNumber
+    string? TruckNumber,
+    int? BeneficiaryBankAccountId
 ) : IRequest<ApiResponse<CustomerInvoiceDto>>;
 
 public sealed class MarkInvoiceAsExportedCommandValidator : AbstractValidator<MarkInvoiceAsExportedCommand>
@@ -59,15 +60,17 @@ internal sealed class MarkInvoiceAsExportedCommandHandler
     : IRequestHandler<MarkInvoiceAsExportedCommand, ApiResponse<CustomerInvoiceDto>>
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
+    private readonly IRepository<Domain.Entities.BankAccount> _bankRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public MarkInvoiceAsExportedCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
+        IRepository<Domain.Entities.BankAccount> bankRepo,
         IUnitOfWork uow,
         IMediator mediator)
     {
-        _repo = repo; _uow = uow; _mediator = mediator;
+        _repo = repo; _bankRepo = bankRepo; _uow = uow; _mediator = mediator;
     }
 
     public async Task<ApiResponse<CustomerInvoiceDto>> Handle(MarkInvoiceAsExportedCommand cmd, CancellationToken ct)
@@ -78,6 +81,10 @@ internal sealed class MarkInvoiceAsExportedCommandHandler
             return ApiResponse<CustomerInvoiceDto>.Fail("Issue the invoice first before marking it as exported.");
         if (inv.Status == Domain.Entities.CustomerInvoiceStatus.Cancelled)
             return ApiResponse<CustomerInvoiceDto>.Fail("Cannot record export details on a cancelled invoice.");
+
+        if (cmd.BeneficiaryBankAccountId.HasValue
+            && await _bankRepo.GetByIdAsync(cmd.BeneficiaryBankAccountId.Value, ct) is null)
+            return ApiResponse<CustomerInvoiceDto>.Fail("Beneficiary bank account not found.");
 
         inv.EpbFormNumber = Trim(cmd.EpbFormNumber);
         inv.LcNumber = Trim(cmd.LcNumber);
@@ -94,6 +101,7 @@ internal sealed class MarkInvoiceAsExportedCommandHandler
         inv.ContainerNumber = Trim(cmd.ContainerNumber);
         inv.SealNumber = Trim(cmd.SealNumber);
         inv.TruckNumber = Trim(cmd.TruckNumber);
+        inv.BeneficiaryBankAccountId = cmd.BeneficiaryBankAccountId;
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(ct);

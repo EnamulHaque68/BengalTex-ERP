@@ -195,6 +195,20 @@
         <pre class="marks-block">{{ invoice.shippingMarks }}</pre>
       </div>
 
+      <!-- Beneficiary Bank (for LC / TT remittance) -->
+      <div class="beneficiary-bank" *ngIf="invoice.beneficiaryBank as b">
+        <div class="lbl">Beneficiary Bank</div>
+        <div class="beneficiary-grid">
+          <div><span>Beneficiary:</span> <strong>{{ b.accountName }}</strong></div>
+          <div><span>Bank:</span> <strong>{{ b.bankName }}</strong></div>
+          <div *ngIf="b.branchName"><span>Branch:</span> {{ b.branchName }}</div>
+          <div><span>Account #:</span> <strong class="mono">{{ b.accountNumber }}</strong></div>
+          <div *ngIf="b.swiftCode"><span>SWIFT:</span> <strong class="mono">{{ b.swiftCode }}</strong></div>
+          <div *ngIf="b.routingNumber"><span>Routing #:</span> <span class="mono">{{ b.routingNumber }}</span></div>
+          <div><span>Currency:</span> <strong>{{ b.currency }}</strong></div>
+        </div>
+      </div>
+
       <!-- Declaration -->
       <div class="declaration">
         <div class="lbl">Declaration</div>

@@ -100,6 +100,13 @@ public class CustomerInvoice : BaseTransactionalEntity
     public string? SealNumber { get; set; }
     /// <summary>Truck / wagon number that hauled the goods to port.</summary>
     public string? TruckNumber { get; set; }
+    /// <summary>
+    /// Optional FK to a <see cref="BankAccount"/> — the beneficiary bank the buyer's bank
+    /// remits payment to (LC negotiation / TT receipt). Renders as a "Beneficiary Bank"
+    /// block on the Commercial Invoice. Null = no bank block printed.
+    /// </summary>
+    public int? BeneficiaryBankAccountId { get; set; }
+    public BankAccount? BeneficiaryBankAccount { get; set; }
 
     public ICollection<CustomerInvoiceLine> Lines { get; set; } = new List<CustomerInvoiceLine>();
 

@@ -98,7 +98,8 @@ public class CustomerInvoicesController : ControllerBase
             request.IncoTerm, request.PortOfLoading, request.PortOfDischarge,
             request.VesselName, request.CountryOfDestination, request.ShippingMarks,
             request.TotalPackages, request.GrossWeightKg, request.NetWeightKg,
-            request.ContainerNumber, request.SealNumber, request.TruckNumber), ct);
+            request.ContainerNumber, request.SealNumber, request.TruckNumber,
+            request.BeneficiaryBankAccountId), ct);
         return Ok(result);
     }
 
@@ -129,7 +130,8 @@ public record MarkExportedRequest(
     decimal? NetWeightKg,
     string? ContainerNumber,
     string? SealNumber,
-    string? TruckNumber);
+    string? TruckNumber,
+    int? BeneficiaryBankAccountId);
 
 public record CreateCustomerInvoiceRequest(
     long SalesOrderId,

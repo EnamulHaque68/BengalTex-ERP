@@ -83,7 +83,20 @@ export interface CustomerInvoiceDto {
   containerNumber: string | null;
   sealNumber: string | null;
   truckNumber: string | null;
+  beneficiaryBankAccountId: number | null;
+  beneficiaryBank: BeneficiaryBankDto | null;
   lines: CustomerInvoiceLineDto[];
+}
+
+export interface BeneficiaryBankDto {
+  id: number;
+  accountName: string;
+  bankName: string;
+  branchName: string | null;
+  accountNumber: string;
+  routingNumber: string | null;
+  swiftCode: string | null;
+  currency: string;
 }
 
 export interface CustomerInvoiceListItemDto {
@@ -127,6 +140,7 @@ export interface MarkExportedRequest {
   containerNumber: string | null;
   sealNumber: string | null;
   truckNumber: string | null;
+  beneficiaryBankAccountId: number | null;
 }
 
 export interface CustomerInvoiceLineInput {
