@@ -143,4 +143,14 @@ public class ReportsController : ControllerBase
         [FromQuery] bool pendingFormExpOnly = false,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetEpbExportRegisterQuery(fromDate, toDate, pendingFormExpOnly), ct));
+
+    /// <summary>Customer Statement of Account — opening balance + chronological invoices/receipts + running balance + closing.</summary>
+    [HttpGet("customer-statement")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetCustomerStatement(
+        [FromQuery] int customerId,
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetCustomerStatementQuery(customerId, fromDate, toDate), ct));
 }

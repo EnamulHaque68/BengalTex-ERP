@@ -1,0 +1,97 @@
+<div class="page-shell">
+  <div class="page-header no-print">
+    <div>
+      <h2 class="page-title">Customer Statement of Account</h2>
+      <p class="page-subtitle">Opening balance + chronological invoices &amp; receipts + running balance &mdash; in BDT</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="customerId"
+                [options]="customers"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="code,name"
+                placeholder="Pick customer..."
+                styleClass="filter-select" />
+      <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" />
+      <input pInputText type="date" [(ngModel)]="toDate" class="date-input" />
+      <p-button label="Run" icon="pi pi-refresh" (click)="run()" [loading]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" [disabled]="!report" />
+      <p-button label="Download CSV" icon="pi pi-download" severity="secondary"
+                (click)="downloadCsv()" [disabled]="!report || report.lines.length === 0" />
+    </div>
+  </div>
+
+  <div class="alert alert-error no-print" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <ng-container *ngIf="report">
+    <div class="statement-header">
+      <div class="company-block">
+        <h3 class="customer-name">{{ report.customerName }}</h3>
+        <div class="muted">Code: {{ report.customerCode }} <span *ngIf="report.customerEmail">&middot; {{ report.customerEmail }}</span></div>
+      </div>
+      <div class="period-block">
+        <div><span class="lbl">Period</span><span class="val">{{ report.fromDate }} → {{ report.toDate }}</span></div>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div><span class="lbl">Opening Balance</span><span class="val num fw-700" [class.bad]="report.openingBalance > 0">{{ formatCurrency(report.openingBalance) }}</span></div>
+      <div><span class="lbl">Debits (Invoices)</span><span class="val num fw-700">{{ formatCurrency(report.totalDebits) }}</span></div>
+      <div><span class="lbl">Credits (Receipts)</span><span class="val num fw-700 good">{{ formatCurrency(report.totalCredits) }}</span></div>
+      <div><span class="lbl">Closing Balance</span><span class="val num fw-700 highlight" [class.bad]="report.closingBalance > 0">{{ formatCurrency(report.closingBalance) }}</span></div>
+    </div>
+
+    <p-card styleClass="table-card">
+      <table class="statement-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Document</th>
+            <th class="num-h">Debit (BDT)</th>
+            <th class="num-h">Credit (BDT)</th>
+            <th class="num-h">Running Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="opening-row">
+            <td></td>
+            <td><strong>Opening</strong></td>
+            <td colspan="3" class="muted">Brought forward as of {{ report.fromDate }}</td>
+            <td></td>
+            <td class="num fw-700">{{ formatCurrency(report.openingBalance) }}</td>
+          </tr>
+          <tr *ngFor="let l of report.lines" [class.invoice-row]="l.type === 'Invoice'" [class.receipt-row]="l.type === 'Receipt'">
+            <td class="num">{{ l.date }}</td>
+            <td><span class="line-type" [class.invoice]="l.type === 'Invoice'" [class.receipt]="l.type === 'Receipt'">{{ l.type }}</span></td>
+            <td><span class="code-badge">{{ l.reference }}</span></td>
+            <td class="muted">{{ l.documentRef || '—' }}</td>
+            <td class="num">{{ l.debit > 0 ? formatCurrency(l.debit) : '—' }}</td>
+            <td class="num good">{{ l.credit > 0 ? formatCurrency(l.credit) : '—' }}</td>
+            <td class="num fw-700">{{ formatCurrency(l.runningBalance) }}</td>
+          </tr>
+          <tr *ngIf="report.lines.length === 0" class="empty">
+            <td colspan="7" class="empty-row">
+              <i class="pi pi-inbox"></i>
+              <span>No invoices or receipts in this window.</span>
+            </td>
+          </tr>
+          <tr class="closing-row">
+            <td></td>
+            <td><strong>Closing</strong></td>
+            <td colspan="2" class="muted">Carried forward as of {{ report.toDate }}</td>
+            <td class="num fw-700">{{ formatCurrency(report.totalDebits) }}</td>
+            <td class="num fw-700">{{ formatCurrency(report.totalCredits) }}</td>
+            <td class="num fw-700 highlight">{{ formatCurrency(report.closingBalance) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </p-card>
+
+    <div class="footer-note no-print">
+      <small>Closing balance > 0 means the customer owes us; &lt; 0 means we hold a credit they can apply to future invoices.</small>
+    </div>
+  </ng-container>
+</div>
