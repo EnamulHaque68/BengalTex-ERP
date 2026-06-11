@@ -369,6 +369,19 @@
       </div>
     </div>
 
+    <h4 class="export-section">Beneficiary Bank <small>(for LC / TT remittance — appears on Commercial Invoice)</small></h4>
+    <div class="field">
+      <p-select [(ngModel)]="exportForm.beneficiaryBankAccountId"
+                [options]="bankAccounts"
+                optionLabel="accountName"
+                optionValue="id"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="accountName,bankName,accountNumber,swiftCode"
+                placeholder="No beneficiary bank block on Commercial Invoice"
+                styleClass="w-full" />
+    </div>
+
     <h4 class="export-section">Packing</h4>
     <div class="export-grid">
       <div class="field">

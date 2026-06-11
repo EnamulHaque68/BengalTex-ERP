@@ -24,10 +24,23 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             .Include(c => c.SalesOrder)
             .Include(c => c.Currency)
             .Include(c => c.VatChallan)
+            .Include(c => c.BeneficiaryBankAccount)
             .Include(c => c.Lines).ThenInclude(l => l.Product).ThenInclude(p => p.UnitOfMeasure)
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
         if (inv is null) return ApiResponse<CustomerInvoiceDto>.Fail("Customer invoice not found.");
+
+        var beneficiary = inv.BeneficiaryBankAccount is null
+            ? null
+            : new BeneficiaryBankDto(
+                inv.BeneficiaryBankAccount.Id,
+                inv.BeneficiaryBankAccount.AccountName,
+                inv.BeneficiaryBankAccount.BankName,
+                inv.BeneficiaryBankAccount.BranchName,
+                inv.BeneficiaryBankAccount.AccountNumber,
+                inv.BeneficiaryBankAccount.RoutingNumber,
+                inv.BeneficiaryBankAccount.SwiftCode,
+                inv.BeneficiaryBankAccount.Currency);
 
         var lines = inv.Lines
             .OrderBy(l => l.SortOrder)
@@ -57,6 +70,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
             inv.CountryOfDestination, inv.ShippingMarks,
             inv.TotalPackages, inv.GrossWeightKg, inv.NetWeightKg,
             inv.ContainerNumber, inv.SealNumber, inv.TruckNumber,
+            inv.BeneficiaryBankAccountId, beneficiary,
             lines);
 
         return ApiResponse<CustomerInvoiceDto>.Ok(dto);

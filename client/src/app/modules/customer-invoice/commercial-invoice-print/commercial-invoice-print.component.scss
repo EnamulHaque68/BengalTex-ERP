@@ -80,3 +80,21 @@
   .lbl { font-size: 0.65rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
   p { margin: 0; font-size: 0.8rem; color: #4b5563; font-style: italic; }
 }
+
+.beneficiary-bank {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  .lbl { font-size: 0.65rem; color: #075985; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+  .beneficiary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.4rem 1rem;
+    font-size: 0.82rem;
+    color: #0c4a6e;
+    span { color: #0369a1; margin-right: 0.25rem; }
+    .mono { font-family: monospace; }
+  }
+}

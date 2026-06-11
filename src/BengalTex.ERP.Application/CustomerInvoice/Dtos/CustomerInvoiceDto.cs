@@ -43,7 +43,23 @@ public record CustomerInvoiceDto(
     string? ContainerNumber,
     string? SealNumber,
     string? TruckNumber,
+    int? BeneficiaryBankAccountId,
+    BeneficiaryBankDto? BeneficiaryBank,
     IReadOnlyList<CustomerInvoiceLineDto> Lines);
+
+/// <summary>
+/// Snapshot of the company bank account used as the beneficiary for this invoice's
+/// remittance — appears as a block on the Commercial Invoice. All from `BankAccount`.
+/// </summary>
+public record BeneficiaryBankDto(
+    int Id,
+    string AccountName,
+    string BankName,
+    string? BranchName,
+    string AccountNumber,
+    string? RoutingNumber,
+    string? SwiftCode,
+    string Currency);
 
 public record CustomerInvoiceLineDto(
     long Id,
