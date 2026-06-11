@@ -1,4 +1,5 @@
 using BengalTex.ERP.Api.Authorization;
+using BengalTex.ERP.Application.Reports.Commands;
 using BengalTex.ERP.Application.Reports.Queries;
 using BengalTex.ERP.Shared.Permissions;
 using MediatR;
@@ -163,4 +164,31 @@ public class ReportsController : ControllerBase
         [FromQuery] DateOnly? toDate = null,
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetSupplierStatementQuery(supplierId, fromDate, toDate), ct));
+
+    /// <summary>Email the customer their statement for the window as an attached PDF.</summary>
+    [HttpPost("customer-statement/email")]
+    [HasPermission(Permissions.Emails.Send)]
+    public async Task<IActionResult> EmailCustomerStatement(
+        [FromBody] EmailStatementRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new SendCustomerStatementEmailCommand(
+            request.PartyId, request.FromDate, request.ToDate,
+            request.ToAddresses, request.CcAddresses, request.Subject, request.HtmlBody), ct));
+
+    /// <summary>Email the supplier their payable statement for the window as an attached PDF.</summary>
+    [HttpPost("supplier-statement/email")]
+    [HasPermission(Permissions.Emails.Send)]
+    public async Task<IActionResult> EmailSupplierStatement(
+        [FromBody] EmailStatementRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new SendSupplierStatementEmailCommand(
+            request.PartyId, request.FromDate, request.ToDate,
+            request.ToAddresses, request.CcAddresses, request.Subject, request.HtmlBody), ct));
 }
+
+public record EmailStatementRequest(
+    int PartyId,                       // CustomerId or SupplierId depending on endpoint
+    DateOnly? FromDate,
+    DateOnly? ToDate,
+    string ToAddresses,
+    string? CcAddresses,
+    string Subject,
+    string HtmlBody);

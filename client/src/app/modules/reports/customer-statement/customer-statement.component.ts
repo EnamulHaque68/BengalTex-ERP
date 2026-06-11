@@ -4,6 +4,13 @@ import { CustomerService } from '../../../services/customer.service';
 import { CustomerStatementLineDto, CustomerStatementReportDto } from '../../../models/reports.models';
 import { CustomerListItemDto } from '../../../models/customer.models';
 
+interface StatementEmailForm {
+  toAddresses: string;
+  ccAddresses: string;
+  subject: string;
+  htmlBody: string;
+}
+
 @Component({
   selector: 'app-customer-statement',
   standalone: false,
@@ -67,6 +74,57 @@ export class CustomerStatementComponent implements OnInit {
   }
 
   print(): void { window.print(); }
+
+  // ─── Email statement (PDF attached) ────────────────────────────────────
+  emailDlgVisible = false;
+  emailSending = false;
+  emailError = '';
+  emailForm: StatementEmailForm = { toAddresses: '', ccAddresses: '', subject: '', htmlBody: '' };
+
+  openEmailStatement(): void {
+    if (!this.report) return;
+    this.emailError = '';
+    this.emailForm = {
+      toAddresses: this.report.customerEmail ?? '',
+      ccAddresses: '',
+      subject: `Statement of Account — ${this.report.customerCode} (${this.report.fromDate} to ${this.report.toDate})`,
+      htmlBody:
+        `<p>Dear ${this.report.customerName},</p>` +
+        `<p>Please find attached your statement of account for the period <strong>${this.report.fromDate}</strong> to <strong>${this.report.toDate}</strong>.</p>` +
+        `<p>Closing balance: <strong>${this.formatCurrency(this.report.closingBalance)}</strong>.</p>` +
+        `<p>Kindly reconcile and report any discrepancy within 7 days.</p>` +
+        `<p>Regards,<br/>Accounts Team</p>`
+    };
+    this.emailDlgVisible = true;
+  }
+
+  sendStatementEmail(): void {
+    if (!this.report || this.emailSending) return;
+    this.emailSending = true;
+    this.emailError = '';
+    this.cdr.detectChanges();
+    this.svc.emailCustomerStatement({
+      partyId: this.report.customerId,
+      fromDate: this.fromDate || null,
+      toDate: this.toDate || null,
+      toAddresses: this.emailForm.toAddresses.trim(),
+      ccAddresses: this.emailForm.ccAddresses.trim() || null,
+      subject: this.emailForm.subject.trim(),
+      htmlBody: this.emailForm.htmlBody
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.emailSending = false;
+        if (res.success) this.emailDlgVisible = false;
+        else this.emailError = res.message || 'Send failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (e) => this.zone.run(() => {
+        this.emailSending = false;
+        this.emailError = e?.error?.message || 'Send failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
 
   downloadCsv(): void {
     if (!this.report || this.report.lines.length === 0) return;

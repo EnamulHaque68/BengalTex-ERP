@@ -128,4 +128,22 @@ export class ReportsService {
     if (toDate) params = params.set('toDate', toDate);
     return this.http.get<ApiResponse<SupplierStatementReportDto>>(`${this.base}/supplier-statement`, { params });
   }
+
+  emailCustomerStatement(data: EmailStatementRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/customer-statement/email`, data);
+  }
+
+  emailSupplierStatement(data: EmailStatementRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/supplier-statement/email`, data);
+  }
+}
+
+export interface EmailStatementRequest {
+  partyId: number;                 // customerId or supplierId depending on endpoint
+  fromDate: string | null;
+  toDate: string | null;
+  toAddresses: string;
+  ccAddresses: string | null;
+  subject: string;
+  htmlBody: string;
 }

@@ -85,6 +85,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton<IQrCodeService, QrCodeService>();
         services.AddSingleton<IExportPdfRenderer, ExportPdfRenderer>();
+        services.AddSingleton<IStatementPdfRenderer, StatementPdfRenderer>();
         services.AddHostedService<NotificationDispatcherHostedService>();
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(o =>
