@@ -22,6 +22,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
+// QuestPDF community license — required before any PDF is generated. Free for companies
+// under USD 1M annual revenue; switch to LicenseType.Professional with a paid licence
+// above that threshold. See https://www.questpdf.com/license/
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================

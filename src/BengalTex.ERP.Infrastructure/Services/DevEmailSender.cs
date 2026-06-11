@@ -27,10 +27,21 @@ public class DevEmailSender : IEmailSender
     }
 
     public Task SendAsync(IEnumerable<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
+        => SendAsync(toAddresses, subject, htmlBody, Array.Empty<EmailAttachment>(), ct);
+
+    public Task SendAsync(
+        IEnumerable<string> toAddresses,
+        string subject,
+        string htmlBody,
+        IReadOnlyList<EmailAttachment> attachments,
+        CancellationToken ct = default)
     {
+        var attachmentSummary = attachments.Count == 0
+            ? "(none)"
+            : string.Join(", ", attachments.Select(a => $"{a.FileName} ({a.Content.Length} bytes)"));
         _logger.LogInformation(
-            "[DEV EMAIL] To: {To} | Subject: {Subject} | Body: {Body}",
-            string.Join(", ", toAddresses), subject, htmlBody);
+            "[DEV EMAIL] To: {To} | Subject: {Subject} | Attachments: {Attachments} | Body: {Body}",
+            string.Join(", ", toAddresses), subject, attachmentSummary, htmlBody);
         return Task.CompletedTask;
     }
 }
