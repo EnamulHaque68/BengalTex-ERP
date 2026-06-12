@@ -45,6 +45,8 @@ builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.AuditLogRetenti
     builder.Configuration.GetSection("AuditLogRetention"));
 builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.DatabaseBackupOptions>(
     builder.Configuration.GetSection("DatabaseBackup"));
+builder.Services.Configure<BengalTex.ERP.Application.Reports.Jobs.MonthlyStatementOptions>(
+    builder.Configuration.GetSection("MonthlyStatements"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -363,6 +365,13 @@ RecurringJob.AddOrUpdate<DatabaseBackupJob>(
     DatabaseBackupJob.RecurringJobId,
     x => x.RunAsync(CancellationToken.None),
     "30 1 * * *"); // 5-field cron: every day at 01:30
+
+// Month-end statements — emails last month's statement PDF to every active party with
+// activity + an email on file. OPT-IN: does nothing until MonthlyStatements:Enabled=true.
+RecurringJob.AddOrUpdate<BengalTex.ERP.Application.Reports.Jobs.MonthlyStatementBatchJob>(
+    BengalTex.ERP.Application.Reports.Jobs.MonthlyStatementBatchJob.RecurringJobId,
+    x => x.RunAsync(CancellationToken.None),
+    "0 6 1 * *"); // 5-field cron: 06:00 on the 1st of every month
 
 // ============================================
 // RUN
