@@ -6,6 +6,7 @@ using BengalTex.ERP.Infrastructure.Persistence.CrossCutting;
 using BengalTex.ERP.Shared.Permissions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace BengalTex.ERP.Infrastructure.Persistence;
 
@@ -14,15 +15,18 @@ public class DataSeeder : IDataSeeder
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _db;
+    private readonly IConfiguration _config;
 
     public DataSeeder(
         RoleManager<ApplicationRole> roleManager,
         UserManager<ApplicationUser> userManager,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        IConfiguration config)
     {
         _roleManager = roleManager;
         _userManager = userManager;
         _db = db;
+        _config = config;
     }
 
     public async Task SeedAsync(CancellationToken ct = default)
@@ -588,7 +592,10 @@ public class DataSeeder : IDataSeeder
     private async Task SeedSuperAdminAsync(CancellationToken ct)
     {
         const string email = "admin@bengaltex.com";
-        const string password = "Admin@123456";
+        // First-boot password — override in production via Seed__SuperAdminPassword env var
+        // (used ONLY when the account doesn't exist yet; never changes an existing password).
+        var password = _config["Seed:SuperAdminPassword"];
+        if (string.IsNullOrWhiteSpace(password)) password = "Admin@123456";
 
         // Resolve HQ Factory for FactoryId assignment
         var hqFactoryId = (await _db.Factories

@@ -40,6 +40,11 @@ services:
       DeviceFingerprint__Salt: ${FINGERPRINT_SALT}
       AllowedHosts: ${ALLOWED_HOSTS:-*}
       Cors__AllowedOrigins__0: ${PUBLIC_ORIGIN}
+      # First-boot SuperAdmin password (only used when the account doesn't exist yet).
+      Seed__SuperAdminPassword: ${SEED_ADMIN_PASSWORD:-Admin@123456}
+      # Honor X-Forwarded-Proto/For from a TLS-terminating reverse proxy (Caddy/nginx) —
+      # makes HSTS + https detection work even though the API itself listens on plain HTTP.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       # Nightly DB backup: SQL writes to its own path; the api cleans up via the shared volume.
       DatabaseBackup__BackupDirectory: "/var/opt/mssql/backups"
       DatabaseBackup__CleanupDirectory: "/backups"
