@@ -26,4 +26,6 @@ public static class LedgerAccounts
     public const string AdministrativeExpense = "5400";   // default expense account for unmapped categories
     public const string GainOnAssetDisposal = "4400";      // credited when disposal proceeds > NBV
     public const string LossOnAssetDisposal = "5350";      // debited when disposal proceeds < NBV
+    public const string MaterialWastage = "5700";           // debited by Wastage posts + quarantine Scrap write-offs
+    public const string InventoryAdjustment = "5750";       // debited on stock shortage, credited on surplus (count adjustments)
 }

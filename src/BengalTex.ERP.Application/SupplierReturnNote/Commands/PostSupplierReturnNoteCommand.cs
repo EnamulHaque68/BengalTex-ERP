@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Application.SupplierReturnNote.Dtos;
@@ -37,6 +38,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IStockService _stockService;
     private readonly IStockLotService _lots;
+    private readonly IJournalPostingService _journal;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -47,6 +49,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IStockService stockService,
         IStockLotService lots,
+        IJournalPostingService journal,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -56,6 +59,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
         _poRepo = poRepo;
         _stockService = stockService;
         _lots = lots;
+        _journal = journal;
         _uow = uow;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -118,6 +122,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
 
         // ─── Pass 2: apply all (stock out + GRN line + PO line) ────────────
         var poLineById = po.Lines.ToDictionary(l => l.Id);
+        var totalReturnCost = 0m;
         foreach (var srnLine in srn.Lines)
         {
             var grnLine = grnLineById[srnLine.GoodsReceiptLineId];
@@ -125,6 +130,7 @@ internal sealed class PostSupplierReturnNoteCommandHandler
 
             var poLine = poLineById[grnLine.PurchaseOrderLineId];
             poLine.ReceivedQuantity -= srnLine.ReturnedQuantity;
+            totalReturnCost += srnLine.ReturnedQuantity * srnLine.RawMaterial.WeightedAverageCost;
 
             // FIFO lot draw-down for the returned RM — decrements the oldest lots at the source
             // warehouse and tags each ReturnOut movement; lot-less remainder posts un-tagged.
@@ -139,6 +145,21 @@ internal sealed class PostSupplierReturnNoteCommandHandler
                 movementDate: srn.ReturnDate,
                 notes: srnLine.LineNotes,
                 ct: cancellationToken);
+        }
+
+        // Auto-journal — goods leave stock back to the supplier at current WAC:
+        // Dr Purchase Returns & Allowances / Cr Raw Material Inventory. Pairs with the
+        // Debit Note's "Dr AP / Cr Purchase Returns" so the two docs net to Dr AP / Cr Inventory.
+        if (totalReturnCost > 0m)
+        {
+            await _journal.PostAsync(
+                srn.ReturnDate, $"Supplier return {srn.Code} (GRN {grn.Code}) — stock out at WAC",
+                "SupplierReturnNote", srn.Id, srn.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.PurchaseReturnsAllowances, totalReturnCost, 0m),
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalReturnCost),
+                }, cancellationToken);
         }
 
         // Recompute PO status — mirror of GRN Post logic, but only for non-terminal states.
