@@ -38,6 +38,14 @@ public class DebitNote : BaseTransactionalEntity
 
     public DebitNoteStatus Status { get; set; } = DebitNoteStatus.Draft;
 
+    /// <summary>
+    /// Optional link to the physical return (SRN) this debit note recovers — set when the
+    /// DBN is raised from a posted SupplierReturnNote. Traceability only; the SRN moved the
+    /// stock, this DBN settles the money.
+    /// </summary>
+    public long? SupplierReturnNoteId { get; set; }
+    public SupplierReturnNote? SupplierReturnNote { get; set; }
+
     public DateTimeOffset? IssuedAt { get; set; }
     public string? IssuedBy { get; set; }
 

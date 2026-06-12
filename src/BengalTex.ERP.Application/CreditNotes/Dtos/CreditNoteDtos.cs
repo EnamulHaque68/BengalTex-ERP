@@ -18,4 +18,6 @@ public sealed record CreditNoteDto(
     string Status,
     DateTimeOffset? IssuedAt,
     string? IssuedBy,
-    string? Notes);
+    string? Notes,
+    long? CustomerReturnNoteId = null,
+    string? CustomerReturnNoteCode = null);

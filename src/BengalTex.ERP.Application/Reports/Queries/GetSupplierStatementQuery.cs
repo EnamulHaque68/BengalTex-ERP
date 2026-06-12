@@ -10,9 +10,11 @@ namespace BengalTex.ERP.Application.Reports.Queries;
 /// <summary>
 /// Supplier Statement of Account (AP mirror of the customer statement) — opening payable,
 /// chronological in-window movements (supplier invoices as credits: payable up; payments
-/// as debits: payable down), running balance, closing payable. All amounts in base BDT
-/// (each line × its source invoice's ExchangeRate). Excludes Draft + Cancelled invoices.
-/// v1 doesn't include Debit Notes — add when DN-AP settlement mechanics solidify.
+/// AND issued Debit Notes as debits: payable down), running balance, closing payable.
+/// Debit Notes MUST be included: Issue adds the DN amount to the supplier invoice's
+/// AmountPaid (non-cash settlement), so without the DN line the statement's closing
+/// would disagree with AP ageing. All amounts in base BDT (each line × its source
+/// invoice's ExchangeRate). Excludes Draft + Cancelled documents.
 /// </summary>
 public sealed record GetSupplierStatementQuery(
     int SupplierId,
@@ -25,14 +27,16 @@ internal sealed class GetSupplierStatementQueryHandler
 {
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _invRepo;
     private readonly IRepository<Domain.Entities.Payment, long> _paymentRepo;
+    private readonly IRepository<Domain.Entities.DebitNote, long> _dnRepo;
     private readonly IRepository<Domain.Entities.Supplier> _supplierRepo;
 
     public GetSupplierStatementQueryHandler(
         IRepository<Domain.Entities.SupplierInvoice, long> invRepo,
         IRepository<Domain.Entities.Payment, long> paymentRepo,
+        IRepository<Domain.Entities.DebitNote, long> dnRepo,
         IRepository<Domain.Entities.Supplier> supplierRepo)
     {
-        _invRepo = invRepo; _paymentRepo = paymentRepo; _supplierRepo = supplierRepo;
+        _invRepo = invRepo; _paymentRepo = paymentRepo; _dnRepo = dnRepo; _supplierRepo = supplierRepo;
     }
 
     public async Task<ApiResponse<SupplierStatementReportDto>> Handle(
@@ -59,7 +63,13 @@ internal sealed class GetSupplierStatementQueryHandler
                      && p.PaymentDate < fromDate)
             .Select(p => p.Amount * p.SupplierInvoice.ExchangeRate)
             .ToListAsync(ct);
-        var opening = openInvoices.Sum() - openPayments.Sum();
+        var openDebitNotes = await _dnRepo.Query()
+            .Where(n => n.SupplierId == req.SupplierId
+                     && n.Status == DebitNoteStatus.Issued
+                     && n.IssueDate < fromDate)
+            .Select(n => n.Amount * n.ExchangeRate)
+            .ToListAsync(ct);
+        var opening = openInvoices.Sum() - openPayments.Sum() - openDebitNotes.Sum();
 
         // In-window lines.
         var invLines = await _invRepo.Query()
@@ -91,6 +101,21 @@ internal sealed class GetSupplierStatementQueryHandler
             })
             .ToListAsync(ct);
 
+        var dnLines = await _dnRepo.Query()
+            .Where(n => n.SupplierId == req.SupplierId
+                     && n.Status == DebitNoteStatus.Issued
+                     && n.IssueDate >= fromDate
+                     && n.IssueDate <= toDate)
+            .Select(n => new
+            {
+                Date = n.IssueDate,
+                Code = n.Code,
+                InvoiceCode = n.SupplierInvoice.Code,
+                Reason = n.Reason,
+                AmountBase = n.Amount * n.ExchangeRate
+            })
+            .ToListAsync(ct);
+
         var unsorted = new List<(DateOnly Date, string Type, string Reference, string? DocRef, decimal Debit, decimal Credit, long Tiebreaker)>();
         foreach (var i in invLines)
         {
@@ -101,6 +126,8 @@ internal sealed class GetSupplierStatementQueryHandler
         }
         foreach (var p in paymentLines)
             unsorted.Add((p.Date, "Payment", p.Code, p.Method.ToString(), p.AmountBase, 0m, 1)); // payments after invoices on same day
+        foreach (var n in dnLines)
+            unsorted.Add((n.Date, "DebitNote", n.Code, $"{n.InvoiceCode} / {n.Reason}", n.AmountBase, 0m, 1));
 
         var ordered = unsorted
             .OrderBy(x => x.Date)

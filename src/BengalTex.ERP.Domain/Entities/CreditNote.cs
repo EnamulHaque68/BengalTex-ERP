@@ -38,6 +38,14 @@ public class CreditNote : BaseTransactionalEntity
 
     public CreditNoteStatus Status { get; set; } = CreditNoteStatus.Draft;
 
+    /// <summary>
+    /// Optional link to the physical return (CRN) this credit note refunds — set when the
+    /// CN is raised from a posted CustomerReturnNote. Traceability only; the CRN moved the
+    /// stock, this CN settles the money.
+    /// </summary>
+    public long? CustomerReturnNoteId { get; set; }
+    public CustomerReturnNote? CustomerReturnNote { get; set; }
+
     public DateTimeOffset? IssuedAt { get; set; }
     public string? IssuedBy { get; set; }
 

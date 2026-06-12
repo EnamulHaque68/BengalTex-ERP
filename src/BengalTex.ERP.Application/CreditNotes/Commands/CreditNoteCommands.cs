@@ -57,7 +57,9 @@ internal sealed class GetCreditNotesQueryHandler
                 x.IssueDate, x.Reason.ToString(), x.Amount,
                 x.CurrencyId, x.Currency.Code, x.ExchangeRate,
                 x.Status.ToString(),
-                x.IssuedAt, x.IssuedBy, x.Notes))
+                x.IssuedAt, x.IssuedBy, x.Notes,
+                x.CustomerReturnNoteId,
+                x.CustomerReturnNote != null ? x.CustomerReturnNote.Code : null))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<CreditNoteDto>>.Ok(
@@ -87,7 +89,9 @@ internal sealed class GetCreditNoteByIdQueryHandler
                 x.IssueDate, x.Reason.ToString(), x.Amount,
                 x.CurrencyId, x.Currency.Code, x.ExchangeRate,
                 x.Status.ToString(),
-                x.IssuedAt, x.IssuedBy, x.Notes))
+                x.IssuedAt, x.IssuedBy, x.Notes,
+                x.CustomerReturnNoteId,
+                x.CustomerReturnNote != null ? x.CustomerReturnNote.Code : null))
             .FirstOrDefaultAsync(ct);
         return dto is null
             ? ApiResponse<CreditNoteDto>.Fail("Credit note not found.")
@@ -103,7 +107,8 @@ public sealed record CreateCreditNoteCommand(
     DateOnly IssueDate,
     string Reason,
     decimal Amount,
-    string? Notes
+    string? Notes,
+    long? CustomerReturnNoteId = null   // link to the physical return this CN refunds (optional)
 ) : IRequest<ApiResponse<long>>;
 
 public sealed class CreateCreditNoteCommandValidator : AbstractValidator<CreateCreditNoteCommand>
@@ -125,22 +130,38 @@ internal sealed class CreateCreditNoteCommandHandler
 {
     private readonly IRepository<CreditNote, long> _repo;
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
+    private readonly IRepository<Domain.Entities.CustomerReturnNote, long> _crnRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
 
     public CreateCreditNoteCommandHandler(
         IRepository<CreditNote, long> repo,
         IRepository<Domain.Entities.CustomerInvoice, long> invRepo,
+        IRepository<Domain.Entities.CustomerReturnNote, long> crnRepo,
         IUnitOfWork uow,
         INumberingService numbering)
     {
-        _repo = repo; _invRepo = invRepo; _uow = uow; _numbering = numbering;
+        _repo = repo; _invRepo = invRepo; _crnRepo = crnRepo; _uow = uow; _numbering = numbering;
     }
 
     public async Task<ApiResponse<long>> Handle(CreateCreditNoteCommand cmd, CancellationToken ct)
     {
         var inv = await _invRepo.GetByIdAsync(cmd.CustomerInvoiceId, ct);
         if (inv is null) return ApiResponse<long>.Fail("Customer invoice not found.");
+
+        if (cmd.CustomerReturnNoteId.HasValue)
+        {
+            // Customer traces via CRN → DN → SO (the CRN has no direct CustomerId).
+            var crn = await _crnRepo.Query()
+                .Where(c => c.Id == cmd.CustomerReturnNoteId.Value)
+                .Select(c => new { c.Status, c.DeliveryNote.SalesOrder.CustomerId })
+                .FirstOrDefaultAsync(ct);
+            if (crn is null) return ApiResponse<long>.Fail("Linked customer return note not found.");
+            if (crn.Status != Domain.Entities.CustomerReturnNoteStatus.Posted)
+                return ApiResponse<long>.Fail("Only a Posted return can be linked to a credit note.");
+            if (crn.CustomerId != inv.CustomerId)
+                return ApiResponse<long>.Fail("Return note belongs to a different customer than the invoice.");
+        }
 
         // Allow against Issued / PartiallyPaid / Paid (e.g. retroactive discount). Block Draft + Cancelled.
         if (inv.Status == Domain.Entities.CustomerInvoiceStatus.Draft
@@ -164,6 +185,7 @@ internal sealed class CreateCreditNoteCommandHandler
             CurrencyId = inv.CurrencyId,
             ExchangeRate = inv.ExchangeRate,
             Status = CreditNoteStatus.Draft,
+            CustomerReturnNoteId = cmd.CustomerReturnNoteId,
             Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
         };
         await _repo.AddAsync(entity, ct);

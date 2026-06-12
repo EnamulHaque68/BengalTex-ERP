@@ -9,10 +9,11 @@ namespace BengalTex.ERP.Application.Reports.Queries;
 
 /// <summary>
 /// Customer Statement of Account — opening balance, chronological in-window movements
-/// (invoices as debits, receipts as credits), running balance, closing balance.
-/// All amounts in base BDT (each line × its source ExchangeRate). Excludes Draft +
-/// Cancelled invoices. v1 doesn't yet include Credit/Debit Notes — add when CN/DN
-/// settlement mechanics solidify in this module.
+/// (invoices as debits; receipts AND issued Credit Notes as credits), running balance,
+/// closing balance. Credit Notes MUST be included: Issue adds the CN amount to the
+/// invoice's AmountPaid (non-cash settlement), so without the CN line the statement's
+/// closing balance would disagree with AR ageing. All amounts in base BDT (each line ×
+/// its source ExchangeRate). Excludes Draft + Cancelled documents.
 /// </summary>
 public sealed record GetCustomerStatementQuery(
     int CustomerId,
@@ -25,14 +26,16 @@ internal sealed class GetCustomerStatementQueryHandler
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
     private readonly IRepository<Domain.Entities.Receipt, long> _receiptRepo;
+    private readonly IRepository<Domain.Entities.CreditNote, long> _cnRepo;
     private readonly IRepository<Domain.Entities.Customer> _customerRepo;
 
     public GetCustomerStatementQueryHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> invRepo,
         IRepository<Domain.Entities.Receipt, long> receiptRepo,
+        IRepository<Domain.Entities.CreditNote, long> cnRepo,
         IRepository<Domain.Entities.Customer> customerRepo)
     {
-        _invRepo = invRepo; _receiptRepo = receiptRepo; _customerRepo = customerRepo;
+        _invRepo = invRepo; _receiptRepo = receiptRepo; _cnRepo = cnRepo; _customerRepo = customerRepo;
     }
 
     public async Task<ApiResponse<CustomerStatementReportDto>> Handle(
@@ -59,7 +62,13 @@ internal sealed class GetCustomerStatementQueryHandler
                      && r.ReceiptDate < fromDate)
             .Select(r => r.Amount * r.CustomerInvoice.ExchangeRate)
             .ToListAsync(ct);
-        var opening = openInvoices.Sum() - openReceipts.Sum();
+        var openCreditNotes = await _cnRepo.Query()
+            .Where(n => n.CustomerId == req.CustomerId
+                     && n.Status == CreditNoteStatus.Issued
+                     && n.IssueDate < fromDate)
+            .Select(n => n.Amount * n.ExchangeRate)
+            .ToListAsync(ct);
+        var opening = openInvoices.Sum() - openReceipts.Sum() - openCreditNotes.Sum();
 
         // In-window lines.
         var invLines = await _invRepo.Query()
@@ -91,11 +100,28 @@ internal sealed class GetCustomerStatementQueryHandler
             })
             .ToListAsync(ct);
 
+        var cnLines = await _cnRepo.Query()
+            .Where(n => n.CustomerId == req.CustomerId
+                     && n.Status == CreditNoteStatus.Issued
+                     && n.IssueDate >= fromDate
+                     && n.IssueDate <= toDate)
+            .Select(n => new
+            {
+                Date = n.IssueDate,
+                Code = n.Code,
+                InvoiceCode = n.CustomerInvoice.Code,
+                Reason = n.Reason,
+                AmountBase = n.Amount * n.ExchangeRate
+            })
+            .ToListAsync(ct);
+
         var unsorted = new List<(DateOnly Date, string Type, string Reference, string? DocRef, decimal Debit, decimal Credit, long Tiebreaker)>();
         foreach (var i in invLines)
             unsorted.Add((i.Date, "Invoice", i.Code, i.SalesOrderCode, i.AmountBase, 0m, 0));
         foreach (var r in receiptLines)
             unsorted.Add((r.Date, "Receipt", r.Code, r.Method.ToString(), 0m, r.AmountBase, 1)); // receipts after invoices on same day
+        foreach (var n in cnLines)
+            unsorted.Add((n.Date, "CreditNote", n.Code, $"{n.InvoiceCode} / {n.Reason}", 0m, n.AmountBase, 1));
 
         var ordered = unsorted
             .OrderBy(x => x.Date)
