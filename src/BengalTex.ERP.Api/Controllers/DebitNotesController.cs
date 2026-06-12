@@ -35,7 +35,8 @@ public class DebitNotesController : ControllerBase
     [HasPermission(Permissions.DebitNotes.Create)]
     public async Task<IActionResult> Create([FromBody] CreateDebitNoteRequest req, CancellationToken ct)
         => Ok(await _mediator.Send(new CreateDebitNoteCommand(
-            req.SupplierInvoiceId, req.IssueDate, req.Reason, req.Amount, req.Notes), ct));
+            req.SupplierInvoiceId, req.IssueDate, req.Reason, req.Amount, req.Notes,
+            req.SupplierReturnNoteId), ct));
 
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.DebitNotes.Edit)]
@@ -60,6 +61,6 @@ public class DebitNotesController : ControllerBase
 }
 
 public record CreateDebitNoteRequest(long SupplierInvoiceId, DateOnly IssueDate,
-    string Reason, decimal Amount, string? Notes);
+    string Reason, decimal Amount, string? Notes, long? SupplierReturnNoteId = null);
 
 public record UpdateDebitNoteRequest(DateOnly IssueDate, string Reason, decimal Amount, string? Notes);

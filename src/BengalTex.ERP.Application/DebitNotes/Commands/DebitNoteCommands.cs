@@ -57,7 +57,9 @@ internal sealed class GetDebitNotesQueryHandler
                 x.IssueDate, x.Reason.ToString(), x.Amount,
                 x.CurrencyId, x.Currency.Code, x.ExchangeRate,
                 x.Status.ToString(),
-                x.IssuedAt, x.IssuedBy, x.Notes))
+                x.IssuedAt, x.IssuedBy, x.Notes,
+                x.SupplierReturnNoteId,
+                x.SupplierReturnNote != null ? x.SupplierReturnNote.Code : null))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<DebitNoteDto>>.Ok(
@@ -87,7 +89,9 @@ internal sealed class GetDebitNoteByIdQueryHandler
                 x.IssueDate, x.Reason.ToString(), x.Amount,
                 x.CurrencyId, x.Currency.Code, x.ExchangeRate,
                 x.Status.ToString(),
-                x.IssuedAt, x.IssuedBy, x.Notes))
+                x.IssuedAt, x.IssuedBy, x.Notes,
+                x.SupplierReturnNoteId,
+                x.SupplierReturnNote != null ? x.SupplierReturnNote.Code : null))
             .FirstOrDefaultAsync(ct);
         return dto is null
             ? ApiResponse<DebitNoteDto>.Fail("Debit note not found.")
@@ -103,7 +107,8 @@ public sealed record CreateDebitNoteCommand(
     DateOnly IssueDate,
     string Reason,
     decimal Amount,
-    string? Notes
+    string? Notes,
+    long? SupplierReturnNoteId = null   // link to the physical return this DBN recovers (optional)
 ) : IRequest<ApiResponse<long>>;
 
 public sealed class CreateDebitNoteCommandValidator : AbstractValidator<CreateDebitNoteCommand>
@@ -125,22 +130,38 @@ internal sealed class CreateDebitNoteCommandHandler
 {
     private readonly IRepository<DebitNote, long> _repo;
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _invRepo;
+    private readonly IRepository<Domain.Entities.SupplierReturnNote, long> _srnRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
 
     public CreateDebitNoteCommandHandler(
         IRepository<DebitNote, long> repo,
         IRepository<Domain.Entities.SupplierInvoice, long> invRepo,
+        IRepository<Domain.Entities.SupplierReturnNote, long> srnRepo,
         IUnitOfWork uow,
         INumberingService numbering)
     {
-        _repo = repo; _invRepo = invRepo; _uow = uow; _numbering = numbering;
+        _repo = repo; _invRepo = invRepo; _srnRepo = srnRepo; _uow = uow; _numbering = numbering;
     }
 
     public async Task<ApiResponse<long>> Handle(CreateDebitNoteCommand cmd, CancellationToken ct)
     {
         var inv = await _invRepo.GetByIdAsync(cmd.SupplierInvoiceId, ct);
         if (inv is null) return ApiResponse<long>.Fail("Supplier invoice not found.");
+
+        if (cmd.SupplierReturnNoteId.HasValue)
+        {
+            // Supplier traces via SRN → GRN → PO (the SRN has no direct SupplierId).
+            var srn = await _srnRepo.Query()
+                .Where(s => s.Id == cmd.SupplierReturnNoteId.Value)
+                .Select(s => new { s.Status, s.GoodsReceiptNote.PurchaseOrder.SupplierId })
+                .FirstOrDefaultAsync(ct);
+            if (srn is null) return ApiResponse<long>.Fail("Linked supplier return note not found.");
+            if (srn.Status != Domain.Entities.SupplierReturnNoteStatus.Posted)
+                return ApiResponse<long>.Fail("Only a Posted return can be linked to a debit note.");
+            if (srn.SupplierId != inv.SupplierId)
+                return ApiResponse<long>.Fail("Return note belongs to a different supplier than the invoice.");
+        }
 
         if (inv.Status == Domain.Entities.SupplierInvoiceStatus.Draft
             || inv.Status == Domain.Entities.SupplierInvoiceStatus.Cancelled)
@@ -162,6 +183,7 @@ internal sealed class CreateDebitNoteCommandHandler
             CurrencyId = inv.CurrencyId,
             ExchangeRate = inv.ExchangeRate,
             Status = DebitNoteStatus.Draft,
+            SupplierReturnNoteId = cmd.SupplierReturnNoteId,
             Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
         };
         await _repo.AddAsync(entity, ct);

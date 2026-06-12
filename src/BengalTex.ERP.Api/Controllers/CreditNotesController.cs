@@ -35,7 +35,8 @@ public class CreditNotesController : ControllerBase
     [HasPermission(Permissions.CreditNotes.Create)]
     public async Task<IActionResult> Create([FromBody] CreateCreditNoteRequest req, CancellationToken ct)
         => Ok(await _mediator.Send(new CreateCreditNoteCommand(
-            req.CustomerInvoiceId, req.IssueDate, req.Reason, req.Amount, req.Notes), ct));
+            req.CustomerInvoiceId, req.IssueDate, req.Reason, req.Amount, req.Notes,
+            req.CustomerReturnNoteId), ct));
 
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.CreditNotes.Edit)]
@@ -60,6 +61,6 @@ public class CreditNotesController : ControllerBase
 }
 
 public record CreateCreditNoteRequest(long CustomerInvoiceId, DateOnly IssueDate,
-    string Reason, decimal Amount, string? Notes);
+    string Reason, decimal Amount, string? Notes, long? CustomerReturnNoteId = null);
 
 public record UpdateCreditNoteRequest(DateOnly IssueDate, string Reason, decimal Amount, string? Notes);

@@ -38,6 +38,11 @@ public class CreditNoteConfiguration : IEntityTypeConfiguration<CreditNote>
             .HasForeignKey(n => n.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(n => n.CustomerReturnNoteId);
+        builder.HasOne(n => n.CustomerReturnNote).WithMany()
+            .HasForeignKey(n => n.CustomerReturnNoteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(n => n.RowVersion).IsRowVersion();
     }
 }

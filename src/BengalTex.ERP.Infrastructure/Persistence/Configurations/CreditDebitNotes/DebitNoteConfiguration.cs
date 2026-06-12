@@ -38,6 +38,11 @@ public class DebitNoteConfiguration : IEntityTypeConfiguration<DebitNote>
             .HasForeignKey(n => n.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(n => n.SupplierReturnNoteId);
+        builder.HasOne(n => n.SupplierReturnNote).WithMany()
+            .HasForeignKey(n => n.SupplierReturnNoteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(n => n.RowVersion).IsRowVersion();
     }
 }

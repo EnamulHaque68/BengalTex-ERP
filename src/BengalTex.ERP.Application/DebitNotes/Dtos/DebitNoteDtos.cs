@@ -18,4 +18,6 @@ public sealed record DebitNoteDto(
     string Status,
     DateTimeOffset? IssuedAt,
     string? IssuedBy,
-    string? Notes);
+    string? Notes,
+    long? SupplierReturnNoteId = null,
+    string? SupplierReturnNoteCode = null);

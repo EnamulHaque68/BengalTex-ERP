@@ -1137,6 +1137,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<long>("CustomerInvoiceId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("CustomerReturnNoteId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1196,6 +1199,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("CustomerInvoiceId");
+
+                    b.HasIndex("CustomerReturnNoteId");
 
                     b.HasIndex("IssueDate");
 
@@ -1919,6 +1924,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<long>("SupplierInvoiceId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("SupplierReturnNoteId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -1933,6 +1941,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("SupplierId");
 
                     b.HasIndex("SupplierInvoiceId");
+
+                    b.HasIndex("SupplierReturnNoteId");
 
                     b.ToTable("DebitNotes", (string)null);
                 });
@@ -9571,11 +9581,18 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CustomerReturnNote", "CustomerReturnNote")
+                        .WithMany()
+                        .HasForeignKey("CustomerReturnNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Currency");
 
                     b.Navigation("Customer");
 
                     b.Navigation("CustomerInvoice");
+
+                    b.Navigation("CustomerReturnNote");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>
@@ -9697,11 +9714,18 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SupplierReturnNote", "SupplierReturnNote")
+                        .WithMany()
+                        .HasForeignKey("SupplierReturnNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Currency");
 
                     b.Navigation("Supplier");
 
                     b.Navigation("SupplierInvoice");
+
+                    b.Navigation("SupplierReturnNote");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.DeliveryNote", b =>

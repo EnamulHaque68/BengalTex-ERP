@@ -65,9 +65,9 @@
             <td></td>
             <td class="num fw-700">{{ formatCurrency(report.openingBalance) }}</td>
           </tr>
-          <tr *ngFor="let l of report.lines" [class.invoice-row]="l.type === 'Invoice'" [class.receipt-row]="l.type === 'Payment'">
+          <tr *ngFor="let l of report.lines" [class.invoice-row]="l.type === 'Invoice'" [class.receipt-row]="l.type === 'Payment' || l.type === 'DebitNote'">
             <td class="num">{{ l.date }}</td>
-            <td><span class="line-type" [class.invoice]="l.type === 'Invoice'" [class.receipt]="l.type === 'Payment'">{{ l.type }}</span></td>
+            <td><span class="line-type" [class.invoice]="l.type === 'Invoice'" [class.receipt]="l.type === 'Payment' || l.type === 'DebitNote'">{{ l.type === 'DebitNote' ? 'Debit Note' : l.type }}</span></td>
             <td><span class="code-badge">{{ l.reference }}</span></td>
             <td class="muted">{{ l.documentRef || '—' }}</td>
             <td class="num good">{{ l.debit > 0 ? formatCurrency(l.debit) : '—' }}</td>
