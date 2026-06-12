@@ -200,6 +200,7 @@ public class DataSeeder : IDataSeeder
             ("5500", "Selling & Distribution Expense", AccountType.Expense, false, "5000"),
             ("5600", "Bank Charges", AccountType.Expense, false, "5000"),
             ("5700", "Material Wastage", AccountType.Expense, false, "5000"),
+            ("5750", "Inventory Adjustment", AccountType.Expense, false, "5000"),
             ("5800", "Exchange Loss", AccountType.Expense, false, "5000"),
         };
 

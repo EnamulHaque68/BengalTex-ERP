@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.QuarantineDisposition.Dtos;
 using BengalTex.ERP.Application.QuarantineDisposition.Queries;
@@ -26,6 +27,7 @@ internal sealed class PostQuarantineDispositionCommandHandler
 {
     private readonly IRepository<Domain.Entities.QuarantineDisposition, long> _repo;
     private readonly IStockService _stock;
+    private readonly IJournalPostingService _journal;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -33,12 +35,14 @@ internal sealed class PostQuarantineDispositionCommandHandler
     public PostQuarantineDispositionCommandHandler(
         IRepository<Domain.Entities.QuarantineDisposition, long> repo,
         IStockService stock,
+        IJournalPostingService journal,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
         _repo = repo;
         _stock = stock;
+        _journal = journal;
         _uow = uow;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -88,8 +92,18 @@ internal sealed class PostQuarantineDispositionCommandHandler
             return ApiResponse<QuarantineDispositionDto>.Fail("Cannot post disposition:\n" + string.Join("\n", violations));
 
         // ─── Pass 2: apply movements ────────────────────────────────────────
+        var rmScrapCost = 0m;
+        var fgScrapCost = 0m;
         foreach (var line in disp.Lines)
         {
+            if (!isRelease)
+            {
+                if (line.RawMaterialId.HasValue)
+                    rmScrapCost += line.Quantity * (line.RawMaterial?.WeightedAverageCost ?? 0m);
+                else
+                    fgScrapCost += line.Quantity * (line.Product?.WeightedAverageCost ?? 0m);
+            }
+
             if (line.RawMaterialId.HasValue)
             {
                 await _stock.PostRawMaterialMovementAsync(
@@ -114,6 +128,22 @@ internal sealed class PostQuarantineDispositionCommandHandler
                         StockMovementType.QuarantineReleaseIn,
                         "QuarantineDisposition", disp.Id, disp.Code, disp.DispositionDate, line.LineNotes, cancellationToken);
             }
+        }
+
+        // Auto-journal — Scrap write-off at WAC: Dr Material Wastage / Cr Inventory (RM and/or FG).
+        // Release moves stock between warehouses only — same inventory account, no GL impact.
+        if (rmScrapCost + fgScrapCost > 0m)
+        {
+            var lines = new List<JournalPostingLine>
+            {
+                new(LedgerAccounts.MaterialWastage, rmScrapCost + fgScrapCost, 0m),
+            };
+            if (rmScrapCost > 0m) lines.Add(new(LedgerAccounts.RawMaterialInventory, 0m, rmScrapCost));
+            if (fgScrapCost > 0m) lines.Add(new(LedgerAccounts.FinishedGoodsInventory, 0m, fgScrapCost));
+
+            await _journal.PostAsync(
+                disp.DispositionDate, $"Quarantine scrap {disp.Code} — write-off at WAC",
+                "QuarantineDisposition", disp.Id, disp.Code, lines, cancellationToken);
         }
 
         disp.Status = Domain.Entities.QuarantineDispositionStatus.Posted;

@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.DeliveryNote.Dtos;
 using BengalTex.ERP.Application.DeliveryNote.Queries;
@@ -17,9 +18,12 @@ namespace BengalTex.ERP.Application.DeliveryNote.Commands;
 ///   2. Increment <see cref="SalesOrderLine.DispatchedQuantity"/> per line.
 ///   3. Post a <see cref="StockMovement"/> per line (type = SalesDispatch, − qty) via
 ///      <see cref="IStockService.PostProductMovementAsync"/>.
-///   4. Recompute parent SO status — all lines complete → Dispatched; some &gt; 0 →
+///   4. Auto-journal COGS at dispatch (perpetual): Dr Cost of Goods Sold / Cr Finished
+///      Goods Inventory at Σ(qty × Product.WeightedAverageCost) — pairs with the revenue
+///      entry made by Customer Invoice Issue, so the P&amp;L shows margin per period.
+///   5. Recompute parent SO status — all lines complete → Dispatched; some &gt; 0 →
 ///      PartiallyDispatched.
-///   5. Mark DN as Posted with PostedAt/By.
+///   6. Mark DN as Posted with PostedAt/By.
 /// Once Posted, the DN is immutable.
 /// </summary>
 public sealed record PostDeliveryNoteCommand(long Id) : IRequest<ApiResponse<DeliveryNoteDto>>;
@@ -31,6 +35,7 @@ internal sealed class PostDeliveryNoteCommandHandler
     private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
+    private readonly IJournalPostingService _journal;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
@@ -39,6 +44,7 @@ internal sealed class PostDeliveryNoteCommandHandler
         IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IUnitOfWork uow,
         IStockService stock,
+        IJournalPostingService journal,
         ICurrentUserService currentUser,
         IMediator mediator)
     {
@@ -46,6 +52,7 @@ internal sealed class PostDeliveryNoteCommandHandler
         _soRepo = soRepo;
         _uow = uow;
         _stock = stock;
+        _journal = journal;
         _currentUser = currentUser;
         _mediator = mediator;
     }
@@ -97,11 +104,13 @@ internal sealed class PostDeliveryNoteCommandHandler
                     $"(need {dnLine.DispatchedQuantity:0.####}, have {available:0.####}).");
         }
 
-        // Pass 2 — apply: increment SO lines + post movements
+        // Pass 2 — apply: increment SO lines + post movements; accumulate COGS at WAC
+        var totalCogs = 0m;
         foreach (var dnLine in dn.Lines)
         {
             var soLine = so.Lines.First(sl => sl.Id == dnLine.SalesOrderLineId);
             soLine.DispatchedQuantity += dnLine.DispatchedQuantity;
+            totalCogs += dnLine.DispatchedQuantity * soLine.Product.WeightedAverageCost;
 
             await _stock.PostProductMovementAsync(
                 productId: soLine.ProductId,
@@ -114,6 +123,19 @@ internal sealed class PostDeliveryNoteCommandHandler
                 movementDate: dn.DispatchDate,
                 notes: dnLine.LineNotes,
                 ct: cancellationToken);
+        }
+
+        // Auto-journal — recognize cost of goods at dispatch (zero-cost FG → no entry).
+        if (totalCogs > 0m)
+        {
+            await _journal.PostAsync(
+                dn.DispatchDate, $"COGS on dispatch {dn.Code} (SO {so.Code})",
+                "DeliveryNote", dn.Id, dn.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.CostOfGoodsSold, totalCogs, 0m),
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, totalCogs),
+                }, cancellationToken);
         }
 
         // Recompute SO status

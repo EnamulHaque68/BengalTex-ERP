@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.CustomerReturnNote.Dtos;
 using BengalTex.ERP.Application.CustomerReturnNote.Queries;
@@ -35,6 +36,7 @@ internal sealed class PostCustomerReturnNoteCommandHandler
     private readonly IRepository<Domain.Entities.DeliveryNote, long> _dnRepo;
     private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IStockService _stockService;
+    private readonly IJournalPostingService _journal;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -44,6 +46,7 @@ internal sealed class PostCustomerReturnNoteCommandHandler
         IRepository<Domain.Entities.DeliveryNote, long> dnRepo,
         IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IStockService stockService,
+        IJournalPostingService journal,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -52,6 +55,7 @@ internal sealed class PostCustomerReturnNoteCommandHandler
         _dnRepo = dnRepo;
         _soRepo = soRepo;
         _stockService = stockService;
+        _journal = journal;
         _uow = uow;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -106,6 +110,7 @@ internal sealed class PostCustomerReturnNoteCommandHandler
 
         // ─── Pass 2: apply all (stock + DN line + SO line) ──────────────────
         var soLineById = so.Lines.ToDictionary(l => l.Id);
+        var totalReturnCost = 0m;
         foreach (var crnLine in crn.Lines)
         {
             var dnLine = dnLineById[crnLine.DeliveryNoteLineId];
@@ -113,6 +118,7 @@ internal sealed class PostCustomerReturnNoteCommandHandler
 
             var soLine = soLineById[dnLine.SalesOrderLineId];
             soLine.DispatchedQuantity -= crnLine.ReturnedQuantity;
+            totalReturnCost += crnLine.ReturnedQuantity * crnLine.Product.WeightedAverageCost;
 
             await _stockService.PostProductMovementAsync(
                 productId: crnLine.ProductId,
@@ -125,6 +131,21 @@ internal sealed class PostCustomerReturnNoteCommandHandler
                 movementDate: crn.ReturnDate,
                 notes: crnLine.LineNotes,
                 ct: cancellationToken);
+        }
+
+        // Auto-journal — goods back in stock, reverse the dispatch COGS at current WAC:
+        // Dr Finished Goods Inventory / Cr Cost of Goods Sold. (Revenue side is handled
+        // separately by a Credit Note when the buyer is to be refunded.)
+        if (totalReturnCost > 0m)
+        {
+            await _journal.PostAsync(
+                crn.ReturnDate, $"Customer return {crn.Code} (DN {dn.Code}) — stock back at WAC",
+                "CustomerReturnNote", crn.Id, crn.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalReturnCost, 0m),
+                    new JournalPostingLine(LedgerAccounts.CostOfGoodsSold, 0m, totalReturnCost),
+                }, cancellationToken);
         }
 
         // Recompute SO status — mirror of DN Post logic, but only when SO is in a
