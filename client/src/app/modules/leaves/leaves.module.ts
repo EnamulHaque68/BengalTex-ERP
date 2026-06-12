@@ -16,6 +16,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
+import { SharedModule } from '../../shared/shared.module';
 import { LeaveListComponent } from './leave-list/leave-list.component';
 import { LeaveTypeListComponent } from './leave-type-list/leave-type-list.component';
 import { HolidayListComponent } from './holiday-list/holiday-list.component';
@@ -35,7 +36,8 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, SelectModule, CheckboxModule, TooltipModule,
-    TextareaModule, TagModule, ToggleSwitchModule
+    TextareaModule, TagModule, ToggleSwitchModule,
+    SharedModule
   ]
 })
 export class LeavesModule {}

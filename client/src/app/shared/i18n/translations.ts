@@ -130,5 +130,57 @@ export const TRANSLATIONS: Record<string, { en: string; bn: string }> = {
   'scanner.empty':        {
     en: 'No scans yet. Aim the camera at a job-card QR code.',
     bn: 'এখনো কোনো স্ক্যান হয়নি। জব-কার্ডের QR কোডে ক্যামেরা ধরুন।'
-  }
+  },
+
+  // ── Leave statuses (enum text from the API) ───────────────────────────────
+  'lstatus.Pending':    { en: 'Pending',   bn: 'অপেক্ষমাণ' },
+  'lstatus.Approved':   { en: 'Approved',  bn: 'অনুমোদিত' },
+  'lstatus.Rejected':   { en: 'Rejected',  bn: 'প্রত্যাখ্যাত' },
+  'lstatus.Cancelled':  { en: 'Cancelled', bn: 'বাতিল' },
+
+  // ── Leave applications screen ─────────────────────────────────────────────
+  'leave.title':        { en: 'Leave Applications', bn: 'ছুটির আবেদন' },
+  'leave.subtitle':     {
+    en: 'Apply for leave, approve / reject pending requests, see history',
+    bn: 'ছুটির আবেদন করুন, অনুমোদন / প্রত্যাখ্যান করুন, ইতিহাস দেখুন'
+  },
+  'leave.types':        { en: 'Types',    bn: 'ধরন' },
+  'leave.holidays':     { en: 'Holidays', bn: 'ছুটির দিন' },
+  'leave.balances':     { en: 'Balances', bn: 'ব্যালেন্স' },
+  'leave.apply':        { en: 'Apply Leave', bn: 'ছুটির আবেদন করুন' },
+  'leave.searchPlaceholder': { en: 'Search code, employee...', bn: 'কোড বা কর্মীর নাম খুঁজুন...' },
+  'leave.allStatuses':  { en: 'All statuses',  bn: 'সব অবস্থা' },
+  'leave.allEmployees': { en: 'All employees', bn: 'সব কর্মী' },
+  'leave.code':         { en: 'Code',     bn: 'কোড' },
+  'leave.employee':     { en: 'Employee', bn: 'কর্মী' },
+  'leave.type':         { en: 'Type',     bn: 'ধরন' },
+  'leave.from':         { en: 'From',     bn: 'থেকে' },
+  'leave.to':           { en: 'To',       bn: 'পর্যন্ত' },
+  'leave.days':         { en: 'Days',     bn: 'দিন' },
+  'leave.reason':       { en: 'Reason',   bn: 'কারণ' },
+  'leave.actions':      { en: 'Actions',  bn: 'পদক্ষেপ' },
+  'leave.empty':        { en: 'No leave applications.', bn: 'কোনো ছুটির আবেদন নেই।' },
+  'leave.approve':      { en: 'Approve', bn: 'অনুমোদন' },
+  'leave.rejectTip':    { en: 'Reject',  bn: 'প্রত্যাখ্যান' },
+  'leave.cancelTip':    { en: 'Cancel',  bn: 'বাতিল' },
+  'leave.applyTitle':   { en: 'Apply for Leave', bn: 'ছুটির আবেদন' },
+  'leave.leaveType':    { en: 'Leave Type', bn: 'ছুটির ধরন' },
+  'leave.fromDate':     { en: 'From Date',  bn: 'শুরুর তারিখ' },
+  'leave.toDate':       { en: 'To Date',    bn: 'শেষ তারিখ' },
+  'leave.reasonPlaceholder': {
+    en: 'e.g. Family function, medical appointment',
+    bn: 'যেমন: পারিবারিক অনুষ্ঠান, ডাক্তার দেখানো'
+  },
+  'leave.autoAttendance': { en: 'Auto-write Attendance (recommended)', bn: 'হাজিরা স্বয়ংক্রিয় লেখা (প্রস্তাবিত)' },
+  'leave.autoAttendanceHint': {
+    en: 'On approve, AttendanceRecord rows for working days will be set to "Leave". Disable if entering attendance manually.',
+    bn: 'অনুমোদনের পর কর্মদিবসগুলোর হাজিরা স্বয়ংক্রিয়ভাবে "ছুটি" হিসেবে লেখা হবে। হাজিরা নিজে লিখলে বন্ধ রাখুন।'
+  },
+  'leave.cancelBtn':    { en: 'Cancel',  bn: 'বাতিল' },
+  'leave.submit':       { en: 'Submit',  bn: 'জমা দিন' },
+  'leave.submitting':   { en: 'Submitting...', bn: 'জমা হচ্ছে...' },
+  'leave.rejectTitle':  { en: 'Reject Leave', bn: 'ছুটি প্রত্যাখ্যান' },
+  'leave.rejectConfirm': { en: 'Reject this leave application?', bn: 'এই ছুটির আবেদন প্রত্যাখ্যান করবেন?' },
+  'leave.rejectionReason': { en: 'Rejection Reason', bn: 'প্রত্যাখ্যানের কারণ' },
+  'leave.rejectBtn':    { en: 'Reject', bn: 'প্রত্যাখ্যান করুন' }
 };
