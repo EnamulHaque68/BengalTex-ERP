@@ -43,6 +43,8 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Application"));
 builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.AuditLogRetentionOptions>(
     builder.Configuration.GetSection("AuditLogRetention"));
+builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.DatabaseBackupOptions>(
+    builder.Configuration.GetSection("DatabaseBackup"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -353,6 +355,14 @@ RecurringJob.AddOrUpdate<AuditLogRetentionJob>(
     AuditLogRetentionJob.RecurringJobId,
     x => x.RunAsync(CancellationToken.None),
     "30 2 * * *"); // 5-field cron: every day at 02:30
+
+// Database backup — full BACKUP DATABASE nightly at 01:30 (before the audit-log trim at
+// 02:30). Configure via the DatabaseBackup section; also enqueueable on demand from
+// POST /api/maintenance/backup-now. Set DatabaseBackup:Enabled=false to disable.
+RecurringJob.AddOrUpdate<DatabaseBackupJob>(
+    DatabaseBackupJob.RecurringJobId,
+    x => x.RunAsync(CancellationToken.None),
+    "30 1 * * *"); // 5-field cron: every day at 01:30
 
 // ============================================
 // RUN

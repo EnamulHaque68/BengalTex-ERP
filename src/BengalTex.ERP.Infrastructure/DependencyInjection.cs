@@ -58,6 +58,9 @@ public static class DependencyInjection
         // Outbox processor (Hangfire recurring job — class activated by IServiceProvider, no interface needed)
         services.AddScoped<OutboxProcessor>();
 
+        // Nightly SQL Server backup job (Hangfire recurring + on-demand enqueue)
+        services.AddScoped<DatabaseBackupJob>();
+
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseSqlServer(
