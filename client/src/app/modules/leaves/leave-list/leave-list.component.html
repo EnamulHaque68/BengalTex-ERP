@@ -1,26 +1,27 @@
 <div class="page-shell">
   <div class="page-header">
     <div>
-      <h2 class="page-title">Leave Applications</h2>
-      <p class="page-subtitle">Apply for leave, approve / reject pending requests, see history</p>
+      <h2 class="page-title">{{ 'leave.title' | t }}</h2>
+      <p class="page-subtitle">{{ 'leave.subtitle' | t }}</p>
     </div>
     <div class="header-actions">
-      <a class="link-btn" routerLink="/leaves/types"><i class="pi pi-tags"></i> Types</a>
-      <a class="link-btn" routerLink="/leaves/holidays"><i class="pi pi-calendar-times"></i> Holidays</a>
-      <a class="link-btn" routerLink="/leaves/balances"><i class="pi pi-chart-bar"></i> Balances</a>
-      <p-button label="Apply Leave" icon="pi pi-plus" *ngIf="canApply" (click)="openApply()" />
+      <app-lang-toggle></app-lang-toggle>
+      <a class="link-btn" routerLink="/leaves/types"><i class="pi pi-tags"></i> {{ 'leave.types' | t }}</a>
+      <a class="link-btn" routerLink="/leaves/holidays"><i class="pi pi-calendar-times"></i> {{ 'leave.holidays' | t }}</a>
+      <a class="link-btn" routerLink="/leaves/balances"><i class="pi pi-chart-bar"></i> {{ 'leave.balances' | t }}</a>
+      <p-button [label]="'leave.apply' | t" icon="pi pi-plus" *ngIf="canApply" (click)="openApply()" />
     </div>
   </div>
 
   <div class="filter-bar">
     <span class="search-wrap">
       <i class="pi pi-search"></i>
-      <input pInputText type="text" placeholder="Search code, employee..." (input)="onSearch($any($event.target).value)" />
+      <input pInputText type="text" [placeholder]="'leave.searchPlaceholder' | t" (input)="onSearch($any($event.target).value)" />
     </span>
     <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
-              [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+              [showClear]="true" [placeholder]="'leave.allStatuses' | t" styleClass="filter-select-sm" (onChange)="load()" />
     <p-select [(ngModel)]="filterEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id"
-              [showClear]="true" [filter]="true" filterBy="fullName,code" placeholder="All employees"
+              [showClear]="true" [filter]="true" filterBy="fullName,code" [placeholder]="'leave.allEmployees' | t"
               styleClass="filter-select" (onChange)="load()" />
   </div>
 
@@ -32,10 +33,10 @@
              [rowHover]="true" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
-          <th>Code</th><th>Employee</th><th>Type</th>
-          <th>From</th><th>To</th><th>Days</th>
-          <th>Reason</th><th>Status</th>
-          <th style="width:180px">Actions</th>
+          <th>{{ 'leave.code' | t }}</th><th>{{ 'leave.employee' | t }}</th><th>{{ 'leave.type' | t }}</th>
+          <th>{{ 'leave.from' | t }}</th><th>{{ 'leave.to' | t }}</th><th>{{ 'leave.days' | t }}</th>
+          <th>{{ 'leave.reason' | t }}</th><th>{{ 'common.status' | t }}</th>
+          <th style="width:180px">{{ 'leave.actions' | t }}</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-l>
@@ -47,87 +48,87 @@
           <td class="num">{{ l.toDate | date:'mediumDate' }}</td>
           <td class="num"><strong>{{ l.totalDays }}</strong></td>
           <td class="reason-cell">{{ l.reason || '—' }}</td>
-          <td><p-tag [value]="l.status" [severity]="statusSeverity(l.status)" /></td>
+          <td><p-tag [value]="('lstatus.' + l.status) | t: l.status" [severity]="statusSeverity(l.status)" /></td>
           <td>
             <div class="row-actions">
               <ng-container *ngIf="l.status === 'Pending'">
                 <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="canApprove"
-                          [loading]="rowActionId === l.id" (click)="approve(l)" pTooltip="Approve" />
+                          [loading]="rowActionId === l.id" (click)="approve(l)" [pTooltip]="'leave.approve' | t" />
                 <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" *ngIf="canApprove"
-                          (click)="openReject(l)" pTooltip="Reject" />
+                          (click)="openReject(l)" [pTooltip]="'leave.rejectTip' | t" />
               </ng-container>
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel && (l.status === 'Pending' || l.status === 'Approved')"
-                        [loading]="rowActionId === l.id" (click)="cancel(l)" pTooltip="Cancel" />
+                        [loading]="rowActionId === l.id" (click)="cancel(l)" [pTooltip]="'leave.cancelTip' | t" />
             </div>
           </td>
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage">
-        <tr><td colspan="9" class="empty-row"><i class="pi pi-calendar"></i><span>No leave applications.</span></td></tr>
+        <tr><td colspan="9" class="empty-row"><i class="pi pi-calendar"></i><span>{{ 'leave.empty' | t }}</span></td></tr>
       </ng-template>
     </p-table>
   </p-card>
 </div>
 
 <!-- Apply dialog -->
-<p-dialog [(visible)]="applyVisible" header="Apply for Leave" [modal]="true" [style]="{ width: '580px' }" [draggable]="false">
+<p-dialog [(visible)]="applyVisible" [header]="'leave.applyTitle' | t" [modal]="true" [style]="{ width: '580px' }" [draggable]="false">
   <form [formGroup]="applyForm" (ngSubmit)="doApply()" autocomplete="off">
     <div class="alert alert-error" *ngIf="applyError"><i class="pi pi-exclamation-circle"></i>{{ applyError }}</div>
     <div class="dialog-grid">
       <div class="field">
-        <label>Employee *</label>
+        <label>{{ 'leave.employee' | t }} *</label>
         <p-select formControlName="employeeId" [options]="employees" optionLabel="fullName" optionValue="id"
-                  [filter]="true" filterBy="fullName,code" placeholder="Pick employee"
+                  [filter]="true" filterBy="fullName,code" [placeholder]="'leave.employee' | t"
                   appendTo="body" class="w-full" styleClass="w-full" />
       </div>
       <div class="field">
-        <label>Leave Type *</label>
+        <label>{{ 'leave.leaveType' | t }} *</label>
         <p-select formControlName="leaveTypeId" [options]="leaveTypes" optionLabel="name" optionValue="id"
                   appendTo="body" class="w-full" styleClass="w-full" />
       </div>
       <div class="field">
-        <label>From Date *</label>
+        <label>{{ 'leave.fromDate' | t }} *</label>
         <input pInputText type="date" formControlName="fromDate" class="w-full" />
       </div>
       <div class="field">
-        <label>To Date *</label>
+        <label>{{ 'leave.toDate' | t }} *</label>
         <input pInputText type="date" formControlName="toDate" class="w-full" />
       </div>
       <div class="field col-span-2">
-        <label>Reason</label>
-        <textarea pTextarea rows="2" formControlName="reason" placeholder="e.g. Family function, medical appointment" class="w-full"></textarea>
+        <label>{{ 'leave.reason' | t }}</label>
+        <textarea pTextarea rows="2" formControlName="reason" [placeholder]="'leave.reasonPlaceholder' | t" class="w-full"></textarea>
       </div>
       <div class="field check-field col-span-2">
-        <label>Auto-write Attendance (recommended)</label>
+        <label>{{ 'leave.autoAttendance' | t }}</label>
         <p-toggleSwitch formControlName="writeAttendance" />
-        <small class="hint">On approve, AttendanceRecord rows for working days will be set to "Leave". Disable if entering attendance manually.</small>
+        <small class="hint">{{ 'leave.autoAttendanceHint' | t }}</small>
       </div>
       <div class="field col-span-2">
-        <label>Notes</label>
+        <label>{{ 'common.notes' | t }}</label>
         <textarea pTextarea rows="2" formControlName="notes" class="w-full"></textarea>
       </div>
     </div>
     <div class="dialog-footer">
-      <p-button label="Cancel" severity="secondary" [text]="true" (click)="applyVisible = false" [disabled]="applySaving" />
-      <p-button type="submit" [label]="applySaving ? 'Submitting...' : 'Submit'" icon="pi pi-send"
+      <p-button [label]="'leave.cancelBtn' | t" severity="secondary" [text]="true" (click)="applyVisible = false" [disabled]="applySaving" />
+      <p-button type="submit" [label]="(applySaving ? 'leave.submitting' : 'leave.submit') | t" icon="pi pi-send"
                 [loading]="applySaving" [disabled]="applyForm.invalid || applySaving" />
     </div>
   </form>
 </p-dialog>
 
 <!-- Reject dialog -->
-<p-dialog [(visible)]="rejectVisible" header="Reject Leave" [modal]="true" [style]="{ width: '440px' }">
+<p-dialog [(visible)]="rejectVisible" [header]="'leave.rejectTitle' | t" [modal]="true" [style]="{ width: '440px' }">
   <div *ngIf="rejectTarget">
-    <p>Reject leave <strong>{{ rejectTarget.code }}</strong> for {{ rejectTarget.employeeName }}?</p>
+    <p>{{ 'leave.rejectConfirm' | t }} <strong>{{ rejectTarget.code }}</strong> — {{ rejectTarget.employeeName }}</p>
     <div class="alert alert-error" *ngIf="rejectError"><i class="pi pi-exclamation-circle"></i>{{ rejectError }}</div>
     <div class="field">
-      <label>Rejection Reason</label>
-      <textarea pTextarea rows="3" [(ngModel)]="rejectReason" placeholder="(optional)" class="w-full"></textarea>
+      <label>{{ 'leave.rejectionReason' | t }}</label>
+      <textarea pTextarea rows="3" [(ngModel)]="rejectReason" [placeholder]="'common.optional' | t" class="w-full"></textarea>
     </div>
     <div class="dialog-footer">
-      <p-button label="Cancel" severity="secondary" [text]="true" (click)="rejectVisible = false" [disabled]="rejectBusy" />
-      <p-button label="Reject" icon="pi pi-times" severity="danger" [loading]="rejectBusy" (click)="doReject()" />
+      <p-button [label]="'leave.cancelBtn' | t" severity="secondary" [text]="true" (click)="rejectVisible = false" [disabled]="rejectBusy" />
+      <p-button [label]="'leave.rejectBtn' | t" icon="pi pi-times" severity="danger" [loading]="rejectBusy" (click)="doReject()" />
     </div>
   </div>
 </p-dialog>
