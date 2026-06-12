@@ -5,6 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { JobCardService } from '../../../services/job-card.service';
 import { AuthService } from '../../../services/auth.service';
 import { JobCardDto } from '../../../models/job-card.models';
+import { TranslationService } from '../../../shared/i18n/translation.service';
+import { Lang } from '../../../shared/i18n/translations';
 
 @Component({
   selector: 'app-job-card-detail',
@@ -29,8 +31,14 @@ export class JobCardDetailComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public i18n: TranslationService
   ) {}
+
+  setLang(lang: Lang): void {
+    this.i18n.setLang(lang);
+    this.cdr.detectChanges();
+  }
 
   ngOnInit(): void {
     this.canScan = this.auth.hasPermission('JobCards.Scan');

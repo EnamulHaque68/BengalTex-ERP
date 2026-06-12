@@ -62,5 +62,48 @@ export const TRANSLATIONS: Record<string, { en: string; bn: string }> = {
   'checkin.recordedHint': {
     en: 'Your check-in is recorded. Have a productive day!',
     bn: 'আপনার চেক-ইন রেকর্ড হয়েছে। দিনটি ভালো কাটুক!'
-  }
+  },
+
+  // ── Job card statuses (enum text from the API) ────────────────────────────
+  'jcstatus.Open':        { en: 'Open',        bn: 'খোলা' },
+  'jcstatus.InProgress':  { en: 'In Progress', bn: 'চলছে' },
+  'jcstatus.OnHold':      { en: 'On Hold',     bn: 'বিরতিতে' },
+  'jcstatus.Completed':   { en: 'Completed',   bn: 'সম্পন্ন' },
+  'jcstatus.Cancelled':   { en: 'Cancelled',   bn: 'বাতিল' },
+
+  // ── Job card scan types (enum text from the API) ──────────────────────────
+  'scan.Start':     { en: 'Start',    bn: 'শুরু' },
+  'scan.Pause':     { en: 'Pause',    bn: 'বিরতি' },
+  'scan.Resume':    { en: 'Resume',   bn: 'পুনরায় শুরু' },
+  'scan.Complete':  { en: 'Complete', bn: 'সম্পন্ন' },
+  'scan.QcCheck':   { en: 'QC Check', bn: 'কিউসি পরীক্ষা' },
+  'scan.Cancel':    { en: 'Cancel',   bn: 'বাতিল' },
+
+  // ── Job card detail screen ────────────────────────────────────────────────
+  'jobcard.back':        { en: 'Back to Job Cards', bn: 'জব কার্ড তালিকায় ফিরুন' },
+  'jobcard.start':       { en: 'Start',     bn: 'শুরু করুন' },
+  'jobcard.pause':       { en: 'Pause',     bn: 'বিরতি দিন' },
+  'jobcard.resume':      { en: 'Resume',    bn: 'আবার শুরু করুন' },
+  'jobcard.complete':    { en: 'Complete',  bn: 'সম্পন্ন করুন' },
+  'jobcard.cancel':      { en: 'Cancel',    bn: 'বাতিল করুন' },
+  'jobcard.printCard':   { en: 'Print Card', bn: 'কার্ড প্রিন্ট করুন' },
+  'jobcard.loadingQr':   { en: 'Loading QR...', bn: 'QR লোড হচ্ছে...' },
+  'jobcard.po':          { en: 'PO',        bn: 'প্রোডাকশন অর্ডার' },
+  'jobcard.product':     { en: 'Product',   bn: 'পণ্য' },
+  'jobcard.stage':       { en: 'Stage',     bn: 'ধাপ' },
+  'jobcard.batch':       { en: 'Batch',     bn: 'ব্যাচ' },
+  'jobcard.qty':         { en: 'Qty',       bn: 'পরিমাণ' },
+  'jobcard.quantity':    { en: 'Quantity',  bn: 'পরিমাণ' },
+  'jobcard.completedQty':{ en: 'Completed', bn: 'সম্পন্ন' },
+  'jobcard.rejected':    { en: 'Rejected',  bn: 'বাতিলকৃত' },
+  'jobcard.activeTime':  { en: 'Active Time', bn: 'কার্যকাল' },
+  'jobcard.machine':     { en: 'Machine',   bn: 'মেশিন' },
+  'jobcard.operator':    { en: 'Operator',  bn: 'অপারেটর' },
+  'jobcard.startedAt':   { en: 'Started',   bn: 'শুরু হয়েছে' },
+  'jobcard.completedAt': { en: 'Completed', bn: 'শেষ হয়েছে' },
+  'jobcard.details':     { en: 'Details',   bn: 'বিস্তারিত' },
+  'jobcard.scanTimeline':{ en: 'Scan Timeline', bn: 'স্ক্যান টাইমলাইন' },
+  'jobcard.noScans':     { en: 'No scans yet.', bn: 'এখনো কোনো স্ক্যান হয়নি।' },
+  'jobcard.by':          { en: 'by',        bn: 'করেছেন' },
+  'jobcard.loading':     { en: 'Loading...', bn: 'লোড হচ্ছে...' }
 };
