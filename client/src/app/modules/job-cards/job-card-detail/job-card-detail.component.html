@@ -6,10 +6,7 @@
       <p class="page-subtitle">{{ card.productionOrderCode }} &mdash; {{ card.productName }}</p>
     </div>
     <div class="header-actions">
-      <div class="lang-toggle">
-        <button type="button" [class.active]="i18n.lang === 'en'" (click)="setLang('en')">EN</button>
-        <button type="button" [class.active]="i18n.lang === 'bn'" (click)="setLang('bn')">বাংলা</button>
-      </div>
+      <app-lang-toggle></app-lang-toggle>
       <ng-container *ngIf="canScan && card.status !== 'Completed' && card.status !== 'Cancelled'">
         <p-button *ngIf="card.status === 'Open'" [label]="'jobcard.start' | t" icon="pi pi-play" severity="success" (click)="scanShortcut('Start')" />
         <p-button *ngIf="card.status === 'InProgress'" [label]="'jobcard.pause' | t" icon="pi pi-pause" severity="warn" (click)="scanShortcut('Pause')" />

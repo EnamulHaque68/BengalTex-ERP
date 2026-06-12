@@ -105,5 +105,30 @@ export const TRANSLATIONS: Record<string, { en: string; bn: string }> = {
   'jobcard.scanTimeline':{ en: 'Scan Timeline', bn: 'স্ক্যান টাইমলাইন' },
   'jobcard.noScans':     { en: 'No scans yet.', bn: 'এখনো কোনো স্ক্যান হয়নি।' },
   'jobcard.by':          { en: 'by',        bn: 'করেছেন' },
-  'jobcard.loading':     { en: 'Loading...', bn: 'লোড হচ্ছে...' }
+  'jobcard.loading':     { en: 'Loading...', bn: 'লোড হচ্ছে...' },
+
+  // ── QR scanner screen ─────────────────────────────────────────────────────
+  'scanner.title':        { en: 'QR Scanner', bn: 'QR স্ক্যানার' },
+  'scanner.subtitle':     {
+    en: 'Pick action below, then point camera at job-card QR codes to apply continuously.',
+    bn: 'নিচে অ্যাকশন বেছে নিন, তারপর জব-কার্ডের QR কোডে ক্যামেরা ধরুন — একটানা প্রয়োগ হবে।'
+  },
+  'scanner.startCamera':  { en: 'Start Camera', bn: 'ক্যামেরা চালু করুন' },
+  'scanner.stopCamera':   { en: 'Stop Camera',  bn: 'ক্যামেরা বন্ধ করুন' },
+  'scanner.noPermission': {
+    en: "You don't have permission to scan job cards (JobCards.Scan).",
+    bn: 'জব কার্ড স্ক্যান করার অনুমতি আপনার নেই (JobCards.Scan)।'
+  },
+  'scanner.actionOnScan': { en: 'Action on each scan:', bn: 'প্রতি স্ক্যানে অ্যাকশন:' },
+  'scanner.clickStart':   {
+    en: 'Click "Start Camera" to begin scanning.',
+    bn: '"ক্যামেরা চালু করুন" চাপুন স্ক্যান শুরু করতে।'
+  },
+  'scanner.posting':      { en: 'Posting scan...', bn: 'স্ক্যান পাঠানো হচ্ছে...' },
+  'scanner.history':      { en: 'Scan History', bn: 'স্ক্যান ইতিহাস' },
+  'scanner.clear':        { en: 'Clear', bn: 'মুছুন' },
+  'scanner.empty':        {
+    en: 'No scans yet. Aim the camera at a job-card QR code.',
+    bn: 'এখনো কোনো স্ক্যান হয়নি। জব-কার্ডের QR কোডে ক্যামেরা ধরুন।'
+  }
 };

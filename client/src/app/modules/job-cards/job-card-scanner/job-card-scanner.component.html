@@ -1,13 +1,14 @@
 <div class="scanner-shell">
   <div class="scanner-header">
     <div>
-      <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Job Cards</a>
-      <h2 class="page-title">QR Scanner</h2>
-      <p class="page-subtitle">Pick action below, then point camera at job-card QR codes to apply continuously.</p>
+      <a class="back-link" (click)="back()"><i class="pi pi-arrow-left"></i> {{ 'jobcard.back' | t }}</a>
+      <h2 class="page-title">{{ 'scanner.title' | t }}</h2>
+      <p class="page-subtitle">{{ 'scanner.subtitle' | t }}</p>
     </div>
     <div class="header-actions">
-      <p-button *ngIf="!cameraActive" label="Start Camera" icon="pi pi-camera" severity="success" (click)="startScanner()" />
-      <p-button *ngIf="cameraActive" label="Stop Camera" icon="pi pi-stop-circle" severity="danger" [text]="true" (click)="stopScanner()" />
+      <app-lang-toggle></app-lang-toggle>
+      <p-button *ngIf="!cameraActive" [label]="'scanner.startCamera' | t" icon="pi pi-camera" severity="success" (click)="startScanner()" />
+      <p-button *ngIf="cameraActive" [label]="'scanner.stopCamera' | t" icon="pi pi-stop-circle" severity="danger" [text]="true" (click)="stopScanner()" />
     </div>
   </div>
 
@@ -17,11 +18,11 @@
   </div>
   <div class="alert alert-warn" *ngIf="!canScan">
     <i class="pi pi-exclamation-circle"></i>
-    You don't have permission to scan job cards (JobCards.Scan).
+    {{ 'scanner.noPermission' | t }}
   </div>
 
   <div class="action-bar">
-    <span class="lbl">Action on each scan:</span>
+    <span class="lbl">{{ 'scanner.actionOnScan' | t }}</span>
     <div class="action-pills">
       <button *ngFor="let a of actions"
               type="button"
@@ -29,7 +30,7 @@
               [class.active]="selectedAction === a.value"
               [attr.data-severity]="a.severity"
               (click)="selectedAction = a.value">
-        {{ a.label }}
+        {{ ('scan.' + a.value) | t: a.label }}
       </button>
     </div>
   </div>
@@ -39,20 +40,20 @@
       <div [id]="scannerId" class="viewport"></div>
       <div *ngIf="!cameraActive && !cameraError" class="viewport-overlay">
         <i class="pi pi-camera"></i>
-        <p>Click "Start Camera" to begin scanning.</p>
+        <p>{{ 'scanner.clickStart' | t }}</p>
       </div>
       <div *ngIf="scanning" class="scanning-pulse">
-        <i class="pi pi-spin pi-spinner"></i> Posting scan...
+        <i class="pi pi-spin pi-spinner"></i> {{ 'scanner.posting' | t }}
       </div>
     </div>
 
     <div class="history-panel">
       <div class="history-head">
-        <h4><i class="pi pi-history"></i> Scan History ({{ history.length }})</h4>
-        <p-button *ngIf="history.length > 0" label="Clear" icon="pi pi-trash" severity="secondary" [text]="true" size="small" (click)="clearHistory()" />
+        <h4><i class="pi pi-history"></i> {{ 'scanner.history' | t }} ({{ history.length }})</h4>
+        <p-button *ngIf="history.length > 0" [label]="'scanner.clear' | t" icon="pi pi-trash" severity="secondary" [text]="true" size="small" (click)="clearHistory()" />
       </div>
       <div *ngIf="history.length === 0" class="empty-history">
-        <p>No scans yet. Aim the camera at a job-card QR code.</p>
+        <p>{{ 'scanner.empty' | t }}</p>
       </div>
       <div class="history-list" *ngIf="history.length > 0">
         <div *ngFor="let h of history" class="history-row" [class.error]="!h.success">
@@ -63,7 +64,7 @@
           <div class="hist-body">
             <div class="hist-head">
               <span class="code-badge">{{ h.code }}</span>
-              <p-tag [value]="h.action" [severity]="$any(actionSeverity(h.action))" />
+              <p-tag [value]="('scan.' + h.action) | t: h.action" [severity]="$any(actionSeverity(h.action))" />
               <span class="hist-time">{{ h.at | date:'mediumTime' }}</span>
             </div>
             <div class="hist-msg" [class.danger]="!h.success">{{ h.message }}</div>

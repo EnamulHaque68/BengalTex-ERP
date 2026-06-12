@@ -55,25 +55,3 @@
   .card-grid { grid-template-columns: 1fr; }
   .qr-wrap .qr-img { width: 280px; height: 280px; }
 }
-
-.lang-toggle {
-  display: flex;
-  gap: 0;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  overflow: hidden;
-  align-self: center;
-
-  button {
-    background: white;
-    border: none;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    &:first-child { border-right: 1px solid #d1d5db; }
-    &.active { background: #4f46e5; color: white; }
-    &:hover:not(.active) { background: #f3f4f6; }
-  }
-}

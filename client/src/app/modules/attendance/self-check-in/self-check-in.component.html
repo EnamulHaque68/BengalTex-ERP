@@ -4,10 +4,7 @@
       <h2 class="page-title">{{ 'checkin.title' | t }}</h2>
       <p class="page-subtitle">{{ 'checkin.subtitle' | t }}</p>
     </div>
-    <div class="lang-toggle">
-      <button type="button" [class.active]="i18n.lang === 'en'" (click)="setLang('en')">EN</button>
-      <button type="button" [class.active]="i18n.lang === 'bn'" (click)="setLang('bn')">বাংলা</button>
-    </div>
+    <app-lang-toggle></app-lang-toggle>
   </div>
 
   <div class="checkin-grid">

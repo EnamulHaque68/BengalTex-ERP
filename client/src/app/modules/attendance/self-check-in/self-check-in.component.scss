@@ -110,25 +110,3 @@
   .fence-row.inside strong { color: #047857; i { margin-right: 0.3rem; } }
   .fence-row.outside strong { color: #b45309; i { margin-right: 0.3rem; } }
 }
-
-.lang-toggle {
-  display: flex;
-  gap: 0;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  overflow: hidden;
-  align-self: flex-start;
-
-  button {
-    background: white;
-    border: none;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    &:first-child { border-right: 1px solid #d1d5db; }
-    &.active { background: #4f46e5; color: white; }
-    &:hover:not(.active) { background: #f3f4f6; }
-  }
-}
