@@ -1,8 +1,12 @@
 <div class="page-shell">
   <div class="page-header">
     <div>
-      <h2 class="page-title">Self Check-In</h2>
-      <p class="page-subtitle">Mark yourself Present for today &mdash; GPS location validates you're inside the factory geo-fence</p>
+      <h2 class="page-title">{{ 'checkin.title' | t }}</h2>
+      <p class="page-subtitle">{{ 'checkin.subtitle' | t }}</p>
+    </div>
+    <div class="lang-toggle">
+      <button type="button" [class.active]="i18n.lang === 'en'" (click)="setLang('en')">EN</button>
+      <button type="button" [class.active]="i18n.lang === 'bn'" (click)="setLang('bn')">বাংলা</button>
     </div>
   </div>
 
@@ -11,34 +15,34 @@
     <div class="card location-card">
       <div class="card-header">
         <i class="pi pi-map-marker"></i>
-        <span>Location</span>
+        <span>{{ 'checkin.location' | t }}</span>
       </div>
 
       <div class="gps-status" [ngClass]="gpsState">
         <ng-container [ngSwitch]="gpsState">
           <ng-container *ngSwitchCase="'idle'">
             <i class="pi pi-circle-fill"></i>
-            <span>Waiting...</span>
+            <span>{{ 'checkin.gps.idle' | t }}</span>
           </ng-container>
           <ng-container *ngSwitchCase="'requesting'">
             <i class="pi pi-spin pi-spinner"></i>
-            <span>Requesting your location...</span>
+            <span>{{ 'checkin.gps.requesting' | t }}</span>
           </ng-container>
           <ng-container *ngSwitchCase="'granted'">
             <i class="pi pi-check-circle"></i>
-            <span>Location captured</span>
+            <span>{{ 'checkin.gps.granted' | t }}</span>
           </ng-container>
           <ng-container *ngSwitchCase="'denied'">
             <i class="pi pi-ban"></i>
-            <span>Permission denied</span>
+            <span>{{ 'checkin.gps.denied' | t }}</span>
           </ng-container>
           <ng-container *ngSwitchCase="'unavailable'">
             <i class="pi pi-times-circle"></i>
-            <span>GPS not available</span>
+            <span>{{ 'checkin.gps.unavailable' | t }}</span>
           </ng-container>
           <ng-container *ngSwitchCase="'error'">
             <i class="pi pi-exclamation-triangle"></i>
-            <span>Location error</span>
+            <span>{{ 'checkin.gps.error' | t }}</span>
           </ng-container>
         </ng-container>
       </div>
@@ -48,13 +52,13 @@
       </div>
 
       <div class="coords" *ngIf="gpsState === 'granted'">
-        <div><span class="lbl">Latitude</span><strong class="mono">{{ formatCoord(latitude, 'N', 'S') }}</strong></div>
-        <div><span class="lbl">Longitude</span><strong class="mono">{{ formatCoord(longitude, 'E', 'W') }}</strong></div>
-        <div *ngIf="gpsAccuracyMeters != null"><span class="lbl">Accuracy</span><strong>±{{ formatDistance(gpsAccuracyMeters) }}</strong></div>
+        <div><span class="lbl">{{ 'checkin.latitude' | t }}</span><strong class="mono">{{ formatCoord(latitude, 'N', 'S') }}</strong></div>
+        <div><span class="lbl">{{ 'checkin.longitude' | t }}</span><strong class="mono">{{ formatCoord(longitude, 'E', 'W') }}</strong></div>
+        <div *ngIf="gpsAccuracyMeters != null"><span class="lbl">{{ 'checkin.accuracy' | t }}</span><strong>±{{ formatDistance(gpsAccuracyMeters) }}</strong></div>
       </div>
 
       <div class="actions" *ngIf="gpsState !== 'requesting' && !todayRecord">
-        <p-button label="Retry GPS" icon="pi pi-refresh" severity="secondary" [text]="true" size="small" (click)="requestGps()" />
+        <p-button [label]="'checkin.retryGps' | t" icon="pi pi-refresh" severity="secondary" [text]="true" size="small" (click)="requestGps()" />
       </div>
     </div>
 
@@ -63,7 +67,7 @@
       <ng-container *ngIf="!todayRecord; else doneCard">
         <div class="card-header">
           <i class="pi pi-clock"></i>
-          <span>Check In</span>
+          <span>{{ 'checkin.checkIn' | t }}</span>
         </div>
 
         <div class="alert alert-error" *ngIf="checkInError">
@@ -71,20 +75,20 @@
         </div>
 
         <div class="field">
-          <label>Notes <small>(optional)</small></label>
+          <label>{{ 'common.notes' | t }} <small>{{ 'common.optional' | t }}</small></label>
           <textarea pInputTextarea [(ngModel)]="notes" rows="3"
-                    placeholder="Anything to flag — late arrival reason, work from home, etc."
+                    [placeholder]="'checkin.notesPlaceholder' | t"
                     maxlength="1000"></textarea>
         </div>
 
         <p class="hint" *ngIf="gpsState !== 'granted'">
           <i class="pi pi-info-circle"></i>
-          You can check in without GPS — it just won't be validated against the geo-fence.
+          {{ 'checkin.noGpsHint' | t }}
         </p>
 
         <div class="actions">
           <p-button
-            [label]="checkingIn ? 'Checking in...' : 'Check In Now'"
+            [label]="checkingIn ? ('checkin.checkingIn' | t) : ('checkin.checkInNow' | t)"
             icon="pi pi-check"
             [loading]="checkingIn"
             [disabled]="checkingIn || gpsState === 'requesting'"
@@ -95,38 +99,38 @@
       <ng-template #doneCard>
         <div class="card-header success">
           <i class="pi pi-check-circle"></i>
-          <span>Checked In</span>
+          <span>{{ 'checkin.checkedIn' | t }}</span>
         </div>
 
         <div class="checked-summary">
-          <div class="row"><span class="lbl">Date</span><strong>{{ todayRecord?.attendanceDate }}</strong></div>
-          <div class="row"><span class="lbl">Time</span><strong class="mono">{{ todayRecord?.checkInTime }}</strong></div>
-          <div class="row"><span class="lbl">Status</span><strong>{{ todayRecord?.status }}</strong></div>
+          <div class="row"><span class="lbl">{{ 'common.date' | t }}</span><strong>{{ todayRecord?.attendanceDate }}</strong></div>
+          <div class="row"><span class="lbl">{{ 'common.time' | t }}</span><strong class="mono">{{ todayRecord?.checkInTime }}</strong></div>
+          <div class="row"><span class="lbl">{{ 'common.status' | t }}</span><strong>{{ ('status.' + todayRecord?.status) | t: todayRecord?.status }}</strong></div>
 
           <ng-container *ngIf="todayRecord?.checkInWithinFence !== null">
             <div class="row fence-row" [class.inside]="isInsideFence === true" [class.outside]="isInsideFence === false">
-              <span class="lbl">Geo-fence</span>
+              <span class="lbl">{{ 'checkin.geoFence' | t }}</span>
               <strong *ngIf="isInsideFence === true">
-                <i class="pi pi-check-circle"></i> Inside factory ({{ formatDistance(todayRecord?.checkInDistanceMeters ?? null) }})
+                <i class="pi pi-check-circle"></i> {{ 'checkin.insideFactory' | t }} ({{ formatDistance(todayRecord?.checkInDistanceMeters ?? null) }})
               </strong>
               <strong *ngIf="isInsideFence === false">
-                <i class="pi pi-exclamation-triangle"></i> Outside fence ({{ formatDistance(todayRecord?.checkInDistanceMeters ?? null) }} away) — flagged for review
+                <i class="pi pi-exclamation-triangle"></i> {{ 'checkin.outsideFence' | t }} ({{ formatDistance(todayRecord?.checkInDistanceMeters ?? null) }} {{ 'checkin.away' | t }}) — {{ 'checkin.flagged' | t }}
               </strong>
             </div>
           </ng-container>
           <div class="row" *ngIf="todayRecord?.checkInWithinFence === null && (todayRecord?.checkInLatitude != null)">
-            <span class="lbl">Geo-fence</span>
-            <strong class="muted">Not configured — location recorded but not validated</strong>
+            <span class="lbl">{{ 'checkin.geoFence' | t }}</span>
+            <strong class="muted">{{ 'checkin.fenceNotConfigured' | t }}</strong>
           </div>
 
           <div class="row" *ngIf="todayRecord?.notes">
-            <span class="lbl">Notes</span><strong>{{ todayRecord?.notes }}</strong>
+            <span class="lbl">{{ 'common.notes' | t }}</span><strong>{{ todayRecord?.notes }}</strong>
           </div>
         </div>
 
         <p class="hint">
           <i class="pi pi-info-circle"></i>
-          Your check-in is recorded. Have a productive day!
+          {{ 'checkin.recordedHint' | t }}
         </p>
       </ng-template>
     </div>
