@@ -16,6 +16,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
+import { SharedModule } from '../../shared/shared.module';
 import { MachineListComponent } from './machine-list/machine-list.component';
 import { JobCardListComponent } from './job-card-list/job-card-list.component';
 import { JobCardDetailComponent } from './job-card-detail/job-card-detail.component';
@@ -35,7 +36,8 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, SelectModule, CheckboxModule, TooltipModule,
-    TextareaModule, TagModule, ToggleSwitchModule
+    TextareaModule, TagModule, ToggleSwitchModule,
+    SharedModule
   ]
 })
 export class JobCardsModule {}
