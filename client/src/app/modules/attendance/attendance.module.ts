@@ -13,6 +13,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { SharedModule } from '../../shared/shared.module';
 import { AttendanceListComponent } from './attendance-list/attendance-list.component';
 import { SelfCheckInComponent } from './self-check-in/self-check-in.component';
 
@@ -27,7 +28,8 @@ const routes: Routes = [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
-    InputTextModule, InputNumberModule, TextareaModule, SelectModule, TooltipModule
+    InputTextModule, InputNumberModule, TextareaModule, SelectModule, TooltipModule,
+    SharedModule
   ]
 })
 export class AttendanceModule {}

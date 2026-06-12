@@ -1,6 +1,8 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { AttendanceService } from '../../../services/attendance.service';
 import { AttendanceRecordDto } from '../../../models/attendance.models';
+import { TranslationService } from '../../../shared/i18n/translation.service';
+import { Lang } from '../../../shared/i18n/translations';
 
 type GpsState = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable' | 'error';
 
@@ -26,8 +28,14 @@ export class SelfCheckInComponent implements OnInit {
   constructor(
     private svc: AttendanceService,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public i18n: TranslationService
   ) {}
+
+  setLang(lang: Lang): void {
+    this.i18n.setLang(lang);
+    this.cdr.detectChanges();
+  }
 
   ngOnInit(): void {
     // Auto-request GPS on page load — most browsers prompt the user immediately.
