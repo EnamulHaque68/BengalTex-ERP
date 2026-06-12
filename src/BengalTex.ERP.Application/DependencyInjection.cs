@@ -32,6 +32,9 @@ public static class DependencyInjection
         // Shared plumbing for statement-email handlers (render + send + audit)
         services.AddScoped<Reports.Commands.StatementEmailDispatcher>();
 
+        // Month-end statement batch (Hangfire recurring + on-demand enqueue)
+        services.AddScoped<Reports.Jobs.MonthlyStatementBatchJob>();
+
         return services;
     }
 }
