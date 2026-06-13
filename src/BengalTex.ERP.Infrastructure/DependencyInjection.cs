@@ -61,6 +61,9 @@ public static class DependencyInjection
         // Nightly SQL Server backup job (Hangfire recurring + on-demand enqueue)
         services.AddScoped<DatabaseBackupJob>();
 
+        // Daily operational-alerts sweep (low stock / overdue invoices / expiring certs)
+        services.AddScoped<OperationalAlertsJob>();
+
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseSqlServer(
