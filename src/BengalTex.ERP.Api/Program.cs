@@ -47,6 +47,8 @@ builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.DatabaseBackupO
     builder.Configuration.GetSection("DatabaseBackup"));
 builder.Services.Configure<BengalTex.ERP.Application.Reports.Jobs.MonthlyStatementOptions>(
     builder.Configuration.GetSection("MonthlyStatements"));
+builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.OperationalAlertsOptions>(
+    builder.Configuration.GetSection("OperationalAlerts"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -372,6 +374,13 @@ RecurringJob.AddOrUpdate<BengalTex.ERP.Application.Reports.Jobs.MonthlyStatement
     BengalTex.ERP.Application.Reports.Jobs.MonthlyStatementBatchJob.RecurringJobId,
     x => x.RunAsync(CancellationToken.None),
     "0 6 1 * *"); // 5-field cron: 06:00 on the 1st of every month
+
+// Operational alerts — daily at 07:00: low stock, overdue invoices, expiring certificates.
+// Deduplicated so a persistent condition isn't re-alerted every morning.
+RecurringJob.AddOrUpdate<OperationalAlertsJob>(
+    OperationalAlertsJob.RecurringJobId,
+    x => x.RunAsync(CancellationToken.None),
+    "0 7 * * *"); // 5-field cron: every day at 07:00
 
 // ============================================
 // RUN

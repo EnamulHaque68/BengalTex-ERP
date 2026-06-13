@@ -58,4 +58,17 @@ public class MaintenanceController : ControllerBase
         return Ok(ApiResponse<string>.Ok(jobId,
             "Monthly statement batch queued. Check the API log for sent/skipped/failed counts."));
     }
+
+    /// <summary>
+    /// Run the operational-alerts sweep now (same job as the 07:00 daily schedule) —
+    /// low stock, overdue invoices, expiring certificates. Deduplicated per DedupDays.
+    /// </summary>
+    [HttpPost("run-operational-alerts")]
+    [HasPermission(Permissions.Settings.Edit)]
+    public IActionResult RunOperationalAlerts()
+    {
+        var jobId = _jobs.Enqueue<OperationalAlertsJob>(x => x.RunAsync(CancellationToken.None));
+        return Ok(ApiResponse<string>.Ok(jobId,
+            "Operational-alerts sweep queued. Check the Notifications viewer for new alerts."));
+    }
 }
