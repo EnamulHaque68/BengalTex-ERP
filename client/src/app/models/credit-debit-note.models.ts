@@ -33,6 +33,8 @@ export interface CreditNoteDto {
   issuedAt: string | null;
   issuedBy: string | null;
   notes: string | null;
+  customerReturnNoteId: number | null;
+  customerReturnNoteCode: string | null;
 }
 
 export interface DebitNoteDto {
@@ -54,6 +56,8 @@ export interface DebitNoteDto {
   issuedAt: string | null;
   issuedBy: string | null;
   notes: string | null;
+  supplierReturnNoteId: number | null;
+  supplierReturnNoteCode: string | null;
 }
 
 export interface CreateCreditNoteRequest {
@@ -62,6 +66,7 @@ export interface CreateCreditNoteRequest {
   reason: string;
   amount: number;
   notes: string | null;
+  customerReturnNoteId?: number | null;
 }
 
 export interface UpdateCreditNoteRequest {
@@ -77,6 +82,7 @@ export interface CreateDebitNoteRequest {
   reason: string;
   amount: number;
   notes: string | null;
+  supplierReturnNoteId?: number | null;
 }
 
 export interface UpdateDebitNoteRequest {

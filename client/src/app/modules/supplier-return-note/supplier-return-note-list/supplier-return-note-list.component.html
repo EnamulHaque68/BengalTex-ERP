@@ -81,6 +81,9 @@
                         *ngIf="s.status === 'Draft'"
                         [loading]="rowActionId === s.id"
                         (click)="post(s)" pTooltip="Post (reverse stock + GRN)" />
+              <p-button icon="pi pi-receipt" severity="info" [text]="true" size="small"
+                        *ngIf="s.status === 'Posted'"
+                        (click)="createDebitNote(s)" pTooltip="Create Debit Note (recover this return)" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         *ngIf="canDelete(s)"
                         (click)="confirmDelete(s)" pTooltip="Delete" />

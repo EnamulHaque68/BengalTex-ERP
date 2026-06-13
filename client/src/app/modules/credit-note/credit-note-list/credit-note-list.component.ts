@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CreditNoteService } from '../../../services/credit-note.service';
 import { CustomerInvoiceService } from '../../../services/customer-invoice.service';
@@ -40,6 +41,12 @@ export class CreditNoteListComponent implements OnInit {
   form!: FormGroup;
   selectedInvoice: CustomerInvoiceListItemDto | null = null;
 
+  // Link to a posted Customer Return Note (set when navigated from the CRN screen)
+  linkedCrnId: number | null = null;
+  linkedCrnCode: string | null = null;
+  linkCustomerId: number | null = null;
+  linkCustomerName: string | null = null;
+
   // Cancel confirm
   cancelVisible = false;
   cancelling = false;
@@ -57,7 +64,9 @@ export class CreditNoteListComponent implements OnInit {
     private invoiceService: CustomerInvoiceService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -70,6 +79,25 @@ export class CreditNoteListComponent implements OnInit {
     });
     this.loadInvoices();
     this.load();
+
+    // Arrived from a posted CRN's "Create Credit Note" button — open a linked draft.
+    const q = this.route.snapshot.queryParamMap;
+    if (q.get('fromCrn')) {
+      this.linkedCrnId = Number(q.get('fromCrn'));
+      this.linkedCrnCode = q.get('crnCode');
+      this.linkCustomerId = q.get('customerId') ? Number(q.get('customerId')) : null;
+      this.linkCustomerName = q.get('customerName');
+      // Strip the query params so a refresh doesn't re-trigger the linked dialog.
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      this.openCreate();
+    }
+  }
+
+  /** Invoices offered in the create dialog — narrowed to the linked customer when present. */
+  get dialogInvoices(): CustomerInvoiceListItemDto[] {
+    return this.linkCustomerId
+      ? this.invoices.filter(i => i.customerId === this.linkCustomerId)
+      : this.invoices;
   }
 
   private todayIso(): string { return new Date().toISOString().substring(0, 10); }
@@ -133,6 +161,12 @@ export class CreditNoteListComponent implements OnInit {
 
   // ── Dialog ───────────────────────────────────────────────────────────────
 
+  /** Header "New Credit Note" — always a fresh, unlinked draft. */
+  newCreditNote(): void {
+    this.clearLink();
+    this.openCreate();
+  }
+
   openCreate(): void {
     this.dialogMode = 'create';
     this.editing = null;
@@ -141,11 +175,24 @@ export class CreditNoteListComponent implements OnInit {
     this.form.reset({
       customerInvoiceId: null,
       issueDate: this.todayIso(),
-      reason: 'PriceCorrection',
+      // A return refund is a quality allowance by default; manual drafts keep PriceCorrection.
+      reason: this.linkedCrnId ? 'QualityAllowance' : 'PriceCorrection',
       amount: 0,
-      notes: ''
+      notes: this.linkedCrnId ? `Refund for return ${this.linkedCrnCode ?? ''}`.trim() : ''
     });
     this.dialogVisible = true;
+  }
+
+  onDialogHide(): void {
+    // Clear the CRN link once the dialog is dismissed so the next manual draft is clean.
+    this.clearLink();
+  }
+
+  private clearLink(): void {
+    this.linkedCrnId = null;
+    this.linkedCrnCode = null;
+    this.linkCustomerId = null;
+    this.linkCustomerName = null;
   }
 
   openEdit(n: CreditNoteDto): void {
@@ -185,7 +232,8 @@ export class CreditNoteListComponent implements OnInit {
           issueDate: v.issueDate,
           reason: v.reason,
           amount: Number(v.amount),
-          notes: (v.notes as string)?.trim() || null
+          notes: (v.notes as string)?.trim() || null,
+          customerReturnNoteId: this.linkedCrnId
         })
       : this.service.update(this.editing!.id, {
           issueDate: v.issueDate,
