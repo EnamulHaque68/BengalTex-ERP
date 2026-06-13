@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SupplierReturnNoteService } from '../../../services/supplier-return-note.service';
 import { GoodsReceiptService } from '../../../services/goods-receipt.service';
@@ -60,8 +61,20 @@ export class SupplierReturnNoteListComponent implements OnInit {
     private warehouseService: WarehouseService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
+
+  /**
+   * Jump to the Debit Note screen to recover money for a posted supplier return. The SRN
+   * moved the stock back; the debit note settles the money. Passes the return id + supplier
+   * so the create dialog opens pre-filtered and linked back to this return.
+   */
+  createDebitNote(s: SupplierReturnNoteListItemDto): void {
+    this.router.navigate(['/debit-notes'], {
+      queryParams: { fromSrn: s.id, srnCode: s.code, supplierId: s.supplierId, supplierName: s.supplierName }
+    });
+  }
 
   ngOnInit(): void {
     this.buildForm();

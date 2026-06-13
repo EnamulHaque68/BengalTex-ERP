@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DebitNoteService } from '../../../services/debit-note.service';
 import { SupplierInvoiceService } from '../../../services/supplier-invoice.service';
@@ -39,6 +40,12 @@ export class DebitNoteListComponent implements OnInit {
   form!: FormGroup;
   selectedInvoice: SupplierInvoiceListItemDto | null = null;
 
+  // Link to a posted Supplier Return Note (set when navigated from the SRN screen)
+  linkedSrnId: number | null = null;
+  linkedSrnCode: string | null = null;
+  linkSupplierId: number | null = null;
+  linkSupplierName: string | null = null;
+
   cancelVisible = false;
   cancelling = false;
   cancelTarget: DebitNoteDto | null = null;
@@ -54,7 +61,9 @@ export class DebitNoteListComponent implements OnInit {
     private invoiceService: SupplierInvoiceService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -67,6 +76,24 @@ export class DebitNoteListComponent implements OnInit {
     });
     this.loadInvoices();
     this.load();
+
+    // Arrived from a posted SRN's "Create Debit Note" button — open a linked draft.
+    const q = this.route.snapshot.queryParamMap;
+    if (q.get('fromSrn')) {
+      this.linkedSrnId = Number(q.get('fromSrn'));
+      this.linkedSrnCode = q.get('srnCode');
+      this.linkSupplierId = q.get('supplierId') ? Number(q.get('supplierId')) : null;
+      this.linkSupplierName = q.get('supplierName');
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      this.openCreate();
+    }
+  }
+
+  /** Invoices offered in the create dialog — narrowed to the linked supplier when present. */
+  get dialogInvoices(): SupplierInvoiceListItemDto[] {
+    return this.linkSupplierId
+      ? this.invoices.filter(i => i.supplierId === this.linkSupplierId)
+      : this.invoices;
   }
 
   private todayIso(): string { return new Date().toISOString().substring(0, 10); }
@@ -127,6 +154,12 @@ export class DebitNoteListComponent implements OnInit {
     this.load();
   }
 
+  /** Header "New Debit Note" — always a fresh, unlinked draft. */
+  newDebitNote(): void {
+    this.clearLink();
+    this.openCreate();
+  }
+
   openCreate(): void {
     this.dialogMode = 'create';
     this.editing = null;
@@ -135,11 +168,22 @@ export class DebitNoteListComponent implements OnInit {
     this.form.reset({
       supplierInvoiceId: null,
       issueDate: this.todayIso(),
-      reason: 'PriceCorrection',
+      reason: this.linkedSrnId ? 'QualityAllowance' : 'PriceCorrection',
       amount: 0,
-      notes: ''
+      notes: this.linkedSrnId ? `Recovery for return ${this.linkedSrnCode ?? ''}`.trim() : ''
     });
     this.dialogVisible = true;
+  }
+
+  onDialogHide(): void {
+    this.clearLink();
+  }
+
+  private clearLink(): void {
+    this.linkedSrnId = null;
+    this.linkedSrnCode = null;
+    this.linkSupplierId = null;
+    this.linkSupplierName = null;
   }
 
   openEdit(n: DebitNoteDto): void {
@@ -179,7 +223,8 @@ export class DebitNoteListComponent implements OnInit {
           issueDate: v.issueDate,
           reason: v.reason,
           amount: Number(v.amount),
-          notes: (v.notes as string)?.trim() || null
+          notes: (v.notes as string)?.trim() || null,
+          supplierReturnNoteId: this.linkedSrnId
         })
       : this.service.update(this.editing!.id, {
           issueDate: v.issueDate,

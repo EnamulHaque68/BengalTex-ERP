@@ -6,7 +6,7 @@
       <p class="page-subtitle">Non-stock adjustments that REDUCE what we owe a supplier &mdash; price corrections, discounts, allowances. For physical returns use Supplier Returns instead.</p>
     </div>
     <div class="header-actions">
-      <p-button label="New Debit Note" icon="pi pi-plus" (click)="openCreate()" />
+      <p-button label="New Debit Note" icon="pi pi-plus" (click)="newDebitNote()" />
     </div>
   </div>
 
@@ -52,7 +52,12 @@
         <tr>
           <td><span class="code-badge">{{ n.code }}</span></td>
           <td class="fw-600">{{ n.supplierName }}</td>
-          <td><span class="code-badge alt">{{ n.supplierInvoiceCode }}</span></td>
+          <td>
+            <span class="code-badge alt">{{ n.supplierInvoiceCode }}</span>
+            <span class="link-chip" *ngIf="n.supplierReturnNoteCode" pTooltip="Recovery linked to return">
+              <i class="pi pi-reply"></i> {{ n.supplierReturnNoteCode }}
+            </span>
+          </td>
           <td class="num">{{ n.issueDate }}</td>
           <td>{{ reasonLabel(n.reason) }}</td>
           <td class="num fw-700">{{ formatCurrency(n.amount, n.currencyCode) }}</td>
@@ -92,7 +97,7 @@
 
 <p-dialog [(visible)]="dialogVisible"
           [header]="dialogMode === 'create' ? 'New Debit Note' : (dialogMode === 'edit' ? 'Edit Debit Note' : 'View Debit Note')"
-          [modal]="true" [style]="{ width: '540px' }" [draggable]="false">
+          [modal]="true" [style]="{ width: '540px' }" [draggable]="false" (onHide)="onDialogHide()">
   <form [formGroup]="form" (ngSubmit)="save()">
     <div class="alert alert-error" *ngIf="dialogError">
       <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
@@ -100,11 +105,15 @@
     <div class="alert alert-info" *ngIf="dialogMode === 'view'">
       <i class="pi pi-lock"></i>Read-only — only draft debit notes can be edited.
     </div>
+    <div class="alert alert-info" *ngIf="linkedSrnId">
+      <i class="pi pi-reply"></i>Recovering return <strong>{{ linkedSrnCode }}</strong>
+      from <strong>{{ linkSupplierName }}</strong> — pick which invoice to debit.
+    </div>
 
     <div class="form-grid">
       <div class="field col-span-2">
         <label>Supplier Invoice *</label>
-        <p-select formControlName="supplierInvoiceId" [options]="invoices"
+        <p-select formControlName="supplierInvoiceId" [options]="dialogInvoices"
                   optionLabel="code" optionValue="id"
                   [filter]="true" filterBy="code,supplierName"
                   placeholder="Select an Approved / Partially-Paid / Paid invoice"

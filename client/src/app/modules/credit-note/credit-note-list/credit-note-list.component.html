@@ -6,7 +6,7 @@
       <p class="page-subtitle">Non-stock adjustments that REDUCE a customer's outstanding balance &mdash; price corrections, discounts, allowances. For physical returns use Customer Returns instead.</p>
     </div>
     <div class="header-actions">
-      <p-button label="New Credit Note" icon="pi pi-plus" (click)="openCreate()" />
+      <p-button label="New Credit Note" icon="pi pi-plus" (click)="newCreditNote()" />
     </div>
   </div>
 
@@ -52,7 +52,12 @@
         <tr>
           <td><span class="code-badge">{{ n.code }}</span></td>
           <td class="fw-600">{{ n.customerName }}</td>
-          <td><span class="code-badge alt">{{ n.customerInvoiceCode }}</span></td>
+          <td>
+            <span class="code-badge alt">{{ n.customerInvoiceCode }}</span>
+            <span class="link-chip" *ngIf="n.customerReturnNoteCode" pTooltip="Refund linked to return">
+              <i class="pi pi-reply"></i> {{ n.customerReturnNoteCode }}
+            </span>
+          </td>
           <td class="num">{{ n.issueDate }}</td>
           <td>{{ reasonLabel(n.reason) }}</td>
           <td class="num fw-700">{{ formatCurrency(n.amount, n.currencyCode) }}</td>
@@ -93,7 +98,7 @@
 <!-- Create / Edit / View dialog -->
 <p-dialog [(visible)]="dialogVisible"
           [header]="dialogMode === 'create' ? 'New Credit Note' : (dialogMode === 'edit' ? 'Edit Credit Note' : 'View Credit Note')"
-          [modal]="true" [style]="{ width: '540px' }" [draggable]="false">
+          [modal]="true" [style]="{ width: '540px' }" [draggable]="false" (onHide)="onDialogHide()">
   <form [formGroup]="form" (ngSubmit)="save()">
     <div class="alert alert-error" *ngIf="dialogError">
       <i class="pi pi-exclamation-circle"></i>{{ dialogError }}
@@ -101,11 +106,15 @@
     <div class="alert alert-info" *ngIf="dialogMode === 'view'">
       <i class="pi pi-lock"></i>Read-only — only draft credit notes can be edited.
     </div>
+    <div class="alert alert-info" *ngIf="linkedCrnId">
+      <i class="pi pi-reply"></i>Refunding return <strong>{{ linkedCrnCode }}</strong>
+      for <strong>{{ linkCustomerName }}</strong> — pick which invoice to credit.
+    </div>
 
     <div class="form-grid">
       <div class="field col-span-2">
         <label>Customer Invoice *</label>
-        <p-select formControlName="customerInvoiceId" [options]="invoices"
+        <p-select formControlName="customerInvoiceId" [options]="dialogInvoices"
                   optionLabel="code" optionValue="id"
                   [filter]="true" filterBy="code,customerName"
                   placeholder="Select an Issued / Partially-Paid / Paid invoice"

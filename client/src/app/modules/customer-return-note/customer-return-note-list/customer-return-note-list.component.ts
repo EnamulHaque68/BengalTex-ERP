@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerReturnNoteService } from '../../../services/customer-return-note.service';
 import { DeliveryNoteService } from '../../../services/delivery-note.service';
@@ -60,8 +61,20 @@ export class CustomerReturnNoteListComponent implements OnInit {
     private warehouseService: WarehouseService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
+
+  /**
+   * Jump to the Credit Note screen to refund a posted return. The CRN moved the stock;
+   * the credit note settles the money. Passes the return id + customer so the create
+   * dialog opens pre-filtered and linked back to this return.
+   */
+  createCreditNote(c: CustomerReturnNoteListItemDto): void {
+    this.router.navigate(['/credit-notes'], {
+      queryParams: { fromCrn: c.id, crnCode: c.code, customerId: c.customerId, customerName: c.customerName }
+    });
+  }
 
   ngOnInit(): void {
     this.buildForm();
