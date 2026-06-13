@@ -54,7 +54,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
         IssueCustomerInvoiceCommand cmd, CancellationToken cancellationToken)
     {
         var inv = await _repo.Query()
-            .Include(c => c.Lines)
+            .Include(c => c.Lines).ThenInclude(l => l.Product)
             .FirstOrDefaultAsync(c => c.Id == cmd.Id, cancellationToken);
         if (inv is null) return ApiResponse<CustomerInvoiceDto>.Fail("Customer invoice not found.");
         if (inv.Status != Domain.Entities.CustomerInvoiceStatus.Draft)
@@ -66,6 +66,11 @@ internal sealed class IssueCustomerInvoiceCommandHandler
         inv.SubtotalAmount = inv.Lines.Sum(l => l.Quantity * l.UnitPrice);
         inv.VatAmount = Math.Round(inv.SubtotalAmount * inv.VatRate, 4, MidpointRounding.AwayFromZero);
         inv.TotalAmount = inv.SubtotalAmount + inv.VatAmount;
+
+        // Snapshot cost-at-sale per line (Product WAC, base BDT) so the margin report stays
+        // historically accurate as the live WAC drifts after this sale.
+        foreach (var line in inv.Lines)
+            line.UnitCostAtSale = line.Product.WeightedAverageCost;
 
         inv.Status = Domain.Entities.CustomerInvoiceStatus.Issued;
         inv.IssuedAt = DateTimeOffset.UtcNow;

@@ -92,6 +92,7 @@ public class CustomerInvoiceLineConfiguration : IEntityTypeConfiguration<Custome
 
         builder.Property(l => l.Quantity).HasPrecision(18, 4);
         builder.Property(l => l.UnitPrice).HasPrecision(18, 4);
+        builder.Property(l => l.UnitCostAtSale).HasPrecision(18, 4);
         builder.Property(l => l.LineNotes).HasMaxLength(1000);
 
         // Per-line export packing breakdown

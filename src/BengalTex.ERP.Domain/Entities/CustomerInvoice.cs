@@ -132,6 +132,14 @@ public class CustomerInvoiceLine : BaseTransactionalEntity
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
 
+    /// <summary>
+    /// Snapshot of the Product's weighted-average cost (base BDT) captured when the invoice
+    /// is Issued — the "cost at sale". Lets the margin report stay historically accurate as
+    /// the live WAC drifts over time. Null on pre-snapshot (legacy) rows → margin report
+    /// falls back to the Product's current WAC for those.
+    /// </summary>
+    public decimal? UnitCostAtSale { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }

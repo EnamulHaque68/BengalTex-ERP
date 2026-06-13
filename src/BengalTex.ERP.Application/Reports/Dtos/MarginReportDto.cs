@@ -20,6 +20,6 @@ public record MarginReportRowDto(
     decimal QuantitySold,
     decimal Revenue,
     decimal Cogs,
-    decimal UnitCost,                  // current Product WAC, for reference
+    decimal UnitCost,                  // weighted-avg cost-at-sale across the window's lines
     decimal Margin,                    // Revenue − Cogs
     decimal MarginPercent);            // Margin / Revenue × 100 (0 if revenue 0)
