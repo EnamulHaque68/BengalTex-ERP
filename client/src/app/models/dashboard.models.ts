@@ -54,6 +54,13 @@ export interface ComplianceSectionDto {
   overdueCapFindings: number;
 }
 
+export interface MonthlyTrendPointDto {
+  year: number;
+  month: number;
+  label: string;
+  revenue: number;
+}
+
 export interface NeedsAttentionItemDto {
   type: 'ExpiringCert' | 'OverdueCap' | 'PendingLeave' | 'UnreconciledStmt' | 'OverdueInvoice';
   title: string;
@@ -66,6 +73,7 @@ export interface NeedsAttentionItemDto {
 export interface DashboardSnapshotDto {
   generatedAt: string;
   hero: HeroKpiDto;
+  revenueTrend: MonthlyTrendPointDto[];
   sales: SalesSectionDto | null;
   procurement: ProcurementSectionDto | null;
   production: ProductionSectionDto | null;

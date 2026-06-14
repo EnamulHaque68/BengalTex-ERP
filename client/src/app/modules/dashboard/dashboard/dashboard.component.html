@@ -60,6 +60,23 @@
       </div>
     </div>
 
+    <!-- ── REVENUE TREND (last 12 months) ── -->
+    <div class="trend-panel" *ngIf="data.revenueTrend && data.revenueTrend.length">
+      <div class="trend-head">
+        <span class="trend-title"><i class="pi pi-chart-bar"></i> Revenue — last 12 months</span>
+        <span class="trend-peak">Peak {{ formatCurrencyShort(trendPeak) }}</span>
+      </div>
+      <svg class="trend-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" preserveAspectRatio="none">
+        <g *ngFor="let b of trendBars">
+          <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height"
+                rx="2" [class.bar-current]="b.current" class="trend-bar">
+            <title>{{ trendTooltip(b) }}</title>
+          </rect>
+          <text [attr.x]="b.x + b.width / 2" [attr.y]="trendLabelY" text-anchor="middle" class="trend-label">{{ b.label }}</text>
+        </g>
+      </svg>
+    </div>
+
     <!-- ── ROLE SECTIONS ── -->
     <div class="section-grid">
 
