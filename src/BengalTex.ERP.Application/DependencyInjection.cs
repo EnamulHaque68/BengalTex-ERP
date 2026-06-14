@@ -35,6 +35,9 @@ public static class DependencyInjection
         // Month-end statement batch (Hangfire recurring + on-demand enqueue)
         services.AddScoped<Reports.Jobs.MonthlyStatementBatchJob>();
 
+        // Dunning (overdue-payment reminders to customers) — Hangfire recurring + on-demand
+        services.AddScoped<Reports.Jobs.DunningReminderJob>();
+
         return services;
     }
 }
