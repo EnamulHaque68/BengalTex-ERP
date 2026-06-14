@@ -13,6 +13,7 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<ReceiptEntity>
 
         builder.Property(r => r.Code).IsRequired().HasMaxLength(50);
         builder.Property(r => r.Amount).HasPrecision(18, 4);
+        builder.Property(r => r.ExchangeRate).HasPrecision(18, 6);
         builder.Property(r => r.ReferenceNumber).HasMaxLength(100);
         builder.Property(r => r.Notes).HasMaxLength(2000);
 

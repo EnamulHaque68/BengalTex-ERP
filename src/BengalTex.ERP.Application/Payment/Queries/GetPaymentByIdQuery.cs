@@ -29,7 +29,7 @@ internal sealed class GetPaymentByIdQueryHandler
             pay.Id, pay.Code,
             pay.SupplierInvoiceId, pay.SupplierInvoice.Code,
             pay.SupplierInvoice.SupplierId, pay.SupplierInvoice.Supplier.Name,
-            pay.PaymentDate, pay.Amount,
+            pay.PaymentDate, pay.Amount, pay.ExchangeRate,
             pay.PaymentMethod.ToString(),
             pay.ReferenceNumber, pay.Notes);
 

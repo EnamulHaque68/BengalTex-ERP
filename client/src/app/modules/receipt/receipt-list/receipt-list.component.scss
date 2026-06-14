@@ -210,3 +210,16 @@
     &:hover { opacity: 1; }
   }
 }
+
+.fx-preview {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  small { font-weight: 400; opacity: 0.75; }
+  i { font-size: 0.7rem; }
+  &.gain { color: #059669; }
+  &.loss { color: #dc2626; }
+}

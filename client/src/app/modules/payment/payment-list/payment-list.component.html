@@ -130,10 +130,11 @@
                     (onChange)="onInvoiceChange($event)" />
         <div class="outstanding-hint" *ngIf="selectedInvoice">
           <div><span class="label">Supplier:</span> <strong>{{ selectedInvoice.supplierName }}</strong></div>
-          <div><span class="label">Invoice Total:</span> {{ formatCurrency(selectedInvoice.totalAmount) }}</div>
+          <div><span class="label">Invoice Total:</span> {{ formatMoney(selectedInvoice.totalAmount, selectedInvoice.currencyCode) }}</div>
           <div class="outstanding-line"><span class="label">Outstanding:</span>
-            <strong class="outstanding-amount">{{ formatCurrency(selectedInvoice.amountDue) }}</strong>
+            <strong class="outstanding-amount">{{ formatMoney(selectedInvoice.amountDue, selectedInvoice.currencyCode) }}</strong>
           </div>
+          <div *ngIf="isForeignInvoice"><span class="label">Invoice rate:</span> 1 {{ selectedInvoice.currencyCode }} = {{ selectedInvoice.invoiceRate | number:'1.2-6' }} BDT</div>
         </div>
       </div>
 
@@ -143,9 +144,20 @@
       </div>
 
       <div class="field">
-        <label>Amount (BDT) *</label>
-        <p-inputNumber formControlName="amount" [min]="0" mode="currency" currency="BDT" locale="en-BD"
-                       [minFractionDigits]="2" class="w-full" />
+        <label>Amount{{ selectedInvoice ? ' (' + selectedInvoice.currencyCode + ')' : '' }} *</label>
+        <p-inputNumber formControlName="amount" [min]="0" [minFractionDigits]="2" class="w-full" />
+      </div>
+
+      <!-- FX rate — only for foreign-currency invoices -->
+      <div class="field" *ngIf="isForeignInvoice">
+        <label>Payment-date rate <small>(BDT per 1 {{ selectedInvoice?.currencyCode }})</small> *</label>
+        <p-inputNumber formControlName="exchangeRate" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="6" class="w-full" />
+        <div class="fx-preview" *ngIf="fxPreview !== 0"
+             [class.gain]="fxPreview > 0" [class.loss]="fxPreview < 0">
+          <i class="pi" [class.pi-arrow-up]="fxPreview > 0" [class.pi-arrow-down]="fxPreview < 0"></i>
+          Realized FX {{ fxPreview > 0 ? 'gain' : 'loss' }}: {{ formatCurrency(fxPreview > 0 ? fxPreview : -fxPreview) }}
+          <small>(vs invoice rate {{ selectedInvoice?.invoiceRate | number:'1.2-6' }})</small>
+        </div>
       </div>
 
       <div class="field">

@@ -25,7 +25,8 @@ public sealed record CreatePaymentCommand(
     decimal Amount,
     string PaymentMethod,                // enum string
     string? ReferenceNumber,
-    string? Notes
+    string? Notes,
+    decimal? ExchangeRate = null         // BDT/currency at payment time; null → invoice's rate (no FX)
 ) : IRequest<ApiResponse<PaymentDto>>;
 
 public sealed class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentCommand>
@@ -40,6 +41,7 @@ public sealed class CreatePaymentCommandValidator : AbstractValidator<CreatePaym
             .WithMessage("Invalid payment method.");
         RuleFor(x => x.ReferenceNumber).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x.ExchangeRate).GreaterThan(0).When(x => x.ExchangeRate.HasValue);
     }
 }
 
@@ -93,12 +95,16 @@ internal sealed class CreatePaymentCommandHandler
 
         var code = await _numbering.NextAsync("PAY", null, cancellationToken);
 
+        // Payment-time rate: caller-supplied, else the invoice's locked rate (= no FX effect).
+        var paymentRate = cmd.ExchangeRate ?? inv.ExchangeRate;
+
         var entity = new Domain.Entities.Payment
         {
             Code = code,
             SupplierInvoiceId = cmd.SupplierInvoiceId,
             PaymentDate = cmd.PaymentDate,
             Amount = cmd.Amount,
+            ExchangeRate = paymentRate,
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
             ReferenceNumber = string.IsNullOrWhiteSpace(cmd.ReferenceNumber) ? null : cmd.ReferenceNumber.Trim(),
             Notes = cmd.Notes
@@ -113,16 +119,25 @@ internal sealed class CreatePaymentCommandHandler
 
         await _uow.SaveChangesAsync(cancellationToken);   // persist payment (gets its Id) + invoice
 
-        // Auto-journal: Dr Accounts Payable, Cr Cash/Bank (base BDT via the invoice's rate).
+        // Auto-journal: Dr Accounts Payable at the INVOICE rate (the booked payable being cleared),
+        // Cr Cash/Bank at the PAYMENT rate (actual BDT out). Any difference is a realized FX gain
+        // (paid fewer BDT than booked) or loss (paid more).
         var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
-        var baseAmount = cmd.Amount * inv.ExchangeRate;
+        var apBdt = cmd.Amount * inv.ExchangeRate;
+        var cashBdt = cmd.Amount * paymentRate;
+        var fxDiff = apBdt - cashBdt;
+
+        var lines = new List<JournalPostingLine>
+        {
+            new(LedgerAccounts.AccountsPayable, apBdt, 0m),
+            new(cashAccount, 0m, cashBdt),
+        };
+        if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, 0m, fxDiff));
+        else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, -fxDiff, 0m));
+
         await _journal.PostAsync(
             entity.PaymentDate, $"Payment {entity.Code} against {inv.Code}", "Payment", entity.Id, entity.Code,
-            new[]
-            {
-                new JournalPostingLine(LedgerAccounts.AccountsPayable, baseAmount, 0m),
-                new JournalPostingLine(cashAccount, 0m, baseAmount),
-            }, cancellationToken);
+            lines, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetPaymentByIdQuery(entity.Id), cancellationToken);

@@ -21,8 +21,15 @@ public class Receipt : BaseTransactionalEntity
 
     public DateOnly ReceiptDate { get; set; }
 
-    /// <summary>Amount received. Must be &gt; 0.</summary>
+    /// <summary>Amount received, in the invoice's currency. Must be &gt; 0.</summary>
     public decimal Amount { get; set; }
+
+    /// <summary>
+    /// BDT per 1 unit of the invoice's currency at RECEIPT time (the rate the money actually
+    /// came in at). Default 1 (BDT invoices). When it differs from the invoice's locked rate,
+    /// the receipt journal recognizes a realized FX gain/loss for the difference.
+    /// </summary>
+    public decimal ExchangeRate { get; set; } = 1m;
 
     public PaymentMethod PaymentMethod { get; set; }
 

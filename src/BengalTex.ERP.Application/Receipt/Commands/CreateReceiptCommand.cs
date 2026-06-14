@@ -25,7 +25,8 @@ public sealed record CreateReceiptCommand(
     decimal Amount,
     string PaymentMethod,                // enum string
     string? ReferenceNumber,
-    string? Notes
+    string? Notes,
+    decimal? ExchangeRate = null         // BDT/currency at receipt time; null → invoice's rate (no FX)
 ) : IRequest<ApiResponse<ReceiptDto>>;
 
 public sealed class CreateReceiptCommandValidator : AbstractValidator<CreateReceiptCommand>
@@ -40,6 +41,7 @@ public sealed class CreateReceiptCommandValidator : AbstractValidator<CreateRece
             .WithMessage("Invalid payment method.");
         RuleFor(x => x.ReferenceNumber).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x.ExchangeRate).GreaterThan(0).When(x => x.ExchangeRate.HasValue);
     }
 }
 
@@ -93,12 +95,16 @@ internal sealed class CreateReceiptCommandHandler
 
         var code = await _numbering.NextAsync("RCT", null, cancellationToken);
 
+        // Receipt-time rate: caller-supplied, else the invoice's locked rate (= no FX effect).
+        var receiptRate = cmd.ExchangeRate ?? inv.ExchangeRate;
+
         var entity = new Domain.Entities.Receipt
         {
             Code = code,
             CustomerInvoiceId = cmd.CustomerInvoiceId,
             ReceiptDate = cmd.ReceiptDate,
             Amount = cmd.Amount,
+            ExchangeRate = receiptRate,
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
             ReferenceNumber = string.IsNullOrWhiteSpace(cmd.ReferenceNumber) ? null : cmd.ReferenceNumber.Trim(),
             Notes = cmd.Notes
@@ -113,16 +119,25 @@ internal sealed class CreateReceiptCommandHandler
 
         await _uow.SaveChangesAsync(cancellationToken);   // persist receipt (gets its Id) + invoice
 
-        // Auto-journal: Dr Cash/Bank, Cr Accounts Receivable (base BDT via the invoice's rate).
+        // Auto-journal: Dr Cash/Bank at the RECEIPT rate (actual BDT in), Cr Accounts Receivable
+        // at the INVOICE rate (the booked receivable being cleared). Any difference is a realized
+        // FX gain (received more BDT than booked) or loss (received less).
         var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
-        var baseAmount = cmd.Amount * inv.ExchangeRate;
+        var cashBdt = cmd.Amount * receiptRate;
+        var arBdt = cmd.Amount * inv.ExchangeRate;
+        var fxDiff = cashBdt - arBdt;
+
+        var lines = new List<JournalPostingLine>
+        {
+            new(cashAccount, cashBdt, 0m),
+            new(LedgerAccounts.AccountsReceivable, 0m, arBdt),
+        };
+        if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, 0m, fxDiff));
+        else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, -fxDiff, 0m));
+
         await _journal.PostAsync(
             entity.ReceiptDate, $"Receipt {entity.Code} against {inv.Code}", "Receipt", entity.Id, entity.Code,
-            new[]
-            {
-                new JournalPostingLine(cashAccount, baseAmount, 0m),
-                new JournalPostingLine(LedgerAccounts.AccountsReceivable, 0m, baseAmount),
-            }, cancellationToken);
+            lines, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetReceiptByIdQuery(entity.Id), cancellationToken);

@@ -17,6 +17,7 @@ export interface ReceiptDto {
   customerName: string;
   receiptDate: string;                  // DateOnly
   amount: number;
+  exchangeRate: number;                 // BDT per 1 unit of invoice currency at receipt time
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
@@ -42,4 +43,5 @@ export interface CreateReceiptRequest {
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
+  exchangeRate?: number | null;         // null → backend uses the invoice's locked rate (no FX)
 }

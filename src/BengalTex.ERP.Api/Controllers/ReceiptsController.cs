@@ -46,7 +46,7 @@ public class ReceiptsController : ControllerBase
     {
         var result = await _mediator.Send(new CreateReceiptCommand(
             request.CustomerInvoiceId, request.ReceiptDate, request.Amount,
-            request.PaymentMethod, request.ReferenceNumber, request.Notes
+            request.PaymentMethod, request.ReferenceNumber, request.Notes, request.ExchangeRate
         ), ct);
         return Ok(result);
     }
@@ -66,4 +66,5 @@ public record CreateReceiptRequest(
     decimal Amount,
     string PaymentMethod,
     string? ReferenceNumber,
-    string? Notes);
+    string? Notes,
+    decimal? ExchangeRate = null);

@@ -182,5 +182,16 @@ export const TRANSLATIONS: Record<string, { en: string; bn: string }> = {
   'leave.rejectTitle':  { en: 'Reject Leave', bn: 'ছুটি প্রত্যাখ্যান' },
   'leave.rejectConfirm': { en: 'Reject this leave application?', bn: 'এই ছুটির আবেদন প্রত্যাখ্যান করবেন?' },
   'leave.rejectionReason': { en: 'Rejection Reason', bn: 'প্রত্যাখ্যানের কারণ' },
-  'leave.rejectBtn':    { en: 'Reject', bn: 'প্রত্যাখ্যান করুন' }
+  'leave.rejectBtn':    { en: 'Reject', bn: 'প্রত্যাখ্যান করুন' },
+
+  // ── Login screen ──────────────────────────────────────────────────────────
+  'login.tagline':      { en: 'Garments Accessories Manufacturing', bn: 'গার্মেন্টস এক্সেসরিজ ম্যানুফ্যাকচারিং' },
+  'login.title':        { en: 'Sign in to your account', bn: 'আপনার অ্যাকাউন্টে সাইন ইন করুন' },
+  'login.userLabel':    { en: 'Email or Username', bn: 'ইমেইল বা ইউজারনেম' },
+  'login.userRequired': { en: 'Email or username is required.', bn: 'ইমেইল বা ইউজারনেম দিতে হবে।' },
+  'login.password':     { en: 'Password', bn: 'পাসওয়ার্ড' },
+  'login.passwordPlaceholder': { en: 'Enter your password', bn: 'আপনার পাসওয়ার্ড লিখুন' },
+  'login.passwordRequired': { en: 'Password is required.', bn: 'পাসওয়ার্ড দিতে হবে।' },
+  'login.signIn':       { en: 'Sign In', bn: 'সাইন ইন' },
+  'login.forgot':       { en: 'Forgot your password?', bn: 'পাসওয়ার্ড ভুলে গেছেন?' }
 };
