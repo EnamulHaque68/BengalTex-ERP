@@ -14,6 +14,8 @@ interface PayableInvoiceOption {
   totalAmount: number;
   amountDue: number;
   status: string;
+  currencyCode: string;
+  invoiceRate: number;       // the invoice's locked BDT rate
   displayLabel: string;
 }
 
@@ -80,10 +82,24 @@ export class PaymentListComponent implements OnInit {
       supplierInvoiceId: [null as number | null, Validators.required],
       paymentDate: [this.todayIso(), Validators.required],
       amount: [0, [Validators.required, Validators.min(0.01)]],
+      exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
       paymentMethod: ['Cash', Validators.required],
       referenceNumber: ['', Validators.maxLength(100)],
       notes: ['', Validators.maxLength(2000)]
     });
+  }
+
+  /** Selected invoice is in a foreign currency → the payment-date rate matters (FX gain/loss). */
+  get isForeignInvoice(): boolean {
+    return !!this.selectedInvoice && this.selectedInvoice.currencyCode !== 'BDT';
+  }
+
+  /** Realized FX gain (+) or loss (−) in BDT = amount × (invoiceRate − paymentRate). */
+  get fxPreview(): number {
+    if (!this.isForeignInvoice || !this.selectedInvoice) return 0;
+    const amount = Number(this.form.get('amount')?.value) || 0;
+    const rate = Number(this.form.get('exchangeRate')?.value) || 0;
+    return amount * (this.selectedInvoice.invoiceRate - rate);
   }
 
   private loadDropdowns(): void {
@@ -111,7 +127,9 @@ export class PaymentListComponent implements OnInit {
                 totalAmount: i.totalAmount,
                 amountDue: i.amountDue,
                 status: i.status,
-                displayLabel: `${i.code} — ${i.supplierName} (outstanding ${this.formatCurrency(i.amountDue)})`
+                currencyCode: i.currencyCode,
+                invoiceRate: i.exchangeRate,
+                displayLabel: `${i.code} — ${i.supplierName} (outstanding ${this.formatMoney(i.amountDue, i.currencyCode)})`
               }));
           }
           this.cdr.detectChanges();
@@ -167,6 +185,7 @@ export class PaymentListComponent implements OnInit {
       supplierInvoiceId: null,
       paymentDate: this.todayIso(),
       amount: 0,
+      exchangeRate: 1,
       paymentMethod: 'Cash',
       referenceNumber: '',
       notes: ''
@@ -179,8 +198,11 @@ export class PaymentListComponent implements OnInit {
     const id = event?.value;
     this.selectedInvoice = id ? (this.payableInvoices.find(i => i.id === id) ?? null) : null;
     if (this.selectedInvoice) {
-      // default amount to full outstanding for convenience
-      this.form.patchValue({ amount: this.selectedInvoice.amountDue });
+      // default amount to full outstanding + seed the rate from the invoice's locked rate
+      this.form.patchValue({
+        amount: this.selectedInvoice.amountDue,
+        exchangeRate: this.selectedInvoice.invoiceRate
+      });
     }
   }
 
@@ -197,7 +219,9 @@ export class PaymentListComponent implements OnInit {
       amount: Number(v.amount),
       paymentMethod: v.paymentMethod,
       referenceNumber: (v.referenceNumber as string)?.trim() || null,
-      notes: (v.notes as string)?.trim() || null
+      notes: (v.notes as string)?.trim() || null,
+      // Only send a rate for foreign-currency invoices; BDT invoices ignore it (rate = 1).
+      exchangeRate: this.isForeignInvoice ? Number(v.exchangeRate) : null
     }).subscribe({
       next: (res) => this.handleSave(res),
       error: (err) => this.handleError(err)
@@ -284,5 +308,15 @@ export class PaymentListComponent implements OnInit {
     return new Intl.NumberFormat('en-BD', {
       style: 'currency', currency: 'BDT', maximumFractionDigits: 2
     }).format(amount || 0);
+  }
+
+  /** Format an amount in a given ISO currency code (falls back to plain + code). */
+  formatMoney(amount: number, code: string | null | undefined): string {
+    const c = code || 'BDT';
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: c, maximumFractionDigits: 2 }).format(amount || 0);
+    } catch {
+      return `${(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${c}`;
+    }
   }
 }

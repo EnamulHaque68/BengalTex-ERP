@@ -29,7 +29,7 @@ internal sealed class GetReceiptByIdQueryHandler
             rct.Id, rct.Code,
             rct.CustomerInvoiceId, rct.CustomerInvoice.Code,
             rct.CustomerInvoice.CustomerId, rct.CustomerInvoice.Customer.Name,
-            rct.ReceiptDate, rct.Amount,
+            rct.ReceiptDate, rct.Amount, rct.ExchangeRate,
             rct.PaymentMethod.ToString(),
             rct.ReferenceNumber, rct.Notes);
 

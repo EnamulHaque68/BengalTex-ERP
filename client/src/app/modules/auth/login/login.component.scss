@@ -1,4 +1,5 @@
 .login-wrapper {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -127,4 +128,11 @@
   font-size: 0.75rem;
   text-align: center;
   margin: 0;
+}
+
+.login-lang {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
 }

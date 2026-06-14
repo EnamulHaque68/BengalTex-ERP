@@ -9,6 +9,7 @@ public record ReceiptDto(
     string CustomerName,
     DateOnly ReceiptDate,
     decimal Amount,
+    decimal ExchangeRate,                // BDT per 1 unit of invoice currency at receipt time
     string PaymentMethod,                // enum as string
     string? ReferenceNumber,
     string? Notes);

@@ -17,6 +17,7 @@ export interface PaymentDto {
   supplierName: string;
   paymentDate: string;                  // DateOnly
   amount: number;
+  exchangeRate: number;                 // BDT per 1 unit of invoice currency at payment time
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
@@ -42,4 +43,5 @@ export interface CreatePaymentRequest {
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
+  exchangeRate?: number | null;         // null → backend uses the invoice's locked rate (no FX)
 }

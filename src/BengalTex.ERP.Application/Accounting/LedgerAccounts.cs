@@ -28,4 +28,6 @@ public static class LedgerAccounts
     public const string LossOnAssetDisposal = "5350";      // debited when disposal proceeds < NBV
     public const string MaterialWastage = "5700";           // debited by Wastage posts + quarantine Scrap write-offs
     public const string InventoryAdjustment = "5750";       // debited on stock shortage, credited on surplus (count adjustments)
+    public const string ExchangeGain = "4300";              // credited on realized FX gain (receipt/payment rate vs invoice rate)
+    public const string ExchangeLoss = "5800";              // debited on realized FX loss
 }

@@ -22,8 +22,15 @@ public class Payment : BaseTransactionalEntity
 
     public DateOnly PaymentDate { get; set; }
 
-    /// <summary>Amount paid. Must be &gt; 0.</summary>
+    /// <summary>Amount paid, in the invoice's currency. Must be &gt; 0.</summary>
     public decimal Amount { get; set; }
+
+    /// <summary>
+    /// BDT per 1 unit of the invoice's currency at PAYMENT time (the rate the money actually
+    /// went out at). Default 1 (BDT invoices). When it differs from the invoice's locked rate,
+    /// the payment journal recognizes a realized FX gain/loss for the difference.
+    /// </summary>
+    public decimal ExchangeRate { get; set; } = 1m;
 
     public PaymentMethod PaymentMethod { get; set; }
 

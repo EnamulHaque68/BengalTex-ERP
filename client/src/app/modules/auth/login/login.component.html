@@ -1,4 +1,5 @@
 <div class="login-wrapper">
+  <div class="login-lang"><app-lang-toggle></app-lang-toggle></div>
   <div class="login-container">
 
     <!-- Logo / Brand -->
@@ -7,20 +8,20 @@
         <i class="pi pi-building"></i>
       </div>
       <h1 class="brand-name">Bengal TEX ERP</h1>
-      <p class="brand-tagline">Garments Accessories Manufacturing</p>
+      <p class="brand-tagline">{{ 'login.tagline' | t }}</p>
     </div>
 
     <!-- Login Card -->
     <p-card styleClass="login-card">
       <ng-template pTemplate="title">
-        <span class="card-title">Sign in to your account</span>
+        <span class="card-title">{{ 'login.title' | t }}</span>
       </ng-template>
 
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" autocomplete="on">
 
         <!-- Email / Username -->
         <div class="field">
-          <label for="emailOrUsername">Email or Username</label>
+          <label for="emailOrUsername">{{ 'login.userLabel' | t }}</label>
           <input
             pInputText
             id="emailOrUsername"
@@ -32,18 +33,18 @@
           <small
             class="p-error"
             *ngIf="loginForm.get('emailOrUsername')?.invalid && loginForm.get('emailOrUsername')?.touched">
-            Email or username is required.
+            {{ 'login.userRequired' | t }}
           </small>
         </div>
 
         <!-- Password -->
         <div class="field">
-          <label for="password">Password</label>
+          <label for="password">{{ 'login.password' | t }}</label>
           <p-password
             formControlName="password"
             [feedback]="false"
             [toggleMask]="true"
-            placeholder="Enter your password"
+            [placeholder]="'login.passwordPlaceholder' | t"
             autocomplete="current-password"
             styleClass="w-full"
             inputStyleClass="w-full"
@@ -51,7 +52,7 @@
           <small
             class="p-error"
             *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-            Password is required.
+            {{ 'login.passwordRequired' | t }}
           </small>
         </div>
 
@@ -64,7 +65,7 @@
         <!-- Submit button -->
         <p-button
           type="submit"
-          label="Sign In"
+          [label]="'login.signIn' | t"
           icon="pi pi-sign-in"
           [loading]="loading"
           [disabled]="loginForm.invalid || loading"
@@ -73,7 +74,7 @@
 
         <!-- Forgot password link -->
         <div class="forgot-link">
-          <a routerLink="/login/forgot-password">Forgot your password?</a>
+          <a routerLink="/login/forgot-password">{{ 'login.forgot' | t }}</a>
         </div>
 
       </form>

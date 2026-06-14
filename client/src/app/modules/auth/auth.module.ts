@@ -9,6 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 
+import { SharedModule } from '../../shared/shared.module';
 import { LoginComponent } from './login/login.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
@@ -32,7 +33,8 @@ const routes: Routes = [
     CardModule,
     InputTextModule,
     PasswordModule,
-    ButtonModule
+    ButtonModule,
+    SharedModule
   ]
 })
 export class AuthModule {}
