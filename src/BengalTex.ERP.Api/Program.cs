@@ -49,6 +49,8 @@ builder.Services.Configure<BengalTex.ERP.Application.Reports.Jobs.MonthlyStateme
     builder.Configuration.GetSection("MonthlyStatements"));
 builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.OperationalAlertsOptions>(
     builder.Configuration.GetSection("OperationalAlerts"));
+builder.Services.Configure<BengalTex.ERP.Application.Reports.Jobs.DunningOptions>(
+    builder.Configuration.GetSection("Dunning"));
 
 // ============================================
 // LAYER REGISTRATIONS
@@ -381,6 +383,13 @@ RecurringJob.AddOrUpdate<OperationalAlertsJob>(
     OperationalAlertsJob.RecurringJobId,
     x => x.RunAsync(CancellationToken.None),
     "0 7 * * *"); // 5-field cron: every day at 07:00
+
+// Dunning reminders — daily at 08:00: emails customers about overdue invoices, escalating
+// tone by age. OPT-IN: does nothing until Dunning:Enabled=true (+ a real Email provider).
+RecurringJob.AddOrUpdate<BengalTex.ERP.Application.Reports.Jobs.DunningReminderJob>(
+    BengalTex.ERP.Application.Reports.Jobs.DunningReminderJob.RecurringJobId,
+    x => x.RunAsync(CancellationToken.None),
+    "0 8 * * *"); // 5-field cron: every day at 08:00
 
 // ============================================
 // RUN

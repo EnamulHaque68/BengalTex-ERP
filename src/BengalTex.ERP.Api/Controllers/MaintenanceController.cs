@@ -71,4 +71,18 @@ public class MaintenanceController : ControllerBase
         return Ok(ApiResponse<string>.Ok(jobId,
             "Operational-alerts sweep queued. Check the Notifications viewer for new alerts."));
     }
+
+    /// <summary>
+    /// Run the dunning reminder batch now (same job as the 08:00 daily schedule) — emails
+    /// customers about overdue invoices. No-op unless Dunning:Enabled=true.
+    /// </summary>
+    [HttpPost("run-dunning-reminders")]
+    [HasPermission(Permissions.Settings.Edit)]
+    public IActionResult RunDunningReminders()
+    {
+        var jobId = _jobs.Enqueue<BengalTex.ERP.Application.Reports.Jobs.DunningReminderJob>(
+            x => x.RunAsync(CancellationToken.None));
+        return Ok(ApiResponse<string>.Ok(jobId,
+            "Dunning reminder batch queued. Check the Sent Email log for sent/failed counts."));
+    }
 }
