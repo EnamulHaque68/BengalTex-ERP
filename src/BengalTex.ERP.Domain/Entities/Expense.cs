@@ -52,6 +52,7 @@ public class Expense : BaseTransactionalEntity
 public enum ExpenseStatus
 {
     Draft = 1,
-    Approved = 2,    // recorded + paid (posted to the ledger)
-    Cancelled = 3
+    Approved = 2,           // recorded + paid (posted to the ledger)
+    Cancelled = 3,
+    PendingApproval = 4     // over the approval threshold — awaiting sign-off via the Approvals inbox
 }
