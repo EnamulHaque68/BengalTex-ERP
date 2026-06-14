@@ -49,6 +49,13 @@ public record ComplianceSectionDto(
     int OpenCapFindings,
     int OverdueCapFindings);
 
+// ─── Revenue trend (last 12 months, hero-level) ────────────────────────────
+public record MonthlyTrendPointDto(
+    int Year,
+    int Month,
+    string Label,                      // "Jun" — short month abbreviation
+    decimal Revenue);                  // Σ TotalAmount (BDT) for non-Draft/Cancelled invoices that month
+
 // ─── Needs-attention lists ─────────────────────────────────────────────────
 public record NeedsAttentionItemDto(
     string Type,                       // "ExpiringCert" | "OverdueCap" | "PendingLeave" | "UnreconciledStmt" | "OverdueInvoice"
@@ -61,6 +68,7 @@ public record NeedsAttentionItemDto(
 public record DashboardSnapshotDto(
     DateTimeOffset GeneratedAt,
     HeroKpiDto Hero,
+    IReadOnlyList<MonthlyTrendPointDto> RevenueTrend,   // last 12 months, oldest → newest
     SalesSectionDto? Sales,            // null = caller has no Sales view permission
     ProcurementSectionDto? Procurement,
     ProductionSectionDto? Production,

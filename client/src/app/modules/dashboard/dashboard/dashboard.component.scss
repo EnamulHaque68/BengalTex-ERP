@@ -63,3 +63,53 @@
 }
 
 .loading { text-align: center; color: #9ca3af; padding: 3rem; }
+
+// ── Revenue trend (inline SVG, dependency-free) ──
+.trend-panel {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  padding: 1rem 1.25rem 0.75rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  .trend-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    .trend-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #111827;
+      i { margin-right: 0.4rem; color: #4f46e5; }
+    }
+    .trend-peak {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #6b7280;
+      background: #f3f4f6;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+    }
+  }
+
+  .trend-svg {
+    display: block;
+    width: 100%;
+    height: 160px;
+
+    .trend-bar {
+      fill: #c7d2fe;
+      transition: fill 0.15s;
+      &:hover { fill: #818cf8; }
+      &.bar-current { fill: #4f46e5; }
+    }
+    .trend-label {
+      font-size: 11px;
+      fill: #9ca3af;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+  }
+}

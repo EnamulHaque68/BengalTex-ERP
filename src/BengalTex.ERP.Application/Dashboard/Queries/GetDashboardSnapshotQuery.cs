@@ -132,6 +132,24 @@ internal sealed class GetDashboardSnapshotQueryHandler
         var hero = new HeroKpiDto(cashAndBank, thisMonthRevenue, totalStockValue,
             activeSoCount + activePoCount, arOutstanding, apOutstanding);
 
+        // ── REVENUE TREND (last 12 months, visible to all) ─────────────────
+        var trendStart = monthStart.AddMonths(-11);
+        var trendRaw = await _arRepo.Query()
+            .Where(i => i.InvoiceDate >= trendStart && i.InvoiceDate <= monthEnd
+                     && i.Status != CustomerInvoiceStatus.Draft
+                     && i.Status != CustomerInvoiceStatus.Cancelled)
+            .GroupBy(i => new { i.InvoiceDate.Year, i.InvoiceDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Revenue = g.Sum(x => x.TotalAmount * x.ExchangeRate) })
+            .ToListAsync(ct);
+        var revenueTrend = new List<MonthlyTrendPointDto>(12);
+        for (var k = 0; k < 12; k++)
+        {
+            var m = trendStart.AddMonths(k);
+            var hit = trendRaw.FirstOrDefault(r => r.Year == m.Year && r.Month == m.Month);
+            revenueTrend.Add(new MonthlyTrendPointDto(
+                m.Year, m.Month, m.ToString("MMM"), hit?.Revenue ?? 0m));
+        }
+
         // ── SECTIONS (gated by permission) ─────────────────────────────────
         SalesSectionDto? sales = null;
         if (_currentUser.HasPermission(Permissions.Dashboard.ViewSales) || _currentUser.HasPermission(Permissions.Dashboard.ViewOwner))
@@ -293,7 +311,7 @@ internal sealed class GetDashboardSnapshotQueryHandler
         }
 
         return ApiResponse<DashboardSnapshotDto>.Ok(new DashboardSnapshotDto(
-            _clock.UtcNow, hero, sales, procurement, production, hr,
+            _clock.UtcNow, hero, revenueTrend, sales, procurement, production, hr,
             accounting, compliance, needs));
     }
 }

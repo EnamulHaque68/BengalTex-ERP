@@ -1,6 +1,17 @@
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { DashboardService } from '../../../services/dashboard.service';
-import { DashboardSnapshotDto, NeedsAttentionItemDto } from '../../../models/dashboard.models';
+import { DashboardSnapshotDto, MonthlyTrendPointDto, NeedsAttentionItemDto } from '../../../models/dashboard.models';
+
+/** One positioned bar in the inline SVG revenue trend (no chart library). */
+interface TrendBar {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  value: number;
+  current: boolean;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -48,6 +59,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (Math.abs(amount) >= 100_000) return `৳${(amount / 100_000).toFixed(2)} L`;
     if (Math.abs(amount) >= 1_000) return `৳${(amount / 1_000).toFixed(1)} K`;
     return this.formatCurrency(amount);
+  }
+
+  // ── Inline SVG revenue trend (dependency-free) ──
+  readonly chartW = 720;
+  readonly chartH = 160;
+  private readonly padBottom = 22;   // room for month labels
+  private readonly padTop = 8;
+
+  get trendBars(): TrendBar[] {
+    const pts = this.data?.revenueTrend ?? [];
+    if (pts.length === 0) return [];
+    const max = Math.max(...pts.map(p => p.revenue), 1);   // avoid /0; all-zero → flat
+    const slot = this.chartW / pts.length;
+    const barW = slot * 0.6;
+    const plotH = this.chartH - this.padBottom - this.padTop;
+    return pts.map((p: MonthlyTrendPointDto, i: number) => {
+      const h = max > 0 ? (p.revenue / max) * plotH : 0;
+      return {
+        x: i * slot + (slot - barW) / 2,
+        y: this.padTop + (plotH - h),
+        width: barW,
+        height: h,
+        label: p.label,
+        value: p.revenue,
+        current: i === pts.length - 1   // newest = current month
+      };
+    });
+  }
+
+  /** Y of the month-label baseline. */
+  get trendLabelY(): number { return this.chartH - 6; }
+
+  trendTooltip(b: TrendBar): string {
+    return `${b.label}: ${this.formatCurrencyShort(b.value)}`;
+  }
+
+  get trendPeak(): number {
+    const pts = this.data?.revenueTrend ?? [];
+    return pts.length ? Math.max(...pts.map(p => p.revenue)) : 0;
   }
 
   severityColor(s: string | null): string {
