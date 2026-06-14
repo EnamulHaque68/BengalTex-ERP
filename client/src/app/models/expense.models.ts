@@ -10,6 +10,7 @@ export const EXPENSE_PAYMENT_METHODS: { label: string; value: string }[] = [
 
 export const EXPENSE_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
+  { label: 'Pending Approval', value: 'PendingApproval' },
   { label: 'Approved', value: 'Approved' },
   { label: 'Cancelled', value: 'Cancelled' }
 ];

@@ -36,11 +36,11 @@
           <td class="muted">{{ e.payee || '—' }}</td>
           <td class="muted">{{ e.paymentMethod }}</td>
           <td class="num fw-600">{{ e.amount | number:'1.2-2' }}</td>
-          <td><span class="status-badge" [class]="statusClass(e.status)">{{ e.status }}</span></td>
+          <td><span class="status-badge" [class]="statusClass(e.status)">{{ e.status === 'PendingApproval' ? 'Pending Approval' : e.status }}</span></td>
           <td>
             <div class="row-actions">
               <p-button [icon]="e.status === 'Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="open(e)" [pTooltip]="e.status === 'Draft' ? 'Edit' : 'View'" />
-              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status === 'Draft' && canApprove" [loading]="rowActionId === e.id" (click)="approve(e)" pTooltip="Approve & pay" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status === 'Draft' && canApprove" [loading]="rowActionId === e.id" (click)="approve(e)" pTooltip="Submit for approval (auto-pays under the threshold)" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small" *ngIf="e.status === 'Approved' && canApprove" [loading]="rowActionId === e.id" (click)="cancel(e)" pTooltip="Cancel (reverse)" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status === 'Draft' && canCreate" (click)="confirmDelete(e)" pTooltip="Delete" />
             </div>

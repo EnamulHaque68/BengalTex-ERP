@@ -56,10 +56,14 @@ public class ExpensesController : ControllerBase
     public async Task<IActionResult> Delete(long id, CancellationToken ct)
         => Ok(await _mediator.Send(new DeleteExpenseCommand(id), ct));
 
+    /// <summary>
+    /// Submit a draft expense for approval. Within the configured threshold it is recorded +
+    /// paid immediately; above it, it goes to PendingApproval for sign-off via the Approvals inbox.
+    /// </summary>
     [HttpPost("{id:long}/approve")]
     [HasPermission(Permissions.Expenses.Approve)]
     public async Task<IActionResult> Approve(long id, CancellationToken ct)
-        => Ok(await _mediator.Send(new ApproveExpenseCommand(id), ct));
+        => Ok(await _mediator.Send(new SubmitExpenseForApprovalCommand(id), ct));
 
     [HttpPost("{id:long}/cancel")]
     [HasPermission(Permissions.Expenses.Approve)]

@@ -40,7 +40,8 @@ public sealed class ApprovalService : IApprovalService
         decimal amount, CancellationToken ct = default)
     {
         var now = _clock.UtcNow;
-        var auto = amount <= _settings.PurchaseOrderThreshold;
+        var (threshold, approverRole) = RulesFor(documentType);
+        var auto = amount <= threshold;
 
         var request = new ApprovalRequest
         {
@@ -58,11 +59,11 @@ public sealed class ApprovalService : IApprovalService
         request.Steps.Add(new ApprovalStep
         {
             Level = 1,
-            ApproverRole = _settings.PurchaseOrderApproverRole,
+            ApproverRole = approverRole,
             Status = auto ? ApprovalStepStatus.Skipped : ApprovalStepStatus.Pending,
             ApproverUserId = auto ? "system" : null,
             ActedAt = auto ? now : null,
-            Comment = auto ? $"Auto-approved (within {_settings.PurchaseOrderThreshold:N0} threshold)" : null,
+            Comment = auto ? $"Auto-approved (within {threshold:N0} threshold)" : null,
         });
 
         _db.ApprovalRequests.Add(request);   // caller saves
@@ -72,7 +73,7 @@ public sealed class ApprovalService : IApprovalService
         {
             await _notifications.NotifyAsync(
                 NotificationChannels.InApp,
-                _settings.PurchaseOrderApproverRole,
+                approverRole,
                 $"{documentType} {documentReference} pending approval",
                 $"{documentType} {documentReference} (amount {amount:N2}) was submitted by " +
                 $"{_currentUser.UserName ?? _currentUser.UserId} and is awaiting your approval.",
@@ -81,6 +82,13 @@ public sealed class ApprovalService : IApprovalService
 
         return new ApprovalSubmitResult(auto);
     }
+
+    /// <summary>Threshold + approver role for a gated document type. Falls back to PO rules.</summary>
+    private (decimal Threshold, string ApproverRole) RulesFor(string documentType) => documentType switch
+    {
+        "Expense" => (_settings.ExpenseThreshold, _settings.ExpenseApproverRole),
+        _ => (_settings.PurchaseOrderThreshold, _settings.PurchaseOrderApproverRole),
+    };
 
     public async Task<IReadOnlyList<ApprovalRequestDto>> GetInboxAsync(
         IReadOnlyList<string> roles, bool seeAll, CancellationToken ct = default)
