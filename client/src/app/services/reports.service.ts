@@ -12,6 +12,7 @@ import {
   StockSummaryReportDto,
   StockLedgerReportDto,
   DeadStockReportDto,
+  WastageVarianceReportDto,
   VatSummaryReportDto,
   WipReportDto,
   ProductionSummaryReportDto,
@@ -99,6 +100,14 @@ export class ReportsService {
 
   getWip(): Observable<ApiResponse<WipReportDto>> {
     return this.http.get<ApiResponse<WipReportDto>>(`${this.base}/wip`);
+  }
+
+  getWastageVariance(fromDate?: string, toDate?: string, productId?: number): Observable<ApiResponse<WastageVarianceReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    if (productId) params = params.set('productId', productId.toString());
+    return this.http.get<ApiResponse<WastageVarianceReportDto>>(`${this.base}/wastage-variance`, { params });
   }
 
   getProductionSummary(fromDate?: string, toDate?: string, productId?: number): Observable<ApiResponse<ProductionSummaryReportDto>> {

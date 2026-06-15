@@ -89,6 +89,34 @@ export interface DeadStockReportDto {
   rows: DeadStockRowDto[];
 }
 
+// ─── Wastage Variance ─────────────────────────────────────────────────────
+
+export interface WastageVarianceRowDto {
+  productionOrderId: number;
+  productionOrderCode: string;
+  completedDate: string | null;
+  productId: number;
+  productCode: string;
+  productName: string;
+  producedQuantity: number;
+  standardWastageCost: number;
+  actualWastageCost: number;
+  variance: number;
+  variancePercent: number;
+}
+
+export interface WastageVarianceReportDto {
+  generatedAt: string;
+  fromDate: string | null;
+  toDate: string | null;
+  productId: number | null;
+  rowCount: number;
+  totalStandardCost: number;
+  totalActualCost: number;
+  totalVariance: number;
+  rows: WastageVarianceRowDto[];
+}
+
 // ─── AR Ageing ────────────────────────────────────────────────────────────
 
 export interface ArAgeingInvoiceDto {

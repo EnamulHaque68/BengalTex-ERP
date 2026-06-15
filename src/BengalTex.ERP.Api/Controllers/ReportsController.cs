@@ -140,6 +140,16 @@ public class ReportsController : ControllerBase
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetProductionSummaryReportQuery(fromDate, toDate, productId), ct));
 
+    /// <summary>Wastage variance — BOM standard wastage allowance vs actual wastage per completed production order.</summary>
+    [HttpGet("wastage-variance")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetWastageVariance(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] int? productId = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetWastageVarianceReportQuery(fromDate, toDate, productId), ct));
+
     /// <summary>Operator productivity — per-employee rollup of completed Job Card output, reject rate, units-per-hour.</summary>
     [HttpGet("operator-productivity")]
     [HasPermission(Permissions.Reports.ViewProduction)]
