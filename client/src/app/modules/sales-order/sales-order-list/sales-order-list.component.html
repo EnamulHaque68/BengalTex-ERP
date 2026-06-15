@@ -153,7 +153,23 @@
                     [filter]="true"
                     filterBy="code,name"
                     placeholder="Select customer"
-                    appendTo="body" class="w-full" styleClass="w-full" />
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onCustomerChange($event)" />
+
+        <!-- Credit standing of the selected customer -->
+        <div class="credit-strip" *ngIf="creditStatus && creditStatus.creditLimit > 0"
+             [class.over]="creditStatus.isOverLimit || creditWouldExceed">
+          <span><span class="lbl">Credit limit:</span> {{ formatCurrency(creditStatus.creditLimit) }}</span>
+          <span><span class="lbl">Outstanding:</span> {{ formatCurrency(creditStatus.outstandingAr) }}</span>
+          <span><span class="lbl">Available:</span> <strong>{{ formatCurrency(creditStatus.availableCredit) }}</strong></span>
+          <span class="credit-warn" *ngIf="creditWouldExceed">
+            <i class="pi pi-exclamation-triangle"></i>
+            This order ({{ formatCurrency(orderTotalBdt) }}) exceeds available credit{{ creditStatus.enforced ? ' — confirm will be blocked' : '' }}.
+          </span>
+          <span class="credit-warn" *ngIf="!creditWouldExceed && creditStatus.isOverLimit">
+            <i class="pi pi-exclamation-triangle"></i> Customer is already over their credit limit.
+          </span>
+        </div>
       </div>
 
       <div class="field">

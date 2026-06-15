@@ -6,6 +6,7 @@ import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   CreateCustomerRequest,
+  CustomerCreditStatusDto,
   CustomerDto,
   CustomerListItemDto,
   UpdateCustomerRequest
@@ -32,6 +33,10 @@ export class CustomerService {
 
   getById(id: number): Observable<ApiResponse<CustomerDto>> {
     return this.http.get<ApiResponse<CustomerDto>>(`${this.base}/${id}`);
+  }
+
+  getCreditStatus(id: number): Observable<ApiResponse<CustomerCreditStatusDto>> {
+    return this.http.get<ApiResponse<CustomerCreditStatusDto>>(`${this.base}/${id}/credit-status`);
   }
 
   create(data: CreateCustomerRequest): Observable<ApiResponse<CustomerDto>> {

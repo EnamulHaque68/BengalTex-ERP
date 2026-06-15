@@ -5,7 +5,7 @@ import { CustomerService } from '../../../services/customer.service';
 import { ProductService } from '../../../services/product.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { SO_STATUSES, SalesOrderListItemDto } from '../../../models/sales-order.models';
-import { CustomerListItemDto } from '../../../models/customer.models';
+import { CustomerListItemDto, CustomerCreditStatusDto } from '../../../models/customer.models';
 import { ProductListItemDto } from '../../../models/product.models';
 import { CurrencyDto } from '../../../models/master-data.models';
 import { CurrencyService } from '../../../services/currency.service';
@@ -41,6 +41,10 @@ export class SalesOrderListComponent implements OnInit {
   dialogError = '';
   editingId: number | null = null;
   form!: FormGroup;
+
+  // Credit standing of the selected customer (shown on the create dialog)
+  creditStatus: CustomerCreditStatusDto | null = null;
+  creditLoading = false;
 
   // Delete
   deleteDialogVisible = false;
@@ -136,6 +140,33 @@ export class SalesOrderListComponent implements OnInit {
 
   totalAmount(): number {
     return this.lines.controls.reduce((sum, l) => sum + this.lineTotal(l), 0);
+  }
+
+  /** This order's line total converted to base BDT (for comparison against available credit). */
+  get orderTotalBdt(): number {
+    return this.totalAmount() * (Number(this.form.get('exchangeRate')?.value) || 1);
+  }
+
+  /** True when credit control is enforced and this order would push the customer over their limit. */
+  get creditWouldExceed(): boolean {
+    if (!this.creditStatus?.enforced) return false;
+    return this.creditStatus.outstandingAr + this.orderTotalBdt > this.creditStatus.creditLimit;
+  }
+
+  /** Fetch the picked customer's credit standing to show on the dialog. */
+  onCustomerChange(ev: any): void {
+    const id = ev?.value;
+    this.creditStatus = null;
+    if (!id) return;
+    this.creditLoading = true;
+    this.customerService.getCreditStatus(id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.creditLoading = false;
+        if (res.success && res.data) this.creditStatus = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.creditLoading = false; this.cdr.detectChanges(); })
+    });
   }
 
   formatCurrency(amount: number): string {
@@ -254,6 +285,7 @@ export class SalesOrderListComponent implements OnInit {
     this.dialogMode = 'create';
     this.editingId = null;
     this.dialogError = '';
+    this.creditStatus = null;
     this.form.enable();
     this.lines.clear();
     this.form.reset({
@@ -266,6 +298,8 @@ export class SalesOrderListComponent implements OnInit {
       exchangeRate: 1,
       notes: ''
     });
+    // If a customer filter pre-seeds the form, fetch their credit standing up front.
+    if (this.filterCustomerId) this.onCustomerChange({ value: this.filterCustomerId });
     this.addLine();
     this.dialogVisible = true;
   }
@@ -274,6 +308,7 @@ export class SalesOrderListComponent implements OnInit {
     this.editingId = so.id;
     this.dialogError = '';
     this.dialogMode = 'edit';
+    this.creditStatus = null;
     this.form.enable();
     this.lines.clear();
     this.dialogVisible = true;
@@ -298,6 +333,7 @@ export class SalesOrderListComponent implements OnInit {
               this.newLine(l.productId, l.quantity, l.unitPrice, l.lineNotes ?? '')
             ));
             if (this.dialogMode === 'view') this.form.disable();
+            else this.onCustomerChange({ value: s.customerId });
             this.cdr.detectChanges();
           }
         });
