@@ -11,6 +11,7 @@ public static class LedgerAccounts
     public const string AccountsReceivable = "1130";
     public const string RawMaterialInventory = "1140";
     public const string FinishedGoodsInventory = "1150";
+    public const string WorkInProgressInventory = "1160";   // RM cost parked here from issue until FG receipt (backflush)
     public const string VatReceivable = "1170";   // input VAT
     public const string MachineryEquipment = "1210";       // gross fixed-asset cost (existed)
     public const string AccumulatedDepreciation = "1215";  // contra-asset; credited each month

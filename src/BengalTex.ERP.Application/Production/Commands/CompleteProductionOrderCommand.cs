@@ -158,18 +158,33 @@ internal sealed class CompleteProductionOrderCommandHandler
         po.CompletedBy = _currentUser.UserName;
         _repo.Update(po);
 
-        // ── Phase 5: auto-journal — move cost from Raw Material to Finished Goods ──
-        // (Only if consumed cost is non-zero — zero-cost RMs would produce a zero-balance entry.)
+        // ── Phase 5: auto-journals — backflush the RM cost through Work-In-Progress ──
+        // Two distinct economic events posted at completion (backflush costing — appropriate for
+        // short-cycle production that records issue + receipt together):
+        //   (a) materials issued to WIP:  Dr WIP / Cr Raw Material Inventory
+        //   (b) WIP completed to finished goods:  Dr Finished Goods / Cr WIP
+        // WIP nets to zero per run; its balance reflects only runs issued-but-not-yet-received.
+        // (Only when consumed cost is non-zero — zero-cost RMs would produce zero-balance entries.)
         if (totalRmCost > 0m)
         {
             await _journal.PostAsync(
                 movementDate,
-                $"Production {po.Code} complete — RM consumed for {po.Product.Name}",
+                $"Production {po.Code} — raw materials issued to WIP for {po.Product.Name}",
+                "ProductionOrder", po.Id, po.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, totalRmCost, 0m),
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalRmCost),
+                }, cancellationToken);
+
+            await _journal.PostAsync(
+                movementDate,
+                $"Production {po.Code} — WIP completed to finished goods ({po.Product.Name})",
                 "ProductionOrder", po.Id, po.Code,
                 new[]
                 {
                     new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalRmCost, 0m),
-                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalRmCost),
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, totalRmCost),
                 }, cancellationToken);
         }
 
