@@ -8,6 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.CustomerPricing;
 
+internal static class CustomerPricingText
+{
+    /// <summary>Trim to null — empty/whitespace becomes null.</summary>
+    public static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+}
+
 // ── DTOs ──
 public sealed record CustomerProductPriceDto(
     int Id,
@@ -19,6 +25,8 @@ public sealed record CustomerProductPriceDto(
     string ProductUnitOfMeasureCode,
     decimal DefaultSalesPrice,     // the product's standard price, for reference
     decimal UnitPrice,             // this customer's negotiated price
+    string? BuyerProductCode,      // buyer's own article code (export docs)
+    string? BuyerProductName,
     bool IsActive,
     string? Notes);
 
@@ -42,7 +50,7 @@ internal sealed class GetCustomerProductPricesQueryHandler
             .Select(p => new CustomerProductPriceDto(
                 p.Id, p.CustomerId, p.Customer.Name,
                 p.ProductId, p.Product.Code, p.Product.Name, p.Product.UnitOfMeasure.Code,
-                p.Product.SalesPrice, p.UnitPrice, p.IsActive, p.Notes))
+                p.Product.SalesPrice, p.UnitPrice, p.BuyerProductCode, p.BuyerProductName, p.IsActive, p.Notes))
             .ToListAsync(ct);
         return ApiResponse<IReadOnlyList<CustomerProductPriceDto>>.Ok(items);
     }
@@ -69,7 +77,9 @@ internal sealed class GetCustomerProductPriceQueryHandler
 }
 
 // ── Create ──
-public sealed record CreateCustomerProductPriceCommand(int CustomerId, int ProductId, decimal UnitPrice, string? Notes)
+public sealed record CreateCustomerProductPriceCommand(
+    int CustomerId, int ProductId, decimal UnitPrice,
+    string? BuyerProductCode, string? BuyerProductName, string? Notes)
     : IRequest<ApiResponse<int>>;
 
 public sealed class CreateCustomerProductPriceCommandValidator : AbstractValidator<CreateCustomerProductPriceCommand>
@@ -79,6 +89,8 @@ public sealed class CreateCustomerProductPriceCommandValidator : AbstractValidat
         RuleFor(x => x.CustomerId).GreaterThan(0);
         RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.BuyerProductCode).MaximumLength(50);
+        RuleFor(x => x.BuyerProductName).MaximumLength(200);
         RuleFor(x => x.Notes).MaximumLength(1000);
     }
 }
@@ -101,8 +113,10 @@ internal sealed class CreateCustomerProductPriceCommandHandler
             CustomerId = cmd.CustomerId,
             ProductId = cmd.ProductId,
             UnitPrice = cmd.UnitPrice,
+            BuyerProductCode = CustomerPricingText.Clean(cmd.BuyerProductCode),
+            BuyerProductName = CustomerPricingText.Clean(cmd.BuyerProductName),
             IsActive = true,
-            Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
+            Notes = CustomerPricingText.Clean(cmd.Notes)
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -111,7 +125,8 @@ internal sealed class CreateCustomerProductPriceCommandHandler
 }
 
 // ── Update ──
-public sealed record UpdateCustomerProductPriceCommand(int Id, decimal UnitPrice, bool IsActive, string? Notes)
+public sealed record UpdateCustomerProductPriceCommand(
+    int Id, decimal UnitPrice, string? BuyerProductCode, string? BuyerProductName, bool IsActive, string? Notes)
     : IRequest<ApiResponse<int>>;
 
 public sealed class UpdateCustomerProductPriceCommandValidator : AbstractValidator<UpdateCustomerProductPriceCommand>
@@ -120,6 +135,8 @@ public sealed class UpdateCustomerProductPriceCommandValidator : AbstractValidat
     {
         RuleFor(x => x.Id).GreaterThan(0);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.BuyerProductCode).MaximumLength(50);
+        RuleFor(x => x.BuyerProductName).MaximumLength(200);
         RuleFor(x => x.Notes).MaximumLength(1000);
     }
 }
@@ -137,8 +154,10 @@ internal sealed class UpdateCustomerProductPriceCommandHandler
         var e = await _repo.GetByIdAsync(cmd.Id, ct);
         if (e is null) return ApiResponse<int>.Fail("Customer price not found.");
         e.UnitPrice = cmd.UnitPrice;
+        e.BuyerProductCode = CustomerPricingText.Clean(cmd.BuyerProductCode);
+        e.BuyerProductName = CustomerPricingText.Clean(cmd.BuyerProductName);
         e.IsActive = cmd.IsActive;
-        e.Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim();
+        e.Notes = CustomerPricingText.Clean(cmd.Notes);
         _repo.Update(e);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<int>.Ok(e.Id, "Customer price updated.");

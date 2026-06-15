@@ -19,6 +19,12 @@ public class CustomerProductPrice : BaseEntity
     /// <summary>Negotiated unit price for this customer (in their trading currency).</summary>
     public decimal UnitPrice { get; set; }
 
+    /// <summary>The buyer's own code/article-number for this product ("buyer er code = Y"), for export docs.</summary>
+    public string? BuyerProductCode { get; set; }
+
+    /// <summary>The buyer's own name/description for this product (optional, shown on export docs).</summary>
+    public string? BuyerProductName { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public string? Notes { get; set; }

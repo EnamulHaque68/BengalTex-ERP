@@ -144,6 +144,7 @@
             <td>
               <div class="item-name">{{ l.productName }}</div>
               <div class="item-code mono">{{ l.productCode }}</div>
+              <div class="buyer-ref mono" *ngIf="buyerCodeFor(l.productId)">Buyer Ref: {{ buyerCodeFor(l.productId) }}</div>
               <div class="item-notes" *ngIf="l.lineNotes">{{ l.lineNotes }}</div>
             </td>
             <td class="mono">{{ l.hsCode || '—' }}</td>

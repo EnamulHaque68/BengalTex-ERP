@@ -46,6 +46,8 @@ export class CustomerPricingListComponent implements OnInit {
     this.form = this.fb.group({
       productId: [null as number | null, Validators.required],
       unitPrice: [0, [Validators.required, Validators.min(0)]],
+      buyerProductCode: ['', Validators.maxLength(50)],
+      buyerProductName: ['', Validators.maxLength(200)],
       isActive: [true],
       notes: ['', Validators.maxLength(1000)]
     });
@@ -99,7 +101,7 @@ export class CustomerPricingListComponent implements OnInit {
   openCreate(): void {
     this.editingId = null;
     this.dialogError = '';
-    this.form.reset({ productId: null, unitPrice: 0, isActive: true, notes: '' });
+    this.form.reset({ productId: null, unitPrice: 0, buyerProductCode: '', buyerProductName: '', isActive: true, notes: '' });
     this.form.get('productId')?.enable();
     this.dialogVisible = true;
   }
@@ -107,7 +109,11 @@ export class CustomerPricingListComponent implements OnInit {
   openEdit(p: CustomerProductPriceDto): void {
     this.editingId = p.id;
     this.dialogError = '';
-    this.form.reset({ productId: p.productId, unitPrice: p.unitPrice, isActive: p.isActive, notes: p.notes ?? '' });
+    this.form.reset({
+      productId: p.productId, unitPrice: p.unitPrice,
+      buyerProductCode: p.buyerProductCode ?? '', buyerProductName: p.buyerProductName ?? '',
+      isActive: p.isActive, notes: p.notes ?? ''
+    });
     this.form.get('productId')?.disable();   // product is fixed once a price row exists
     this.dialogVisible = true;
   }
@@ -140,15 +146,19 @@ export class CustomerPricingListComponent implements OnInit {
       })
     };
 
+    const buyerCode = (v.buyerProductCode as string)?.trim() || null;
+    const buyerName = (v.buyerProductName as string)?.trim() || null;
+    const notes = (v.notes as string)?.trim() || null;
+
     if (this.editingId) {
       this.pricingService.update({
-        id: this.editingId, unitPrice: Number(v.unitPrice), isActive: !!v.isActive,
-        notes: (v.notes as string)?.trim() || null
+        id: this.editingId, unitPrice: Number(v.unitPrice),
+        buyerProductCode: buyerCode, buyerProductName: buyerName, isActive: !!v.isActive, notes
       }).subscribe(done);
     } else {
       this.pricingService.create({
         customerId: this.selectedCustomerId, productId: v.productId, unitPrice: Number(v.unitPrice),
-        notes: (v.notes as string)?.trim() || null
+        buyerProductCode: buyerCode, buyerProductName: buyerName, notes
       }).subscribe(done);
     }
   }

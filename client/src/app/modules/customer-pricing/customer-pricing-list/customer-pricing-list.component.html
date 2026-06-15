@@ -2,8 +2,8 @@
 
   <div class="page-header">
     <div>
-      <h2 class="page-title">Customer Pricing</h2>
-      <p class="page-subtitle">Customer-specific selling prices &mdash; auto-fill Quotation &amp; Sales Order lines</p>
+      <h2 class="page-title">Customer Pricing &amp; Codes</h2>
+      <p class="page-subtitle">Customer-specific prices + buyer article codes &mdash; auto-fill Sales Orders, print on export docs</p>
     </div>
     <div class="header-actions">
       <p-select [(ngModel)]="selectedCustomerId" [options]="customers" optionLabel="name" optionValue="id"
@@ -24,12 +24,12 @@
       <ng-template pTemplate="header">
         <tr>
           <th>Product</th>
+          <th>Buyer Code</th>
           <th>UoM</th>
           <th class="num-col">Default Price</th>
           <th class="num-col">Customer Price</th>
           <th class="num-col">Diff</th>
           <th>Status</th>
-          <th>Notes</th>
           <th style="width:7rem"></th>
         </tr>
       </ng-template>
@@ -37,6 +37,11 @@
       <ng-template pTemplate="body" let-p>
         <tr [class.row-inactive]="!p.isActive">
           <td class="fw-600">{{ p.productName }}<span class="prod-code">{{ p.productCode }}</span></td>
+          <td>
+            <span class="buyer-code" *ngIf="p.buyerProductCode">{{ p.buyerProductCode }}</span>
+            <span class="muted-cell" *ngIf="!p.buyerProductCode">—</span>
+            <span class="buyer-name" *ngIf="p.buyerProductName">{{ p.buyerProductName }}</span>
+          </td>
           <td class="unit-cell">{{ p.productUnitOfMeasureCode }}</td>
           <td class="num muted-cell">{{ formatCurrency(p.defaultSalesPrice) }}</td>
           <td class="num fw-700">{{ formatCurrency(p.unitPrice) }}</td>
@@ -45,7 +50,6 @@
             {{ p.unitPrice === p.defaultSalesPrice ? '—' : (p.unitPrice > p.defaultSalesPrice ? '+' : '') + formatCurrency(p.unitPrice - p.defaultSalesPrice) }}
           </td>
           <td><span class="status-pill" [class.active]="p.isActive">{{ p.isActive ? 'Active' : 'Inactive' }}</span></td>
-          <td class="notes-cell">{{ p.notes || '' }}</td>
           <td>
             <div class="row-actions">
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(p)" pTooltip="Edit" />
@@ -56,7 +60,7 @@
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
-        <tr><td colspan="8" class="empty-row"><i class="pi pi-tag"></i><span>No customer-specific prices yet — add one.</span></td></tr>
+        <tr><td colspan="8" class="empty-row"><i class="pi pi-tag"></i><span>No customer-specific prices or codes yet — add one.</span></td></tr>
       </ng-template>
     </p-table>
   </p-card>
@@ -79,6 +83,16 @@
       <label>Customer Price (BDT) *</label>
       <p-inputNumber formControlName="unitPrice" [min]="0" mode="currency" currency="BDT" locale="en-BD"
                      [minFractionDigits]="2" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Buyer Product Code <small>(buyer's own article #)</small></label>
+      <input pInputText formControlName="buyerProductCode" placeholder="e.g. WM-ART-77231" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Buyer Product Name <small>(optional)</small></label>
+      <input pInputText formControlName="buyerProductName" placeholder="buyer's description for this product" class="w-full" />
     </div>
 
     <div class="field-check" *ngIf="editingId">

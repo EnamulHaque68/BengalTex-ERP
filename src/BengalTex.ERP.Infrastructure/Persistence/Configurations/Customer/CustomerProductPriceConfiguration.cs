@@ -11,6 +11,8 @@ public class CustomerProductPriceConfiguration : IEntityTypeConfiguration<Custom
         builder.ToTable("CustomerProductPrices");
 
         builder.Property(p => p.UnitPrice).HasPrecision(18, 2);
+        builder.Property(p => p.BuyerProductCode).HasMaxLength(50);
+        builder.Property(p => p.BuyerProductName).HasMaxLength(200);
         builder.Property(p => p.Notes).HasMaxLength(1000);
 
         builder.HasOne(p => p.Customer)
