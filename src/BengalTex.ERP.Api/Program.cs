@@ -41,6 +41,8 @@ builder.Host.UseSerilog((ctx, lc) => lc
 // ============================================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("Application"));
+builder.Services.Configure<BengalTex.ERP.Application.Common.Settings.CreditControlSettings>(
+    builder.Configuration.GetSection("CreditControl"));
 builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.AuditLogRetentionOptions>(
     builder.Configuration.GetSection("AuditLogRetention"));
 builder.Services.Configure<BengalTex.ERP.Infrastructure.Services.DatabaseBackupOptions>(
