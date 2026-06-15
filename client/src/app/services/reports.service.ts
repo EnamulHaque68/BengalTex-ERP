@@ -11,6 +11,7 @@ import {
   SalesSummaryReportDto,
   StockSummaryReportDto,
   StockLedgerReportDto,
+  DeadStockReportDto,
   VatSummaryReportDto,
   WipReportDto,
   ProductionSummaryReportDto,
@@ -43,6 +44,16 @@ export class ReportsService {
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
     return this.http.get<ApiResponse<StockLedgerReportDto>>(`${this.base}/stock-ledger`, { params });
+  }
+
+  getDeadStock(
+    daysThreshold = 90, itemType?: string, warehouseId?: number, asOfDate?: string
+  ): Observable<ApiResponse<DeadStockReportDto>> {
+    let params = new HttpParams().set('daysThreshold', daysThreshold.toString());
+    if (itemType) params = params.set('itemType', itemType);
+    if (warehouseId) params = params.set('warehouseId', warehouseId.toString());
+    if (asOfDate) params = params.set('asOfDate', asOfDate);
+    return this.http.get<ApiResponse<DeadStockReportDto>>(`${this.base}/dead-stock`, { params });
   }
 
   getArAgeing(asOfDate?: string, customerId?: number): Observable<ApiResponse<ArAgeingReportDto>> {

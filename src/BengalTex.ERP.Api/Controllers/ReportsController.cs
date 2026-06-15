@@ -44,6 +44,21 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Dead / slow-moving stock — on-hand items with no movement for N+ days.</summary>
+    [HttpGet("dead-stock")]
+    [HasPermission(Permissions.Reports.ViewInventory)]
+    public async Task<IActionResult> GetDeadStock(
+        [FromQuery] int daysThreshold = 90,
+        [FromQuery] string? itemType = null,
+        [FromQuery] int? warehouseId = null,
+        [FromQuery] DateOnly? asOfDate = null,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(
+            new GetDeadStockReportQuery(daysThreshold, itemType, warehouseId, asOfDate), ct);
+        return Ok(result);
+    }
+
     [HttpGet("ar-ageing")]
     [HasPermission(Permissions.Reports.ViewFinance)]
     public async Task<IActionResult> GetArAgeing(
