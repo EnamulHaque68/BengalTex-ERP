@@ -38,6 +38,12 @@ public class CustomersController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Customer's current credit standing (limit / outstanding AR / available) in BDT.</summary>
+    [HttpGet("{id:int}/credit-status")]
+    [HasPermission(Permissions.Customers.View)]
+    public async Task<IActionResult> GetCreditStatus(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetCustomerCreditStatusQuery(id), ct));
+
     [HttpPost]
     [HasPermission(Permissions.Customers.Create)]
     public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request, CancellationToken ct)

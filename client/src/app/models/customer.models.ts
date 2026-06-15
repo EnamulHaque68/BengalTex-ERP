@@ -42,6 +42,15 @@ export interface CustomerListItemDto {
   isActive: boolean;
 }
 
+export interface CustomerCreditStatusDto {
+  customerId: number;
+  creditLimit: number;          // 0 = no limit set (not enforced)
+  outstandingAr: number;        // BDT
+  availableCredit: number;      // BDT
+  isOverLimit: boolean;
+  enforced: boolean;
+}
+
 export interface CreateCustomerRequest {
   code: string | null;          // null = auto-generate
   name: string;

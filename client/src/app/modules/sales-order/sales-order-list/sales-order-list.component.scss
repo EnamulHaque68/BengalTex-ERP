@@ -227,3 +227,25 @@
     &:hover { opacity: 1; }
   }
 }
+
+.credit-strip {
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #166534;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: center;
+  .lbl { color: #15803d; opacity: 0.8; margin-right: 0.2rem; }
+  .credit-warn { color: #b45309; font-weight: 600; width: 100%; i { margin-right: 0.3rem; } }
+  &.over {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+    .lbl { color: #c2410c; }
+  }
+}
