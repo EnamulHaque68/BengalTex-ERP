@@ -45,6 +45,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerProductPrice> CustomerProductPrices => Set<CustomerProductPrice>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();

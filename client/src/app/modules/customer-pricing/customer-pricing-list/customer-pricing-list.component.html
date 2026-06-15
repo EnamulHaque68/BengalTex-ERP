@@ -1,0 +1,108 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Customer Pricing</h2>
+      <p class="page-subtitle">Customer-specific selling prices &mdash; auto-fill Quotation &amp; Sales Order lines</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="selectedCustomerId" [options]="customers" optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="code,name" [showClear]="true"
+                placeholder="Select a customer" styleClass="filter-select" (onChange)="onCustomerChange()" />
+      <p-button label="Add Price" icon="pi pi-plus" (click)="openCreate()" [disabled]="!selectedCustomerId" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <p-card *ngIf="!selectedCustomerId" styleClass="hint-card">
+    <div class="empty-hint"><i class="pi pi-tags"></i><span>Select a customer to view and manage their price list.</span></div>
+  </p-card>
+
+  <p-card *ngIf="selectedCustomerId" styleClass="table-card">
+    <p-table [value]="prices" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Product</th>
+          <th>UoM</th>
+          <th class="num-col">Default Price</th>
+          <th class="num-col">Customer Price</th>
+          <th class="num-col">Diff</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th style="width:7rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr [class.row-inactive]="!p.isActive">
+          <td class="fw-600">{{ p.productName }}<span class="prod-code">{{ p.productCode }}</span></td>
+          <td class="unit-cell">{{ p.productUnitOfMeasureCode }}</td>
+          <td class="num muted-cell">{{ formatCurrency(p.defaultSalesPrice) }}</td>
+          <td class="num fw-700">{{ formatCurrency(p.unitPrice) }}</td>
+          <td class="num"
+              [class.up]="p.unitPrice > p.defaultSalesPrice" [class.down]="p.unitPrice < p.defaultSalesPrice">
+            {{ p.unitPrice === p.defaultSalesPrice ? '—' : (p.unitPrice > p.defaultSalesPrice ? '+' : '') + formatCurrency(p.unitPrice - p.defaultSalesPrice) }}
+          </td>
+          <td><span class="status-pill" [class.active]="p.isActive">{{ p.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td class="notes-cell">{{ p.notes || '' }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(p)" pTooltip="Edit" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="confirmDelete(p)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty-row"><i class="pi pi-tag"></i><span>No customer-specific prices yet — add one.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '32rem' }"
+          [header]="editingId ? 'Edit Customer Price' : 'Add Customer Price'" [closable]="!dialogSaving">
+  <form [formGroup]="form" (ngSubmit)="save()" class="dialog-form">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+
+    <div class="field">
+      <label>Product *</label>
+      <p-select formControlName="productId" [options]="availableProducts" optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="code,name" placeholder="Select product"
+                appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Customer Price (BDT) *</label>
+      <p-inputNumber formControlName="unitPrice" [min]="0" mode="currency" currency="BDT" locale="en-BD"
+                     [minFractionDigits]="2" class="w-full" />
+    </div>
+
+    <div class="field-check" *ngIf="editingId">
+      <p-checkbox formControlName="isActive" [binary]="true" inputId="isActive" />
+      <label for="isActive">Active</label>
+    </div>
+
+    <div class="field">
+      <label>Notes</label>
+      <input pInputText formControlName="notes" placeholder="e.g. valid for 2026 season" class="w-full" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+    <p-button [label]="editingId ? 'Update' : 'Add'" (click)="save()" [loading]="dialogSaving" [disabled]="form.invalid" />
+  </ng-template>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteVisible" [modal]="true" [style]="{ width: '26rem' }" header="Delete Price" [closable]="!deleting">
+  <p *ngIf="deleteTarget">Remove the customer-specific price for <strong>{{ deleteTarget.productName }}</strong>?</p>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteVisible = false" [disabled]="deleting" />
+    <p-button label="Delete" severity="danger" (click)="doDelete()" [loading]="deleting" />
+  </ng-template>
+</p-dialog>

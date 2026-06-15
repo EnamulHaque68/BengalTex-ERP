@@ -9,6 +9,7 @@ import { CustomerListItemDto, CustomerCreditStatusDto } from '../../../models/cu
 import { ProductListItemDto } from '../../../models/product.models';
 import { CurrencyDto } from '../../../models/master-data.models';
 import { CurrencyService } from '../../../services/currency.service';
+import { CustomerPricingService } from '../../../services/customer-pricing.service';
 
 @Component({
   selector: 'app-sales-order-list',
@@ -60,6 +61,7 @@ export class SalesOrderListComponent implements OnInit {
     private customerService: CustomerService,
     private productService: ProductService,
     private currencyService: CurrencyService,
+    private pricingService: CustomerPricingService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -118,8 +120,20 @@ export class SalesOrderListComponent implements OnInit {
   }
 
   onLineProductChange(line: AbstractControl, event: any): void {
-    const product = this.productById(event?.value);
+    const productId = event?.value;
+    const product = this.productById(productId);
     if (product) line.get('unitPrice')?.setValue(product.salesPrice);
+
+    // Override with the customer-specific price when one exists for this buyer + product.
+    const customerId = this.form.get('customerId')?.value;
+    if (customerId && productId) {
+      this.pricingService.lookup(customerId, productId).subscribe({
+        next: (res) => this.zone.run(() => {
+          if (res.success && res.data != null) line.get('unitPrice')?.setValue(res.data);
+          this.cdr.detectChanges();
+        })
+      });
+    }
   }
 
   // ─── Line computations ───────────────────────────────────────────────────

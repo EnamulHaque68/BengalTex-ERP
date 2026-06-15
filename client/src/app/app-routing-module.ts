@@ -17,6 +17,7 @@ const routes: Routes = [
       { path: 'units-of-measure', loadChildren: () => import('./modules/unit-of-measure/unit-of-measure.module').then(m => m.UnitOfMeasureModule) },
       { path: 'warehouses', loadChildren: () => import('./modules/warehouse/warehouse.module').then(m => m.WarehouseModule) },
       { path: 'customers', loadChildren: () => import('./modules/customer/customer.module').then(m => m.CustomerModule) },
+      { path: 'customer-pricing', loadChildren: () => import('./modules/customer-pricing/customer-pricing.module').then(m => m.CustomerPricingModule) },
       { path: 'suppliers', loadChildren: () => import('./modules/supplier/supplier.module').then(m => m.SupplierModule) },
       { path: 'product-categories', loadChildren: () => import('./modules/product-category/product-category.module').then(m => m.ProductCategoryModule) },
       { path: 'products', loadChildren: () => import('./modules/product/product.module').then(m => m.ProductModule) },
