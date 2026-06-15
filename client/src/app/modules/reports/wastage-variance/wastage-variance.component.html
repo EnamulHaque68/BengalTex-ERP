@@ -1,0 +1,103 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Wastage Variance</h2>
+      <p class="page-subtitle">BOM standard wastage allowance vs actual recorded wastage &mdash; per completed production order</p>
+    </div>
+    <div class="header-actions">
+      <input type="date" pInputText [(ngModel)]="fromDate" class="filter-date" (change)="load()" />
+      <span class="date-sep">to</span>
+      <input type="date" pInputText [(ngModel)]="toDate" class="filter-date" (change)="load()" />
+      <p-select [(ngModel)]="filterProductId" [options]="products" optionLabel="name" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="code,name"
+                placeholder="All products" styleClass="filter-select" (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true" (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Orders</span>
+        <span class="tile-value">{{ report.rowCount }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Standard Wastage</span>
+        <span class="tile-value muted">{{ formatCurrency(report.totalStandardCost) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Actual Wastage</span>
+        <span class="tile-value">{{ formatCurrency(report.totalActualCost) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Total Variance</span>
+        <span class="tile-value" [class.over]="report.totalVariance > 0" [class.under]="report.totalVariance < 0">
+          {{ report.totalVariance > 0 ? '+' : '' }}{{ formatCurrency(report.totalVariance) }}
+        </span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.rows || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.rows?.length || 0) > 50"
+      [rows]="50"
+      [rowsPerPageOptions]="[50, 100, 250]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Production Order</th>
+          <th>Completed</th>
+          <th>Product</th>
+          <th class="num-col">Qty</th>
+          <th class="num-col">Standard</th>
+          <th class="num-col">Actual</th>
+          <th class="num-col">Variance</th>
+          <th class="num-col">Var %</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td><span class="code-badge">{{ r.productionOrderCode }}</span></td>
+          <td>{{ r.completedDate ? (r.completedDate | date:'mediumDate') : '—' }}</td>
+          <td class="fw-600">{{ r.productName }}<span class="prod-code">{{ r.productCode }}</span></td>
+          <td class="num">{{ formatNumber(r.producedQuantity) }}</td>
+          <td class="num muted-cell">{{ formatCurrency(r.standardWastageCost) }}</td>
+          <td class="num">{{ formatCurrency(r.actualWastageCost) }}</td>
+          <td class="num fw-700" [class.over]="r.variance > 0" [class.under]="r.variance < 0">
+            {{ r.variance > 0 ? '+' : '' }}{{ formatCurrency(r.variance) }}
+          </td>
+          <td class="num">
+            <span class="var-pill" [class.over]="r.variance > 0" [class.under]="r.variance < 0">
+              {{ r.variancePercent > 0 ? '+' : '' }}{{ r.variancePercent }}%
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-row">
+            <i class="pi pi-chart-bar"></i>
+            <span>No completed production orders in the selected range.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Generated: {{ report.generatedAt | date:'medium' }} &mdash; variance = actual − standard (positive means more waste than the BOM allows)
+  </p>
+</div>

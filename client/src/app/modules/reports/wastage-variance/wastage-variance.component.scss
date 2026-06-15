@@ -1,0 +1,29 @@
+@use '../report-shared' as *;
+
+.date-sep { color: #9ca3af; font-size: 0.8rem; }
+.filter-date {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.prod-code { display: block; font-size: 0.7rem; color: #9ca3af; font-family: monospace; }
+.muted-cell { color: #6b7280; }
+
+.tile-value.over, .num.over { color: #dc2626; }
+.tile-value.under, .num.under { color: #059669; }
+
+.var-pill {
+  display: inline-block;
+  min-width: 3.5rem;
+  text-align: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  background: #f3f4f6;
+  color: #4b5563;
+  &.over { background: #fee2e2; color: #b91c1c; }
+  &.under { background: #d1fae5; color: #065f46; }
+}
