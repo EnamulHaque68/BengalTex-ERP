@@ -30,6 +30,9 @@
 .num.up { color: #059669; } .num.down { color: #dc2626; }
 .row-inactive { opacity: 0.55; }
 
+.buyer-code { font-family: monospace; font-weight: 700; color: #075985; background: #f0f9ff; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.8rem; }
+.buyer-name { display: block; font-size: 0.72rem; color: #9ca3af; margin-top: 0.15rem; }
+
 .status-pill {
   display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
   font-size: 0.72rem; font-weight: 700; background: #e5e7eb; color: #4b5563;

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerInvoiceService } from '../../../services/customer-invoice.service';
 import { CompanyService } from '../../../services/company.service';
 import { CustomerService } from '../../../services/customer.service';
+import { CustomerPricingService } from '../../../services/customer-pricing.service';
 import { CustomerInvoiceDto } from '../../../models/customer-invoice.models';
 import { CompanyDto } from '../../../models/company.models';
 import { CustomerDto } from '../../../models/customer.models';
@@ -20,10 +21,14 @@ export class CommercialInvoicePrintComponent implements OnInit {
   company: CompanyDto | null = null;
   buyer: CustomerDto | null = null;
 
+  /** productId → buyer's own article code (from the customer's pricing/code list). */
+  buyerCodes: Record<number, string> = {};
+
   constructor(
     private svc: CustomerInvoiceService,
     private companySvc: CompanyService,
     private customerSvc: CustomerService,
+    private pricingSvc: CustomerPricingService,
     private route: ActivatedRoute,
     private router: Router,
     private zone: NgZone,
@@ -41,6 +46,17 @@ export class CommercialInvoicePrintComponent implements OnInit {
             next: (cr) => this.zone.run(() => {
               if (cr.success && cr.data) this.buyer = cr.data;
               this.tryComplete();
+            })
+          });
+          // Buyer's own article codes for this customer's products (export-doc requirement).
+          this.pricingSvc.getForCustomer(res.data.customerId, true).subscribe({
+            next: (pr) => this.zone.run(() => {
+              if (pr.success && pr.data) {
+                for (const row of pr.data) {
+                  if (row.buyerProductCode) this.buyerCodes[row.productId] = row.buyerProductCode;
+                }
+              }
+              this.cdr.detectChanges();
             })
           });
         }
@@ -77,5 +93,10 @@ export class CommercialInvoicePrintComponent implements OnInit {
 
   totalQty(): number {
     return (this.invoice?.lines ?? []).reduce((s, l) => s + (l.quantity || 0), 0);
+  }
+
+  /** The buyer's own code for a product line, if mapped for this customer. */
+  buyerCodeFor(productId: number): string | null {
+    return this.buyerCodes[productId] ?? null;
   }
 }
