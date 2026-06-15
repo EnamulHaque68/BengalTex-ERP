@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { StockSummaryComponent } from './stock-summary/stock-summary.component';
 import { StockLedgerComponent } from './stock-ledger/stock-ledger.component';
+import { DeadStockComponent } from './dead-stock/dead-stock.component';
 import { ArAgeingComponent } from './ar-ageing/ar-ageing.component';
 import { ApAgeingComponent } from './ap-ageing/ap-ageing.component';
 import { SalesSummaryComponent } from './sales-summary/sales-summary.component';
@@ -30,6 +31,7 @@ const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
   { path: 'stock-summary', component: StockSummaryComponent },
   { path: 'stock-ledger', component: StockLedgerComponent },
+  { path: 'dead-stock', component: DeadStockComponent },
   { path: 'ar-ageing', component: ArAgeingComponent },
   { path: 'ap-ageing', component: ApAgeingComponent },
   { path: 'sales-summary', component: SalesSummaryComponent },
@@ -48,6 +50,7 @@ const routes: Routes = [
   declarations: [
     StockSummaryComponent,
     StockLedgerComponent,
+    DeadStockComponent,
     ArAgeingComponent,
     ApAgeingComponent,
     SalesSummaryComponent,

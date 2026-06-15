@@ -1,0 +1,117 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Dead Stock</h2>
+      <p class="page-subtitle">On-hand items with no movement for the selected period &mdash; capital tied up in idle inventory</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="daysThreshold"
+                [options]="thresholdOptions" optionLabel="label" optionValue="value"
+                styleClass="filter-select-sm" (onChange)="load()" />
+      <p-select [(ngModel)]="filterItemType"
+                [options]="itemTypes" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All items"
+                styleClass="filter-select-sm" (onChange)="load()" />
+      <p-select [(ngModel)]="filterWarehouseId"
+                [options]="warehouses" optionLabel="name" optionValue="id"
+                [showClear]="true" [filter]="true" filterBy="code,name"
+                placeholder="All warehouses" styleClass="filter-select" (onChange)="load()" />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true"
+                (click)="load()" [disabled]="loading" />
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Dead Items</span>
+        <span class="tile-value">{{ report.rowCount }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Tied-up Value</span>
+        <span class="tile-value value">{{ formatCurrency(report.totalDeadValue) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Threshold</span>
+        <span class="tile-value muted">No move {{ report.daysThreshold }}+ days</span>
+      </div>
+      <div class="summary-tile" *ngIf="report.warehouseName">
+        <span class="tile-label">Warehouse</span>
+        <span class="tile-value muted">{{ report.warehouseName }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">As Of</span>
+        <span class="tile-value muted">{{ report.asOfDate | date:'mediumDate' }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card">
+    <p-table
+      [value]="report?.rows || []"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="(report?.rows?.length || 0) > 50"
+      [rows]="50"
+      [rowsPerPageOptions]="[50, 100, 250]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Type</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>UoM</th>
+          <th class="num-col">Qty</th>
+          <th class="num-col">Unit Cost</th>
+          <th class="num-col">Value</th>
+          <th>Last Movement</th>
+          <th class="num-col">Idle Days</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>
+            <span class="type-badge"
+                  [class.rm]="r.itemType === 'RawMaterial'"
+                  [class.product]="r.itemType === 'Product'">
+              {{ r.itemType === 'RawMaterial' ? 'RM' : 'Product' }}
+            </span>
+          </td>
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-600">{{ r.name }}</td>
+          <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
+          <td class="num fw-700">{{ formatNumber(r.quantity) }}</td>
+          <td class="num">{{ formatCurrency(r.unitCost) }}</td>
+          <td class="num value-cell">{{ formatCurrency(r.value) }}</td>
+          <td>{{ r.lastMovementDate ? (r.lastMovementDate | date:'mediumDate') : 'Never' }}</td>
+          <td class="num">
+            <span class="aging-pill" [ngClass]="agingClass(r.daysSinceLastMovement)">
+              {{ r.daysSinceLastMovement >= 9999 ? '∞' : r.daysSinceLastMovement }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-check-circle"></i>
+            <span>No dead stock — every on-hand item moved within {{ report?.daysThreshold || daysThreshold }} days.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Generated: {{ report.generatedAt | date:'medium' }}
+  </p>
+</div>

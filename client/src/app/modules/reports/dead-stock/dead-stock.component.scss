@@ -1,0 +1,18 @@
+@use '../report-shared' as *;
+
+.tile-value.value { color: #b45309; }
+.value-cell { color: #b45309; font-weight: 700; }
+
+.aging-pill {
+  display: inline-block;
+  min-width: 2.5rem;
+  text-align: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  &.sev-low { background: #fef9c3; color: #854d0e; }
+  &.sev-mid { background: #fed7aa; color: #9a3412; }
+  &.sev-high { background: #fecaca; color: #b91c1c; }
+  &.sev-critical { background: #dc2626; color: #fff; }
+}

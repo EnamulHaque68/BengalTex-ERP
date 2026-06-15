@@ -61,6 +61,34 @@ export interface StockLedgerReportDto {
   rows: StockLedgerRowDto[];
 }
 
+// ─── Dead Stock ───────────────────────────────────────────────────────────
+
+export interface DeadStockRowDto {
+  itemType: string;                  // "RawMaterial" | "Product"
+  rawMaterialId: number | null;
+  productId: number | null;
+  code: string;
+  name: string;
+  unitOfMeasureCode: string;
+  quantity: number;
+  unitCost: number;
+  value: number;
+  lastMovementDate: string | null;
+  daysSinceLastMovement: number;
+}
+
+export interface DeadStockReportDto {
+  generatedAt: string;
+  asOfDate: string;
+  daysThreshold: number;
+  warehouseId: number | null;
+  warehouseName: string | null;
+  itemType: string | null;
+  rowCount: number;
+  totalDeadValue: number;
+  rows: DeadStockRowDto[];
+}
+
 // ─── AR Ageing ────────────────────────────────────────────────────────────
 
 export interface ArAgeingInvoiceDto {
