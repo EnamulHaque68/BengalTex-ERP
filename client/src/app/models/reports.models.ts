@@ -25,6 +25,42 @@ export interface StockSummaryReportDto {
   rows: StockSummaryRowDto[];
 }
 
+// ─── Stock Ledger (Item Ledger) ───────────────────────────────────────────
+
+export interface StockLedgerRowDto {
+  date: string;
+  movementCode: string;
+  movementType: string;              // enum name, e.g. "GrnReceipt"
+  referenceType: string | null;
+  referenceCode: string | null;
+  warehouseCode: string;
+  lotNumber: string | null;
+  inQuantity: number;
+  outQuantity: number;
+  runningBalance: number;
+  notes: string | null;
+}
+
+export interface StockLedgerReportDto {
+  generatedAt: string;
+  itemType: string;                  // "RawMaterial" | "Product"
+  itemId: number;
+  itemCode: string;
+  itemName: string;
+  unitOfMeasureCode: string;
+  warehouseId: number | null;
+  warehouseName: string | null;
+  fromDate: string | null;
+  toDate: string | null;
+  openingBalance: number;
+  totalIn: number;
+  totalOut: number;
+  closingBalance: number;
+  unitCost: number;
+  closingValue: number;
+  rows: StockLedgerRowDto[];
+}
+
 // ─── AR Ageing ────────────────────────────────────────────────────────────
 
 export interface ArAgeingInvoiceDto {

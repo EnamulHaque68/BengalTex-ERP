@@ -12,6 +12,7 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { StockSummaryComponent } from './stock-summary/stock-summary.component';
+import { StockLedgerComponent } from './stock-ledger/stock-ledger.component';
 import { ArAgeingComponent } from './ar-ageing/ar-ageing.component';
 import { ApAgeingComponent } from './ap-ageing/ap-ageing.component';
 import { SalesSummaryComponent } from './sales-summary/sales-summary.component';
@@ -28,6 +29,7 @@ import { SupplierStatementComponent } from './supplier-statement/supplier-statem
 const routes: Routes = [
   { path: '', redirectTo: 'stock-summary', pathMatch: 'full' },
   { path: 'stock-summary', component: StockSummaryComponent },
+  { path: 'stock-ledger', component: StockLedgerComponent },
   { path: 'ar-ageing', component: ArAgeingComponent },
   { path: 'ap-ageing', component: ApAgeingComponent },
   { path: 'sales-summary', component: SalesSummaryComponent },
@@ -45,6 +47,7 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     StockSummaryComponent,
+    StockLedgerComponent,
     ArAgeingComponent,
     ApAgeingComponent,
     SalesSummaryComponent,

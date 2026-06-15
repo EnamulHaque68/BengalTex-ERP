@@ -10,6 +10,7 @@ import {
   MarginReportDto,
   SalesSummaryReportDto,
   StockSummaryReportDto,
+  StockLedgerReportDto,
   VatSummaryReportDto,
   WipReportDto,
   ProductionSummaryReportDto,
@@ -32,6 +33,16 @@ export class ReportsService {
     if (itemType) params = params.set('itemType', itemType);
     if (warehouseId) params = params.set('warehouseId', warehouseId.toString());
     return this.http.get<ApiResponse<StockSummaryReportDto>>(`${this.base}/stock-summary`, { params });
+  }
+
+  getStockLedger(
+    itemType: string, itemId: number, warehouseId?: number, fromDate?: string, toDate?: string
+  ): Observable<ApiResponse<StockLedgerReportDto>> {
+    let params = new HttpParams().set('itemType', itemType).set('itemId', itemId.toString());
+    if (warehouseId) params = params.set('warehouseId', warehouseId.toString());
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    return this.http.get<ApiResponse<StockLedgerReportDto>>(`${this.base}/stock-ledger`, { params });
   }
 
   getArAgeing(asOfDate?: string, customerId?: number): Observable<ApiResponse<ArAgeingReportDto>> {
