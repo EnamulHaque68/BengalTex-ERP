@@ -1,0 +1,138 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Stock Ledger</h2>
+      <p class="page-subtitle">Per-item movement history with running balance &mdash; raw material or product</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Print" icon="pi pi-print" severity="secondary" (click)="print()" [disabled]="!report" />
+    </div>
+  </div>
+
+  <p-card styleClass="filter-card">
+    <div class="filter-row">
+      <div class="filter-field">
+        <label>Item Type</label>
+        <p-select [(ngModel)]="filterItemType" [options]="itemTypes" optionLabel="label" optionValue="value"
+                  (onChange)="onItemTypeChange()" styleClass="w-full" appendTo="body" />
+      </div>
+      <div class="filter-field grow">
+        <label>Item *</label>
+        <p-select [(ngModel)]="filterItemId" [options]="items" optionLabel="label" optionValue="id"
+                  [filter]="true" filterBy="label" [loading]="itemsLoading"
+                  placeholder="Select an item" styleClass="w-full" appendTo="body" />
+      </div>
+      <div class="filter-field">
+        <label>Warehouse</label>
+        <p-select [(ngModel)]="filterWarehouseId" [options]="warehouses" optionLabel="name" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="code,name"
+                  placeholder="All warehouses" styleClass="w-full" appendTo="body" />
+      </div>
+      <div class="filter-field">
+        <label>From</label>
+        <input type="date" pInputText [(ngModel)]="fromDate" class="w-full" />
+      </div>
+      <div class="filter-field">
+        <label>To</label>
+        <input type="date" pInputText [(ngModel)]="toDate" class="w-full" />
+      </div>
+      <div class="filter-field action">
+        <p-button label="View Ledger" icon="pi pi-search" (click)="load()" [disabled]="loading || !filterItemId" />
+      </div>
+    </div>
+  </p-card>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+  </div>
+
+  <p-card styleClass="summary-card" *ngIf="report">
+    <div class="ledger-head">
+      <div>
+        <span class="item-code">{{ report.itemCode }}</span>
+        <span class="item-name">{{ report.itemName }}</span>
+        <span class="item-uom">({{ report.unitOfMeasureCode }})</span>
+        <span class="wh-tag" *ngIf="report.warehouseName">@ {{ report.warehouseName }}</span>
+      </div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-tile">
+        <span class="tile-label">Opening Balance</span>
+        <span class="tile-value">{{ formatNumber(report.openingBalance) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Total In</span>
+        <span class="tile-value in">+{{ formatNumber(report.totalIn) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Total Out</span>
+        <span class="tile-value out">-{{ formatNumber(report.totalOut) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Closing Balance</span>
+        <span class="tile-value value">{{ formatNumber(report.closingBalance) }}</span>
+      </div>
+      <div class="summary-tile">
+        <span class="tile-label">Closing Value</span>
+        <span class="tile-value muted">{{ formatCurrency(report.closingValue) }}</span>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="table-card" *ngIf="report">
+    <p-table
+      [value]="report.rows"
+      [loading]="loading"
+      [rowHover]="true"
+      [paginator]="report.rows.length > 100"
+      [rows]="100"
+      [rowsPerPageOptions]="[100, 250, 500]"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Date</th>
+          <th>Movement</th>
+          <th>Type</th>
+          <th>Reference</th>
+          <th>Warehouse</th>
+          <th>Lot</th>
+          <th class="num-col">In</th>
+          <th class="num-col">Out</th>
+          <th class="num-col">Balance</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>{{ r.date | date:'mediumDate' }}</td>
+          <td><span class="code-badge">{{ r.movementCode }}</span></td>
+          <td><span class="mtype">{{ r.movementType }}</span></td>
+          <td class="ref-cell">
+            <span *ngIf="r.referenceCode">{{ r.referenceCode }}</span>
+            <span class="ref-type" *ngIf="r.referenceType">{{ r.referenceType }}</span>
+          </td>
+          <td class="unit-cell">{{ r.warehouseCode }}</td>
+          <td class="unit-cell">{{ r.lotNumber || '—' }}</td>
+          <td class="num in" [class.zero]="!r.inQuantity">{{ r.inQuantity ? formatNumber(r.inQuantity) : '' }}</td>
+          <td class="num out" [class.zero]="!r.outQuantity">{{ r.outQuantity ? formatNumber(r.outQuantity) : '' }}</td>
+          <td class="num fw-700">{{ formatNumber(r.runningBalance) }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-book"></i>
+            <span>No movements for this item in the selected range.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p class="generated-at" *ngIf="report">
+    Generated: {{ report.generatedAt | date:'medium' }}
+  </p>
+</div>
