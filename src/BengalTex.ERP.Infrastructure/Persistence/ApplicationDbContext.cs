@@ -57,6 +57,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();
     public DbSet<Bom> Boms => Set<Bom>();
     public DbSet<BomLine> BomLines => Set<BomLine>();
