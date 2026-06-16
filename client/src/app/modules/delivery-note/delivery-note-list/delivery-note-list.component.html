@@ -171,13 +171,28 @@
       </div>
 
       <div class="field">
+        <label>Planned Delivery Date <small>(schedule)</small></label>
+        <input pInputText type="date" formControlName="plannedDeliveryDate" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label>Transport Company <small>(carrier / courier)</small></label>
+        <input pInputText formControlName="transportCompany" placeholder="e.g. Sundarban Courier / own fleet" class="w-full" />
+      </div>
+
+      <div class="field">
         <label>Vehicle Number <small>(truck / courier)</small></label>
         <input pInputText formControlName="vehicleNumber" placeholder="e.g. DHK-METRO-1234" class="w-full" />
       </div>
 
       <div class="field">
+        <label>Driver Name</label>
+        <input pInputText formControlName="driverName" placeholder="Driver's name" class="w-full" />
+      </div>
+
+      <div class="field">
         <label>Driver Contact</label>
-        <input pInputText formControlName="driverContact" placeholder="Driver name / phone" class="w-full" />
+        <input pInputText formControlName="driverContact" placeholder="Driver phone" class="w-full" />
       </div>
 
       <div class="field col-span-2">
@@ -238,6 +253,13 @@
       <small class="grid-hint" *ngIf="lines.length > 0 && dialogMode !== 'view'">
         Set <em>Dispatch Now</em> to 0 to skip a line. Lines with 0 are excluded on save.
       </small>
+    </div>
+
+    <!-- Delivery proof — signed challan / photo (existing DN only) -->
+    <div class="proof-section" *ngIf="editingId">
+      <p class="section-label">Delivery Proof</p>
+      <app-attachments-panel entityType="DeliveryNote" [entityId]="editingId"
+                             [canManage]="dialogMode !== 'view'"></app-attachments-panel>
     </div>
 
     <div class="dialog-footer">

@@ -30,7 +30,10 @@ export interface DeliveryNoteDto {
   dispatchWarehouseId: number;
   dispatchWarehouseName: string;
   status: string;
+  plannedDeliveryDate: string | null;
   vehicleNumber: string | null;
+  transportCompany: string | null;
+  driverName: string | null;
   driverContact: string | null;
   deliveryAddress: string | null;
   postedAt: string | null;
@@ -66,6 +69,9 @@ export interface CreateDeliveryNoteRequest {
   deliveryAddress: string | null;
   notes: string | null;
   lines: DeliveryNoteLineInput[];
+  plannedDeliveryDate: string | null;
+  transportCompany: string | null;
+  driverName: string | null;
 }
 
 export interface UpdateDeliveryNoteRequest {
@@ -76,4 +82,7 @@ export interface UpdateDeliveryNoteRequest {
   deliveryAddress: string | null;
   notes: string | null;
   lines: DeliveryNoteLineInput[];
+  plannedDeliveryDate: string | null;
+  transportCompany: string | null;
+  driverName: string | null;
 }

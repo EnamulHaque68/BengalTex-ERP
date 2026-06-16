@@ -13,6 +13,8 @@ public class DeliveryNoteConfiguration : IEntityTypeConfiguration<DeliveryNoteEn
 
         builder.Property(d => d.Code).IsRequired().HasMaxLength(50);
         builder.Property(d => d.VehicleNumber).HasMaxLength(50);
+        builder.Property(d => d.TransportCompany).HasMaxLength(150);
+        builder.Property(d => d.DriverName).HasMaxLength(100);
         builder.Property(d => d.DriverContact).HasMaxLength(100);
         builder.Property(d => d.DeliveryAddress).HasMaxLength(500);
         builder.Property(d => d.PostedBy).HasMaxLength(100);

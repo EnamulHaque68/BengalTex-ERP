@@ -45,7 +45,8 @@ public class DeliveryNotesController : ControllerBase
         var result = await _mediator.Send(new CreateDeliveryNoteCommand(
             request.SalesOrderId, request.DispatchDate, request.DispatchWarehouseId,
             request.VehicleNumber, request.DriverContact, request.DeliveryAddress,
-            request.Notes, request.Lines
+            request.Notes, request.Lines,
+            request.PlannedDeliveryDate, request.TransportCompany, request.DriverName
         ), ct);
         return Ok(result);
     }
@@ -57,7 +58,8 @@ public class DeliveryNotesController : ControllerBase
         var result = await _mediator.Send(new UpdateDeliveryNoteCommand(
             id, request.DispatchDate, request.DispatchWarehouseId,
             request.VehicleNumber, request.DriverContact, request.DeliveryAddress,
-            request.Notes, request.Lines
+            request.Notes, request.Lines,
+            request.PlannedDeliveryDate, request.TransportCompany, request.DriverName
         ), ct);
         return Ok(result);
     }
@@ -87,7 +89,10 @@ public record CreateDeliveryNoteRequest(
     string? DriverContact,
     string? DeliveryAddress,
     string? Notes,
-    IReadOnlyList<DeliveryNoteLineInput> Lines);
+    IReadOnlyList<DeliveryNoteLineInput> Lines,
+    DateOnly? PlannedDeliveryDate = null,
+    string? TransportCompany = null,
+    string? DriverName = null);
 
 public record UpdateDeliveryNoteRequest(
     DateOnly DispatchDate,
@@ -96,4 +101,7 @@ public record UpdateDeliveryNoteRequest(
     string? DriverContact,
     string? DeliveryAddress,
     string? Notes,
-    IReadOnlyList<DeliveryNoteLineInput> Lines);
+    IReadOnlyList<DeliveryNoteLineInput> Lines,
+    DateOnly? PlannedDeliveryDate = null,
+    string? TransportCompany = null,
+    string? DriverName = null);

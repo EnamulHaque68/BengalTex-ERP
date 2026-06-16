@@ -52,7 +52,8 @@ internal sealed class GetDeliveryNoteByIdQueryHandler
             dn.DispatchDate,
             dn.DispatchWarehouseId, dn.DispatchWarehouse.Name,
             dn.Status.ToString(),
-            dn.VehicleNumber, dn.DriverContact, dn.DeliveryAddress,
+            dn.PlannedDeliveryDate,
+            dn.VehicleNumber, dn.TransportCompany, dn.DriverName, dn.DriverContact, dn.DeliveryAddress,
             dn.PostedAt, dn.PostedBy, dn.Notes,
             lines);
 
