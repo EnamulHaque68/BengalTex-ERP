@@ -2,6 +2,7 @@ using BengalTex.ERP.Api.Authorization;
 using BengalTex.ERP.Application.Banking.Commands;
 using BengalTex.ERP.Application.Banking.Queries;
 using BengalTex.ERP.Application.Common.Models;
+using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Permissions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -45,7 +46,8 @@ public class LettersOfCreditController : ControllerBase
         var result = await _mediator.Send(new CreateLetterOfCreditCommand(
             request.Code, request.LcNumber, request.IssuingBank, request.SupplierId, request.PurchaseOrderId,
             request.CurrencyId, request.ExchangeRate, request.Amount,
-            request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes), ct);
+            request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes,
+            request.Type, request.MasterLcReference, request.MasterLcBuyer), ct);
         return Ok(result);
     }
 
@@ -56,7 +58,8 @@ public class LettersOfCreditController : ControllerBase
         var result = await _mediator.Send(new UpdateLetterOfCreditCommand(
             id, request.LcNumber, request.IssuingBank, request.SupplierId, request.PurchaseOrderId,
             request.CurrencyId, request.ExchangeRate, request.Amount,
-            request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes), ct);
+            request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes,
+            request.Type, request.MasterLcReference, request.MasterLcBuyer), ct);
         return Ok(result);
     }
 
@@ -103,7 +106,10 @@ public record CreateLetterOfCreditRequest(
     DateOnly IssueDate,
     DateOnly ExpiryDate,
     int TenorDays,
-    string? Notes);
+    string? Notes,
+    LcType Type = LcType.Import,
+    string? MasterLcReference = null,
+    string? MasterLcBuyer = null);
 
 public record UpdateLetterOfCreditRequest(
     string LcNumber,
@@ -116,6 +122,9 @@ public record UpdateLetterOfCreditRequest(
     DateOnly IssueDate,
     DateOnly ExpiryDate,
     int TenorDays,
-    string? Notes);
+    string? Notes,
+    LcType Type = LcType.Import,
+    string? MasterLcReference = null,
+    string? MasterLcBuyer = null);
 
 public record LcDateRequest(DateOnly? Date);

@@ -21,7 +21,10 @@ public sealed record UpdateLetterOfCreditCommand(
     DateOnly IssueDate,
     DateOnly ExpiryDate,
     int TenorDays,
-    string? Notes
+    string? Notes,
+    LcType Type = LcType.Import,
+    string? MasterLcReference = null,
+    string? MasterLcBuyer = null
 ) : IRequest<ApiResponse<LetterOfCreditDto>>;
 
 public sealed class UpdateLetterOfCreditCommandValidator : AbstractValidator<UpdateLetterOfCreditCommand>
@@ -39,6 +42,11 @@ public sealed class UpdateLetterOfCreditCommandValidator : AbstractValidator<Upd
         RuleFor(x => x.ExpiryDate).GreaterThanOrEqualTo(x => x.IssueDate);
         RuleFor(x => x.TenorDays).InclusiveBetween(0, 365);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x.MasterLcReference).MaximumLength(100);
+        RuleFor(x => x.MasterLcBuyer).MaximumLength(200);
+        RuleFor(x => x.MasterLcReference).NotEmpty()
+            .When(x => x.Type == LcType.BackToBack)
+            .WithMessage("A back-to-back LC must reference the master export LC number.");
     }
 }
 
@@ -85,6 +93,11 @@ internal sealed class UpdateLetterOfCreditCommandHandler
         lc.IssueDate = cmd.IssueDate;
         lc.ExpiryDate = cmd.ExpiryDate;
         lc.TenorDays = cmd.TenorDays;
+        lc.Type = cmd.Type;
+        lc.MasterLcReference = cmd.Type == LcType.BackToBack && !string.IsNullOrWhiteSpace(cmd.MasterLcReference)
+            ? cmd.MasterLcReference.Trim() : null;
+        lc.MasterLcBuyer = cmd.Type == LcType.BackToBack && !string.IsNullOrWhiteSpace(cmd.MasterLcBuyer)
+            ? cmd.MasterLcBuyer.Trim() : null;
         lc.Notes = cmd.Notes;
 
         _repo.Update(lc);

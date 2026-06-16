@@ -28,7 +28,8 @@ internal sealed class GetLetterOfCreditByIdQueryHandler
                 l.CurrencyId, l.Currency.Code, l.Currency.Symbol, l.ExchangeRate,
                 l.Amount, l.Amount * l.ExchangeRate,
                 l.IssueDate, l.ExpiryDate, l.TenorDays,
-                l.Status.ToString(), l.ShipmentDate, l.SettlementDate, l.Notes))
+                l.Status.ToString(), l.Type.ToString(), l.MasterLcReference, l.MasterLcBuyer,
+                l.ShipmentDate, l.SettlementDate, l.Notes))
             .FirstOrDefaultAsync(ct);
 
         return dto is null

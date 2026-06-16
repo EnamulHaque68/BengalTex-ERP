@@ -8,6 +8,11 @@ export const LC_STATUSES: { label: string; value: string }[] = [
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
+export const LC_TYPES: { label: string; value: string }[] = [
+  { label: 'Import LC', value: 'Import' },
+  { label: 'Back-to-Back LC', value: 'BackToBack' }
+];
+
 export interface LetterOfCreditDto {
   id: number;
   code: string;
@@ -27,6 +32,9 @@ export interface LetterOfCreditDto {
   expiryDate: string;
   tenorDays: number;
   status: string;
+  type: string;                    // "Import" | "BackToBack"
+  masterLcReference: string | null;
+  masterLcBuyer: string | null;
   shipmentDate: string | null;
   settlementDate: string | null;
   notes: string | null;
@@ -44,6 +52,7 @@ export interface LetterOfCreditListItemDto {
   issueDate: string;
   expiryDate: string;
   status: string;
+  type: string;
 }
 
 export interface CreateLetterOfCreditRequest {
@@ -59,6 +68,9 @@ export interface CreateLetterOfCreditRequest {
   expiryDate: string;
   tenorDays: number;
   notes: string | null;
+  type: string;
+  masterLcReference: string | null;
+  masterLcBuyer: string | null;
 }
 
 export interface UpdateLetterOfCreditRequest {
@@ -73,4 +85,7 @@ export interface UpdateLetterOfCreditRequest {
   expiryDate: string;
   tenorDays: number;
   notes: string | null;
+  type: string;
+  masterLcReference: string | null;
+  masterLcBuyer: string | null;
 }

@@ -18,10 +18,14 @@ public class LetterOfCreditConfiguration : IEntityTypeConfiguration<LetterOfCred
         builder.Property(l => l.Notes).HasMaxLength(2000);
 
         builder.Property(l => l.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(l => l.Type).HasConversion<string>().HasMaxLength(20).HasDefaultValue(LcType.Import);
+        builder.Property(l => l.MasterLcReference).HasMaxLength(100);
+        builder.Property(l => l.MasterLcBuyer).HasMaxLength(200);
 
         builder.HasIndex(l => l.Code).IsUnique();
         builder.HasIndex(l => l.SupplierId);
         builder.HasIndex(l => l.Status);
+        builder.HasIndex(l => l.Type);
         builder.HasIndex(l => l.IssueDate);
 
         builder.HasOne(l => l.Supplier)

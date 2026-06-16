@@ -49,3 +49,15 @@
   display: flex; justify-content: flex-end; gap: 0.5rem;
   margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;
 }
+
+.b2b-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  background: #ede9fe;
+  color: #6d28d9;
+  vertical-align: middle;
+}

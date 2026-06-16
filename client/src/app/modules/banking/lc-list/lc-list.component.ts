@@ -5,7 +5,7 @@ import { SupplierService } from '../../../services/supplier.service';
 import { CurrencyService } from '../../../services/currency.service';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { LetterOfCreditListItemDto, LC_STATUSES } from '../../../models/letter-of-credit.models';
+import { LetterOfCreditListItemDto, LC_STATUSES, LC_TYPES } from '../../../models/letter-of-credit.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
 import { CurrencyDto } from '../../../models/master-data.models';
 import { PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
@@ -29,6 +29,9 @@ export class LcListComponent implements OnInit {
   rowActionId: number | null = null;
 
   readonly statuses = LC_STATUSES;
+  readonly lcTypes = LC_TYPES;
+
+  get isBackToBack(): boolean { return this.form?.get('type')?.value === 'BackToBack'; }
   suppliers: SupplierListItemDto[] = [];
   currencies: CurrencyDto[] = [];
   purchaseOrders: PurchaseOrderListItemDto[] = [];
@@ -66,6 +69,9 @@ export class LcListComponent implements OnInit {
   private buildForm(): void {
     this.form = this.fb.group({
       code: [''],
+      type: ['Import', Validators.required],
+      masterLcReference: ['', Validators.maxLength(100)],
+      masterLcBuyer: ['', Validators.maxLength(200)],
       lcNumber: ['', [Validators.required, Validators.maxLength(100)]],
       issuingBank: ['', [Validators.required, Validators.maxLength(200)]],
       supplierId: [null as number | null, Validators.required],
@@ -135,7 +141,8 @@ export class LcListComponent implements OnInit {
     this.editingId = null;
     this.dialogError = '';
     this.form.reset({
-      code: '', lcNumber: '', issuingBank: '', supplierId: null, purchaseOrderId: null,
+      code: '', type: 'Import', masterLcReference: '', masterLcBuyer: '',
+      lcNumber: '', issuingBank: '', supplierId: null, purchaseOrderId: null,
       currencyId: null, exchangeRate: 1, amount: 0, issueDate: this.todayIso(), expiryDate: this.todayIso(),
       tenorDays: 90, notes: ''
     });
@@ -152,7 +159,9 @@ export class LcListComponent implements OnInit {
         if (res.success && res.data) {
           const l = res.data;
           this.form.patchValue({
-            code: l.code, lcNumber: l.lcNumber, issuingBank: l.issuingBank, supplierId: l.supplierId,
+            code: l.code, type: l.type ?? 'Import',
+            masterLcReference: l.masterLcReference ?? '', masterLcBuyer: l.masterLcBuyer ?? '',
+            lcNumber: l.lcNumber, issuingBank: l.issuingBank, supplierId: l.supplierId,
             purchaseOrderId: l.purchaseOrderId, currencyId: l.currencyId, exchangeRate: l.exchangeRate,
             amount: l.amount, issueDate: l.issueDate, expiryDate: l.expiryDate, tenorDays: l.tenorDays, notes: l.notes ?? ''
           });
@@ -179,7 +188,10 @@ export class LcListComponent implements OnInit {
       issueDate: v.issueDate,
       expiryDate: v.expiryDate,
       tenorDays: Number(v.tenorDays) || 0,
-      notes: (v.notes as string)?.trim() || null
+      notes: (v.notes as string)?.trim() || null,
+      type: v.type as string,
+      masterLcReference: v.type === 'BackToBack' ? ((v.masterLcReference as string)?.trim() || null) : null,
+      masterLcBuyer: v.type === 'BackToBack' ? ((v.masterLcBuyer as string)?.trim() || null) : null
     };
     const obs = this.dialogMode === 'create'
       ? this.service.create({ ...common, code: (v.code as string)?.trim() || null })

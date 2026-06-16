@@ -53,7 +53,7 @@ internal sealed class GetLettersOfCreditQueryHandler
             .Select(l => new LetterOfCreditListItemDto(
                 l.Id, l.Code, l.LcNumber, l.IssuingBank, l.Supplier.Name,
                 l.Currency.Code, l.Amount, l.Amount * l.ExchangeRate,
-                l.IssueDate, l.ExpiryDate, l.Status.ToString()))
+                l.IssueDate, l.ExpiryDate, l.Status.ToString(), l.Type.ToString()))
             .ToListAsync(ct);
 
         var result = PagedResult<LetterOfCreditListItemDto>.Create(
