@@ -13,6 +13,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { SharedModule } from '../../shared/shared.module';
 import { DeliveryNoteListComponent } from './delivery-note-list/delivery-note-list.component';
 import { DeliveryNotePrintComponent } from './delivery-note-print/delivery-note-print.component';
 
@@ -28,7 +29,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule
+    TooltipModule, SharedModule
   ]
 })
 export class DeliveryNoteModule {}

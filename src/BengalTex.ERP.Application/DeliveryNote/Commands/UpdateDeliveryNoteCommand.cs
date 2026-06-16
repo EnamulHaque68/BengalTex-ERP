@@ -16,7 +16,10 @@ public sealed record UpdateDeliveryNoteCommand(
     string? DriverContact,
     string? DeliveryAddress,
     string? Notes,
-    IReadOnlyList<DeliveryNoteLineInput> Lines
+    IReadOnlyList<DeliveryNoteLineInput> Lines,
+    DateOnly? PlannedDeliveryDate = null,
+    string? TransportCompany = null,
+    string? DriverName = null
 ) : IRequest<ApiResponse<DeliveryNoteDto>>;
 
 public sealed class UpdateDeliveryNoteCommandValidator : AbstractValidator<UpdateDeliveryNoteCommand>
@@ -27,6 +30,8 @@ public sealed class UpdateDeliveryNoteCommandValidator : AbstractValidator<Updat
         RuleFor(x => x.DispatchDate).NotEmpty();
         RuleFor(x => x.DispatchWarehouseId).GreaterThan(0);
         RuleFor(x => x.VehicleNumber).MaximumLength(50);
+        RuleFor(x => x.TransportCompany).MaximumLength(150);
+        RuleFor(x => x.DriverName).MaximumLength(100);
         RuleFor(x => x.DriverContact).MaximumLength(100);
         RuleFor(x => x.DeliveryAddress).MaximumLength(500);
         RuleFor(x => x.Notes).MaximumLength(2000);
@@ -103,7 +108,10 @@ internal sealed class UpdateDeliveryNoteCommandHandler
 
         dn.DispatchDate = cmd.DispatchDate;
         dn.DispatchWarehouseId = cmd.DispatchWarehouseId;
+        dn.PlannedDeliveryDate = cmd.PlannedDeliveryDate;
         dn.VehicleNumber = string.IsNullOrWhiteSpace(cmd.VehicleNumber) ? null : cmd.VehicleNumber.Trim();
+        dn.TransportCompany = string.IsNullOrWhiteSpace(cmd.TransportCompany) ? null : cmd.TransportCompany.Trim();
+        dn.DriverName = string.IsNullOrWhiteSpace(cmd.DriverName) ? null : cmd.DriverName.Trim();
         dn.DriverContact = string.IsNullOrWhiteSpace(cmd.DriverContact) ? null : cmd.DriverContact.Trim();
         dn.DeliveryAddress = string.IsNullOrWhiteSpace(cmd.DeliveryAddress) ? null : cmd.DeliveryAddress.Trim();
         dn.Notes = cmd.Notes;

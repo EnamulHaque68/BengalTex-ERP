@@ -2061,6 +2061,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("DriverName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2073,6 +2077,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateOnly?>("PlannedDeliveryDate")
+                        .HasColumnType("date");
 
                     b.Property<DateTimeOffset?>("PostedAt")
                         .HasColumnType("datetimeoffset");
@@ -2094,6 +2101,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TransportCompany")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("VehicleNumber")
                         .HasMaxLength(50)

@@ -29,8 +29,17 @@ public class DeliveryNote : BaseTransactionalEntity
 
     public DeliveryNoteStatus Status { get; set; } = DeliveryNoteStatus.Draft;
 
+    /// <summary>Scheduled delivery date (planning) — may differ from the actual dispatch date.</summary>
+    public DateOnly? PlannedDeliveryDate { get; set; }
+
     /// <summary>Vehicle / courier reference (truck number, courier tracking, etc.).</summary>
     public string? VehicleNumber { get; set; }
+
+    /// <summary>Carrier / transport company (own fleet, courier name, third-party transporter).</summary>
+    public string? TransportCompany { get; set; }
+
+    /// <summary>Driver name.</summary>
+    public string? DriverName { get; set; }
 
     /// <summary>Driver / courier contact.</summary>
     public string? DriverContact { get; set; }

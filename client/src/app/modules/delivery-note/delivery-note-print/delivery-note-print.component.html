@@ -36,8 +36,11 @@
         <div class="sub" *ngIf="dn.deliveryAddress">{{ dn.deliveryAddress }}</div>
       </section>
 
-      <div class="meta-strip" *ngIf="dn.vehicleNumber || dn.driverContact">
+      <div class="meta-strip" *ngIf="dn.plannedDeliveryDate || dn.transportCompany || dn.vehicleNumber || dn.driverName || dn.driverContact">
+        <div class="meta" *ngIf="dn.plannedDeliveryDate"><div class="lbl">Planned Delivery</div><div class="val">{{ dn.plannedDeliveryDate | date:'mediumDate' }}</div></div>
+        <div class="meta" *ngIf="dn.transportCompany"><div class="lbl">Transport</div><div class="val">{{ dn.transportCompany }}</div></div>
         <div class="meta" *ngIf="dn.vehicleNumber"><div class="lbl">Vehicle</div><div class="val mono">{{ dn.vehicleNumber }}</div></div>
+        <div class="meta" *ngIf="dn.driverName"><div class="lbl">Driver</div><div class="val">{{ dn.driverName }}</div></div>
         <div class="meta" *ngIf="dn.driverContact"><div class="lbl">Driver Contact</div><div class="val">{{ dn.driverContact }}</div></div>
       </div>
 

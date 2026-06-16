@@ -11,7 +11,10 @@ public record DeliveryNoteDto(
     int DispatchWarehouseId,
     string DispatchWarehouseName,
     string Status,                       // enum as string
+    DateOnly? PlannedDeliveryDate,
     string? VehicleNumber,
+    string? TransportCompany,
+    string? DriverName,
     string? DriverContact,
     string? DeliveryAddress,
     DateTimeOffset? PostedAt,
