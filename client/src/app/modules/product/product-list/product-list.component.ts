@@ -4,7 +4,7 @@ import { ProductService } from '../../../services/product.service';
 import { ProductCategoryService } from '../../../services/product-category.service';
 import { UnitOfMeasureService } from '../../../services/unit-of-measure.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { ProductCategoryDto, ProductListItemDto } from '../../../models/product.models';
+import { ProductCategoryDto, ProductListItemDto, ProductPriceHistoryDto } from '../../../models/product.models';
 import { UnitOfMeasureDto } from '../../../models/master-data.models';
 
 @Component({
@@ -41,6 +41,12 @@ export class ProductListComponent implements OnInit {
   deletingProduct: ProductListItemDto | null = null;
   deleting = false;
   deleteError = '';
+
+  // Price history
+  priceHistoryVisible = false;
+  priceHistoryLoading = false;
+  priceHistoryProduct: ProductListItemDto | null = null;
+  priceHistory: ProductPriceHistoryDto[] = [];
 
   constructor(
     private productService: ProductService,
@@ -251,6 +257,22 @@ export class ProductListComponent implements OnInit {
     this.deletingProduct = product;
     this.deleteError = '';
     this.deleteDialogVisible = true;
+  }
+
+  openPriceHistory(product: ProductListItemDto): void {
+    this.priceHistoryProduct = product;
+    this.priceHistory = [];
+    this.priceHistoryLoading = true;
+    this.priceHistoryVisible = true;
+    this.cdr.detectChanges();
+    this.productService.getPriceHistory(product.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.priceHistoryLoading = false;
+        if (res.success && res.data) this.priceHistory = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.priceHistoryLoading = false; this.cdr.detectChanges(); })
+    });
   }
 
   doDelete(): void {

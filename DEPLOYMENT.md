@@ -144,13 +144,70 @@ Rollback = `git checkout <previous tag>` + rebuild, **plus restore the pre-upgra
 | Backup fails with COMPRESSION error | SQL Express doesn't support it — keep `DatabaseBackup__Compress=false` |
 | Email never arrives | Default provider is DevLogger (logs only) — set `Email__Provider=Smtp` + `Email__Smtp__*` vars; check `/emails` audit for the error message |
 
-## 9. Go-live checklist
+## 9. Opening balances (the careful part) ⚖️
+
+Loading a live factory into a fresh system means entering, **as of one cut-off date**, everything that already exists: stock on the floor, money customers owe you, money you owe suppliers, and cash/bank. Do this *after* master data and *before* any day-1 transactions.
+
+### 9.1 Cut-off discipline
+- Pick a **go-live date** — ideally the first day of a month (e.g. close the old books on 30-Jun, open here on **01-Jul**).
+- Take a **physical stock count** and pull the **outstanding customer/supplier lists** as of that date from the old system.
+- Freeze the old system for new entries once you start; date every opening document with the cut-off date.
+
+### 9.2 The "Opening Balance Equity" technique
+Every document in this ERP auto-posts its own journal, so the trick is to let those journals build the ledger, with one **Opening Balance Equity** account absorbing the other side. Create it once: **Accounting → Chart of Accounts → New** → code `3150`, name `Opening Balance Equity`, type **Equity**, parent `3000`. (Or reuse `3100 Owner's Capital`.) When you finish, this account's balance equals the business's net worth, and the Trial Balance balances.
+
+### 9.3 Cash & bank — one journal entry
+**Accounting → Journal Entries → New**, dated the cut-off:
+```
+Dr  1110 Cash in Hand        <cash on hand>
+Dr  1120 Bank Accounts       <each bank's cleared balance>
+    Cr  3150 Opening Balance Equity   <total>
+```
+
+### 9.4 Opening receivables (per customer)
+For each customer with a balance, **Customer Invoices → New** (one summary invoice per customer, dated cut-off, no VAT) for the amount due, then **Issue** it. That posts `Dr AR / Cr Sales Revenue` and the invoice shows in **AR Ageing** and the customer statement. Because real revenue wasn't earned now, sweep it to equity with **one** journal for the grand total:
+```
+Dr  4100 Sales Revenue                 <total opening AR>
+    Cr  3150 Opening Balance Equity     <total opening AR>
+```
+Net effect: `Dr AR / Cr Opening Balance Equity`, and the sub-ledger (ageing/statements) is populated. *(Tip: set each opening invoice's due date to the original due date so the ageing buckets are right.)*
+
+### 9.5 Opening payables (per supplier)
+Mirror image — for each supplier you owe, **Supplier Invoices → New** + Approve (`Cr AP / Dr expense-or-inventory`), then one netting journal for the total:
+```
+Dr  3150 Opening Balance Equity        <total opening AP>
+    Cr  <the expense/inventory account the invoices debited>   <total opening AP>
+```
+
+### 9.6 Opening raw-material stock
+Stock quantity lives in stock movements; the **weighted-average cost (WAC)** is only set by a receipt. So enter opening RM stock as a **GRN** (sets both quantity *and* WAC at your known last-purchase cost):
+1. Create one **supplier** called `OPENING BALANCE` and a **Purchase Order** to it listing every raw material at its on-hand qty and known unit cost; Approve it.
+2. **GRN** against that PO and **Post** it → RM `StockOnHand` + WAC are set, and it posts `Dr Raw Material Inventory`.
+3. Don't pay it. Clear the resulting payable with a journal: `Dr 2110 Accounts Payable / Cr 3150 Opening Balance Equity` for the GRN value (or raise+approve the supplier invoice first, then net it as in §9.5).
+
+This is the only path that seeds RM **value**, not just quantity. (A plain Stock Adjustment sets quantity but values at the *current* WAC — which is 0 before any receipt — so it cannot seed opening value and would post to the count-correction account; don't use it for opening balances.)
+
+### 9.7 Opening finished-goods stock ⚠️ known gap
+There is currently **no document that originates finished-product stock except a Production run** (Stock Adjustment is raw-material-only). If you stock made items (e.g. poly bags), seed them with a **one-off Production Order** per product whose BOM/issue produces the on-hand quantity, then **Complete** it (sets Product `StockOnHand` + WAC from consumed RM). If that distorts cost, raise it with the dev team — a small "Opening Stock" document (Products + direct WAC, journaled to Opening Balance Equity) is the clean future fix. Until then, **plan FG opening with your accountant.**
+
+### 9.8 Fixed assets & loans
+Enter assets via **Fixed Assets → New** with the original cost and accumulated depreciation to date (or a journal `Dr asset / Cr accum. dep. / Cr Opening Balance Equity`). Enter outstanding bank loans as `Cr loan liability / Dr Opening Balance Equity`.
+
+### 9.9 Reconcile before you start trading
+- **Trial Balance** (Accounting) balances (total Dr = total Cr). ✅
+- **Stock Summary** total value = your physical-count valuation. ✅
+- **AR Ageing** total = the outstanding-customer list you started from; **AP Ageing** total = the supplier list. ✅
+- `3150 Opening Balance Equity` ≈ the business's real net worth. A surprise here means something is double-counted or missing.
+- Take a backup (`POST /api/maintenance/backup-now`) and tag it "post-opening-balances".
+
+## 10. Go-live checklist
 
 - [ ] `.env` filled with fresh secrets (§2) — never the committed/example values
 - [ ] First boot OK; logged in; SuperAdmin password changed + stored in password manager (§3)
 - [ ] Company profile + logo set; real users created with proper roles
 - [ ] Master data loaded: customers, suppliers, products (+HS codes for exporters), raw materials, BOMs, warehouses, bank accounts
-- [ ] Opening balances: opening stock (Stock Adjustment) + open AR/AP (opening invoices)
+- [ ] Opening balances entered per §9 (cash/bank, AR, AP, RM stock, FG stock, fixed assets) and **reconciled** (§9.9): Trial Balance balances, stock/AR/AP totals match the source lists
+- [ ] "post-opening-balances" backup taken
 - [ ] Numbering series prefixes reviewed (Settings) — codes appear on printed documents
 - [ ] SMTP configured + test email sent (`/emails` shows Sent)
 - [ ] Approval threshold (`Approvals__PurchaseOrderThreshold`) matches company policy

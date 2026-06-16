@@ -84,6 +84,8 @@
             <div class="row-actions">
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         (click)="openEdit(p.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-history" severity="secondary" [text]="true" size="small"
+                        (click)="openPriceHistory(p)" pTooltip="Price history" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         (click)="confirmDelete(p)" pTooltip="Delete" />
             </div>
@@ -244,4 +246,40 @@
                 [loading]="deleting" (click)="doDelete()" />
     </div>
   </div>
+</p-dialog>
+
+<!-- Price history dialog -->
+<p-dialog [(visible)]="priceHistoryVisible" [modal]="true" [style]="{ width: '34rem' }"
+          [header]="'Price History' + (priceHistoryProduct ? ' — ' + priceHistoryProduct.name : '')">
+  <p class="ph-current" *ngIf="priceHistoryProduct">
+    Current sales price: <strong>{{ formatCurrency(priceHistoryProduct.salesPrice) }}</strong>
+  </p>
+  <p-table [value]="priceHistory" [loading]="priceHistoryLoading" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>When</th>
+        <th class="num-col">Old</th>
+        <th class="num-col">New</th>
+        <th class="num-col">Change</th>
+        <th>By</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-h>
+      <tr>
+        <td>{{ h.changedAt | date:'medium' }}</td>
+        <td class="num">{{ formatCurrency(h.oldPrice) }}</td>
+        <td class="num fw-700">{{ formatCurrency(h.newPrice) }}</td>
+        <td class="num" [class.up]="h.change > 0" [class.down]="h.change < 0">
+          {{ h.change > 0 ? '+' : '' }}{{ formatCurrency(h.change) }}
+        </td>
+        <td>{{ h.changedBy || '—' }}</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="5" class="ph-empty"><i class="pi pi-history"></i> No price changes recorded yet.</td></tr>
+    </ng-template>
+  </p-table>
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="priceHistoryVisible = false" />
+  </ng-template>
 </p-dialog>

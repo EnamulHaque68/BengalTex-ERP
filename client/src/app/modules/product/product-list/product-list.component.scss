@@ -164,3 +164,9 @@
   i { flex-shrink: 0; }
   &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
 }
+
+.ph-current { margin: 0 0 0.75rem; font-size: 0.85rem; color: #4b5563; }
+.ph-empty { text-align: center; color: #9ca3af; padding: 1.25rem; i { margin-right: 0.4rem; } }
+.num-col, .num { text-align: right; }
+.num.up { color: #059669; } .num.down { color: #dc2626; }
+.fw-700 { font-weight: 700; }

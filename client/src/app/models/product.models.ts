@@ -58,6 +58,15 @@ export interface ProductListItemDto {
   isActive: boolean;
 }
 
+export interface ProductPriceHistoryDto {
+  id: number;
+  oldPrice: number;
+  newPrice: number;
+  change: number;
+  changedAt: string;
+  changedBy: string | null;
+}
+
 export interface CreateProductRequest {
   code: string | null;
   name: string;

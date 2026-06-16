@@ -8,6 +8,7 @@ import {
   CreateProductRequest,
   ProductDto,
   ProductListItemDto,
+  ProductPriceHistoryDto,
   UpdateProductRequest
 } from '../models/product.models';
 
@@ -34,6 +35,10 @@ export class ProductService {
 
   getById(id: number): Observable<ApiResponse<ProductDto>> {
     return this.http.get<ApiResponse<ProductDto>>(`${this.base}/${id}`);
+  }
+
+  getPriceHistory(id: number): Observable<ApiResponse<ProductPriceHistoryDto[]>> {
+    return this.http.get<ApiResponse<ProductPriceHistoryDto[]>>(`${this.base}/${id}/price-history`);
   }
 
   create(data: CreateProductRequest): Observable<ApiResponse<ProductDto>> {

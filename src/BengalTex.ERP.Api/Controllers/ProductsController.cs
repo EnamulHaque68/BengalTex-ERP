@@ -38,6 +38,12 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Sales-price change history for a product (newest first).</summary>
+    [HttpGet("{id:int}/price-history")]
+    [HasPermission(Permissions.Products.View)]
+    public async Task<IActionResult> GetPriceHistory(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetProductPriceHistoryQuery(id), ct));
+
     [HttpPost]
     [HasPermission(Permissions.Products.Create)]
     public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken ct)

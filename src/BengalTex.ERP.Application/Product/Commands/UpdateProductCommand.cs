@@ -51,17 +51,20 @@ internal sealed class UpdateProductCommandHandler
     private readonly IRepository<Domain.Entities.Product> _repo;
     private readonly IRepository<Domain.Entities.ProductCategory> _categoryRepo;
     private readonly IRepository<Domain.Entities.UnitOfMeasure> _uomRepo;
+    private readonly IRepository<Domain.Entities.ProductPriceHistory> _priceHistoryRepo;
     private readonly IUnitOfWork _uow;
 
     public UpdateProductCommandHandler(
         IRepository<Domain.Entities.Product> repo,
         IRepository<Domain.Entities.ProductCategory> categoryRepo,
         IRepository<Domain.Entities.UnitOfMeasure> uomRepo,
+        IRepository<Domain.Entities.ProductPriceHistory> priceHistoryRepo,
         IUnitOfWork uow)
     {
         _repo = repo;
         _categoryRepo = categoryRepo;
         _uomRepo = uomRepo;
+        _priceHistoryRepo = priceHistoryRepo;
         _uow = uow;
     }
 
@@ -78,6 +81,17 @@ internal sealed class UpdateProductCommandHandler
         var uom = await _uomRepo.GetByIdAsync(cmd.UnitOfMeasureId, cancellationToken);
         if (uom is null)
             return ApiResponse<ProductDto>.Fail("Unit of measure not found.");
+
+        // Log a price-change record when the sales price actually moves (append-only history).
+        if (entity.SalesPrice != cmd.SalesPrice)
+        {
+            await _priceHistoryRepo.AddAsync(new Domain.Entities.ProductPriceHistory
+            {
+                ProductId = entity.Id,
+                OldPrice = entity.SalesPrice,
+                NewPrice = cmd.SalesPrice
+            }, cancellationToken);
+        }
 
         // Code is identity — not editable.
         entity.Name = cmd.Name;
