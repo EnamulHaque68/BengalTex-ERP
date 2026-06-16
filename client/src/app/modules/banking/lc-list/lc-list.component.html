@@ -44,7 +44,10 @@
 
       <ng-template pTemplate="body" let-l>
         <tr>
-          <td><span class="code-badge">{{ l.code }}</span></td>
+          <td>
+            <span class="code-badge">{{ l.code }}</span>
+            <span class="b2b-badge" *ngIf="l.type === 'BackToBack'" pTooltip="Back-to-Back LC">B2B</span>
+          </td>
           <td class="fw-600">{{ l.lcNumber }}</td>
           <td>{{ l.issuingBank }}</td>
           <td>{{ l.supplierName }}</td>
@@ -98,9 +101,25 @@
 
     <div class="dialog-grid">
       <div class="field">
+        <label>LC Type *</label>
+        <p-select formControlName="type" [options]="lcTypes" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
         <label>Code <small>(blank = auto)</small></label>
         <input pInputText formControlName="code" placeholder="Auto-generated" class="w-full" [readonly]="dialogMode === 'edit'" />
       </div>
+
+      <!-- Master export LC details (back-to-back only) -->
+      <div class="field" *ngIf="isBackToBack">
+        <label>Master LC Reference *</label>
+        <input pInputText formControlName="masterLcReference" placeholder="Export LC number" class="w-full" />
+      </div>
+      <div class="field" *ngIf="isBackToBack">
+        <label>Master LC Buyer</label>
+        <input pInputText formControlName="masterLcBuyer" placeholder="Buyer on the master LC" class="w-full" />
+      </div>
+
       <div class="field">
         <label>LC Number (bank) *</label>
         <input pInputText formControlName="lcNumber" class="w-full" />

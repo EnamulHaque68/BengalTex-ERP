@@ -19,6 +19,9 @@ public sealed record LetterOfCreditDto(
     DateOnly ExpiryDate,
     int TenorDays,
     string Status,
+    string Type,                   // "Import" | "BackToBack"
+    string? MasterLcReference,
+    string? MasterLcBuyer,
     DateOnly? ShipmentDate,
     DateOnly? SettlementDate,
     string? Notes);
@@ -34,4 +37,5 @@ public sealed record LetterOfCreditListItemDto(
     decimal BaseAmount,
     DateOnly IssueDate,
     DateOnly ExpiryDate,
-    string Status);
+    string Status,
+    string Type);

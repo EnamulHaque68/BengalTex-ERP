@@ -14,6 +14,18 @@ public class LetterOfCredit : BaseTransactionalEntity
     public string LcNumber { get; set; } = string.Empty;   // the bank's LC number
     public string IssuingBank { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Import (standalone) or Back-to-Back (opened against a master export LC to import raw
+    /// materials for an export order). Both are import LCs with a supplier beneficiary.
+    /// </summary>
+    public LcType Type { get; set; } = LcType.Import;
+
+    /// <summary>The master export LC number this B2B is backed by (the buyer's instrument).</summary>
+    public string? MasterLcReference { get; set; }
+
+    /// <summary>The buyer / applicant named on the master export LC.</summary>
+    public string? MasterLcBuyer { get; set; }
+
     public int SupplierId { get; set; }                    // beneficiary
     public Supplier Supplier { get; set; } = null!;
 
@@ -44,4 +56,10 @@ public enum LcStatus
     Shipped = 3,
     Settled = 4,
     Cancelled = 5
+}
+
+public enum LcType
+{
+    Import = 1,        // standalone import LC
+    BackToBack = 2     // import LC backed by a master export LC
 }

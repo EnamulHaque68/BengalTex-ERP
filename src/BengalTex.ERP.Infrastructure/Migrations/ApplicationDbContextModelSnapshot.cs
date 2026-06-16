@@ -4200,6 +4200,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("MasterLcBuyer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("MasterLcReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -4236,6 +4244,13 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("TenorDays")
                         .HasColumnType("int");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Import");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -4250,6 +4265,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("Type");
 
                     b.ToTable("LettersOfCredit", (string)null);
                 });
