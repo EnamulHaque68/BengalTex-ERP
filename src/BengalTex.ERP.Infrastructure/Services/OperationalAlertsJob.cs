@@ -23,6 +23,9 @@ public sealed class OperationalAlertsOptions
     /// <summary>Certificates expiring within this many days are flagged. Default 60.</summary>
     public int CertExpiryWithinDays { get; set; } = 60;
 
+    /// <summary>Live LCs (Open/Shipped) expiring within this many days are flagged. Default 30.</summary>
+    public int LcExpiryWithinDays { get; set; } = 30;
+
     /// <summary>
     /// Suppress a repeat of the SAME alert (same entity) if one was already raised within
     /// this many days. The job runs daily, so a persistent condition re-alerts every N days
@@ -37,6 +40,7 @@ public sealed class OperationalAlertsOptions
 ///   • Low stock — RawMaterial total on-hand ≤ MinimumStockLevel, or Product ≤ ReorderLevel.
 ///   • Overdue invoices — Issued/PartiallyPaid CustomerInvoices past their DueDate with a balance.
 ///   • Expiring compliance certificates — active certs within CertExpiryWithinDays of expiry (or expired).
+///   • Expiring LCs — Open/Shipped letters of credit within LcExpiryWithinDays of expiry (or expired).
 ///
 /// Notifications go through <see cref="INotificationService"/> (same render/dispatch/audit path
 /// as event-driven notifications); the job owns the single SaveChanges. Lives in Infrastructure
@@ -52,6 +56,7 @@ public class OperationalAlertsJob
     private const string LowStockProduct = "Alert:LowStockProduct";
     private const string OverdueInvoice = "Alert:OverdueInvoice";
     private const string CertExpiry = "Alert:CertExpiry";
+    private const string LcExpiry = "Alert:LcExpiry";
 
     private readonly ApplicationDbContext _db;
     private readonly INotificationService _notifications;
@@ -88,7 +93,8 @@ public class OperationalAlertsJob
                      && (n.RelatedEntityType == LowStockRm
                       || n.RelatedEntityType == LowStockProduct
                       || n.RelatedEntityType == OverdueInvoice
-                      || n.RelatedEntityType == CertExpiry))
+                      || n.RelatedEntityType == CertExpiry
+                      || n.RelatedEntityType == LcExpiry))
             .Select(n => new { n.RelatedEntityType, n.RelatedEntityId })
             .ToListAsync(ct);
         var alreadyAlerted = recent
@@ -100,6 +106,7 @@ public class OperationalAlertsJob
         raised += await RaiseLowStockProductAsync(alreadyAlerted, ct);
         raised += await RaiseOverdueInvoiceAsync(today, alreadyAlerted, ct);
         raised += await RaiseCertExpiryAsync(today, alreadyAlerted, ct);
+        raised += await RaiseLcExpiryAsync(today, alreadyAlerted, ct);
 
         if (raised > 0)
         {
@@ -229,6 +236,34 @@ public class OperationalAlertsJob
                 body: $"Compliance certificate '{c.Name}'{numberSuffix} {phrase} " +
                       $"(expiry {c.ExpiryDate:yyyy-MM-dd}). Arrange renewal to stay audit-ready.",
                 relatedType: CertExpiry, relatedId: c.Id, ct: ct);
+            count++;
+        }
+        return count;
+    }
+
+    private async Task<int> RaiseLcExpiryAsync(DateOnly today, HashSet<(string, long)> seen, CancellationToken ct)
+    {
+        var cutoff = today.AddDays(Math.Max(0, _opts.LcExpiryWithinDays));
+        // Only live LCs matter — Open (issued) or Shipped (docs presented, not yet settled).
+        var lcs = await _db.LettersOfCredit.AsNoTracking()
+            .Where(l => (l.Status == LcStatus.Open || l.Status == LcStatus.Shipped) && l.ExpiryDate <= cutoff)
+            .Select(l => new { l.Id, l.Code, l.LcNumber, l.ExpiryDate, l.Type, SupplierName = l.Supplier.Name })
+            .ToListAsync(ct);
+
+        var count = 0;
+        foreach (var l in lcs)
+        {
+            if (!seen.Add((LcExpiry, l.Id))) continue;
+            var daysLeft = l.ExpiryDate.DayNumber - today.DayNumber;
+            var phrase = daysLeft < 0 ? $"EXPIRED {-daysLeft} day(s) ago" : $"expires in {daysLeft} day(s)";
+            var kind = l.Type == LcType.BackToBack ? "Back-to-back LC" : "LC";
+
+            await _notifications.NotifyAsync(
+                _opts.Channel, _opts.Recipient,
+                subject: $"{kind} {phrase}: {l.Code}",
+                body: $"{kind} {l.Code} (bank LC #{l.LcNumber}, {l.SupplierName}) {phrase} " +
+                      $"(expiry {l.ExpiryDate:yyyy-MM-dd}). Arrange shipment/amendment before it lapses.",
+                relatedType: LcExpiry, relatedId: l.Id, ct: ct);
             count++;
         }
         return count;
