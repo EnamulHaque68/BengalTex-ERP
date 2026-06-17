@@ -1,0 +1,158 @@
+// ── Theme tokens ────────────────────────────────────────────────────────
+// Light (default): white sidebar to match the app's Aura light theme.
+:host {
+  --sidebar-w: 256px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h: 56px;
+
+  --sb-bg: #ffffff;
+  --sb-border: #e5e7eb;
+  --sb-text: #475569;
+  --sb-text-strong: #0f172a;
+  --sb-subtext: #64748b;
+  --sb-hover-bg: #f1f5f9;
+  --sb-active-bg: #eff6ff;
+  --sb-active-text: #2563eb;
+  --sb-group-active-bg: #f8fafc;
+  --sb-divider: #e5e7eb;
+  --sb-scroll: rgba(148, 163, 184, 0.5);
+  --brand-color: #2563eb;
+
+  --top-bg: #ffffff;
+  --top-border: #e5e7eb;
+  --top-text: #334155;
+  --content-bg: #f8fafc;
+
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// Dark theme — professional slate sidebar.
+:host.theme-dark {
+  --sb-bg: #0f172a;
+  --sb-border: #1e293b;
+  --sb-text: #cbd5e1;
+  --sb-text-strong: #ffffff;
+  --sb-subtext: #94a3b8;
+  --sb-hover-bg: rgba(255, 255, 255, 0.06);
+  --sb-active-bg: rgba(37, 99, 235, 0.22);
+  --sb-active-text: #60a5fa;
+  --sb-group-active-bg: rgba(255, 255, 255, 0.04);
+  --sb-divider: rgba(148, 163, 184, 0.18);
+  --sb-scroll: rgba(148, 163, 184, 0.4);
+  --brand-color: #60a5fa;
+
+  --top-bg: #ffffff;
+  --top-border: #e5e7eb;
+  --top-text: #334155;
+  --content-bg: #f1f5f9;
+}
+
+// ── Layout grid ─────────────────────────────────────────────────────────
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+  transition: grid-template-columns 0.18s ease;
+
+  &.collapsed { grid-template-columns: var(--sidebar-w-collapsed) 1fr; }
+}
+
+.layout-sidebar {
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
+  z-index: 30;
+}
+
+.brand {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--sb-border);
+  flex-shrink: 0;
+  .brand-mark { color: var(--brand-color); font-size: 1.4rem; }
+  .brand-text { font-size: 1.05rem; font-weight: 800; color: var(--sb-text-strong); letter-spacing: -0.01em; white-space: nowrap; }
+  .brand-erp { color: var(--brand-color); }
+}
+
+.layout-sidebar app-sidebar { flex: 1; min-height: 0; }
+
+// ── Main column ─────────────────────────────────────────────────────────
+.layout-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.topbar {
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: var(--top-bg);
+  border-bottom: 1px solid var(--top-border);
+  z-index: 20;
+}
+
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 0.4rem; }
+
+.icon-btn {
+  width: 38px; height: 38px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--top-text);
+  border-radius: 8px; cursor: pointer; text-decoration: none;
+  transition: background 0.15s;
+  &:hover { background: #f1f5f9; }
+  i { font-size: 1.05rem; }
+}
+
+.mobile-btn { display: none; }
+
+.topbar-user {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding-left: 0.5rem; margin-left: 0.25rem; border-left: 1px solid var(--top-border);
+}
+.user-meta { display: flex; flex-direction: column; line-height: 1.15; text-align: right; }
+.user-name { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
+.user-role { font-size: 0.7rem; color: #64748b; }
+.logout-btn:hover { background: #fee2e2; color: #dc2626; }
+
+.layout-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--content-bg);
+}
+
+// Backdrop only used on mobile
+.layout-backdrop { display: none; }
+
+// ── Responsive: off-canvas sidebar on small screens ─────────────────────
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .layout-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  }
+  .layout.mobile-open .layout-sidebar { transform: translateX(0); }
+  .layout.mobile-open .layout-backdrop {
+    display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 25;
+  }
+  .collapse-btn { display: none; }
+  .mobile-btn { display: inline-flex; }
+  // never icon-only rail on mobile — full drawer
+  .layout.collapsed { grid-template-columns: 1fr; }
+}

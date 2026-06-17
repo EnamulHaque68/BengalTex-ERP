@@ -9,6 +9,7 @@ import Aura from '@primeuix/themes/aura';
 
 import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
+import { LayoutModule } from './layout/layout.module';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 @NgModule({
@@ -16,6 +17,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
+    LayoutModule,        // eager: provides the authenticated shell (sidebar + topbar)
     AppRoutingModule
   ],
   providers: [

@@ -1,6 +1,6 @@
 .home-shell {
-  min-height: 100vh;
-  background: #f3f4f6;
+  // Renders inside the layout content area now (not the full page) — fill it, don't force viewport height.
+  min-height: 100%;
 }
 
 .top-bar {
@@ -228,4 +228,15 @@
   &.ap    .kpi-value { color: #b45309; }
   &.sales .kpi-icon { background: #d1fae5; color: #065f46; }
   &.sales .kpi-value { color: #065f46; }
+}
+
+/* Dashboard hint (shown when the role has no owner KPIs) */
+.dash-hint {
+  margin: 1.5rem auto;
+  max-width: 540px;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  color: #64748b;
+  i { font-size: 2rem; color: #94a3b8; display: block; margin-bottom: 0.6rem; }
+  p { margin: 0; font-size: 0.95rem; }
 }
