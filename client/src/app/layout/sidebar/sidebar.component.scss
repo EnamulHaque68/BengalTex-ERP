@@ -1,0 +1,176 @@
+// Sidebar is fully driven by CSS variables (set by the layout host) so dark/light
+// themes are a class swap — see layout.component.scss for the variable definitions.
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sb-nav {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0.5rem 1.5rem;
+
+  // thin, theme-aware scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-scroll, rgba(148, 163, 184, 0.5)) transparent;
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: var(--sb-scroll, rgba(148, 163, 184, 0.5)); border-radius: 3px; }
+}
+
+.sb-list, .sb-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// ── Search (Phase 4) ────────────────────────────────────────────────────
+.sb-search {
+  position: relative;
+  margin: 0.25rem 0.25rem 0.6rem;
+  display: flex;
+  align-items: center;
+
+  .sb-search-icon {
+    position: absolute; left: 0.6rem;
+    font-size: 0.8rem; color: var(--sb-subtext, #94a3b8); pointer-events: none;
+  }
+  .sb-search-input {
+    width: 100%;
+    padding: 0.5rem 1.6rem 0.5rem 1.9rem;
+    border: 1px solid var(--sb-divider, #e5e7eb);
+    border-radius: 8px;
+    background: var(--sb-hover-bg, #f1f5f9);
+    color: var(--sb-text-strong, #0f172a);
+    font-size: 0.82rem;
+    outline: none;
+    &::placeholder { color: var(--sb-subtext, #94a3b8); }
+    &:focus { border-color: var(--sb-active-text, #2563eb); }
+  }
+  .sb-search-clear {
+    position: absolute; right: 0.4rem;
+    border: none; background: transparent; cursor: pointer;
+    color: var(--sb-subtext, #94a3b8); padding: 0.2rem;
+    i { font-size: 0.7rem; }
+    &:hover { color: var(--sb-text-strong, #0f172a); }
+  }
+}
+
+.sb-results .sb-crumb {
+  margin-left: auto;
+  font-size: 0.66rem;
+  color: var(--sb-subtext, #94a3b8);
+  padding-left: 0.4rem;
+  white-space: nowrap;
+}
+.sb-noresults {
+  padding: 0.6rem 0.8rem;
+  font-size: 0.78rem;
+  color: var(--sb-subtext, #94a3b8);
+  font-style: italic;
+}
+
+.sb-item { margin: 0.1rem 0; }
+
+// Shared row (leaf links + group headers)
+.sb-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--sb-text, #cbd5e1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--sb-hover-bg, rgba(255, 255, 255, 0.06));
+    color: var(--sb-text-strong, #fff);
+  }
+
+  &.active {
+    background: var(--sb-active-bg, rgba(59, 130, 246, 0.15));
+    color: var(--sb-active-text, #60a5fa);
+    font-weight: 600;
+  }
+}
+
+.sb-icon {
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sb-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-caret {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  transition: transform 0.15s;
+}
+
+// Active group header gets a subtle left accent
+.sb-group-header.active {
+  background: var(--sb-group-active-bg, rgba(255, 255, 255, 0.04));
+  color: var(--sb-active-text, #60a5fa);
+}
+
+// Sub-menu
+.sb-sublist {
+  margin: 0.15rem 0 0.35rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--sb-divider, rgba(148, 163, 184, 0.18));
+  margin-left: 1.1rem;
+}
+
+.sb-sublink {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.7rem;
+  color: var(--sb-subtext, #94a3b8);
+  font-size: 0.82rem;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--sb-hover-bg, rgba(255, 255, 255, 0.06));
+    color: var(--sb-text-strong, #fff);
+  }
+
+  &.active {
+    color: var(--sb-active-text, #60a5fa);
+    background: var(--sb-active-bg, rgba(59, 130, 246, 0.15));
+    font-weight: 600;
+  }
+}
+
+.sb-subicon {
+  font-size: 0.8rem;
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+// ── Collapsed (icon-only) rail ──────────────────────────────────────────
+.sb-nav.collapsed {
+  .sb-text, .sb-caret { display: none; }
+  .sb-link { justify-content: center; padding: 0.65rem; }
+  .sb-icon { width: auto; font-size: 1.1rem; }
+}

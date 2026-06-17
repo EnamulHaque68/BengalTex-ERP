@@ -1,0 +1,52 @@
+<div class="layout" [class.collapsed]="collapsed" [class.mobile-open]="mobileOpen">
+
+  <!-- Sidebar -->
+  <aside class="layout-sidebar">
+    <div class="brand">
+      <i class="pi pi-bolt brand-mark"></i>
+      <span class="brand-text" *ngIf="!collapsed">Bengal TEX <span class="brand-erp">ERP</span></span>
+    </div>
+    <app-sidebar [collapsed]="collapsed"></app-sidebar>
+  </aside>
+
+  <!-- Backdrop for mobile off-canvas -->
+  <div class="layout-backdrop" (click)="closeMobile()"></div>
+
+  <!-- Main column -->
+  <div class="layout-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <!-- desktop collapse -->
+        <button type="button" class="icon-btn collapse-btn" (click)="toggleCollapse()" pTooltip="Toggle menu" tooltipPosition="bottom">
+          <i class="pi pi-bars"></i>
+        </button>
+        <!-- mobile hamburger -->
+        <button type="button" class="icon-btn mobile-btn" (click)="toggleMobile()">
+          <i class="pi pi-bars"></i>
+        </button>
+      </div>
+
+      <div class="topbar-right">
+        <button type="button" class="icon-btn" (click)="toggleTheme()" [pTooltip]="theme === 'dark' ? 'Light mode' : 'Dark mode'" tooltipPosition="bottom">
+          <i class="pi" [ngClass]="theme === 'dark' ? 'pi-sun' : 'pi-moon'"></i>
+        </button>
+        <a routerLink="/notifications" class="icon-btn" pTooltip="Notifications" tooltipPosition="bottom">
+          <i class="pi pi-bell"></i>
+        </a>
+        <div class="topbar-user">
+          <div class="user-meta">
+            <span class="user-name">{{ userName }}</span>
+            <span class="user-role" *ngIf="userRole">{{ userRole }}</span>
+          </div>
+          <button type="button" class="icon-btn logout-btn" (click)="logout()" pTooltip="Logout" tooltipPosition="bottom">
+            <i class="pi pi-sign-out"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
