@@ -17,4 +17,10 @@ public class ApprovalSettings
 
     /// <summary>Role whose members can approve over-threshold expenses.</summary>
     public string ExpenseApproverRole { get; set; } = "Admin";
+
+    /// <summary>SO value at or below this is auto-confirmed; above it requires sign-off.</summary>
+    public decimal SalesOrderThreshold { get; set; } = 100000m;
+
+    /// <summary>Role whose members can approve over-threshold sales orders.</summary>
+    public string SalesOrderApproverRole { get; set; } = "Admin";
 }

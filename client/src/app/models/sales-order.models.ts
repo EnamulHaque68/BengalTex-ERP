@@ -2,6 +2,7 @@
 
 export const SO_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
+  { label: 'Pending Approval', value: 'PendingApproval' },
   { label: 'Confirmed', value: 'Confirmed' },
   { label: 'Partially Dispatched', value: 'PartiallyDispatched' },
   { label: 'Dispatched', value: 'Dispatched' },

@@ -2,6 +2,7 @@ using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Common.Settings;
 using BengalTex.ERP.Application.SalesOrder.Dtos;
 using BengalTex.ERP.Application.SalesOrder.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Domain.Entities;
 using BengalTex.ERP.Shared.Common;
@@ -12,10 +13,11 @@ using Microsoft.Extensions.Options;
 namespace BengalTex.ERP.Application.SalesOrder.Commands;
 
 /// <summary>
-/// Confirms a draft SO — customer commitment locked in. Lifecycle: Draft → Confirmed.
-/// Enforces credit control (when enabled): the customer's total exposure — outstanding
-/// AR (BDT) plus this order's value — may not exceed their CreditLimit. A CreditLimit of
-/// 0 means "no limit set" and is not enforced.
+/// Confirms a draft SO — customer commitment locked in. First enforces credit control (when
+/// enabled): the customer's exposure (outstanding AR + this order's value) may not exceed their
+/// CreditLimit. Then routes through the approval workflow: within the SO threshold it is
+/// auto-confirmed (Draft → Confirmed); above it, a sign-off request is raised
+/// (Draft → PendingApproval), cleared from the Approvals inbox.
 /// </summary>
 public sealed record ConfirmSalesOrderCommand(long Id) : IRequest<ApiResponse<SalesOrderDto>>;
 
@@ -28,6 +30,7 @@ internal sealed class ConfirmSalesOrderCommandHandler
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
     private readonly CreditControlSettings _credit;
+    private readonly IApprovalService _approval;
 
     public ConfirmSalesOrderCommandHandler(
         IRepository<Domain.Entities.SalesOrder, long> repo,
@@ -35,7 +38,8 @@ internal sealed class ConfirmSalesOrderCommandHandler
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IMediator mediator,
-        IOptions<CreditControlSettings> credit)
+        IOptions<CreditControlSettings> credit,
+        IApprovalService approval)
     {
         _repo = repo;
         _invRepo = invRepo;
@@ -43,6 +47,7 @@ internal sealed class ConfirmSalesOrderCommandHandler
         _currentUser = currentUser;
         _mediator = mediator;
         _credit = credit.Value;
+        _approval = approval;
     }
 
     public async Task<ApiResponse<SalesOrderDto>> Handle(
@@ -56,6 +61,9 @@ internal sealed class ConfirmSalesOrderCommandHandler
         if (so.Status != Domain.Entities.SalesOrderStatus.Draft)
             return ApiResponse<SalesOrderDto>.Fail("Only draft sales orders can be confirmed.");
 
+        // Order value in base BDT (line totals are net; a fair proxy that avoids re-deriving VAT).
+        var orderValue = so.Lines.Sum(l => l.Quantity * l.UnitPrice) * so.ExchangeRate;
+
         // ── Credit control ──────────────────────────────────────────────────
         // Enforced only when enabled, set to block, and the customer carries a positive limit.
         if (_credit.Enabled && _credit.BlockOverLimit && so.Customer.CreditLimit > 0m)
@@ -67,11 +75,7 @@ internal sealed class ConfirmSalesOrderCommandHandler
                          && i.TotalAmount - i.AmountPaid > 0m)
                 .SumAsync(i => (decimal?)((i.TotalAmount - i.AmountPaid) * i.ExchangeRate), cancellationToken) ?? 0m;
 
-            // Value of the order being confirmed, in BDT (line totals are net; credit is gross-ish
-            // but net is a fair, conservative proxy and avoids re-deriving VAT here).
-            var orderValue = so.Lines.Sum(l => l.Quantity * l.UnitPrice) * so.ExchangeRate;
             var exposure = outstanding + orderValue;
-
             if (exposure > so.Customer.CreditLimit)
             {
                 var over = exposure - so.Customer.CreditLimit;
@@ -83,9 +87,20 @@ internal sealed class ConfirmSalesOrderCommandHandler
             }
         }
 
-        so.Status = Domain.Entities.SalesOrderStatus.Confirmed;
-        so.ConfirmedAt = DateTimeOffset.UtcNow;
-        so.ConfirmedBy = _currentUser.UserName;
+        // ── Approval gate ────────────────────────────────────────────────────
+        // Within threshold → auto-confirm; above → raise a pending request (Approvals inbox).
+        var approval = await _approval.SubmitAsync("SalesOrder", so.Id, so.Code, orderValue, cancellationToken);
+        if (approval.AutoApproved)
+        {
+            so.Status = Domain.Entities.SalesOrderStatus.Confirmed;
+            so.ConfirmedAt = DateTimeOffset.UtcNow;
+            so.ConfirmedBy = _currentUser.UserName;
+        }
+        else
+        {
+            so.Status = Domain.Entities.SalesOrderStatus.PendingApproval;
+        }
+
         _repo.Update(so);
         await _uow.SaveChangesAsync(cancellationToken);
 

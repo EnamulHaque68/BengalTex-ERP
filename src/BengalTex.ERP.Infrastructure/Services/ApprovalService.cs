@@ -87,6 +87,7 @@ public sealed class ApprovalService : IApprovalService
     private (decimal Threshold, string ApproverRole) RulesFor(string documentType) => documentType switch
     {
         "Expense" => (_settings.ExpenseThreshold, _settings.ExpenseApproverRole),
+        "SalesOrder" => (_settings.SalesOrderThreshold, _settings.SalesOrderApproverRole),
         _ => (_settings.PurchaseOrderThreshold, _settings.PurchaseOrderApproverRole),
     };
 

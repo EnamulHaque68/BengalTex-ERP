@@ -79,11 +79,12 @@
           <td>
             <span class="status-badge"
                   [class.draft]="s.status === 'Draft'"
+                  [class.pending]="s.status === 'PendingApproval'"
                   [class.confirmed]="s.status === 'Confirmed'"
                   [class.dispatched]="s.status === 'PartiallyDispatched' || s.status === 'Dispatched' || s.status === 'Delivered'"
                   [class.closed]="s.status === 'Closed'"
                   [class.cancelled]="s.status === 'Cancelled'">
-              {{ s.status === 'PartiallyDispatched' ? 'Partial' : s.status }}
+              {{ s.status === 'PartiallyDispatched' ? 'Partial' : (s.status === 'PendingApproval' ? 'Pending Approval' : s.status) }}
             </span>
           </td>
           <td>
