@@ -177,6 +177,7 @@ public class DataSeeder : IDataSeeder
             // ── Equity (3000) ──
             ("3000", "Equity", AccountType.Equity, true, null),
             ("3100", "Owner's Capital", AccountType.Equity, false, "3000"),
+            ("3150", "Opening Balance Equity", AccountType.Equity, false, "3000"),
             ("3200", "Retained Earnings", AccountType.Equity, false, "3000"),
             ("3300", "Owner's Drawings", AccountType.Equity, false, "3000"),
 
