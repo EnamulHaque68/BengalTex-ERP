@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DeliveryNoteService } from '../../../services/delivery-note.service';
 import { SalesOrderService } from '../../../services/sales-order.service';
@@ -58,6 +59,7 @@ export class DeliveryNoteListComponent implements OnInit {
     private dnService: DeliveryNoteService,
     private soService: SalesOrderService,
     private warehouseService: WarehouseService,
+    private router: Router,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -377,6 +379,26 @@ export class DeliveryNoteListComponent implements OnInit {
     this.cdr.detectChanges();
     this.dnService.post(dn.id).subscribe({
       next: (res) => this.handleRowAction(res),
+      error: (err) => this.handleRowActionError(err)
+    });
+  }
+
+  /** Generate a draft invoice from a posted DN and jump to it. */
+  createInvoice(dn: DeliveryNoteListItemDto): void {
+    if (this.rowActionId) return;
+    this.rowActionId = dn.id;
+    this.actionError = '';
+    this.cdr.detectChanges();
+    this.dnService.createInvoice(dn.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.rowActionId = null;
+        if (res.success && res.data?.id) {
+          this.router.navigate(['/customer-invoices'], { queryParams: { open: res.data.id } });
+        } else {
+          this.actionError = res.message || 'Could not create invoice.';
+        }
+        this.cdr.detectChanges();
+      }),
       error: (err) => this.handleRowActionError(err)
     });
   }

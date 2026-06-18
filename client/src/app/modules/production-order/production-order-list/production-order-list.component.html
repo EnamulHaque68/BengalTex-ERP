@@ -107,6 +107,10 @@
                         *ngIf="p.status === 'InProgress'"
                         [loading]="rowActionId === p.id"
                         (click)="complete(p)" pTooltip="Complete (posts stock movements)" />
+              <p-button icon="pi pi-cart-plus" severity="help" [text]="true" size="small"
+                        *ngIf="p.status === 'Draft' || p.status === 'InProgress'"
+                        [loading]="rowActionId === p.id"
+                        (click)="generatePr(p)" pTooltip="Generate PR for material shortages" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(p)"
                         [loading]="rowActionId === p.id"

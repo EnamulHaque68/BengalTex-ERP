@@ -93,6 +93,10 @@
                         *ngIf="d.status === 'Draft'"
                         [loading]="rowActionId === d.id"
                         (click)="post(d)" pTooltip="Post (commit dispatch)" />
+              <p-button icon="pi pi-file-export" severity="help" [text]="true" size="small"
+                        *ngIf="d.status === 'Posted'"
+                        [loading]="rowActionId === d.id"
+                        (click)="createInvoice(d)" pTooltip="Create draft invoice from this delivery" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         *ngIf="d.status !== 'Draft'"
                         [routerLink]="['/delivery-notes', d.id, 'print']" pTooltip="Print delivery note" />
