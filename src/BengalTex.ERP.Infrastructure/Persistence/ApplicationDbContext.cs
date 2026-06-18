@@ -58,6 +58,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
+    public DbSet<OpeningStockEntry> OpeningStockEntries => Set<OpeningStockEntry>();
+    public DbSet<OpeningStockLine> OpeningStockLines => Set<OpeningStockLine>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();
     public DbSet<Bom> Boms => Set<Bom>();
     public DbSet<BomLine> BomLines => Set<BomLine>();

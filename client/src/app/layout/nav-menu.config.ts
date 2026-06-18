@@ -63,6 +63,7 @@ export const NAV_MENU: NavItem[] = [
       { title: 'Stock Movements',  icon: 'pi pi-arrows-h',     route: '/stock-movements',   permission: 'Inventory.View' },
       { title: 'Stock Lots',       icon: 'pi pi-tags',         route: '/stock-lots',        permission: 'Inventory.View' },
       { title: 'Stock Adjustments',icon: 'pi pi-sliders-h',    route: '/stock-adjustments', permission: 'Inventory.View' },
+      { title: 'Opening Stock',    icon: 'pi pi-database',     route: '/opening-stock',     permission: 'Inventory.Adjust' },
       { title: 'Stock Transfers',  icon: 'pi pi-arrow-right-arrow-left', route: '/stock-transfers', permission: 'Inventory.View' }
     ]
   },

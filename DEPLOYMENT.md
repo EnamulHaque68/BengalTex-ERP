@@ -179,16 +179,13 @@ Dr  3150 Opening Balance Equity        <total opening AP>
     Cr  <the expense/inventory account the invoices debited>   <total opening AP>
 ```
 
-### 9.6 Opening raw-material stock
-Stock quantity lives in stock movements; the **weighted-average cost (WAC)** is only set by a receipt. So enter opening RM stock as a **GRN** (sets both quantity *and* WAC at your known last-purchase cost):
-1. Create one **supplier** called `OPENING BALANCE` and a **Purchase Order** to it listing every raw material at its on-hand qty and known unit cost; Approve it.
-2. **GRN** against that PO and **Post** it → RM `StockOnHand` + WAC are set, and it posts `Dr Raw Material Inventory`.
-3. Don't pay it. Clear the resulting payable with a journal: `Dr 2110 Accounts Payable / Cr 3150 Opening Balance Equity` for the GRN value (or raise+approve the supplier invoice first, then net it as in §9.5).
+### 9.6 Opening stock — raw materials AND finished goods
+Use the dedicated **Inventory → Opening Stock** screen (the right tool for this — it sets both quantity *and* weighted-average cost and posts the correct equity journal). One entry per warehouse:
+1. **Opening Stock → New Opening Stock** → pick the warehouse, set the entry date (cut-off).
+2. Add a line per item — **raw material OR finished product** (the item picker lists both, `RM ·` / `FG ·`), its on-hand quantity, and its known unit cost.
+3. **Post** it. For every line it seeds the item's WAC from the unit cost, writes an `OpeningStock` stock movement, and posts ONE balanced journal: `Dr Raw Material Inventory + Dr Finished Goods Inventory / Cr 3150 Opening Balance Equity`.
 
-This is the only path that seeds RM **value**, not just quantity. (A plain Stock Adjustment sets quantity but values at the *current* WAC — which is 0 before any receipt — so it cannot seed opening value and would post to the count-correction account; don't use it for opening balances.)
-
-### 9.7 Opening finished-goods stock ⚠️ known gap
-There is currently **no document that originates finished-product stock except a Production run** (Stock Adjustment is raw-material-only). If you stock made items (e.g. poly bags), seed them with a **one-off Production Order** per product whose BOM/issue produces the on-hand quantity, then **Complete** it (sets Product `StockOnHand` + WAC from consumed RM). If that distorts cost, raise it with the dev team — a small "Opening Stock" document (Products + direct WAC, journaled to Opening Balance Equity) is the clean future fix. Until then, **plan FG opening with your accountant.**
+This is the only path that seeds **finished-goods** stock outside a Production run, and it seeds **value** (not just quantity). *(Don't use a plain Stock Adjustment for opening balances — it's raw-material-only, values at the current WAC=0, and posts to the count-correction account.)*
 
 ### 9.8 Fixed assets & loans
 Enter assets via **Fixed Assets → New** with the original cost and accumulated depreciation to date (or a journal `Dr asset / Cr accum. dep. / Cr Opening Balance Equity`). Enter outstanding bank loans as `Cr loan liability / Dr Opening Balance Equity`.
@@ -206,7 +203,7 @@ Enter assets via **Fixed Assets → New** with the original cost and accumulated
 - [ ] First boot OK; logged in; SuperAdmin password changed + stored in password manager (§3)
 - [ ] Company profile + logo set; real users created with proper roles
 - [ ] Master data loaded: customers, suppliers, products (+HS codes for exporters), raw materials, BOMs, warehouses, bank accounts
-- [ ] Opening balances entered per §9 (cash/bank, AR, AP, RM stock, FG stock, fixed assets) and **reconciled** (§9.9): Trial Balance balances, stock/AR/AP totals match the source lists
+- [ ] Opening balances entered per §9 (cash/bank, AR, AP, RM+FG stock via **Inventory → Opening Stock**, fixed assets) and **reconciled** (§9.9): Trial Balance balances, stock/AR/AP totals match the source lists
 - [ ] "post-opening-balances" backup taken
 - [ ] Numbering series prefixes reviewed (Settings) — codes appear on printed documents
 - [ ] SMTP configured + test email sent (`/emails` shows Sent)
