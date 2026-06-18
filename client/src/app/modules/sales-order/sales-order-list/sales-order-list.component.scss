@@ -70,6 +70,7 @@
   font-weight: 600;
 
   &.draft      { background: #fef3c7; color: #92400e; }
+  &.pending    { background: #ffedd5; color: #9a3412; }
   &.confirmed  { background: #d1fae5; color: #065f46; }
   &.dispatched { background: #dbeafe; color: #1e40af; }
   &.closed     { background: #e5e7eb; color: #374151; }

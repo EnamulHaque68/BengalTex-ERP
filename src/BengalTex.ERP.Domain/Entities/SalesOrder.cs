@@ -73,5 +73,6 @@ public enum SalesOrderStatus
     PartiallyDispatched = 4,    // DN-driven (some lines have DispatchedQuantity > 0 but not all complete)
     Dispatched = 5,             // DN-driven (all lines fully dispatched)
     Delivered = 6,              // future — customer-confirmed receipt (manual flag)
-    Closed = 7                  // manual final settlement
+    Closed = 7,                 // manual final settlement
+    PendingApproval = 8         // over the approval threshold — awaiting sign-off via the Approvals inbox
 }

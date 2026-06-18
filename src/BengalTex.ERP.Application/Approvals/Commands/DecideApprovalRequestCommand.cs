@@ -26,6 +26,7 @@ internal sealed class DecideApprovalRequestCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IRepository<Domain.Entities.Expense, long> _expenseRepo;
+    private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IMediator _mediator;
 
     public DecideApprovalRequestCommandHandler(
@@ -34,6 +35,7 @@ internal sealed class DecideApprovalRequestCommandHandler
         IUnitOfWork uow,
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IRepository<Domain.Entities.Expense, long> expenseRepo,
+        IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IMediator mediator)
     {
         _approval = approval;
@@ -41,6 +43,7 @@ internal sealed class DecideApprovalRequestCommandHandler
         _uow = uow;
         _poRepo = poRepo;
         _expenseRepo = expenseRepo;
+        _soRepo = soRepo;
         _mediator = mediator;
     }
 
@@ -93,6 +96,24 @@ internal sealed class DecideApprovalRequestCommandHandler
                         e.Status = ExpenseStatus.Draft;
                         _expenseRepo.Update(e);
                     }
+                }
+            }
+            else if (result.DocumentType == "SalesOrder")
+            {
+                var so = await _soRepo.GetByIdAsync(result.DocumentId, cancellationToken);
+                if (so is not null && so.Status == SalesOrderStatus.PendingApproval)
+                {
+                    if (result.Outcome == ApprovalOutcome.Approved)
+                    {
+                        so.Status = SalesOrderStatus.Confirmed;
+                        so.ConfirmedAt = DateTimeOffset.UtcNow;
+                        so.ConfirmedBy = _currentUser.UserName;
+                    }
+                    else // Rejected → return to Draft for editing / resubmission
+                    {
+                        so.Status = SalesOrderStatus.Draft;
+                    }
+                    _soRepo.Update(so);
                 }
             }
         }
