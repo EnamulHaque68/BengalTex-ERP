@@ -52,4 +52,10 @@ export class DeliveryNoteService {
   post(id: number): Observable<ApiResponse<DeliveryNoteDto>> {
     return this.http.post<ApiResponse<DeliveryNoteDto>>(`${this.base}/${id}/post`, {});
   }
+
+  /** Generate a Draft customer invoice from this posted DN (returns { data: { id } }). */
+  createInvoice(id: number, vatRate = 0): Observable<ApiResponse<{ id: number }>> {
+    const url = `${environment.apiBaseUrl}/api/customer-invoices/from-delivery-note/${id}?vatRate=${vatRate}`;
+    return this.http.post<ApiResponse<{ id: number }>>(url, {});
+  }
 }

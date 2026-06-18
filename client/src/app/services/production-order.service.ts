@@ -62,6 +62,11 @@ export class ProductionOrderService {
     return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}/cancel`, {});
   }
 
+  /** Raise a draft Purchase Requisition for this order's raw-material shortfalls (returns the PR id). */
+  generatePr(id: number): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${environment.apiBaseUrl}/api/purchase-requisitions/from-production/${id}`, {});
+  }
+
   // ── Routing stage workflow ──
   startStage(stageId: number): Observable<ApiResponse<ProductionOrderDto>> {
     return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/stages/${stageId}/start`, {});

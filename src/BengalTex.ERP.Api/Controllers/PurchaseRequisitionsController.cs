@@ -35,6 +35,12 @@ public class PurchaseRequisitionsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreatePurchaseRequisitionCommand cmd, CancellationToken ct)
         => Ok(await _mediator.Send(cmd, ct));
 
+    /// <summary>Raise a Draft PR for a production order's raw-material shortfalls (BOM vs stock).</summary>
+    [HttpPost("from-production/{productionOrderId:long}")]
+    [HasPermission(Permissions.PurchaseRequisitions.Create)]
+    public async Task<IActionResult> CreateFromProduction(long productionOrderId, CancellationToken ct)
+        => Ok(await _mediator.Send(new GeneratePrFromProductionCommand(productionOrderId), ct));
+
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.PurchaseRequisitions.Edit)]
     public async Task<IActionResult> Update(long id, [FromBody] UpdatePurchaseRequisitionBody body, CancellationToken ct)

@@ -50,6 +50,12 @@ public class CustomerInvoicesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Generate a Draft invoice from a posted Delivery Note (delivery → invoice automation).</summary>
+    [HttpPost("from-delivery-note/{deliveryNoteId:long}")]
+    [HasPermission(Permissions.Invoices.Create)]
+    public async Task<IActionResult> CreateFromDeliveryNote(long deliveryNoteId, [FromQuery] decimal vatRate = 0m, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new CreateInvoiceFromDeliveryNoteCommand(deliveryNoteId, vatRate), ct));
+
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.Invoices.Edit)]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateCustomerInvoiceRequest request, CancellationToken ct)

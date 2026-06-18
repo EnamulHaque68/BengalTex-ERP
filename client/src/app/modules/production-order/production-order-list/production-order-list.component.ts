@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProductionOrderService } from '../../../services/production-order.service';
 import { ProductService } from '../../../services/product.service';
@@ -80,6 +81,7 @@ export class ProductionOrderListComponent implements OnInit {
     private bomService: BomService,
     private warehouseService: WarehouseService,
     private employeeService: EmployeeService,
+    private router: Router,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -372,6 +374,23 @@ export class ProductionOrderListComponent implements OnInit {
 
   cancel(po: ProductionOrderListItemDto): void {
     this.runRowAction(po, this.poService.cancel.bind(this.poService));
+  }
+
+  /** Raise a draft PR for this order's material shortfalls; jump to PRs on success. */
+  generatePr(po: ProductionOrderListItemDto): void {
+    if (this.rowActionId) return;
+    this.rowActionId = po.id;
+    this.actionError = '';
+    this.cdr.detectChanges();
+    this.poService.generatePr(po.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.rowActionId = null;
+        if (res.success) this.router.navigate(['/purchase-requisitions']);
+        else this.actionError = res.message || 'Could not generate requisition.';   // e.g. "No material shortage…"
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.handleRowActionError(err)
+    });
   }
 
   private runRowAction(po: ProductionOrderListItemDto, fn: (id: number) => any): void {
