@@ -84,6 +84,8 @@
             <div class="row-actions">
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         (click)="openEdit(p.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-objects-column" severity="secondary" [text]="true" size="small"
+                        (click)="openVariants(p)" pTooltip="Variants (SKU breakdown)" />
               <p-button icon="pi pi-history" severity="secondary" [text]="true" size="small"
                         (click)="openPriceHistory(p)" pTooltip="Price history" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
@@ -281,5 +283,91 @@
   </p-table>
   <ng-template pTemplate="footer">
     <p-button label="Close" severity="secondary" [text]="true" (click)="priceHistoryVisible = false" />
+  </ng-template>
+</p-dialog>
+
+<!-- Variants dialog (catalog SKU breakdown) -->
+<p-dialog [(visible)]="variantsVisible" [modal]="true" [style]="{ width: '60rem' }"
+          [header]="'Variants' + (variantsProduct ? ' — ' + variantsProduct.name : '')">
+  <p class="variants-hint">
+    Catalog SKU breakdown (color / size / buyer SKU / price). v1 is catalog-only — stock is still tracked at the product level.
+  </p>
+
+  <div class="alert alert-error" *ngIf="variantsError"><i class="pi pi-exclamation-circle"></i>{{ variantsError }}
+    <button type="button" class="alert-close" (click)="variantsError = ''">&times;</button>
+  </div>
+
+  <p-table [value]="variants" [loading]="variantsLoading" styleClass="p-datatable-sm" [rowHover]="true">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Code</th><th>Variant</th><th>Color</th><th>Size</th><th>SKU</th>
+        <th class="num-col">Price</th><th>Status</th><th style="width:6rem"></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-v>
+      <tr [class.row-editing]="variantEditingId === v.id">
+        <td><span class="code-badge">{{ v.variantCode }}</span></td>
+        <td>{{ v.name || '—' }}</td>
+        <td>{{ v.color || '—' }}</td>
+        <td>{{ v.size || '—' }}</td>
+        <td>{{ v.sku || '—' }}</td>
+        <td class="num">{{ formatCurrency(v.effectiveSalesPrice) }}
+          <span class="override-tag" *ngIf="v.salesPriceOverride !== null" pTooltip="Overrides product price">override</span>
+        </td>
+        <td><span class="status-badge" [class.active]="v.isActive" [class.inactive]="!v.isActive">{{ v.isActive ? 'Active' : 'Inactive' }}</span></td>
+        <td>
+          <div class="row-actions">
+            <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="editVariant(v)" pTooltip="Edit" />
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deleteVariant(v)" pTooltip="Delete" />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="8" class="ph-empty"><i class="pi pi-objects-column"></i> No variants yet — add one below.</td></tr>
+    </ng-template>
+  </p-table>
+
+  <p class="section-label">Generate matrix <small>(colour × size)</small></p>
+  <div class="bulk-row">
+    <div class="field"><label>Colours <small>(comma-separated)</small></label>
+      <input pInputText [(ngModel)]="bulkColors" [ngModelOptions]="{ standalone: true }" placeholder="e.g. Red, Blue, Black" class="w-full" />
+    </div>
+    <div class="field"><label>Sizes <small>(comma-separated)</small></label>
+      <input pInputText [(ngModel)]="bulkSizes" [ngModelOptions]="{ standalone: true }" placeholder="e.g. S, M, L" class="w-full" />
+    </div>
+    <div class="field"><label>SKU prefix <small>(optional)</small></label>
+      <input pInputText [(ngModel)]="bulkSkuPrefix" [ngModelOptions]="{ standalone: true }" placeholder="e.g. BTN-100" class="w-full" />
+    </div>
+    <div class="bulk-action">
+      <p-button label="Generate" icon="pi pi-table" severity="secondary" (click)="bulkGenerate()" [loading]="bulkGenerating" />
+    </div>
+  </div>
+
+  <p class="section-label">{{ variantEditingId ? 'Edit variant' : 'Add variant' }}</p>
+  <form [formGroup]="variantForm" class="variant-form">
+    <div class="vf-grid">
+      <div class="field"><label>Code *</label><input pInputText formControlName="variantCode" placeholder="e.g. RED-M" class="w-full" /></div>
+      <div class="field"><label>Name</label><input pInputText formControlName="name" placeholder="e.g. Red / Medium" class="w-full" /></div>
+      <div class="field"><label>Color</label><input pInputText formControlName="color" class="w-full" /></div>
+      <div class="field"><label>Size</label><input pInputText formControlName="size" class="w-full" /></div>
+      <div class="field"><label>Buyer SKU</label><input pInputText formControlName="sku" class="w-full" /></div>
+      <div class="field"><label>Price Override</label>
+        <p-inputNumber formControlName="salesPriceOverride" [min]="0" mode="currency" currency="BDT" locale="en-BD" [minFractionDigits]="2" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field field-check">
+        <label>Active</label>
+        <p-toggleswitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2"><label>Notes</label><input pInputText formControlName="notes" placeholder="(optional)" class="w-full" /></div>
+    </div>
+    <div class="vf-actions">
+      <p-button *ngIf="variantEditingId" label="Cancel edit" severity="secondary" [text]="true" (click)="cancelVariantEdit()" [disabled]="variantSaving" />
+      <p-button [label]="variantEditingId ? 'Update Variant' : 'Add Variant'" icon="pi pi-check" (click)="saveVariant()" [loading]="variantSaving" [disabled]="variantForm.invalid" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="variantsVisible = false" [disabled]="variantSaving" />
   </ng-template>
 </p-dialog>

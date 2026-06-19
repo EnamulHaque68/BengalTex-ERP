@@ -170,3 +170,20 @@
 .num-col, .num { text-align: right; }
 .num.up { color: #059669; } .num.down { color: #dc2626; }
 .fw-700 { font-weight: 700; }
+
+// ─── Variants dialog ───────────────────────────────────────────────────────
+.w-full { width: 100%; }
+.alert-close { margin-left: auto; border: none; background: transparent; font-size: 1.1rem; cursor: pointer; color: inherit; }
+.variants-hint { margin: 0 0 0.75rem; font-size: 0.8rem; color: #6b7280; }
+.row-editing { background: #faf5ff; }
+.override-tag {
+  display: inline-block; margin-left: 0.35rem; padding: 0.02rem 0.35rem; border-radius: 999px;
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; background: #ede9fe; color: #6d28d9;
+}
+.variant-form { margin-top: 0.25rem; }
+.vf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem 0.85rem; }
+.vf-grid .col-span-2 { grid-column: span 2; }
+.vf-grid .field-check { flex-direction: row; align-items: center; gap: 0.5rem; }
+.vf-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.85rem; }
+.bulk-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.6rem 0.85rem; align-items: end; }
+.bulk-action { display: flex; align-items: flex-end; }
