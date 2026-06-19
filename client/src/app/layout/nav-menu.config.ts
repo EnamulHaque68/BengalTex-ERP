@@ -45,6 +45,7 @@ export const NAV_MENU: NavItem[] = [
     icon: 'pi pi-shopping-bag',
     children: [
       { title: 'Purchase Requisitions', icon: 'pi pi-list',        route: '/purchase-requisitions', permission: 'PurchaseRequisitions.View' },
+      { title: 'Supplier Quotations',   icon: 'pi pi-th-large',     route: '/supplier-quotations',   permission: 'PurchaseOrders.View' },
       { title: 'Purchase Orders',       icon: 'pi pi-file-edit',   route: '/purchase-orders',       permission: 'PurchaseOrders.View' },
       { title: 'Goods Receipts (GRN)',  icon: 'pi pi-inbox',       route: '/goods-receipts',        permission: 'GoodsReceipts.View' },
       { title: 'Landed Cost',           icon: 'pi pi-truck',       route: '/landed-cost',           permission: 'GoodsReceipts.View' },

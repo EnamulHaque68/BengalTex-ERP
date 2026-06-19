@@ -73,6 +73,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
     public DbSet<LandedCostVoucher> LandedCostVouchers => Set<LandedCostVoucher>();
     public DbSet<LandedCostCharge> LandedCostCharges => Set<LandedCostCharge>();
+    public DbSet<SupplierQuotation> SupplierQuotations => Set<SupplierQuotation>();
+    public DbSet<SupplierQuotationLine> SupplierQuotationLines => Set<SupplierQuotationLine>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
     public DbSet<StockOnHand> StockOnHand => Set<StockOnHand>();

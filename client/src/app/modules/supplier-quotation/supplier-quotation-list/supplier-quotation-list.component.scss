@@ -1,0 +1,61 @@
+.page-shell { padding: 1.25rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+.page-subtitle { margin: 0.2rem 0 0; color: #6b7280; font-size: 0.85rem; }
+.header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 0.6rem 0.9rem; border-radius: 6px; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; position: relative; }
+.alert-close { margin-left: auto; border: none; background: transparent; font-size: 1.1rem; cursor: pointer; color: inherit; }
+
+.num-col, .num { text-align: right; }
+.fw-600 { font-weight: 600; }
+.code-badge { font-family: monospace; font-weight: 700; color: #1d4ed8; background: #eff6ff; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.8rem; }
+.rm-code { font-family: monospace; font-weight: 700; color: #374151; background: #f3f4f6; padding: 0.05rem 0.35rem; border-radius: 4px; font-size: 0.72rem; margin-right: 0.3rem; }
+.status-badge { padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  &.draft { background: #fef3c7; color: #92400e; } &.submitted { background: #dbeafe; color: #1e40af; }
+  &.selected { background: #d1fae5; color: #065f46; } &.rejected { background: #fee2e2; color: #991b1b; } }
+.row-actions { display: flex; gap: 0.1rem; }
+.empty-row { text-align: center; color: #9ca3af; padding: 1.5rem; i { margin-right: 0.4rem; } }
+
+.sq-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
+.field { display: flex; flex-direction: column; gap: 0.3rem; label { font-size: 0.8rem; font-weight: 600; color: #374151; } }
+.col-span-2 { grid-column: span 2; }
+.w-full { width: 100%; }
+
+.section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.04em; margin: 1rem 0 0.4rem; }
+.lines-wrap { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.line-grid { width: 100%; border-collapse: collapse; font-size: 0.85rem;
+  th { background: #f8fafc; text-align: left; padding: 0.5rem 0.6rem; font-size: 0.72rem; text-transform: uppercase; color: #6b7280; font-weight: 700; }
+  td { padding: 0.4rem 0.6rem; border-top: 1px solid #f1f5f9; vertical-align: middle; }
+  .item-col { min-width: 15rem; } .unit-col { width: 4rem; } }
+.unit-cell { color: #6b7280; }
+.value-cell { color: #0f766e; font-weight: 600; }
+.empty-lines { text-align: center; color: #9ca3af; padding: 1rem; }
+.lines-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.6rem; background: #f8fafc; }
+.grand-total { font-size: 0.9rem; strong { color: #0f766e; } }
+:host ::ng-deep .grid-num { width: 7rem; text-align: right; }
+:host ::ng-deep .grid-num-sm { width: 4.5rem; text-align: right; }
+
+/* Comparison */
+.compare-head { margin-bottom: 0.75rem; max-width: 24rem; }
+.compare-loading { color: #6b7280; padding: 1rem; i { margin-right: 0.4rem; } }
+.compare-wrap { overflow-x: auto; }
+.compare-grid { width: 100%; border-collapse: collapse; font-size: 0.82rem;
+  th, td { padding: 0.5rem 0.7rem; border: 1px solid #eef2f7; }
+  .rm-head { background: #f8fafc; text-align: left; }
+  .sup-head { background: #f8fafc; text-align: center; min-width: 9rem; &.lowest { background: #ecfdf5; } }
+  .sup-name { font-weight: 700; color: #111827; }
+  .sup-meta { font-size: 0.68rem; color: #6b7280; }
+  .sel-tag { margin-left: 0.3rem; padding: 0.02rem 0.3rem; border-radius: 999px; background: #d1fae5; color: #065f46; font-weight: 700; }
+  .cell { text-align: right; }
+  .cell-price { font-weight: 600; }
+  .cell-meta { font-size: 0.66rem; color: #9ca3af; }
+  .lowest-cell { background: #ecfdf5; color: #065f46; }
+  .no-quote { background: #fafafa; }
+  .dash { color: #d1d5db; }
+  .total-row td { background: #f9fafb; border-top: 2px solid #e5e7eb; }
+  .total-cell strong { color: #0f766e; }
+  .action-cell { text-align: center; }
+  .sel-done { color: #065f46; font-weight: 700; font-size: 0.75rem; i { margin-right: 0.2rem; } } }
+.compare-hint { margin: 0.6rem 0 0; font-size: 0.75rem; color: #9ca3af; }
