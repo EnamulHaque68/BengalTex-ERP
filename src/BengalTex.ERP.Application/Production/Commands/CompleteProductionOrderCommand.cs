@@ -57,6 +57,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     {
         var po = await _repo.Query()
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial)
+            .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.ComponentProduct)
             .Include(p => p.Product)
             .Include(p => p.Stages)
             .FirstOrDefaultAsync(p => p.Id == cmd.Id, cancellationToken);
@@ -84,17 +85,26 @@ internal sealed class CompleteProductionOrderCommandHandler
         var scale = po.Quantity / po.Bom.OutputQuantity;
 
         // ── Phase 1: stock-availability pre-check (block on any shortage) ────────
+        // Polymorphic BOM lines: a line is either a raw material or a semi-finished
+        // component product (sub-assembly), each checked against its own StockOnHand.
         var shortages = new List<string>();
         foreach (var bomLine in po.Bom.Lines)
         {
             var requiredQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
-            var available = await _stock.GetRawMaterialOnHandAsync(
-                bomLine.RawMaterialId, po.IssueWarehouseId, cancellationToken);
-            if (available < requiredQty)
+            decimal available;
+            string itemName;
+            if (bomLine.RawMaterialId is int rmId)
             {
-                shortages.Add(
-                    $"{bomLine.RawMaterial.Name}: need {requiredQty:0.####}, have {available:0.####}");
+                available = await _stock.GetRawMaterialOnHandAsync(rmId, po.IssueWarehouseId, cancellationToken);
+                itemName = bomLine.RawMaterial!.Name;
             }
+            else
+            {
+                available = await _stock.GetProductOnHandAsync(bomLine.ComponentProductId!.Value, po.IssueWarehouseId, cancellationToken);
+                itemName = bomLine.ComponentProduct!.Name;
+            }
+            if (available < requiredQty)
+                shortages.Add($"{itemName}: need {requiredQty:0.####}, have {available:0.####}");
         }
         if (shortages.Count > 0)
         {
@@ -102,27 +112,50 @@ internal sealed class CompleteProductionOrderCommandHandler
                 "Insufficient stock in issue warehouse — " + string.Join("; ", shortages));
         }
 
-        // ── Phase 2: post RM-out movements per BOM line + accumulate consumed cost ──
+        // ── Phase 2: post consumption movements per BOM line + accumulate consumed cost ──
+        // rmCost is sourced from Raw Material Inventory; componentCost from Finished Goods
+        // Inventory (sub-assemblies are produced finished goods) — the journal (Phase 5)
+        // credits each from its own account.
         var movementDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var totalRmCost = 0m;
+        var rmCost = 0m;
+        var componentCost = 0m;
         foreach (var bomLine in po.Bom.Lines)
         {
             var consumedQty = bomLine.Quantity * (1 + bomLine.WastagePercent / 100m) * scale;
-            totalRmCost += consumedQty * bomLine.RawMaterial.WeightedAverageCost;
-            // FIFO lot draw-down — decrements the oldest lots and tags each issue movement;
-            // any lot-less remainder posts un-tagged (same as before lot tracking existed).
-            await _lots.ConsumeRawMaterialFifoAsync(
-                rawMaterialId: bomLine.RawMaterialId,
-                warehouseId: po.IssueWarehouseId,
-                quantity: consumedQty,                // positive amount; service posts outbound
-                movementType: StockMovementType.ProductionIssue,
-                referenceType: "ProductionOrder",
-                referenceId: po.Id,
-                referenceCode: po.Code,
-                movementDate: movementDate,
-                notes: null,
-                ct: cancellationToken);
+            if (bomLine.RawMaterialId is int rmId)
+            {
+                rmCost += consumedQty * bomLine.RawMaterial!.WeightedAverageCost;
+                // FIFO lot draw-down — decrements the oldest lots and tags each issue movement;
+                // any lot-less remainder posts un-tagged (same as before lot tracking existed).
+                await _lots.ConsumeRawMaterialFifoAsync(
+                    rawMaterialId: rmId,
+                    warehouseId: po.IssueWarehouseId,
+                    quantity: consumedQty,                // positive amount; service posts outbound
+                    movementType: StockMovementType.ProductionIssue,
+                    referenceType: "ProductionOrder",
+                    referenceId: po.Id,
+                    referenceCode: po.Code,
+                    movementDate: movementDate,
+                    notes: null,
+                    ct: cancellationToken);
+            }
+            else
+            {
+                componentCost += consumedQty * bomLine.ComponentProduct!.WeightedAverageCost;
+                await _stock.PostProductMovementAsync(
+                    productId: bomLine.ComponentProductId!.Value,
+                    warehouseId: po.IssueWarehouseId,
+                    signedQuantity: -consumedQty,         // outbound (consumed into this production)
+                    movementType: StockMovementType.ProductionIssue,
+                    referenceType: "ProductionOrder",
+                    referenceId: po.Id,
+                    referenceCode: po.Code,
+                    movementDate: movementDate,
+                    notes: null,
+                    ct: cancellationToken);
+            }
         }
+        var totalRmCost = rmCost + componentCost;   // total material cost rolled into the output FG
 
         // ── Phase 3: recompute Product WAC, then post finished-goods movement ────
         // FG unit cost = total RM cost consumed ÷ produced qty. Weighted-average it into
@@ -161,20 +194,23 @@ internal sealed class CompleteProductionOrderCommandHandler
         // ── Phase 5: auto-journals — backflush the RM cost through Work-In-Progress ──
         // Two distinct economic events posted at completion (backflush costing — appropriate for
         // short-cycle production that records issue + receipt together):
-        //   (a) materials issued to WIP:  Dr WIP / Cr Raw Material Inventory
+        //   (a) materials issued to WIP:  Dr WIP / Cr Raw Material Inventory (+ Cr Finished Goods for sub-assemblies)
         //   (b) WIP completed to finished goods:  Dr Finished Goods / Cr WIP
         // WIP nets to zero per run; its balance reflects only runs issued-but-not-yet-received.
-        // (Only when consumed cost is non-zero — zero-cost RMs would produce zero-balance entries.)
+        // (Only when consumed cost is non-zero — zero-cost components would produce zero-balance entries.
+        //  Multi-level BOM: component sub-assemblies are issued out of Finished Goods Inventory, raw
+        //  materials out of Raw Material Inventory — the credit splits accordingly; zero lines are dropped.)
         if (totalRmCost > 0m)
         {
             await _journal.PostAsync(
                 movementDate,
-                $"Production {po.Code} — raw materials issued to WIP for {po.Product.Name}",
+                $"Production {po.Code} — materials issued to WIP for {po.Product.Name}",
                 "ProductionOrder", po.Id, po.Code,
                 new[]
                 {
                     new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, totalRmCost, 0m),
-                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalRmCost),
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, rmCost),
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, componentCost),
                 }, cancellationToken);
 
             await _journal.PostAsync(

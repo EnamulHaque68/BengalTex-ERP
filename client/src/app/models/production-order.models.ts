@@ -20,9 +20,10 @@ export const COMMON_STAGE_NAMES: string[] = [
 ];
 
 export interface ProductionPlannedLineDto {
-  rawMaterialId: number;
-  rawMaterialCode: string;
-  rawMaterialName: string;
+  itemType: string;                 // "RawMaterial" | "Product" (sub-assembly)
+  itemId: number;
+  itemCode: string;
+  itemName: string;
   unitOfMeasureCode: string;
   bomLineQuantity: number;
   wastagePercent: number;

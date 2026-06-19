@@ -30,31 +30,49 @@ internal sealed class GetProductionOrderByIdQueryHandler
             .Include(p => p.Product).ThenInclude(prod => prod.UnitOfMeasure)
             .Include(p => p.IssueWarehouse)
             .Include(p => p.ReceiveWarehouse)
-            .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
+            .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm!.UnitOfMeasure)
+            .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.ComponentProduct).ThenInclude(cp => cp!.UnitOfMeasure)
             .Include(p => p.Stages).ThenInclude(s => s.OperatorEmployee)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
 
-        // Compute scaling factor and pull current on-hand for each RM in the issue warehouse
+        // Compute scaling factor and pull current on-hand for each component in the issue warehouse
         var scale = po.Bom.OutputQuantity > 0 ? po.Quantity / po.Bom.OutputQuantity : 0m;
-        var rawMaterialIds = po.Bom.Lines.Select(l => l.RawMaterialId).Distinct().ToList();
+        var rawMaterialIds = po.Bom.Lines.Where(l => l.RawMaterialId != null).Select(l => l.RawMaterialId!.Value).Distinct().ToList();
+        var componentProductIds = po.Bom.Lines.Where(l => l.ComponentProductId != null).Select(l => l.ComponentProductId!.Value).Distinct().ToList();
 
-        var onHandLookup = await _onHandRepo.Query()
+        var rmOnHand = await _onHandRepo.Query()
             .Where(s => s.WarehouseId == po.IssueWarehouseId
                 && s.RawMaterialId != null
                 && rawMaterialIds.Contains(s.RawMaterialId!.Value))
-            .ToDictionaryAsync(s => s.RawMaterialId!.Value, s => s.Quantity, cancellationToken);
+            .GroupBy(s => s.RawMaterialId!.Value)
+            .Select(g => new { Id = g.Key, Qty = g.Sum(x => x.Quantity) })
+            .ToDictionaryAsync(x => x.Id, x => x.Qty, cancellationToken);
+
+        var productOnHand = await _onHandRepo.Query()
+            .Where(s => s.WarehouseId == po.IssueWarehouseId
+                && s.ProductId != null
+                && componentProductIds.Contains(s.ProductId!.Value))
+            .GroupBy(s => s.ProductId!.Value)
+            .Select(g => new { Id = g.Key, Qty = g.Sum(x => x.Quantity) })
+            .ToDictionaryAsync(x => x.Id, x => x.Qty, cancellationToken);
 
         var plannedLines = po.Bom.Lines
             .OrderBy(l => l.SortOrder)
             .Select(l =>
             {
                 var scaledQty = l.Quantity * (1 + l.WastagePercent / 100m) * scale;
-                var onHand = onHandLookup.TryGetValue(l.RawMaterialId, out var q) ? q : 0m;
+                var isRm = l.RawMaterialId is not null;
+                var itemId = isRm ? l.RawMaterialId!.Value : l.ComponentProductId!.Value;
+                var onHand = isRm
+                    ? (rmOnHand.TryGetValue(itemId, out var q) ? q : 0m)
+                    : (productOnHand.TryGetValue(itemId, out var pq) ? pq : 0m);
+                var code = isRm ? l.RawMaterial!.Code : l.ComponentProduct!.Code;
+                var name = isRm ? l.RawMaterial!.Name : l.ComponentProduct!.Name;
+                var uom = isRm ? l.RawMaterial!.UnitOfMeasure.Code : l.ComponentProduct!.UnitOfMeasure.Code;
                 return new ProductionPlannedLineDto(
-                    l.RawMaterialId, l.RawMaterial.Code, l.RawMaterial.Name,
-                    l.RawMaterial.UnitOfMeasure.Code,
+                    isRm ? "RawMaterial" : "Product", itemId, code, name, uom,
                     l.Quantity, l.WastagePercent,
                     scaledQty, onHand,
                     onHand >= scaledQty);

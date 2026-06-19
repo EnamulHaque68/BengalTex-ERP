@@ -22,14 +22,16 @@ public record BomDto(
 
 public record BomLineDto(
     int Id,
-    int RawMaterialId,
-    string RawMaterialCode,
-    string RawMaterialName,
+    string ItemType,                     // "RawMaterial" | "Product" (sub-assembly)
+    int? RawMaterialId,
+    int? ComponentProductId,
+    string ItemCode,                     // component code (RM or product)
+    string ItemName,                     // component name (RM or product)
     string UnitOfMeasureCode,
     decimal Quantity,
     decimal WastagePercent,
     decimal EffectiveQuantity,           // Quantity * (1 + WastagePercent/100)
-    decimal StandardCost,                // raw material's per-unit cost
+    decimal StandardCost,                // component's per-unit cost (RM standard cost / product WAC)
     decimal LineCost,                    // EffectiveQuantity * StandardCost
     int SortOrder,
     string? LineNotes);

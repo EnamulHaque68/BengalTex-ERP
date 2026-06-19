@@ -73,6 +73,18 @@
   font-family: monospace;
   margin-right: 0.4rem;
 }
+.item-type-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #ede9fe;
+  color: #6d28d9;
+}
 
 .status-badge {
   padding: 0.2rem 0.6rem;

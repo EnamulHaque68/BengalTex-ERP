@@ -46,14 +46,16 @@ public record ProductionStageDto(
     string? Notes);
 
 /// <summary>
-/// Computed RM consumption preview per BOM line — scaled to the production's output qty.
+/// Computed material-consumption preview per BOM line — scaled to the production's output qty.
+/// Polymorphic: each line is a raw material or a semi-finished component product (sub-assembly).
 /// Includes current on-hand in the issue warehouse so the user sees up-front whether
 /// completion will succeed (stock-sufficient) or fail.
 /// </summary>
 public record ProductionPlannedLineDto(
-    int RawMaterialId,
-    string RawMaterialCode,
-    string RawMaterialName,
+    string ItemType,                     // "RawMaterial" | "Product"
+    int ItemId,                          // RM id or component-product id
+    string ItemCode,
+    string ItemName,
     string UnitOfMeasureCode,
     decimal BomLineQuantity,             // per the BOM's output batch
     decimal WastagePercent,

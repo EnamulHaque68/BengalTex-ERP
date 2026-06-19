@@ -28,14 +28,16 @@ public sealed class UpdateBomCommandValidator : AbstractValidator<UpdateBomComma
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A BOM must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
         {
-            line.RuleFor(l => l.RawMaterialId).GreaterThan(0);
+            line.RuleFor(l => l.ItemType).Must(t => t is "RawMaterial" or "Product")
+                .WithMessage("Line item type must be RawMaterial or Product.");
+            line.RuleFor(l => l.ItemId).GreaterThan(0);
             line.RuleFor(l => l.Quantity).GreaterThan(0);
             line.RuleFor(l => l.WastagePercent).InclusiveBetween(0, 100);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.RawMaterialId).Distinct().Count() == lines.Count)
-            .WithMessage("The same raw material appears more than once in the BOM lines.")
+            .Must(lines => lines.Select(l => (l.ItemType, l.ItemId)).Distinct().Count() == lines.Count)
+            .WithMessage("The same component appears more than once in the BOM lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
 }
@@ -45,17 +47,20 @@ internal sealed class UpdateBomCommandHandler
 {
     private readonly IRepository<Domain.Entities.Bom> _repo;
     private readonly IRepository<Domain.Entities.RawMaterial> _rawMaterialRepo;
+    private readonly IRepository<Domain.Entities.Product> _productRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public UpdateBomCommandHandler(
         IRepository<Domain.Entities.Bom> repo,
         IRepository<Domain.Entities.RawMaterial> rawMaterialRepo,
+        IRepository<Domain.Entities.Product> productRepo,
         IUnitOfWork uow,
         IMediator mediator)
     {
         _repo = repo;
         _rawMaterialRepo = rawMaterialRepo;
+        _productRepo = productRepo;
         _uow = uow;
         _mediator = mediator;
     }
@@ -71,11 +76,27 @@ internal sealed class UpdateBomCommandHandler
         if (bom.Status != Domain.Entities.BomStatus.Draft)
             return ApiResponse<BomDto>.Fail("Only draft BOMs can be edited.");
 
-        var rawMaterialIds = cmd.Lines.Select(l => l.RawMaterialId).Distinct().ToList();
-        var existingCount = await _rawMaterialRepo.Query()
-            .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
-        if (existingCount != rawMaterialIds.Count)
-            return ApiResponse<BomDto>.Fail("One or more raw materials not found.");
+        var rawMaterialIds = cmd.Lines.Where(l => l.ItemType == "RawMaterial").Select(l => l.ItemId).Distinct().ToList();
+        var componentProductIds = cmd.Lines.Where(l => l.ItemType == "Product").Select(l => l.ItemId).Distinct().ToList();
+
+        // A BOM can't consume its own output product as a component (direct self-reference).
+        if (componentProductIds.Contains(bom.ProductId))
+            return ApiResponse<BomDto>.Fail("A BOM cannot use its own output product as a component.");
+
+        if (rawMaterialIds.Count > 0)
+        {
+            var rmCount = await _rawMaterialRepo.Query()
+                .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
+            if (rmCount != rawMaterialIds.Count)
+                return ApiResponse<BomDto>.Fail("One or more raw materials not found.");
+        }
+        if (componentProductIds.Count > 0)
+        {
+            var cpCount = await _productRepo.Query()
+                .CountAsync(p => componentProductIds.Contains(p.Id), cancellationToken);
+            if (cpCount != componentProductIds.Count)
+                return ApiResponse<BomDto>.Fail("One or more component products not found.");
+        }
 
         bom.Name = string.IsNullOrWhiteSpace(cmd.Name) ? null : cmd.Name.Trim();
         bom.OutputQuantity = cmd.OutputQuantity;
@@ -89,7 +110,8 @@ internal sealed class UpdateBomCommandHandler
         {
             bom.Lines.Add(new Domain.Entities.BomLine
             {
-                RawMaterialId = line.RawMaterialId,
+                RawMaterialId = line.ItemType == "RawMaterial" ? line.ItemId : null,
+                ComponentProductId = line.ItemType == "Product" ? line.ItemId : null,
                 Quantity = line.Quantity,
                 WastagePercent = line.WastagePercent,
                 SortOrder = sortOrder++,

@@ -43,16 +43,26 @@ public class Bom : BaseEntity
 }
 
 /// <summary>
-/// A single raw-material requirement within a <see cref="Bom"/>, expressed for the
-/// parent BOM's output batch (in the raw material's own unit of measure).
+/// A single component requirement within a <see cref="Bom"/>, expressed for the parent
+/// BOM's output batch (in the component's own unit of measure).
+///
+/// Polymorphic (multi-level BOM): a line is EITHER a raw material (<see cref="RawMaterialId"/>)
+/// OR a semi-finished <see cref="ComponentProduct"/> — a sub-assembly that is itself produced
+/// by its own BOM and consumed from stock here. Exactly one of the two is set (DB check
+/// constraint <c>CK_BomLine_OneItem</c>). Mirrors the StockMovement polymorphic-item pattern.
 /// </summary>
 public class BomLine : BaseEntity
 {
     public int BomId { get; set; }
     public Bom Bom { get; set; } = null!;
 
-    public int RawMaterialId { get; set; }
-    public RawMaterial RawMaterial { get; set; } = null!;
+    /// <summary>Set when this line is a raw material. Null for a sub-assembly line.</summary>
+    public int? RawMaterialId { get; set; }
+    public RawMaterial? RawMaterial { get; set; }
+
+    /// <summary>Set when this line is a semi-finished product (sub-assembly). Null for a raw-material line.</summary>
+    public int? ComponentProductId { get; set; }
+    public Product? ComponentProduct { get; set; }
 
     /// <summary>Quantity required for the parent BOM's output batch.</summary>
     public decimal Quantity { get; set; }

@@ -3,7 +3,7 @@
   <div class="page-header">
     <div>
       <h2 class="page-title">Bill of Materials</h2>
-      <p class="page-subtitle">Production recipes — raw materials per finished product</p>
+      <p class="page-subtitle">Production recipes — raw materials &amp; sub-assemblies per finished product</p>
     </div>
     <div class="header-actions">
       <span class="search-wrap">
@@ -190,7 +190,7 @@
       <table class="line-grid">
         <thead>
           <tr>
-            <th class="rm-col">Raw Material</th>
+            <th class="rm-col">Component (RM / Sub-assembly)</th>
             <th class="unit-col">Unit</th>
             <th class="num-col">Quantity</th>
             <th class="num-col">Wastage %</th>
@@ -203,13 +203,13 @@
         <tbody>
           <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
             <td>
-              <p-select formControlName="rawMaterialId"
-                          [options]="rawMaterials"
-                          optionLabel="name"
-                          optionValue="id"
+              <p-select formControlName="itemKey"
+                          [options]="itemOptions"
+                          optionLabel="label"
+                          optionValue="key"
                           [filter]="true"
-                          filterBy="code,name"
-                          placeholder="Select material"
+                          filterBy="label"
+                          placeholder="Select RM or sub-assembly"
                           appendTo="body" styleClass="w-full" />
             </td>
             <td class="unit-cell">{{ lineUomCode(lineCtrl) }}</td>
