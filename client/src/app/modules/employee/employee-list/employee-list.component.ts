@@ -4,7 +4,8 @@ import { EmployeeService } from '../../../services/employee.service';
 import { MasterSetupService } from '../../../services/master-setup.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
-  EmployeeListItemDto, GENDERS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES
+  EmployeeListItemDto, GENDERS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES,
+  EMPLOYEE_HISTORY_TYPES, EmployeeHistoryEntryDto
 } from '../../../models/employee.models';
 import {
   DepartmentDto, DesignationDto, ShiftDto, BankAccountDto
@@ -52,6 +53,16 @@ export class EmployeeListComponent implements OnInit {
   deleting = false;
   deleteError = '';
 
+  // Service-record history
+  readonly historyTypes = EMPLOYEE_HISTORY_TYPES;
+  historyVisible = false;
+  historyEmployee: EmployeeListItemDto | null = null;
+  history: EmployeeHistoryEntryDto[] = [];
+  historyLoading = false;
+  historySaving = false;
+  historyError = '';
+  historyForm!: FormGroup;
+
   constructor(
     private service: EmployeeService,
     private masterSvc: MasterSetupService,
@@ -62,8 +73,71 @@ export class EmployeeListComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
+    this.historyForm = this.fb.group({
+      type: ['Increment', Validators.required],
+      effectiveDate: [new Date().toISOString().slice(0, 10), Validators.required],
+      title: ['', [Validators.required, Validators.maxLength(200)]],
+      fromValue: ['', Validators.maxLength(200)],
+      toValue: ['', Validators.maxLength(200)],
+      amount: [null as number | null],
+      details: ['', Validators.maxLength(2000)]
+    });
     this.loadMasters();
     this.load();
+  }
+
+  // ── Service-record history ──
+  openHistory(emp: EmployeeListItemDto): void {
+    this.historyEmployee = emp;
+    this.history = [];
+    this.historyError = '';
+    this.historyForm.reset({ type: 'Increment', effectiveDate: new Date().toISOString().slice(0, 10), title: '', fromValue: '', toValue: '', amount: null, details: '' });
+    this.historyVisible = true;
+    this.loadHistory();
+  }
+
+  private loadHistory(): void {
+    if (!this.historyEmployee) return;
+    this.historyLoading = true;
+    this.cdr.detectChanges();
+    this.service.getHistory(this.historyEmployee.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.historyLoading = false;
+        if (res.success && res.data) this.history = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.historyLoading = false; this.cdr.detectChanges(); })
+    });
+  }
+
+  addHistoryEntry(): void {
+    if (this.historyForm.invalid || this.historySaving || !this.historyEmployee) return;
+    this.historySaving = true;
+    this.historyError = '';
+    this.cdr.detectChanges();
+    const v = this.historyForm.getRawValue();
+    this.service.addHistory(this.historyEmployee.id, {
+      type: v.type, effectiveDate: v.effectiveDate, title: (v.title as string).trim(),
+      fromValue: (v.fromValue as string)?.trim() || null, toValue: (v.toValue as string)?.trim() || null,
+      amount: v.amount != null ? Number(v.amount) : null, details: (v.details as string)?.trim() || null
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.historySaving = false;
+        if (res.success) {
+          this.historyForm.patchValue({ title: '', fromValue: '', toValue: '', amount: null, details: '' });
+          this.loadHistory();
+        } else this.historyError = res.message || 'Could not add entry.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.historySaving = false; this.historyError = err?.error?.message || 'Could not add entry.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  deleteHistoryEntry(h: EmployeeHistoryEntryDto): void {
+    this.service.deleteHistory(h.id).subscribe({
+      next: () => this.zone.run(() => { this.loadHistory(); }),
+      error: () => {}
+    });
   }
 
   private loadMasters(): void {

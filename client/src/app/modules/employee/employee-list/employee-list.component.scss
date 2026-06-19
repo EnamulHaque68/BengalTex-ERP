@@ -66,3 +66,21 @@
   display: flex; justify-content: flex-end; gap: 0.5rem;
   margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;
 }
+
+/* Service-record history dialog */
+.hist-add { margin-bottom: 0.75rem; }
+.hist-form .hist-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
+.hist-form .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 8rem;
+  label { font-size: 0.72rem; font-weight: 600; color: #6b7280; }
+  &.grow { flex: 1 1 12rem; } &.action { justify-content: flex-end; } }
+.hist-form .w-full { width: 100%; }
+.hist-table { margin-top: 0.5rem; }
+.hist-type { padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  &.t-increment { background:#d1fae5; color:#065f46; }
+  &.t-promotion { background:#dbeafe; color:#1e40af; }
+  &.t-transfer { background:#ede9fe; color:#6d28d9; }
+  &.t-disciplinary { background:#fee2e2; color:#991b1b; } }
+.hist-detail { font-size: 0.72rem; color: #9ca3af; margin-top: 0.15rem; }
+.num-col, .num { text-align: right; }
+.fw-600 { font-weight: 600; } .muted { color:#6b7280; }
+.empty-row { text-align:center; color:#9ca3af; padding:1rem; i { margin-right:0.4rem; } }

@@ -39,6 +39,23 @@ public class EmployeesController : ControllerBase
         return Ok(result);
     }
 
+    // ── Service record: increments / promotions / transfers / disciplinary ──
+    [HttpGet("{id:int}/history")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> GetHistory(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeHistoryQuery(id), ct));
+
+    [HttpPost("{id:int}/history")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> AddHistory(int id, [FromBody] AddEmployeeHistoryRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new CreateEmployeeHistoryCommand(
+            id, body.Type, body.EffectiveDate, body.Title, body.FromValue, body.ToValue, body.Amount, body.Details), ct));
+
+    [HttpDelete("history/{historyId:int}")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> DeleteHistory(int historyId, CancellationToken ct)
+        => Ok(await _mediator.Send(new DeleteEmployeeHistoryCommand(historyId), ct));
+
     [HttpPost]
     [HasPermission(Permissions.Employees.Create)]
     public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request, CancellationToken ct)
@@ -83,6 +100,15 @@ public class EmployeesController : ControllerBase
         return Ok(result);
     }
 }
+
+public record AddEmployeeHistoryRequest(
+    string Type,
+    DateOnly EffectiveDate,
+    string Title,
+    string? FromValue,
+    string? ToValue,
+    decimal? Amount,
+    string? Details);
 
 public record CreateEmployeeRequest(
     string? Code,

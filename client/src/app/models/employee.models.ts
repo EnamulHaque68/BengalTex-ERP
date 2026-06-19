@@ -62,6 +62,37 @@ export interface EmployeeListItemDto {
   isActive: boolean;
 }
 
+export const EMPLOYEE_HISTORY_TYPES: { label: string; value: string }[] = [
+  { label: 'Increment', value: 'Increment' },
+  { label: 'Promotion', value: 'Promotion' },
+  { label: 'Transfer', value: 'Transfer' },
+  { label: 'Disciplinary', value: 'Disciplinary' }
+];
+
+export interface EmployeeHistoryEntryDto {
+  id: number;
+  employeeId: number;
+  type: string;
+  effectiveDate: string;
+  title: string;
+  fromValue: string | null;
+  toValue: string | null;
+  amount: number | null;
+  details: string | null;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+export interface AddEmployeeHistoryRequest {
+  type: string;
+  effectiveDate: string;
+  title: string;
+  fromValue: string | null;
+  toValue: string | null;
+  amount: number | null;
+  details: string | null;
+}
+
 export interface CreateEmployeeRequest {
   code: string | null;
   fullName: string;

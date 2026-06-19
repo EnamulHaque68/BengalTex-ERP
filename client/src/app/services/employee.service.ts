@@ -8,7 +8,9 @@ import {
   CreateEmployeeRequest,
   EmployeeDto,
   EmployeeListItemDto,
-  UpdateEmployeeRequest
+  UpdateEmployeeRequest,
+  EmployeeHistoryEntryDto,
+  AddEmployeeHistoryRequest
 } from '../models/employee.models';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +36,17 @@ export class EmployeeService {
 
   getById(id: number): Observable<ApiResponse<EmployeeDto>> {
     return this.http.get<ApiResponse<EmployeeDto>>(`${this.base}/${id}`);
+  }
+
+  // ── Service record (increments / promotions / transfers / disciplinary) ──
+  getHistory(id: number): Observable<ApiResponse<EmployeeHistoryEntryDto[]>> {
+    return this.http.get<ApiResponse<EmployeeHistoryEntryDto[]>>(`${this.base}/${id}/history`);
+  }
+  addHistory(id: number, data: AddEmployeeHistoryRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/${id}/history`, data);
+  }
+  deleteHistory(historyId: number): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(`${this.base}/history/${historyId}`);
   }
 
   create(data: CreateEmployeeRequest): Observable<ApiResponse<EmployeeDto>> {
