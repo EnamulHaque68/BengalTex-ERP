@@ -8,9 +8,11 @@ export const BOM_STATUSES: { label: string; value: string }[] = [
 
 export interface BomLineDto {
   id: number;
-  rawMaterialId: number;
-  rawMaterialCode: string;
-  rawMaterialName: string;
+  itemType: string;                 // "RawMaterial" | "Product" (sub-assembly)
+  rawMaterialId: number | null;
+  componentProductId: number | null;
+  itemCode: string;
+  itemName: string;
   unitOfMeasureCode: string;
   quantity: number;
   wastagePercent: number;
@@ -56,7 +58,8 @@ export interface BomListItemDto {
 }
 
 export interface BomLineInput {
-  rawMaterialId: number;
+  itemType: string;                 // "RawMaterial" | "Product"
+  itemId: number;
   quantity: number;
   wastagePercent: number;
   lineNotes: string | null;

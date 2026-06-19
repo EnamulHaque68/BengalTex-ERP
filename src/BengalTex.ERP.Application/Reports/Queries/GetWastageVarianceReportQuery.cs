@@ -56,7 +56,9 @@ internal sealed class GetWastageVarianceReportQueryHandler
                 {
                     l.Quantity,
                     l.WastagePercent,
-                    Wac = l.RawMaterial.WeightedAverageCost
+                    // Polymorphic BOM line: standard-wastage cost uses the component's WAC
+                    // (raw material or sub-assembly product).
+                    Wac = l.RawMaterialId != null ? l.RawMaterial!.WeightedAverageCost : l.ComponentProduct!.WeightedAverageCost
                 }).ToList()
             })
             .ToListAsync(ct);

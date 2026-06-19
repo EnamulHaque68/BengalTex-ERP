@@ -780,6 +780,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("BomId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ComponentProductId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -809,7 +812,7 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<int>("RawMaterialId")
+                    b.Property<int?>("RawMaterialId")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
@@ -829,9 +832,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("BomId");
 
+                    b.HasIndex("ComponentProductId");
+
                     b.HasIndex("RawMaterialId");
 
-                    b.ToTable("BomLines", (string)null);
+                    b.ToTable("BomLines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BomLine_OneItem", "([RawMaterialId] IS NOT NULL AND [ComponentProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ComponentProductId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Company", b =>
@@ -10089,13 +10097,19 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "ComponentProduct")
+                        .WithMany()
+                        .HasForeignKey("ComponentProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
                         .WithMany()
                         .HasForeignKey("RawMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Bom");
+
+                    b.Navigation("ComponentProduct");
 
                     b.Navigation("RawMaterial");
                 });

@@ -8,6 +8,8 @@ import { BOM_STATUSES, BomListItemDto } from '../../../models/bom.models';
 import { ProductListItemDto } from '../../../models/product.models';
 import { RawMaterialListItemDto } from '../../../models/raw-material.models';
 
+interface ItemOption { key: string; label: string; itemType: string; itemId: number; uom: string; unitCost: number; }
+
 @Component({
   selector: 'app-bom-list',
   standalone: false,
@@ -31,6 +33,7 @@ export class BomListComponent implements OnInit {
   readonly statuses = BOM_STATUSES;
   products: ProductListItemDto[] = [];
   rawMaterials: RawMaterialListItemDto[] = [];
+  itemOptions: ItemOption[] = [];   // combined RM + sub-assembly product picker
 
   // Dialog
   dialogVisible = false;
@@ -82,13 +85,13 @@ export class BomListComponent implements OnInit {
   }
 
   private newLine(
-    rawMaterialId: number | null = null,
+    itemKey: string | null = null,
     quantity = 1,
     wastagePercent = 0,
     lineNotes = ''
   ): FormGroup {
     return this.fb.group({
-      rawMaterialId: [rawMaterialId, Validators.required],
+      itemKey: [itemKey, Validators.required],
       quantity: [quantity, [Validators.required, Validators.min(0.0001)]],
       wastagePercent: [wastagePercent, [Validators.required, Validators.min(0), Validators.max(100)]],
       lineNotes: [lineNotes, Validators.maxLength(1000)]
@@ -105,16 +108,16 @@ export class BomListComponent implements OnInit {
 
   // ─── Line computations (client-side preview) ─────────────────────────────
 
-  rawMaterialById(id: number | null | undefined): RawMaterialListItemDto | undefined {
-    return id ? this.rawMaterials.find(r => r.id === id) : undefined;
+  optionByKey(key: string | null | undefined): ItemOption | undefined {
+    return key ? this.itemOptions.find(o => o.key === key) : undefined;
   }
 
   lineUomCode(line: AbstractControl): string {
-    return this.rawMaterialById(line.get('rawMaterialId')?.value)?.unitOfMeasureCode ?? '—';
+    return this.optionByKey(line.get('itemKey')?.value)?.uom ?? '—';
   }
 
   lineUnitCost(line: AbstractControl): number {
-    return this.rawMaterialById(line.get('rawMaterialId')?.value)?.standardCost ?? 0;
+    return this.optionByKey(line.get('itemKey')?.value)?.unitCost ?? 0;
   }
 
   lineEffectiveQty(line: AbstractControl): number {
@@ -146,6 +149,7 @@ export class BomListComponent implements OnInit {
       next: (res) => {
         this.zone.run(() => {
           if (res.success && res.data) this.products = res.data.items;
+          this.buildItemOptions();
           this.cdr.detectChanges();
         });
       }
@@ -154,10 +158,21 @@ export class BomListComponent implements OnInit {
       next: (res) => {
         this.zone.run(() => {
           if (res.success && res.data) this.rawMaterials = res.data.items;
+          this.buildItemOptions();
           this.cdr.detectChanges();
         });
       }
     });
+  }
+
+  /** Combined picker: raw materials + finished products usable as sub-assemblies. */
+  private buildItemOptions(): void {
+    const opts: ItemOption[] = [];
+    for (const r of this.rawMaterials)
+      opts.push({ key: `RawMaterial:${r.id}`, label: `RM · ${r.code} — ${r.name}`, itemType: 'RawMaterial', itemId: r.id, uom: r.unitOfMeasureCode, unitCost: r.standardCost });
+    for (const p of this.products)
+      opts.push({ key: `Product:${p.id}`, label: `FG · ${p.code} — ${p.name}`, itemType: 'Product', itemId: p.id, uom: p.unitOfMeasureCode, unitCost: p.weightedAverageCost });
+    this.itemOptions = opts;
   }
 
   load(): void {
@@ -240,7 +255,8 @@ export class BomListComponent implements OnInit {
               notes: b.notes ?? ''
             });
             b.lines.forEach(l => this.lines.push(
-              this.newLine(l.rawMaterialId, l.quantity, l.wastagePercent, l.lineNotes ?? '')
+              this.newLine(`${l.itemType}:${l.itemType === 'RawMaterial' ? l.rawMaterialId : l.componentProductId}`,
+                l.quantity, l.wastagePercent, l.lineNotes ?? '')
             ));
             // Product is fixed once a BOM exists — its version chain belongs to that product
             this.form.get('productId')?.disable();
@@ -260,12 +276,18 @@ export class BomListComponent implements OnInit {
     this.cdr.detectChanges();
 
     const v = this.form.getRawValue();
-    const lines = (v.lines as any[]).map(l => ({
-      rawMaterialId: l.rawMaterialId,
-      quantity: Number(l.quantity) || 0,
-      wastagePercent: Number(l.wastagePercent) || 0,
-      lineNotes: (l.lineNotes as string)?.trim() || null
-    }));
+    const lines = (v.lines as any[])
+      .filter(l => l.itemKey)
+      .map(l => {
+        const opt = this.optionByKey(l.itemKey)!;
+        return {
+          itemType: opt.itemType,
+          itemId: opt.itemId,
+          quantity: Number(l.quantity) || 0,
+          wastagePercent: Number(l.wastagePercent) || 0,
+          lineNotes: (l.lineNotes as string)?.trim() || null
+        };
+      });
 
     const baseFields = {
       name: (v.name as string)?.trim() || null,

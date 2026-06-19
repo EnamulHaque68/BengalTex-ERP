@@ -21,7 +21,8 @@ internal sealed class GetBomByIdQueryHandler
         var bom = await _repo.Query()
             .AsNoTracking()
             .Include(b => b.Product).ThenInclude(p => p.UnitOfMeasure)
-            .Include(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
+            .Include(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm!.UnitOfMeasure)
+            .Include(b => b.Lines).ThenInclude(l => l.ComponentProduct).ThenInclude(p => p!.UnitOfMeasure)
             .FirstOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
 
         if (bom is null) return ApiResponse<BomDto>.Fail("BOM not found.");
@@ -31,11 +32,17 @@ internal sealed class GetBomByIdQueryHandler
             .Select(l =>
             {
                 var effectiveQty = l.Quantity * (1 + l.WastagePercent / 100m);
+                var isRm = l.RawMaterialId is not null;
+                var code = isRm ? l.RawMaterial!.Code : l.ComponentProduct!.Code;
+                var name = isRm ? l.RawMaterial!.Name : l.ComponentProduct!.Name;
+                var uom = isRm ? l.RawMaterial!.UnitOfMeasure.Code : l.ComponentProduct!.UnitOfMeasure.Code;
+                // RM costed at standard cost (existing convention); sub-assembly at its current WAC
+                var unitCost = isRm ? l.RawMaterial!.StandardCost : l.ComponentProduct!.WeightedAverageCost;
                 return new BomLineDto(
-                    l.Id, l.RawMaterialId, l.RawMaterial.Code, l.RawMaterial.Name,
-                    l.RawMaterial.UnitOfMeasure.Code,
+                    l.Id, isRm ? "RawMaterial" : "Product",
+                    l.RawMaterialId, l.ComponentProductId, code, name, uom,
                     l.Quantity, l.WastagePercent, effectiveQty,
-                    l.RawMaterial.StandardCost, effectiveQty * l.RawMaterial.StandardCost,
+                    unitCost, effectiveQty * unitCost,
                     l.SortOrder, l.LineNotes);
             })
             .ToList();

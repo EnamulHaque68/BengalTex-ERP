@@ -9,9 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.Bom.Commands;
 
-/// <summary>One raw-material line submitted with a create/update BOM request.</summary>
+/// <summary>
+/// One component line submitted with a create/update BOM request. Polymorphic:
+/// <paramref name="ItemType"/> is "RawMaterial" or "Product" (sub-assembly), and
+/// <paramref name="ItemId"/> is the corresponding RawMaterial or Product id.
+/// </summary>
 public sealed record BomLineInput(
-    int RawMaterialId,
+    string ItemType,
+    int ItemId,
     decimal Quantity,
     decimal WastagePercent,
     string? LineNotes);
@@ -36,14 +41,16 @@ public sealed class CreateBomCommandValidator : AbstractValidator<CreateBomComma
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A BOM must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
         {
-            line.RuleFor(l => l.RawMaterialId).GreaterThan(0);
+            line.RuleFor(l => l.ItemType).Must(t => t is "RawMaterial" or "Product")
+                .WithMessage("Line item type must be RawMaterial or Product.");
+            line.RuleFor(l => l.ItemId).GreaterThan(0);
             line.RuleFor(l => l.Quantity).GreaterThan(0);
             line.RuleFor(l => l.WastagePercent).InclusiveBetween(0, 100);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.RawMaterialId).Distinct().Count() == lines.Count)
-            .WithMessage("The same raw material appears more than once in the BOM lines.")
+            .Must(lines => lines.Select(l => (l.ItemType, l.ItemId)).Distinct().Count() == lines.Count)
+            .WithMessage("The same component appears more than once in the BOM lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
 }
@@ -80,11 +87,27 @@ internal sealed class CreateBomCommandHandler
         var product = await _productRepo.GetByIdAsync(cmd.ProductId, cancellationToken);
         if (product is null) return ApiResponse<BomDto>.Fail("Product not found.");
 
-        var rawMaterialIds = cmd.Lines.Select(l => l.RawMaterialId).Distinct().ToList();
-        var existingCount = await _rawMaterialRepo.Query()
-            .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
-        if (existingCount != rawMaterialIds.Count)
-            return ApiResponse<BomDto>.Fail("One or more raw materials not found.");
+        var rawMaterialIds = cmd.Lines.Where(l => l.ItemType == "RawMaterial").Select(l => l.ItemId).Distinct().ToList();
+        var componentProductIds = cmd.Lines.Where(l => l.ItemType == "Product").Select(l => l.ItemId).Distinct().ToList();
+
+        // A BOM can't consume its own output product as a component (direct self-reference).
+        if (componentProductIds.Contains(cmd.ProductId))
+            return ApiResponse<BomDto>.Fail("A BOM cannot use its own output product as a component.");
+
+        if (rawMaterialIds.Count > 0)
+        {
+            var rmCount = await _rawMaterialRepo.Query()
+                .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
+            if (rmCount != rawMaterialIds.Count)
+                return ApiResponse<BomDto>.Fail("One or more raw materials not found.");
+        }
+        if (componentProductIds.Count > 0)
+        {
+            var cpCount = await _productRepo.Query()
+                .CountAsync(p => componentProductIds.Contains(p.Id), cancellationToken);
+            if (cpCount != componentProductIds.Count)
+                return ApiResponse<BomDto>.Fail("One or more component products not found.");
+        }
 
         // Version is monotonic per product — count soft-deleted versions too so numbers never repeat
         var maxVersion = await _repo.Query()
@@ -108,7 +131,8 @@ internal sealed class CreateBomCommandHandler
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.BomLine
             {
-                RawMaterialId = l.RawMaterialId,
+                RawMaterialId = l.ItemType == "RawMaterial" ? l.ItemId : null,
+                ComponentProductId = l.ItemType == "Product" ? l.ItemId : null,
                 Quantity = l.Quantity,
                 WastagePercent = l.WastagePercent,
                 SortOrder = i,

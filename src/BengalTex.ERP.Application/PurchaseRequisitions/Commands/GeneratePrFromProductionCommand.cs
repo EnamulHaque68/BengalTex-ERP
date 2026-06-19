@@ -48,17 +48,21 @@ internal sealed class GeneratePrFromProductionCommandHandler
         var lines = new List<PurchaseRequisitionLineInput>();
         foreach (var bl in po.Bom.Lines)
         {
+            // PR is for PURCHASING raw materials — sub-assembly (component-product) shortages
+            // are resolved by producing more, not buying, so skip them here.
+            if (bl.RawMaterialId is not int rawMaterialId) continue;
+
             var required = bl.Quantity * (1 + bl.WastagePercent / 100m) * scale;
-            var available = await _stock.GetRawMaterialTotalOnHandAsync(bl.RawMaterialId, ct);
+            var available = await _stock.GetRawMaterialTotalOnHandAsync(rawMaterialId, ct);
             var shortfall = required - available;
             if (shortfall <= 0m) continue;
 
-            var price = bl.RawMaterial.WeightedAverageCost > 0m
+            var price = bl.RawMaterial!.WeightedAverageCost > 0m
                 ? bl.RawMaterial.WeightedAverageCost
                 : bl.RawMaterial.StandardCost;
 
             lines.Add(new PurchaseRequisitionLineInput(
-                bl.RawMaterialId, Math.Round(shortfall, 4, MidpointRounding.AwayFromZero), price,
+                rawMaterialId, Math.Round(shortfall, 4, MidpointRounding.AwayFromZero), price,
                 $"Shortfall for production {po.Code} (need {required:0.####}, have {available:0.####})"));
         }
 

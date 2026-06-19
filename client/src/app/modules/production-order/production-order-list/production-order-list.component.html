@@ -300,11 +300,11 @@
 
     <!-- Planned consumption preview (only in edit/view, server-computed) -->
     <ng-container *ngIf="loadedDetail && loadedDetail.plannedLines.length > 0">
-      <p class="section-label">Planned RM Consumption <small>(scaled to Quantity × BOM line × wastage)</small></p>
+      <p class="section-label">Planned Material Consumption <small>(scaled to Quantity × BOM line × wastage)</small></p>
       <table class="line-grid">
         <thead>
           <tr>
-            <th class="rm-col">Raw Material</th>
+            <th class="rm-col">Component</th>
             <th class="unit-col">Unit</th>
             <th class="num-col">BOM Qty</th>
             <th class="num-col">Wastage %</th>
@@ -316,8 +316,9 @@
         <tbody>
           <tr *ngFor="let l of loadedDetail.plannedLines" [class.row-short]="!l.sufficient">
             <td>
-              <span class="rm-code">{{ l.rawMaterialCode }}</span>
-              <span class="fw-600">{{ l.rawMaterialName }}</span>
+              <span class="rm-code">{{ l.itemCode }}</span>
+              <span class="fw-600">{{ l.itemName }}</span>
+              <span class="item-type-tag" *ngIf="l.itemType === 'Product'">sub-assembly</span>
             </td>
             <td class="unit-cell">{{ l.unitOfMeasureCode }}</td>
             <td class="num">{{ l.bomLineQuantity | number:'1.0-4' }}</td>

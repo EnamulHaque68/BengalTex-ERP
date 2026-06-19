@@ -67,7 +67,8 @@ internal sealed class GetBomsQueryHandler
                 b.Id, b.Code, b.ProductId, b.Product.Name, b.Version,
                 b.Status.ToString(), b.IsActive, b.OutputQuantity,
                 b.Lines.Count,
-                b.Lines.Sum(l => (decimal?)(l.Quantity * (1 + l.WastagePercent / 100m) * l.RawMaterial.StandardCost)) ?? 0m))
+                b.Lines.Sum(l => (decimal?)(l.Quantity * (1 + l.WastagePercent / 100m) *
+                    (l.RawMaterialId != null ? l.RawMaterial!.StandardCost : l.ComponentProduct!.WeightedAverageCost))) ?? 0m))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<BomListItemDto>.Create(

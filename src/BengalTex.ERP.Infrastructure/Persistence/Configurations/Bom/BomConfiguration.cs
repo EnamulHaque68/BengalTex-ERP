@@ -53,7 +53,11 @@ public class BomLineConfiguration : IEntityTypeConfiguration<BomLine>
 {
     public void Configure(EntityTypeBuilder<BomLine> builder)
     {
-        builder.ToTable("BomLines");
+        // Polymorphic line: exactly one of RawMaterialId / ComponentProductId is set.
+        builder.ToTable("BomLines", t => t.HasCheckConstraint(
+            "CK_BomLine_OneItem",
+            "([RawMaterialId] IS NOT NULL AND [ComponentProductId] IS NULL) OR " +
+            "([RawMaterialId] IS NULL AND [ComponentProductId] IS NOT NULL)"));
 
         builder.Property(l => l.Quantity).HasPrecision(18, 4);
         builder.Property(l => l.WastagePercent).HasPrecision(7, 4);
@@ -61,11 +65,18 @@ public class BomLineConfiguration : IEntityTypeConfiguration<BomLine>
 
         builder.HasIndex(l => l.BomId);
         builder.HasIndex(l => l.RawMaterialId);
+        builder.HasIndex(l => l.ComponentProductId);
 
         // RawMaterial FK — Restrict so a material referenced by a BOM line can't be deleted
         builder.HasOne(l => l.RawMaterial)
             .WithMany()
             .HasForeignKey(l => l.RawMaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Component (sub-assembly) Product FK — Restrict for the same reason
+        builder.HasOne(l => l.ComponentProduct)
+            .WithMany()
+            .HasForeignKey(l => l.ComponentProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();
