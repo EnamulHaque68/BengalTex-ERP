@@ -61,6 +61,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
     public DbSet<OpeningStockEntry> OpeningStockEntries => Set<OpeningStockEntry>();
     public DbSet<OpeningStockLine> OpeningStockLines => Set<OpeningStockLine>();
+    public DbSet<ScrapSale> ScrapSales => Set<ScrapSale>();
+    public DbSet<ScrapSaleLine> ScrapSaleLines => Set<ScrapSaleLine>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();
     public DbSet<Bom> Boms => Set<Bom>();
     public DbSet<BomLine> BomLines => Set<BomLine>();

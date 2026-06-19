@@ -186,6 +186,7 @@ public class DataSeeder : IDataSeeder
             ("4100", "Sales Revenue", AccountType.Income, false, "4000"),
             ("4150", "Sales Returns & Allowances", AccountType.Income, false, "4000"),
             ("4200", "Other Income", AccountType.Income, false, "4000"),
+            ("4250", "Scrap Sales Income", AccountType.Income, false, "4000"),
             ("4300", "Exchange Gain", AccountType.Income, false, "4000"),
             ("4400", "Gain on Asset Disposal", AccountType.Income, false, "4000"),
 
