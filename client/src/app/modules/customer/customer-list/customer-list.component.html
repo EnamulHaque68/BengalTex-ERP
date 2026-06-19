@@ -235,6 +235,13 @@
       </div>
 
       <div class="field col-span-2">
+        <label>Parent Customer <small class="muted">(head office — leave blank for a top-level buyer)</small></label>
+        <p-select formControlName="parentCustomerId" [options]="availableParents" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="code,name" [showClear]="true"
+                  placeholder="None (top-level)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2">
         <label>Notes</label>
         <textarea pInputTextarea rows="2" formControlName="notes" placeholder="Internal notes..." class="w-full"></textarea>
       </div>

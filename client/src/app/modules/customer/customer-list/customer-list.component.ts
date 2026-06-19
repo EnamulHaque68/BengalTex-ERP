@@ -17,6 +17,8 @@ import {
 export class CustomerListComponent implements OnInit {
 
   customers: CustomerListItemDto[] = [];
+  /** Full customer list for the parent (head office) picker. */
+  parentOptions: CustomerListItemDto[] = [];
   loading = false;
   totalCount = 0;
   includeInactive = false;
@@ -50,6 +52,18 @@ export class CustomerListComponent implements OnInit {
   ngOnInit(): void {
     this.buildForm();
     this.load();
+    this.loadParentOptions();
+  }
+
+  private loadParentOptions(): void {
+    this.customerService.getAll({ page: 1, pageSize: 1000, search: '' }, false).subscribe({
+      next: (res) => this.zone.run(() => { if (res.success && res.data) this.parentOptions = res.data.items; this.cdr.detectChanges(); })
+    });
+  }
+
+  /** Parent options excluding the customer being edited (can't be its own parent). */
+  get availableParents(): CustomerListItemDto[] {
+    return this.editingId ? this.parentOptions.filter(c => c.id !== this.editingId) : this.parentOptions;
   }
 
   private buildForm(): void {
@@ -79,6 +93,7 @@ export class CustomerListComponent implements OnInit {
       creditLimit: [0, [Validators.required, Validators.min(0)]],
       creditPeriodDays: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
       isExport: [false],
+      parentCustomerId: [null as number | null],
 
       notes: ['', Validators.maxLength(2000)],
       isActive: [true]
@@ -132,6 +147,7 @@ export class CustomerListComponent implements OnInit {
       creditLimit: 0,
       creditPeriodDays: 0,
       isExport: false,
+      parentCustomerId: null,
       notes: '',
       isActive: true
     });
@@ -170,6 +186,7 @@ export class CustomerListComponent implements OnInit {
               creditLimit: c.creditLimit,
               creditPeriodDays: c.creditPeriodDays,
               isExport: c.isExport,
+              parentCustomerId: c.parentCustomerId ?? null,
               notes: c.notes ?? '',
               isActive: c.isActive
             });
@@ -210,6 +227,7 @@ export class CustomerListComponent implements OnInit {
       creditLimit: Number(v.creditLimit) || 0,
       creditPeriodDays: Number(v.creditPeriodDays) || 0,
       isExport: !!v.isExport,
+      parentCustomerId: v.parentCustomerId ?? null,
       notes: v.notes || null
     };
 

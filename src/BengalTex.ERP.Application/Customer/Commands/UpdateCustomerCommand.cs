@@ -33,7 +33,8 @@ public sealed record UpdateCustomerCommand(
     int CreditPeriodDays,
     bool IsExport,
     string? Notes,
-    bool IsActive
+    bool IsActive,
+    int? ParentCustomerId = null
 ) : IRequest<ApiResponse<CustomerDto>>;
 
 public sealed class UpdateCustomerCommandValidator : AbstractValidator<UpdateCustomerCommand>
@@ -87,6 +88,13 @@ internal sealed class UpdateCustomerCommandHandler
         var entity = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
         if (entity is null) return ApiResponse<CustomerDto>.Fail("Customer not found.");
 
+        if (cmd.ParentCustomerId is int parentId)
+        {
+            if (parentId == cmd.Id) return ApiResponse<CustomerDto>.Fail("A customer cannot be its own parent.");
+            if (!await _repo.AnyAsync(c => c.Id == parentId, cancellationToken))
+                return ApiResponse<CustomerDto>.Fail("Parent customer not found.");
+        }
+
         entity.Name = cmd.Name;
         entity.ContactPerson = cmd.ContactPerson;
         entity.Phone = cmd.Phone;
@@ -105,6 +113,7 @@ internal sealed class UpdateCustomerCommandHandler
         entity.CreditLimit = cmd.CreditLimit;
         entity.CreditPeriodDays = cmd.CreditPeriodDays;
         entity.IsExport = cmd.IsExport;
+        entity.ParentCustomerId = cmd.ParentCustomerId;
         entity.Notes = cmd.Notes;
         entity.IsActive = cmd.IsActive;
 

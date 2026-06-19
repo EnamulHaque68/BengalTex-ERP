@@ -29,7 +29,8 @@ public sealed record CreateCustomerCommand(
     decimal CreditLimit,
     int CreditPeriodDays,
     bool IsExport,
-    string? Notes
+    string? Notes,
+    int? ParentCustomerId = null
 ) : IRequest<ApiResponse<CustomerDto>>;
 
 public sealed class CreateCustomerCommandValidator : AbstractValidator<CreateCustomerCommand>
@@ -99,6 +100,9 @@ internal sealed class CreateCustomerCommandHandler
         if (await _repo.AnyAsync(c => c.Code == code, cancellationToken))
             return ApiResponse<CustomerDto>.Fail($"Customer code '{code}' already exists.");
 
+        if (cmd.ParentCustomerId is int parentId && !await _repo.AnyAsync(c => c.Id == parentId, cancellationToken))
+            return ApiResponse<CustomerDto>.Fail("Parent customer not found.");
+
         var entity = new Domain.Entities.Customer
         {
             Code = code,
@@ -120,6 +124,7 @@ internal sealed class CreateCustomerCommandHandler
             CreditLimit = cmd.CreditLimit,
             CreditPeriodDays = cmd.CreditPeriodDays,
             IsExport = cmd.IsExport,
+            ParentCustomerId = cmd.ParentCustomerId,
             Notes = cmd.Notes,
             IsActive = true
         };
