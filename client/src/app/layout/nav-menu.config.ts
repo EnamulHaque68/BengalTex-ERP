@@ -47,6 +47,7 @@ export const NAV_MENU: NavItem[] = [
       { title: 'Purchase Requisitions', icon: 'pi pi-list',        route: '/purchase-requisitions', permission: 'PurchaseRequisitions.View' },
       { title: 'Purchase Orders',       icon: 'pi pi-file-edit',   route: '/purchase-orders',       permission: 'PurchaseOrders.View' },
       { title: 'Goods Receipts (GRN)',  icon: 'pi pi-inbox',       route: '/goods-receipts',        permission: 'GoodsReceipts.View' },
+      { title: 'Landed Cost',           icon: 'pi pi-truck',       route: '/landed-cost',           permission: 'GoodsReceipts.View' },
       { title: 'Supplier Invoices',     icon: 'pi pi-receipt',     route: '/supplier-invoices',     permission: 'Invoices.View' },
       { title: 'Payments',              icon: 'pi pi-credit-card', route: '/payments',              permission: 'Payments.View' },
       { title: 'Debit Notes',           icon: 'pi pi-plus-circle', route: '/debit-notes',           permission: 'DebitNotes.View' },

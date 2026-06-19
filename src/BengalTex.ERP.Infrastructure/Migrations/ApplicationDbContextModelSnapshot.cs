@@ -3999,6 +3999,151 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("JournalEntryLines", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostCharge", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ChargeType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("LandedCostVoucherId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LandedCostVoucherId");
+
+                    b.ToTable("LandedCostCharges", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostVoucher", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AllocationBasis")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("GoodsReceiptNoteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PostedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("VoucherDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("GoodsReceiptNoteId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("LandedCostVouchers", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LeaveApplication", b =>
                 {
                     b.Property<long>("Id")
@@ -10666,6 +10811,28 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("JournalEntry");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostCharge", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.LandedCostVoucher", "LandedCostVoucher")
+                        .WithMany("Charges")
+                        .HasForeignKey("LandedCostVoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LandedCostVoucher");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostVoucher", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", "GoodsReceiptNote")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceiptNoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GoodsReceiptNote");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LeaveApplication", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Employee", "Employee")
@@ -11795,6 +11962,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.JournalEntry", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostVoucher", b =>
+                {
+                    b.Navigation("Charges");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.OpeningStockEntry", b =>
