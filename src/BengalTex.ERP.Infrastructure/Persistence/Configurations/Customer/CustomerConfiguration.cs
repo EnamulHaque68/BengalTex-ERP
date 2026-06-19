@@ -40,6 +40,12 @@ public class CustomerConfiguration : IEntityTypeConfiguration<CustomerEntity>
         builder.HasIndex(c => c.IsActive);
         builder.HasIndex(c => c.IsExport);
 
+        // Self-reference (head office → branches) — NoAction to avoid a SQL Server cascade cycle.
+        builder.HasOne(c => c.ParentCustomer)
+            .WithMany()
+            .HasForeignKey(c => c.ParentCustomerId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

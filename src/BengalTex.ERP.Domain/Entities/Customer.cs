@@ -42,6 +42,13 @@ public class Customer : BaseEntity
     /// </summary>
     public bool IsExport { get; set; }
 
+    /// <summary>
+    /// Optional parent customer — models a buyer hierarchy (head office → branches / sister concerns).
+    /// Self-reference; null for a top-level customer.
+    /// </summary>
+    public int? ParentCustomerId { get; set; }
+    public Customer? ParentCustomer { get; set; }
+
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
 }

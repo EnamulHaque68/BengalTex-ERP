@@ -22,6 +22,7 @@ public record CustomerDto(
     decimal CreditLimit,
     int CreditPeriodDays,
     bool IsExport,              // explicit "export buyer" flag (additive to currency heuristic)
+    int? ParentCustomerId,      // head office (null = top-level)
     string? Notes,
     bool IsActive);
 
@@ -38,4 +39,5 @@ public record CustomerListItemDto(
     decimal CreditLimit,
     int CreditPeriodDays,
     bool IsExport,
+    int? ParentCustomerId,
     bool IsActive);

@@ -1382,6 +1382,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("ParentCustomerId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
@@ -1420,6 +1423,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("IsExport");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("ParentCustomerId");
 
                     b.ToTable("Customers", (string)null);
                 });
@@ -9982,6 +9987,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("CustomerInvoice");
 
                     b.Navigation("CustomerReturnNote");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Customer", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Customer", "ParentCustomer")
+                        .WithMany()
+                        .HasForeignKey("ParentCustomerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ParentCustomer");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>
