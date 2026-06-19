@@ -69,6 +69,7 @@ const routes: Routes = [
       { path: 'quotations', loadChildren: () => import('./modules/quotations/quotations.module').then(m => m.QuotationsModule) },
       { path: 'samples', loadChildren: () => import('./modules/samples/samples.module').then(m => m.SamplesModule) },
       { path: 'wastage', loadChildren: () => import('./modules/wastage/wastage.module').then(m => m.WastageModule) },
+      { path: 'scrap-sales', loadChildren: () => import('./modules/scrap-sale/scrap-sale.module').then(m => m.ScrapSaleModule) },
       { path: 'job-cards', loadChildren: () => import('./modules/job-cards/job-cards.module').then(m => m.JobCardsModule) },
       { path: 'leaves', loadChildren: () => import('./modules/leaves/leaves.module').then(m => m.LeavesModule) },
       { path: 'loans-bonuses', loadChildren: () => import('./modules/loans-bonuses/loans-bonuses.module').then(m => m.LoansBonusesModule) },

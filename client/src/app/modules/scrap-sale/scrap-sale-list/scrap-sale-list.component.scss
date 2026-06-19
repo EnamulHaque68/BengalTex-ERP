@@ -1,0 +1,35 @@
+.page-shell { padding: 1.25rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+.page-subtitle { margin: 0.2rem 0 0; color: #6b7280; font-size: 0.85rem; }
+.header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 0.6rem 0.9rem; border-radius: 6px; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; position: relative; }
+.alert-close { margin-left: auto; border: none; background: transparent; font-size: 1.1rem; cursor: pointer; color: inherit; }
+
+.num-col, .num { text-align: right; }
+.fw-600 { font-weight: 600; }
+.code-badge { font-family: monospace; font-weight: 700; color: #1d4ed8; background: #eff6ff; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.8rem; }
+.status-badge { padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  &.draft { background: #fef3c7; color: #92400e; } &.posted { background: #d1fae5; color: #065f46; } }
+.row-actions { display: flex; gap: 0.1rem; }
+.empty-row { text-align: center; color: #9ca3af; padding: 1.5rem; i { margin-right: 0.4rem; } }
+
+.ss-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
+.field { display: flex; flex-direction: column; gap: 0.3rem; label { font-size: 0.8rem; font-weight: 600; color: #374151; } }
+.w-full { width: 100%; }
+
+.section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.04em; margin: 1rem 0 0.4rem; }
+.lines-wrap { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.line-grid { width: 100%; border-collapse: collapse; font-size: 0.85rem;
+  th { background: #f8fafc; text-align: left; padding: 0.5rem 0.6rem; font-size: 0.72rem; text-transform: uppercase; color: #6b7280; font-weight: 700; }
+  td { padding: 0.4rem 0.6rem; border-top: 1px solid #f1f5f9; vertical-align: middle; }
+  .item-col { min-width: 18rem; } .unit-col { width: 5rem; } }
+.value-cell { color: #0f766e; font-weight: 600; }
+.desc-input { width: 100%; font-size: 0.85rem; }
+.unit-input { width: 4.5rem; font-size: 0.85rem; }
+.empty-lines { text-align: center; color: #9ca3af; padding: 1rem; }
+.lines-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.6rem; background: #f8fafc; }
+.grand-total { font-size: 0.9rem; strong { color: #0f766e; } }
+:host ::ng-deep .grid-num { width: 7rem; text-align: right; }

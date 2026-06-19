@@ -32,4 +32,5 @@ public static class LedgerAccounts
     public const string ExchangeGain = "4300";              // credited on realized FX gain (receipt/payment rate vs invoice rate)
     public const string ExchangeLoss = "5800";              // debited on realized FX loss
     public const string OpeningBalanceEquity = "3150";      // contra for opening-balance seeding (stock, etc.)
+    public const string ScrapSalesIncome = "4250";          // credited when reusable scrap/wastage is sold
 }

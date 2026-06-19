@@ -79,7 +79,8 @@ export const NAV_MENU: NavItem[] = [
       { title: 'Subcontracting',    icon: 'pi pi-send',      route: '/subcontract-orders', permission: 'Subcontracting.View' },
       { title: 'Wastage',           icon: 'pi pi-trash',     route: '/wastage',            permission: 'Wastage.View' },
       { title: 'Wastage Reasons',   icon: 'pi pi-list',      route: '/wastage/reasons',    permission: 'Wastage.ManageReasons' },
-      { title: 'Wastage Summary',   icon: 'pi pi-chart-pie', route: '/wastage/summary',    permission: 'Wastage.View' }
+      { title: 'Wastage Summary',   icon: 'pi pi-chart-pie', route: '/wastage/summary',    permission: 'Wastage.View' },
+      { title: 'Scrap Sales',       icon: 'pi pi-dollar',    route: '/scrap-sales',        permission: 'Wastage.View' }
     ]
   },
 
