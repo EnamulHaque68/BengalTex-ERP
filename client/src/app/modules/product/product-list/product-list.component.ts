@@ -3,8 +3,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProductService } from '../../../services/product.service';
 import { ProductCategoryService } from '../../../services/product-category.service';
 import { UnitOfMeasureService } from '../../../services/unit-of-measure.service';
+import { ProductVariantService } from '../../../services/product-variant.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { ProductCategoryDto, ProductListItemDto, ProductPriceHistoryDto } from '../../../models/product.models';
+import { ProductVariantDto } from '../../../models/product-variant.models';
 import { UnitOfMeasureDto } from '../../../models/master-data.models';
 
 @Component({
@@ -48,10 +50,26 @@ export class ProductListComponent implements OnInit {
   priceHistoryProduct: ProductListItemDto | null = null;
   priceHistory: ProductPriceHistoryDto[] = [];
 
+  // Variants (catalog SKU breakdown)
+  variantsVisible = false;
+  variantsProduct: ProductListItemDto | null = null;
+  variants: ProductVariantDto[] = [];
+  variantsLoading = false;
+  variantsError = '';
+  variantForm!: FormGroup;
+  variantEditingId: number | null = null;
+  variantSaving = false;
+  // Bulk matrix generation
+  bulkColors = '';
+  bulkSizes = '';
+  bulkSkuPrefix = '';
+  bulkGenerating = false;
+
   constructor(
     private productService: ProductService,
     private categoryService: ProductCategoryService,
     private uomService: UnitOfMeasureService,
+    private variantService: ProductVariantService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -59,8 +77,22 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
+    this.buildVariantForm();
     this.loadDropdowns();
     this.load();
+  }
+
+  private buildVariantForm(): void {
+    this.variantForm = this.fb.group({
+      variantCode: ['', [Validators.required, Validators.maxLength(50)]],
+      name: ['', Validators.maxLength(200)],
+      color: ['', Validators.maxLength(50)],
+      size: ['', Validators.maxLength(50)],
+      sku: ['', Validators.maxLength(100)],
+      salesPriceOverride: [null as number | null, Validators.min(0)],
+      notes: ['', Validators.maxLength(1000)],
+      isActive: [true]
+    });
   }
 
   private buildForm(): void {
@@ -302,6 +334,138 @@ export class ProductListComponent implements OnInit {
           this.cdr.detectChanges();
         });
       }
+    });
+  }
+
+  // ─── Variants (catalog SKU breakdown) ────────────────────────────────────
+
+  openVariants(product: ProductListItemDto): void {
+    this.variantsProduct = product;
+    this.variants = [];
+    this.variantsError = '';
+    this.bulkColors = '';
+    this.bulkSizes = '';
+    this.bulkSkuPrefix = '';
+    this.resetVariantForm();
+    this.variantsVisible = true;
+    this.loadVariants();
+  }
+
+  bulkGenerate(): void {
+    if (this.bulkGenerating || !this.variantsProduct) return;
+    const colors = this.bulkColors.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const sizes = this.bulkSizes.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    if (colors.length === 0 && sizes.length === 0) {
+      this.variantsError = 'Enter at least one colour or size (comma-separated).';
+      this.cdr.detectChanges();
+      return;
+    }
+    this.bulkGenerating = true;
+    this.variantsError = '';
+    this.cdr.detectChanges();
+    this.variantService.bulkCreate({
+      productId: this.variantsProduct.id,
+      colors, sizes,
+      skuPrefix: this.bulkSkuPrefix.trim() || null
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.bulkGenerating = false;
+        if (res.success) { this.bulkColors = ''; this.bulkSizes = ''; this.loadVariants(); }
+        else this.variantsError = res.message || 'Generation failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.bulkGenerating = false; this.variantsError = err?.error?.message || 'Generation failed.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  private loadVariants(): void {
+    if (!this.variantsProduct) return;
+    this.variantsLoading = true;
+    this.cdr.detectChanges();
+    this.variantService.getByProduct(this.variantsProduct.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.variantsLoading = false;
+        if (res.success && res.data) this.variants = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.variantsLoading = false; this.cdr.detectChanges(); })
+    });
+  }
+
+  private resetVariantForm(): void {
+    this.variantEditingId = null;
+    this.variantForm.reset({
+      variantCode: '', name: '', color: '', size: '', sku: '',
+      salesPriceOverride: null, notes: '', isActive: true
+    });
+  }
+
+  editVariant(v: ProductVariantDto): void {
+    this.variantEditingId = v.id;
+    this.variantForm.patchValue({
+      variantCode: v.variantCode,
+      name: v.name ?? '',
+      color: v.color ?? '',
+      size: v.size ?? '',
+      sku: v.sku ?? '',
+      salesPriceOverride: v.salesPriceOverride,
+      notes: v.notes ?? '',
+      isActive: v.isActive
+    });
+    this.cdr.detectChanges();
+  }
+
+  cancelVariantEdit(): void {
+    this.resetVariantForm();
+    this.cdr.detectChanges();
+  }
+
+  saveVariant(): void {
+    if (this.variantForm.invalid || this.variantSaving || !this.variantsProduct) return;
+    this.variantSaving = true;
+    this.variantsError = '';
+    this.cdr.detectChanges();
+
+    const v = this.variantForm.getRawValue();
+    const fields = {
+      variantCode: (v.variantCode as string).trim(),
+      name: (v.name as string)?.trim() || null,
+      color: (v.color as string)?.trim() || null,
+      size: (v.size as string)?.trim() || null,
+      sku: (v.sku as string)?.trim() || null,
+      salesPriceOverride: v.salesPriceOverride !== null && v.salesPriceOverride !== '' ? Number(v.salesPriceOverride) : null,
+      notes: (v.notes as string)?.trim() || null,
+      isActive: v.isActive
+    };
+
+    const obs = this.variantEditingId
+      ? this.variantService.update(this.variantEditingId, { id: this.variantEditingId, ...fields })
+      : this.variantService.create({ productId: this.variantsProduct.id, ...fields });
+
+    obs.subscribe({
+      next: (res) => this.zone.run(() => {
+        this.variantSaving = false;
+        if (res.success) { this.resetVariantForm(); this.loadVariants(); }
+        else this.variantsError = res.message || 'Save failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.variantSaving = false; this.variantsError = err?.error?.message || 'Save failed.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  deleteVariant(v: ProductVariantDto): void {
+    if (this.variantSaving) return;
+    this.variantSaving = true;
+    this.variantsError = '';
+    this.cdr.detectChanges();
+    this.variantService.delete(v.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.variantSaving = false;
+        if (res.success) { if (this.variantEditingId === v.id) this.resetVariantForm(); this.loadVariants(); }
+        else this.variantsError = res.message || 'Delete failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.variantSaving = false; this.variantsError = err?.error?.message || 'Delete failed.'; this.cdr.detectChanges(); })
     });
   }
 
