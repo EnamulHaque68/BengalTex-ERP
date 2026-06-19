@@ -48,6 +48,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<CustomerProductPrice> CustomerProductPrices => Set<CustomerProductPrice>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeHistoryEntry> EmployeeHistoryEntries => Set<EmployeeHistoryEntry>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<SubcontractOrder> SubcontractOrders => Set<SubcontractOrder>();
