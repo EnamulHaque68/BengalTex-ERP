@@ -32,6 +32,7 @@ const routes: Routes = [
       { path: 'fixed-assets', loadChildren: () => import('./modules/fixed-asset/fixed-asset.module').then(m => m.FixedAssetModule) },
       { path: 'machine-maintenance', loadChildren: () => import('./modules/machine-maintenance/machine-maintenance.module').then(m => m.MachineMaintenanceModule) },
       { path: 'goods-receipts', loadChildren: () => import('./modules/goods-receipt/goods-receipt.module').then(m => m.GoodsReceiptModule) },
+      { path: 'landed-cost', loadChildren: () => import('./modules/landed-cost/landed-cost.module').then(m => m.LandedCostModule) },
       { path: 'sales-orders', loadChildren: () => import('./modules/sales-order/sales-order.module').then(m => m.SalesOrderModule) },
       { path: 'stock-on-hand', loadChildren: () => import('./modules/stock-on-hand/stock-on-hand.module').then(m => m.StockOnHandModule) },
       { path: 'stock-movements', loadChildren: () => import('./modules/stock-movements/stock-movements.module').then(m => m.StockMovementsModule) },

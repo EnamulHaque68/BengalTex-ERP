@@ -1,0 +1,144 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Landed Cost</h2>
+      <p class="page-subtitle">Capitalise import charges (freight, duty, clearing, insurance) onto a posted GRN &mdash; raises raw-material WAC</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="New Landed Cost" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="vouchers" [loading]="loading" [rowHover]="true" [paginator]="true" [rows]="parameters.pageSize"
+             [totalRecords]="totalCount" [lazy]="true" (onLazyLoad)="onPageChange($event)" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Date</th><th>GRN</th><th>Supplier</th><th>Basis</th><th class="num-col">Charges</th><th class="num-col">Total</th><th>Status</th><th style="width:9rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td><span class="code-badge">{{ e.code }}</span></td>
+          <td>{{ e.voucherDate | date:'mediumDate' }}</td>
+          <td>{{ e.goodsReceiptCode }}</td>
+          <td>{{ e.supplierName }}</td>
+          <td>{{ e.allocationBasis === 'ByValue' ? 'By Value' : 'By Qty' }}</td>
+          <td class="num">{{ e.chargeCount }}</td>
+          <td class="num fw-600">{{ formatCurrency(e.totalCharges) }}</td>
+          <td><span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'">{{ e.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="e.status==='Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="openEdit(e)" [pTooltip]="e.status==='Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="e.status==='Draft'" [loading]="rowActionId===e.id" (click)="post(e)" pTooltip="Post (capitalise into WAC)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status==='Draft'" (click)="confirmDelete(e)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-row"><i class="pi pi-truck"></i> No landed-cost vouchers yet.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '54rem' }"
+          [header]="dialogMode==='create' ? 'New Landed Cost' : (dialogMode==='view' ? 'Landed Cost' : 'Edit Landed Cost')" [closable]="!dialogSaving">
+  <form [formGroup]="form" class="lc-form">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Voucher Date *</label>
+        <input pInputText type="date" formControlName="voucherDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Goods Receipt (posted) *</label>
+        <p-select formControlName="goodsReceiptNoteId" [options]="postedGrns" optionValue="id"
+                  [filter]="true" filterBy="code,supplierName,purchaseOrderCode" placeholder="Select posted GRN"
+                  appendTo="body" class="w-full" styleClass="w-full">
+          <ng-template let-g pTemplate="selectedItem">{{ g.code }} — {{ g.supplierName }}</ng-template>
+          <ng-template let-g pTemplate="item">{{ g.code }} — {{ g.supplierName }} ({{ g.purchaseOrderCode }})</ng-template>
+        </p-select>
+      </div>
+      <div class="field">
+        <label>Allocation Basis *</label>
+        <p-select formControlName="allocationBasis" [options]="bases" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Paid Via *</label>
+        <p-select formControlName="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <input pInputText formControlName="notes" placeholder="e.g. Import shipment Feb-2026 clearing" class="w-full" />
+      </div>
+    </div>
+
+    <p class="section-label">Charges &mdash; in BDT</p>
+    <div formArrayName="charges" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr><th class="type-col">Charge Type</th><th class="num-col">Amount</th><th>Notes</th><th *ngIf="dialogMode!=='view'"></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of charges.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="chargeType" [options]="chargeTypes" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" />
+            </td>
+            <td><p-inputNumber formControlName="amount" [min]="0" mode="currency" currency="BDT" locale="en-BD" [minFractionDigits]="2" inputStyleClass="grid-num" /></td>
+            <td><input pInputText formControlName="notes" placeholder="(optional)" class="notes-input" /></td>
+            <td *ngIf="dialogMode!=='view'"><p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (click)="removeCharge(i)" /></td>
+          </tr>
+          <tr *ngIf="charges.length===0"><td [attr.colspan]="dialogMode!=='view' ? 4 : 3" class="empty-lines">No charges — add one.</td></tr>
+        </tbody>
+      </table>
+      <div class="lines-foot">
+        <p-button *ngIf="dialogMode!=='view'" label="Add Charge" icon="pi pi-plus" severity="secondary" [text]="true" (click)="addCharge()" />
+        <span class="grand-total">Total charges: <strong>{{ formatCurrency(totalCharges()) }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Allocation preview (view mode = posted) -->
+    <ng-container *ngIf="dialogMode==='view' && allocationPreview.length > 0">
+      <p class="section-label">Allocation across receipt lines</p>
+      <table class="line-grid">
+        <thead>
+          <tr><th>Raw Material</th><th class="num-col">Recv Qty</th><th class="num-col">Line Value</th><th class="num-col">Allocated</th><th class="num-col">+ Unit Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of allocationPreview">
+            <td><span class="rm-code">{{ a.rawMaterialCode }}</span> {{ a.rawMaterialName }}</td>
+            <td class="num">{{ a.receivedQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ formatCurrency(a.lineValue) }}</td>
+            <td class="num fw-600">{{ formatCurrency(a.allocatedAmount) }}</td>
+            <td class="num value-cell">+{{ a.addedUnitCost | number:'1.0-4' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+    <p-button *ngIf="dialogMode!=='view'" [label]="dialogMode==='create' ? 'Create' : 'Update'" (click)="save()" [loading]="dialogSaving" [disabled]="form.invalid" />
+  </ng-template>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" [modal]="true" [style]="{ width: '26rem' }" header="Delete Voucher" [closable]="!deleting">
+  <p *ngIf="deletingVoucher">Delete <strong>{{ deletingVoucher.code }}</strong>?</p>
+  <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleting" />
+    <p-button label="Delete" severity="danger" (click)="doDelete()" [loading]="deleting" />
+  </ng-template>
+</p-dialog>
