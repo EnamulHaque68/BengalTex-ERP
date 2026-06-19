@@ -26,6 +26,7 @@ const routes: Routes = [
       { path: 'raw-materials', loadChildren: () => import('./modules/raw-material/raw-material.module').then(m => m.RawMaterialModule) },
       { path: 'boms', loadChildren: () => import('./modules/bom/bom.module').then(m => m.BomModule) },
       { path: 'purchase-requisitions', loadChildren: () => import('./modules/purchase-requisition/purchase-requisition.module').then(m => m.PurchaseRequisitionModule) },
+      { path: 'supplier-quotations', loadChildren: () => import('./modules/supplier-quotation/supplier-quotation.module').then(m => m.SupplierQuotationModule) },
       { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-order/purchase-order.module').then(m => m.PurchaseOrderModule) },
       { path: 'gate-passes', loadChildren: () => import('./modules/gate-pass/gate-pass.module').then(m => m.GatePassModule) },
       { path: 'emails', loadChildren: () => import('./modules/emails/emails.module').then(m => m.EmailsModule) },

@@ -1,0 +1,206 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Supplier Quotations (RFQ)</h2>
+      <p class="page-subtitle">Collect competing supplier quotes, compare side-by-side, then select the winner to raise a PO</p>
+    </div>
+    <div class="header-actions">
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-button label="Compare by PR" icon="pi pi-th-large" severity="secondary" [outlined]="true" (click)="openCompare()" />
+      <p-button label="New Quotation" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="actionError"><i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="quotations" [loading]="loading" [rowHover]="true" [paginator]="true" [rows]="parameters.pageSize"
+             [totalRecords]="totalCount" [lazy]="true" (onLazyLoad)="onPageChange($event)" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Date</th><th>Supplier</th><th>For PR</th><th>Cur</th><th class="num-col">Lines</th><th class="num-col">Total (BDT)</th><th>Status</th><th style="width:11rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-e>
+        <tr>
+          <td><span class="code-badge">{{ e.code }}</span></td>
+          <td>{{ e.quotationDate | date:'mediumDate' }}</td>
+          <td>{{ e.supplierName }}</td>
+          <td>{{ e.purchaseRequisitionCode || '—' }}</td>
+          <td>{{ e.currencyCode }}</td>
+          <td class="num">{{ e.lineCount }}</td>
+          <td class="num fw-600">{{ formatBase(e.totalAmountBase) }}</td>
+          <td><span class="status-badge"
+                    [class.draft]="e.status==='Draft'" [class.submitted]="e.status==='Submitted'"
+                    [class.selected]="e.status==='Selected'" [class.rejected]="e.status==='Rejected'">{{ e.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button [icon]="e.status==='Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="openEdit(e)" [pTooltip]="e.status==='Draft' ? 'Edit' : 'View'" />
+              <p-button icon="pi pi-send" severity="info" [text]="true" size="small" *ngIf="e.status==='Draft'" [loading]="rowActionId===e.id" (click)="rowAction(e, 'submit')" pTooltip="Submit (make comparable)" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status==='Submitted'" [loading]="rowActionId===e.id" (click)="rowAction(e, 'select')" pTooltip="Select &amp; create PO" />
+              <p-button icon="pi pi-times-circle" severity="warn" [text]="true" size="small" *ngIf="e.status==='Submitted'" [loading]="rowActionId===e.id" (click)="rowAction(e, 'reject')" pTooltip="Reject" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status==='Draft'" (click)="confirmDelete(e)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-row"><i class="pi pi-file-edit"></i> No supplier quotations yet.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create / Edit / View dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '58rem' }"
+          [header]="dialogMode==='create' ? 'New Supplier Quotation' : (dialogMode==='view' ? 'Supplier Quotation' : 'Edit Supplier Quotation')" [closable]="!dialogSaving">
+  <form [formGroup]="form" class="sq-form">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Quotation Date *</label>
+        <input pInputText type="date" formControlName="quotationDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Supplier *</label>
+        <p-select formControlName="supplierId" [options]="suppliers" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="name" placeholder="Select supplier" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>For Requisition</label>
+        <p-select formControlName="purchaseRequisitionId" [options]="requisitions" optionLabel="code" optionValue="id"
+                  [filter]="true" filterBy="code" [showClear]="true" placeholder="(optional — enables comparison)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Valid Until</label>
+        <input pInputText type="date" formControlName="validUntil" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Currency *</label>
+        <p-select formControlName="currencyId" [options]="currencies" optionLabel="code" optionValue="id"
+                  placeholder="Currency" appendTo="body" class="w-full" styleClass="w-full" (onChange)="onCurrencyChange($event.value)" />
+      </div>
+      <div class="field">
+        <label>Exchange Rate (→ BDT) *</label>
+        <p-inputNumber formControlName="exchangeRate" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="6" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <input pInputText formControlName="notes" placeholder="(optional)" class="w-full" />
+      </div>
+    </div>
+
+    <p class="section-label">Lines</p>
+    <div formArrayName="lines" class="lines-wrap">
+      <table class="line-grid">
+        <thead>
+          <tr><th class="item-col">Raw Material</th><th class="unit-col">UoM</th><th class="num-col">Qty</th><th class="num-col">Unit Price</th><th class="num-col">Lead (days)</th><th class="num-col">Total</th><th *ngIf="dialogMode!=='view'"></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let line of lines.controls; let i = index" [formGroupName]="i">
+            <td>
+              <p-select formControlName="rawMaterialId" [options]="rawMaterials" optionLabel="name" optionValue="id"
+                        [filter]="true" filterBy="code,name" placeholder="Select material" appendTo="body" styleClass="w-full" />
+            </td>
+            <td class="unit-cell">{{ lineUom(line) }}</td>
+            <td><p-inputNumber formControlName="quantity" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="unitPrice" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" /></td>
+            <td><p-inputNumber formControlName="leadTimeDays" [min]="0" inputStyleClass="grid-num-sm" /></td>
+            <td class="num value-cell">{{ lineTotal(line) | number:'1.2-2' }}</td>
+            <td *ngIf="dialogMode!=='view'"><p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (click)="removeLine(i)" /></td>
+          </tr>
+          <tr *ngIf="lines.length===0"><td [attr.colspan]="dialogMode!=='view' ? 7 : 6" class="empty-lines">No lines — add one.</td></tr>
+        </tbody>
+      </table>
+      <div class="lines-foot">
+        <p-button *ngIf="dialogMode!=='view'" label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" (click)="addLine()" />
+        <span class="grand-total">Total (quote currency): <strong>{{ grandTotal() | number:'1.2-2' }}</strong></span>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
+    <p-button *ngIf="dialogMode!=='view'" [label]="dialogMode==='create' ? 'Create' : 'Update'" (click)="save()" [loading]="dialogSaving" [disabled]="form.invalid" />
+  </ng-template>
+</p-dialog>
+
+<!-- Delete confirm -->
+<p-dialog [(visible)]="deleteDialogVisible" [modal]="true" [style]="{ width: '26rem' }" header="Delete Quotation" [closable]="!deleting">
+  <p *ngIf="deletingQuotation">Delete <strong>{{ deletingQuotation.code }}</strong>?</p>
+  <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible=false" [disabled]="deleting" />
+    <p-button label="Delete" severity="danger" (click)="doDelete()" [loading]="deleting" />
+  </ng-template>
+</p-dialog>
+
+<!-- Comparison matrix -->
+<p-dialog [(visible)]="compareVisible" [modal]="true" [style]="{ width: '64rem' }" header="Compare Quotations by Requisition">
+  <div class="compare-head">
+    <div class="field">
+      <label>Purchase Requisition</label>
+      <p-select [(ngModel)]="comparePrId" [options]="requisitions" optionLabel="code" optionValue="id"
+                [filter]="true" filterBy="code" placeholder="Select requisition" appendTo="body" styleClass="w-full" (onChange)="loadComparison()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="compareError"><i class="pi pi-info-circle"></i>{{ compareError }}</div>
+
+  <div *ngIf="compareLoading" class="compare-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+
+  <div *ngIf="comparison && comparison.suppliers.length > 0" class="compare-wrap">
+    <table class="compare-grid">
+      <thead>
+        <tr>
+          <th class="rm-head">Raw Material</th>
+          <th class="rm-head num-col">Qty</th>
+          <th *ngFor="let s of comparison.suppliers" class="sup-head" [class.lowest]="s.isLowestTotal">
+            <div class="sup-name">{{ s.supplierName }}</div>
+            <div class="sup-meta">{{ s.code }} · {{ s.currencyCode }}<span *ngIf="s.status==='Selected'" class="sel-tag">selected</span></div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of comparison.rows">
+          <td><span class="rm-code">{{ row.rawMaterialCode }}</span> {{ row.rawMaterialName }}</td>
+          <td class="num">{{ row.quantity | number:'1.0-4' }}</td>
+          <td *ngFor="let s of comparison.suppliers" class="cell"
+              [class.lowest-cell]="cellFor(row, s.supplierQuotationId)?.isLowest"
+              [class.no-quote]="!cellFor(row, s.supplierQuotationId)?.hasQuote">
+            <ng-container *ngIf="cellFor(row, s.supplierQuotationId)?.hasQuote; else noq">
+              <div class="cell-price">{{ formatBase(cellFor(row, s.supplierQuotationId).unitPriceBase) }}</div>
+              <div class="cell-meta" *ngIf="cellFor(row, s.supplierQuotationId).leadTimeDays != null">{{ cellFor(row, s.supplierQuotationId).leadTimeDays }}d lead</div>
+            </ng-container>
+            <ng-template #noq><span class="dash">—</span></ng-template>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td class="num" colspan="2">Total (BDT, at PR qty)</td>
+          <td *ngFor="let s of comparison.suppliers" class="num total-cell" [class.lowest-cell]="s.isLowestTotal">
+            <strong>{{ formatBase(s.totalBase) }}</strong>
+          </td>
+        </tr>
+        <tr class="action-row">
+          <td colspan="2"></td>
+          <td *ngFor="let s of comparison.suppliers" class="action-cell">
+            <p-button *ngIf="s.status==='Submitted'" label="Select" icon="pi pi-check" size="small"
+                      [loading]="rowActionId===s.supplierQuotationId" (click)="selectFromCompare(s.supplierQuotationId)" />
+            <span *ngIf="s.status==='Selected'" class="sel-done"><i class="pi pi-check"></i> PO raised</span>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+    <p class="compare-hint">Lowest unit price per row and the lowest total are highlighted. Prices shown in BDT (converted at each quote's rate).</p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="compareVisible=false" />
+  </ng-template>
+</p-dialog>
