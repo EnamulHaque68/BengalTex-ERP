@@ -65,6 +65,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ScrapSale> ScrapSales => Set<ScrapSale>();
     public DbSet<ScrapSaleLine> ScrapSaleLines => Set<ScrapSaleLine>();
     public DbSet<RawMaterial> RawMaterials => Set<RawMaterial>();
+    public DbSet<RawMaterialSubstitute> RawMaterialSubstitutes => Set<RawMaterialSubstitute>();
     public DbSet<Bom> Boms => Set<Bom>();
     public DbSet<BomLine> BomLines => Set<BomLine>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();

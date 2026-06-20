@@ -80,6 +80,8 @@
             <div class="row-actions">
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         (click)="openEdit(m.id)" pTooltip="Edit" />
+              <p-button icon="pi pi-sync" severity="secondary" [text]="true" size="small"
+                        (click)="openSubstitutes(m)" pTooltip="Substitutes (alternative materials)" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         (click)="confirmDelete(m)" pTooltip="Delete" />
             </div>
@@ -226,4 +228,69 @@
                 [loading]="deleting" (click)="doDelete()" />
     </div>
   </div>
+</p-dialog>
+
+<!-- Substitutes (alternative materials) dialog -->
+<p-dialog [(visible)]="substitutesVisible" [modal]="true" [style]="{ width: '52rem' }"
+          [header]="'Substitutes' + (substitutesMaterial ? ' — ' + substitutesMaterial.name : '')">
+  <p class="subs-hint">Approved alternative materials used when this one is short. Conversion factor = units of the substitute per 1 unit of the primary.</p>
+
+  <div class="alert alert-error" *ngIf="substitutesError"><i class="pi pi-exclamation-circle"></i>{{ substitutesError }}
+    <button type="button" class="alert-close" (click)="substitutesError = ''">&times;</button>
+  </div>
+
+  <p-table [value]="substitutes" [loading]="substitutesLoading" styleClass="p-datatable-sm" [rowHover]="true">
+    <ng-template pTemplate="header">
+      <tr><th>Code</th><th>Substitute</th><th class="num-col">Conv.</th><th class="num-col">On Hand</th><th>Status</th><th style="width:6rem"></th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-s>
+      <tr [class.row-editing]="substituteEditingId === s.id">
+        <td><span class="code-badge">{{ s.substituteCode }}</span></td>
+        <td>{{ s.substituteName }}</td>
+        <td class="num">{{ s.conversionFactor | number:'1.0-4' }} {{ s.substituteUnit }}</td>
+        <td class="num" [class.stock-out]="s.substituteOnHand <= 0">{{ s.substituteOnHand | number:'1.0-4' }}</td>
+        <td><span class="status-badge" [class.active]="s.isActive" [class.inactive]="!s.isActive">{{ s.isActive ? 'Active' : 'Inactive' }}</span></td>
+        <td>
+          <div class="row-actions">
+            <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="editSubstitute(s)" pTooltip="Edit" />
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deleteSubstitute(s)" pTooltip="Remove" />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="6" class="subs-empty"><i class="pi pi-sync"></i> No substitutes yet — add one below.</td></tr>
+    </ng-template>
+  </p-table>
+
+  <p class="section-label">{{ substituteEditingId ? 'Edit substitute' : 'Add substitute' }}</p>
+  <form [formGroup]="substituteForm" class="subs-form">
+    <div class="subs-grid">
+      <div class="field subs-mat">
+        <label>Substitute Material *</label>
+        <p-select formControlName="substituteRawMaterialId" [options]="availableSubstitutes" optionLabel="name" optionValue="id"
+                  [filter]="true" filterBy="code,name" placeholder="Select material" appendTo="body" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Conversion Factor *</label>
+        <p-inputNumber formControlName="conversionFactor" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" styleClass="w-full" />
+      </div>
+      <div class="field field-check">
+        <label>Active</label>
+        <p-toggleswitch formControlName="isActive" />
+      </div>
+      <div class="field subs-notes">
+        <label>Notes</label>
+        <input pInputText formControlName="notes" placeholder="(optional)" class="w-full" />
+      </div>
+    </div>
+    <div class="subs-actions">
+      <p-button *ngIf="substituteEditingId" label="Cancel edit" severity="secondary" [text]="true" (click)="cancelSubstituteEdit()" [disabled]="substituteSaving" />
+      <p-button [label]="substituteEditingId ? 'Update' : 'Add Substitute'" icon="pi pi-check" (click)="saveSubstitute()" [loading]="substituteSaving" [disabled]="substituteForm.invalid" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="substitutesVisible = false" [disabled]="substituteSaving" />
+  </ng-template>
 </p-dialog>

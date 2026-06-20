@@ -3,8 +3,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RawMaterialService } from '../../../services/raw-material.service';
 import { UnitOfMeasureService } from '../../../services/unit-of-measure.service';
 import { SupplierService } from '../../../services/supplier.service';
+import { RawMaterialSubstituteService } from '../../../services/raw-material-substitute.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { MATERIAL_CATEGORIES, RawMaterialListItemDto } from '../../../models/raw-material.models';
+import { RawMaterialSubstituteDto } from '../../../models/raw-material-substitute.models';
 import { UnitOfMeasureDto } from '../../../models/master-data.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
 
@@ -44,10 +46,22 @@ export class RawMaterialListComponent implements OnInit {
   deleting = false;
   deleteError = '';
 
+  // Substitutes (alternative materials)
+  substitutesVisible = false;
+  substitutesMaterial: RawMaterialListItemDto | null = null;
+  substitutes: RawMaterialSubstituteDto[] = [];
+  substitutesLoading = false;
+  substitutesError = '';
+  substituteForm!: FormGroup;
+  substituteEditingId: number | null = null;
+  substituteSaving = false;
+  allMaterials: RawMaterialListItemDto[] = [];   // for the substitute picker
+
   constructor(
     private rawMaterialService: RawMaterialService,
     private uomService: UnitOfMeasureService,
     private supplierService: SupplierService,
+    private substituteService: RawMaterialSubstituteService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -55,8 +69,18 @@ export class RawMaterialListComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
+    this.buildSubstituteForm();
     this.loadDropdowns();
     this.load();
+  }
+
+  private buildSubstituteForm(): void {
+    this.substituteForm = this.fb.group({
+      substituteRawMaterialId: [null as number | null, Validators.required],
+      conversionFactor: [1, [Validators.required, Validators.min(0.0001)]],
+      notes: ['', Validators.maxLength(500)],
+      isActive: [true]
+    });
   }
 
   private buildForm(): void {
@@ -88,6 +112,14 @@ export class RawMaterialListComponent implements OnInit {
       next: (res) => {
         this.zone.run(() => {
           if (res.success && res.data) this.suppliers = res.data.items;
+          this.cdr.detectChanges();
+        });
+      }
+    });
+    this.rawMaterialService.getAll({ page: 1, pageSize: 1000, search: '' }, undefined, false).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) this.allMaterials = res.data.items;
           this.cdr.detectChanges();
         });
       }
@@ -269,6 +301,100 @@ export class RawMaterialListComponent implements OnInit {
           this.cdr.detectChanges();
         });
       }
+    });
+  }
+
+  // ─── Substitutes (alternative materials) ─────────────────────────────────
+
+  openSubstitutes(material: RawMaterialListItemDto): void {
+    this.substitutesMaterial = material;
+    this.substitutes = [];
+    this.substitutesError = '';
+    this.resetSubstituteForm();
+    this.substitutesVisible = true;
+    this.loadSubstitutes();
+  }
+
+  /** Materials selectable as a substitute: not the primary, not already listed. */
+  get availableSubstitutes(): RawMaterialListItemDto[] {
+    const primaryId = this.substitutesMaterial?.id;
+    const used = new Set(this.substitutes.map(s => s.substituteRawMaterialId));
+    return this.allMaterials.filter(m => m.id !== primaryId && (this.substituteEditingId ? true : !used.has(m.id)));
+  }
+
+  private loadSubstitutes(): void {
+    if (!this.substitutesMaterial) return;
+    this.substitutesLoading = true;
+    this.cdr.detectChanges();
+    this.substituteService.getForMaterial(this.substitutesMaterial.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.substitutesLoading = false;
+        if (res.success && res.data) this.substitutes = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.substitutesLoading = false; this.cdr.detectChanges(); })
+    });
+  }
+
+  private resetSubstituteForm(): void {
+    this.substituteEditingId = null;
+    this.substituteForm.reset({ substituteRawMaterialId: null, conversionFactor: 1, notes: '', isActive: true });
+    this.substituteForm.get('substituteRawMaterialId')?.enable();
+  }
+
+  editSubstitute(s: RawMaterialSubstituteDto): void {
+    this.substituteEditingId = s.id;
+    this.substituteForm.patchValue({
+      substituteRawMaterialId: s.substituteRawMaterialId,
+      conversionFactor: s.conversionFactor,
+      notes: s.notes ?? '',
+      isActive: s.isActive
+    });
+    this.substituteForm.get('substituteRawMaterialId')?.disable();   // substitute material is fixed once added
+    this.cdr.detectChanges();
+  }
+
+  cancelSubstituteEdit(): void { this.resetSubstituteForm(); this.cdr.detectChanges(); }
+
+  saveSubstitute(): void {
+    if (this.substituteForm.invalid || this.substituteSaving || !this.substitutesMaterial) return;
+    this.substituteSaving = true;
+    this.substitutesError = '';
+    this.cdr.detectChanges();
+
+    const v = this.substituteForm.getRawValue();
+    const obs = this.substituteEditingId
+      ? this.substituteService.update(this.substituteEditingId, {
+          id: this.substituteEditingId, conversionFactor: Number(v.conversionFactor) || 1,
+          notes: (v.notes as string)?.trim() || null, isActive: v.isActive })
+      : this.substituteService.create({
+          rawMaterialId: this.substitutesMaterial.id, substituteRawMaterialId: v.substituteRawMaterialId,
+          conversionFactor: Number(v.conversionFactor) || 1, notes: (v.notes as string)?.trim() || null, isActive: v.isActive });
+
+    obs.subscribe({
+      next: (res) => this.zone.run(() => {
+        this.substituteSaving = false;
+        if (res.success) { this.resetSubstituteForm(); this.loadSubstitutes(); }
+        else this.substitutesError = res.message || 'Save failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.substituteSaving = false; this.substitutesError = err?.error?.message || 'Save failed.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  deleteSubstitute(s: RawMaterialSubstituteDto): void {
+    if (this.substituteSaving) return;
+    this.substituteSaving = true;
+    this.substitutesError = '';
+    this.cdr.detectChanges();
+    this.substituteService.delete(s.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.substituteSaving = false;
+        if (res.success) { if (this.substituteEditingId === s.id) this.resetSubstituteForm(); this.loadSubstitutes(); }
+        else this.substitutesError = res.message || 'Delete failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.substituteSaving = false; this.substitutesError = err?.error?.message || 'Delete failed.'; this.cdr.detectChanges(); })
     });
   }
 
