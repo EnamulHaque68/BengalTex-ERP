@@ -6757,6 +6757,72 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("RawMaterials", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.RawMaterialSubstitute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("ConversionFactor")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SubstituteRawMaterialId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("SubstituteRawMaterialId");
+
+                    b.HasIndex("RawMaterialId", "SubstituteRawMaterialId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RawMaterialSubstitutes_Pair")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("RawMaterialSubstitutes", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Receipt", b =>
                 {
                     b.Property<long>("Id")
@@ -11534,6 +11600,25 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("PreferredSupplier");
 
                     b.Navigation("UnitOfMeasure");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.RawMaterialSubstitute", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "SubstituteRawMaterial")
+                        .WithMany()
+                        .HasForeignKey("SubstituteRawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("SubstituteRawMaterial");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Receipt", b =>
