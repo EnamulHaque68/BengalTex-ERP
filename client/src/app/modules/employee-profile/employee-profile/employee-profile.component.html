@@ -1,0 +1,461 @@
+<div class="profile-shell" *ngIf="!loading || profile">
+  <!-- Page heading -->
+  <div class="page-head" *ngIf="profile">
+    <div>
+      <div class="crumb">HR &amp; Payroll <i class="pi pi-angle-right"></i> Employees <i class="pi pi-angle-right"></i> {{ mode === 'me' ? 'My Profile' : 'Profile' }}</div>
+      <h2 class="page-title">{{ mode === 'me' ? 'My Profile' : profile.fullName }}</h2>
+      <p class="page-sub">View and manage personal and job information</p>
+    </div>
+    <p-button *ngIf="profile.canEdit" label="Edit Profile" icon="pi pi-pencil" (click)="openEdit()" />
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <ng-container *ngIf="profile as p">
+    <!-- Header: identity + contact cards -->
+    <div class="header-grid">
+      <div class="card id-card">
+        <div class="id-main">
+          <div class="avatar">
+            <img *ngIf="photoUrl" [src]="photoUrl" alt="photo" />
+            <span *ngIf="!photoUrl" class="avatar-initials">{{ initials(p.fullName) }}</span>
+            <label class="cam" *ngIf="p.canEdit" pTooltip="Change photo">
+              <i class="pi" [class.pi-camera]="!uploading" [class.pi-spin]="uploading" [class.pi-spinner]="uploading"></i>
+              <input type="file" accept="image/*" hidden (change)="onPhotoSelected($event)" />
+            </label>
+          </div>
+          <div class="id-info">
+            <div class="id-name">{{ p.fullName }} <i class="pi pi-verified" *ngIf="p.isActive"></i></div>
+            <div class="id-desig">{{ p.designation || '—' }}</div>
+            <div class="id-dept">{{ p.department || '' }}</div>
+          </div>
+          <div class="id-code">
+            <div class="qr-box"><img *ngIf="qrUrl" [src]="qrUrl" alt="QR" /><i *ngIf="!qrUrl" class="pi pi-qrcode"></i></div>
+            <div class="qr-id">{{ p.code }}</div>
+          </div>
+        </div>
+
+        <div class="id-strip">
+          <div class="strip-item"><span class="lbl">Employee ID</span><span class="val">{{ p.code }}</span></div>
+          <div class="strip-item"><span class="lbl">Joining Date</span><span class="val">{{ p.joiningDate | date:'dd MMM, yyyy' }}</span></div>
+          <div class="strip-item"><span class="lbl">Employment Type</span><span class="val">{{ p.employmentType }}</span></div>
+          <div class="strip-item"><span class="lbl">Work Location</span><span class="val">{{ p.workLocation || '—' }}</span></div>
+          <div class="strip-item"><span class="lbl">Status</span>
+            <span class="status-pill" [class.active]="p.isActive" [class.inactive]="!p.isActive">{{ p.status }}</span>
+          </div>
+        </div>
+
+        <div class="id-card-btns">
+          <p-button label="View ID Card" icon="pi pi-id-card" size="small" (click)="viewIdCard()" />
+          <p-button label="Download ID Card" icon="pi pi-download" size="small" severity="secondary" [outlined]="true" (click)="printIdCard()" />
+          <p-button label="Print ID Card" icon="pi pi-print" size="small" severity="secondary" [outlined]="true" (click)="printIdCard()" />
+        </div>
+      </div>
+
+      <div class="card contact-card">
+        <div class="fact"><i class="pi pi-envelope ic blue"></i><div><div class="f-lbl">Email</div><div class="f-val">{{ p.email || '—' }}</div></div></div>
+        <div class="fact"><i class="pi pi-heart-fill ic red"></i><div><div class="f-lbl">Blood Group</div><div class="f-val">{{ p.bloodGroup || '—' }}</div></div></div>
+        <div class="fact"><i class="pi pi-phone ic green"></i><div><div class="f-lbl">Phone</div><div class="f-val">{{ p.phone || '—' }}</div></div></div>
+        <div class="fact"><i class="pi pi-user ic violet"></i><div><div class="f-lbl">Gender</div><div class="f-val">{{ p.gender }}</div></div></div>
+        <div class="fact"><i class="pi pi-calendar ic orange"></i><div><div class="f-lbl">Date of Birth</div><div class="f-val">{{ p.dateOfBirth ? (p.dateOfBirth | date:'dd MMM, yyyy') : '—' }}</div></div></div>
+        <div class="fact"><i class="pi pi-heart ic pink"></i><div><div class="f-lbl">Marital Status</div><div class="f-val">{{ p.maritalStatus }}</div></div></div>
+        <div class="fact"><i class="pi pi-flag ic teal"></i><div><div class="f-lbl">Nationality</div><div class="f-val">{{ p.nationality || '—' }}</div></div></div>
+        <div class="fact"><i class="pi pi-star ic amber"></i><div><div class="f-lbl">Religion</div><div class="f-val">{{ p.religion || '—' }}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button *ngFor="let t of tabs" class="tab" [class.active]="activeTab === t.key" (click)="setTab(t.key)">
+        {{ t.label }}<span class="soon" *ngIf="!t.ready">soon</span>
+      </button>
+    </div>
+
+    <!-- Overview -->
+    <div class="overview-grid" *ngIf="activeTab === 'overview'">
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-user ic blue"></i> About Me</div>
+        <p class="about-text">{{ p.aboutMe || 'No bio added yet.' }}</p>
+      </div>
+
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-briefcase ic violet"></i> Job Summary</div>
+        <div class="kv"><span>Designation</span><b>{{ p.designation || '—' }}</b></div>
+        <div class="kv"><span>Department</span><b>{{ p.department || '—' }}</b></div>
+        <div class="kv"><span>Reporting To</span><b>{{ p.reportingToName || '—' }}</b></div>
+        <div class="kv"><span>Work Location</span><b>{{ p.workLocation || '—' }}</b></div>
+        <div class="kv"><span>Employment Type</span><b>{{ p.employmentType }}</b></div>
+        <div class="kv"><span>Confirmation Date</span><b>{{ p.confirmationDate ? (p.confirmationDate | date:'dd MMM, yyyy') : '—' }}</b></div>
+      </div>
+
+      <!-- Monthly Attendance donut -->
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-calendar ic orange"></i> Monthly Attendance <span class="head-tag">{{ p.attendance.monthLabel }}</span></div>
+        <div class="att-wrap" *ngIf="p.attendance.totalWorkingDays > 0; else noAtt">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#f1f5f9" stroke-width="12" />
+              <circle *ngFor="let s of donutSegments()" cx="60" cy="60" r="54" fill="none" [attr.stroke]="s.color" stroke-width="12"
+                      [attr.stroke-dasharray]="s.dash + ' ' + donutCirc" [attr.stroke-dashoffset]="s.offset"
+                      transform="rotate(-90 60 60)" stroke-linecap="butt" />
+            </svg>
+            <div class="donut-center"><div class="dn">{{ p.attendance.presentDays }}</div><div class="dl">Present</div></div>
+          </div>
+          <div class="att-legend">
+            <div class="lg"><span class="dot" style="background:#10b981"></span>Present <b>{{ p.attendance.presentDays }}</b></div>
+            <div class="lg"><span class="dot" style="background:#f59e0b"></span>Late <b>{{ p.attendance.lateDays }}</b></div>
+            <div class="lg"><span class="dot" style="background:#ef4444"></span>Absent <b>{{ p.attendance.absentDays }}</b></div>
+            <div class="lg"><span class="dot" style="background:#9ca3af"></span>Leave <b>{{ p.attendance.leaveDays }}</b></div>
+            <div class="lg total">Working Days <b>{{ p.attendance.totalWorkingDays }}</b></div>
+          </div>
+        </div>
+        <ng-template #noAtt><p class="muted-sm">No attendance recorded for {{ p.attendance.monthLabel }}.</p></ng-template>
+      </div>
+
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-calendar-clock ic teal"></i> Leave Balance</div>
+        <div class="leave-row" *ngFor="let b of p.leaveBalances">
+          <div class="leave-top"><span>{{ b.leaveTypeName }}</span><span class="leave-num">{{ b.remaining | number:'1.0-1' }} / {{ b.entitled | number:'1.0-1' }} Days</span></div>
+          <div class="bar"><div class="bar-fill" [style.width.%]="leavePct(b)"></div></div>
+        </div>
+        <p class="muted-sm" *ngIf="p.leaveBalances.length === 0">No leave balances initialised for this year.</p>
+      </div>
+
+      <!-- Skills -->
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-bolt ic violet"></i> Skills
+          <button *ngIf="p.canEdit" class="head-link" (click)="openSkills()">Manage</button>
+        </div>
+        <div class="leave-row" *ngFor="let s of p.skills">
+          <div class="leave-top"><span>{{ s.name }}</span><span class="leave-num">{{ s.proficiencyPercent }}%</span></div>
+          <div class="bar"><div class="bar-fill skill" [style.width.%]="s.proficiencyPercent"></div></div>
+        </div>
+        <p class="muted-sm" *ngIf="p.skills.length === 0">No skills added yet.</p>
+      </div>
+
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-wallet ic green"></i> Compensation &amp; Payroll</div>
+        <div class="kv"><span>Gross Salary</span><b>{{ formatCurrency(p.grossSalary) }}</b></div>
+        <div class="kv"><span>Basic Salary</span><b>{{ formatCurrency(p.basicSalary) }}</b></div>
+        <div class="kv"><span>House Rent</span><b>{{ formatCurrency(p.houseRentAllowance) }}</b></div>
+        <div class="kv"><span>Medical</span><b>{{ formatCurrency(p.medicalAllowance) }}</b></div>
+        <div class="kv"><span>Transport</span><b>{{ formatCurrency(p.transportAllowance) }}</b></div>
+        <div class="kv"><span>Bank Account</span><b>{{ p.bankName || '—' }}</b></div>
+        <div class="kv"><span>Account No</span><b>{{ p.accountNumberMasked || '—' }}</b></div>
+      </div>
+
+      <!-- Salary history line -->
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-chart-line ic blue"></i> Salary History</div>
+        <ng-container *ngIf="salaryChrono.length > 1; else noSal">
+          <svg class="salary-svg" viewBox="0 0 320 90" preserveAspectRatio="none">
+            <polyline [attr.points]="salaryLine().points" fill="none" stroke="#2563eb" stroke-width="2" />
+            <circle *ngFor="let d of salaryLine().dots" [attr.cx]="d.x" [attr.cy]="d.y" r="3" fill="#2563eb" />
+          </svg>
+          <div class="sal-labels">
+            <span *ngFor="let ps of salaryChrono">{{ ps.monthLabel.split(' ')[0] }}</span>
+          </div>
+        </ng-container>
+        <ng-template #noSal><p class="muted-sm">Not enough payslip history to chart yet.</p></ng-template>
+      </div>
+
+      <div class="card sec">
+        <div class="sec-head"><i class="pi pi-file ic red"></i> Latest Payslips</div>
+        <table class="payslip-table" *ngIf="p.latestPayslips.length > 0">
+          <tr *ngFor="let ps of p.latestPayslips">
+            <td>{{ ps.monthLabel }}</td>
+            <td class="num">{{ formatCurrency(ps.netPay) }}</td>
+            <td><span class="ps-status" [class.paid]="ps.status==='Paid'">{{ ps.status }}</span></td>
+            <td class="ps-dl">
+              <p-button label="Download" icon="pi pi-download" [text]="true" size="small" [routerLink]="['/payroll', ps.payslipId, 'print']" />
+            </td>
+          </tr>
+        </table>
+        <p class="muted-sm" *ngIf="p.latestPayslips.length === 0">No payslips generated yet.</p>
+      </div>
+    </div>
+
+    <!-- Employee ID Card section -->
+    <div class="card id-section" *ngIf="activeTab === 'overview'">
+      <div class="idc-layout">
+        <!-- Left: heading + template mini-cards -->
+        <div class="idc-left">
+          <div class="sec-head"><i class="pi pi-id-card ic blue"></i> Employee ID Card</div>
+          <p class="muted-sm">Choose your preferred ID card template and download or print your ID card.</p>
+          <div class="tpl-grid">
+            <button *ngFor="let t of idTemplates" type="button" class="tpl-card-wrap" [class.sel]="idTemplate === t.key" (click)="idTemplate = t.key">
+              <i class="pi pi-check-circle tpl-tick" *ngIf="idTemplate === t.key"></i>
+              <div class="idcard land mini" [ngClass]="'t-' + t.key">
+                <span class="ic-white"></span>
+                <div class="ic-banner"><span class="ic-brand">BENGAL TEX</span></div>
+                <div class="ic-main">
+                  <div class="ic-photo"><img *ngIf="photoUrl" [src]="photoUrl" alt="" /><span *ngIf="!photoUrl">{{ initials(p.fullName) }}</span></div>
+                  <div class="ic-info"><div class="ic-name">{{ p.fullName }}</div><div class="ic-desig">{{ p.designation || '—' }}</div><div class="ic-id">{{ p.code }}</div></div>
+                  <img class="ic-qr" *ngIf="qrUrl" [src]="qrUrl" alt="" />
+                </div>
+              </div>
+              <span class="tpl-name">{{ t.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Front + Back previews -->
+        <div class="id-print-area idc-previews">
+          <div class="idc-side">
+            <div class="side-label">Front Side</div>
+            <div class="idcard land front" [ngClass]="'t-' + idTemplate">
+              <span class="ic-white"></span>
+              <div class="ic-banner">
+                <span class="ic-logo"><i class="pi pi-bolt"></i></span>
+                <span class="ic-brandwrap"><span class="ic-brand">BENGAL TEX</span><span class="ic-sub">ERP SYSTEM</span></span>
+              </div>
+              <div class="ic-main">
+                <div class="ic-photo"><img *ngIf="photoUrl" [src]="photoUrl" alt="" /><span *ngIf="!photoUrl">{{ initials(p.fullName) }}</span></div>
+                <div class="ic-info">
+                  <div class="ic-name">{{ p.fullName }}</div>
+                  <div class="ic-desig">{{ p.designation || '—' }}</div>
+                  <div class="ic-id">{{ p.code }}</div>
+                </div>
+                <img class="ic-qr" *ngIf="qrUrl" [src]="qrUrl" alt="QR" />
+              </div>
+              <div class="ic-foot">
+                <span><label>Department</label>{{ p.department || '—' }}</span>
+                <span><label>Blood Group</label>{{ p.bloodGroup || '—' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="idc-side">
+            <div class="side-label">Back Side</div>
+            <div class="idcard land back" [ngClass]="'t-' + idTemplate">
+              <span class="ic-white back"></span>
+              <div class="ic-banner sm"><span class="ic-brand">BENGAL TEX</span></div>
+              <div class="ic-back-body">
+                <div class="bk"><label>Join Date</label><span>{{ p.joiningDate | date:'dd MMM yyyy' }}</span></div>
+                <div class="bk"><label>Phone</label><span>{{ p.phone || '—' }}</span></div>
+                <div class="bk"><label>Email</label><span>{{ p.email || '—' }}</span></div>
+                <div class="bk"><label>Emergency</label><span>{{ p.emergencyContacts[0]?.phone || '—' }}</span></div>
+                <div class="bk"><label>Address</label><span>{{ p.address || '—' }}</span></div>
+                <div class="ic-sign"><span class="sign-line"></span>Authorized Signature</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: actions -->
+        <div class="idc-actions">
+          <p-button label="Download PDF" icon="pi pi-download" (click)="printIdCard()" styleClass="w-full" />
+          <p-button label="Print Card" icon="pi pi-print" severity="secondary" [outlined]="true" (click)="printIdCard()" styleClass="w-full" />
+          <p-button label="View QR Code" icon="pi pi-qrcode" severity="secondary" [outlined]="true" (click)="qrDialogVisible = true" styleClass="w-full" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="card sec single" *ngIf="activeTab === 'personal'">
+      <div class="sec-head"><i class="pi pi-id-card ic blue"></i> Personal Information</div>
+      <div class="info-grid">
+        <div class="kv"><span>Full Name</span><b>{{ p.fullName }}</b></div>
+        <div class="kv"><span>Date of Birth</span><b>{{ p.dateOfBirth ? (p.dateOfBirth | date:'dd MMM, yyyy') : '—' }}</b></div>
+        <div class="kv"><span>Gender</span><b>{{ p.gender }}</b></div>
+        <div class="kv"><span>Marital Status</span><b>{{ p.maritalStatus }}</b></div>
+        <div class="kv"><span>Blood Group</span><b>{{ p.bloodGroup || '—' }}</b></div>
+        <div class="kv"><span>Religion</span><b>{{ p.religion || '—' }}</b></div>
+        <div class="kv"><span>Nationality</span><b>{{ p.nationality || '—' }}</b></div>
+        <div class="kv"><span>National ID (NID)</span><b>{{ p.nationalId || '—' }}</b></div>
+        <div class="kv"><span>Phone</span><b>{{ p.phone || '—' }}</b></div>
+        <div class="kv"><span>Email</span><b>{{ p.email || '—' }}</b></div>
+        <div class="kv span-all"><span>Address</span><b>{{ p.address || '—' }}</b></div>
+      </div>
+    </div>
+
+    <!-- Job Information -->
+    <div class="card sec single" *ngIf="activeTab === 'job'">
+      <div class="sec-head"><i class="pi pi-briefcase ic violet"></i> Job Information</div>
+      <div class="info-grid">
+        <div class="kv"><span>Employee ID</span><b>{{ p.code }}</b></div>
+        <div class="kv"><span>Designation</span><b>{{ p.designation || '—' }}</b></div>
+        <div class="kv"><span>Department</span><b>{{ p.department || '—' }}</b></div>
+        <div class="kv"><span>Reporting To</span><b>{{ p.reportingToName || '—' }}</b></div>
+        <div class="kv"><span>Employment Type</span><b>{{ p.employmentType }}</b></div>
+        <div class="kv"><span>Work Location</span><b>{{ p.workLocation || '—' }}</b></div>
+        <div class="kv"><span>Joining Date</span><b>{{ p.joiningDate | date:'dd MMM, yyyy' }}</b></div>
+        <div class="kv"><span>Probation Ends</span><b>{{ p.probationEndDate ? (p.probationEndDate | date:'dd MMM, yyyy') : '—' }}</b></div>
+        <div class="kv"><span>Confirmation Date</span><b>{{ p.confirmationDate ? (p.confirmationDate | date:'dd MMM, yyyy') : '—' }}</b></div>
+        <div class="kv"><span>Status</span><b>{{ p.status }}</b></div>
+      </div>
+    </div>
+
+    <!-- Bank Information -->
+    <div class="card sec single" *ngIf="activeTab === 'bank'">
+      <div class="sec-head"><i class="pi pi-building-columns ic green"></i> Bank Information</div>
+      <div class="info-grid">
+        <div class="kv"><span>Bank Name</span><b>{{ p.bankName || '—' }}</b></div>
+        <div class="kv"><span>Account No</span><b>{{ p.accountNumberMasked || '—' }}</b></div>
+      </div>
+      <p class="muted-sm">Salary breakdown shown on the Overview tab.</p>
+    </div>
+
+    <!-- Education -->
+    <div class="card sec single" *ngIf="activeTab === 'education'">
+      <div class="sec-head"><i class="pi pi-graduation-cap ic blue"></i> Education</div>
+      <div class="alert alert-error" *ngIf="eduError"><i class="pi pi-exclamation-circle"></i>{{ eduError }}</div>
+      <table class="list-table" *ngIf="p.education.length > 0">
+        <tr><th>Degree</th><th>Institute</th><th>Year</th><th>Result</th><th *ngIf="p.canEdit"></th></tr>
+        <tr *ngFor="let ed of p.education">
+          <td><b>{{ ed.degree }}</b></td><td>{{ ed.institute || '—' }}</td><td>{{ ed.passingYear || '—' }}</td><td>{{ ed.result || '—' }}</td>
+          <td *ngIf="p.canEdit" class="rt">
+            <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="editEducation(ed)" />
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deleteEducation(ed)" />
+          </td>
+        </tr>
+      </table>
+      <p class="muted-sm" *ngIf="p.education.length === 0">No education records added yet.</p>
+
+      <form *ngIf="p.canEdit" [formGroup]="eduForm" class="inline-form">
+        <p class="form-cap">{{ eduEditingId ? 'Edit education' : 'Add education' }}</p>
+        <div class="if-grid">
+          <input pInputText formControlName="degree" placeholder="Degree *" />
+          <input pInputText formControlName="institute" placeholder="Institute" />
+          <input pInputText type="number" formControlName="passingYear" placeholder="Year" class="yr" />
+          <input pInputText formControlName="result" placeholder="Result (CGPA / Division)" />
+        </div>
+        <div class="if-actions">
+          <p-button *ngIf="eduEditingId" label="Cancel" severity="secondary" [text]="true" (click)="cancelEdu()" [disabled]="eduSaving" />
+          <p-button [label]="eduEditingId ? 'Update' : 'Add'" icon="pi pi-check" (click)="saveEducation()" [loading]="eduSaving" [disabled]="eduForm.invalid" />
+        </div>
+      </form>
+    </div>
+
+    <!-- Documents (reuse attachments panel) -->
+    <div class="card sec single" *ngIf="activeTab === 'documents'">
+      <div class="sec-head"><i class="pi pi-folder-open ic amber"></i> Documents</div>
+      <app-attachments-panel entityType="Employee" [entityId]="p.id" [canManage]="p.canEdit"></app-attachments-panel>
+    </div>
+
+    <!-- Emergency Contact -->
+    <div class="card sec single" *ngIf="activeTab === 'emergency'">
+      <div class="sec-head"><i class="pi pi-phone ic red"></i> Emergency Contact</div>
+      <div class="alert alert-error" *ngIf="contactError"><i class="pi pi-exclamation-circle"></i>{{ contactError }}</div>
+      <table class="list-table" *ngIf="p.emergencyContacts.length > 0">
+        <tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Address</th><th *ngIf="p.canEdit"></th></tr>
+        <tr *ngFor="let c of p.emergencyContacts">
+          <td><b>{{ c.name }}</b></td><td>{{ c.relationship || '—' }}</td><td>{{ c.phone }}</td><td>{{ c.address || '—' }}</td>
+          <td *ngIf="p.canEdit" class="rt">
+            <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="editContact(c)" />
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deleteContact(c)" />
+          </td>
+        </tr>
+      </table>
+      <p class="muted-sm" *ngIf="p.emergencyContacts.length === 0">No emergency contacts added yet.</p>
+
+      <form *ngIf="p.canEdit" [formGroup]="contactForm" class="inline-form">
+        <p class="form-cap">{{ contactEditingId ? 'Edit contact' : 'Add contact' }}</p>
+        <div class="if-grid">
+          <input pInputText formControlName="name" placeholder="Name *" />
+          <input pInputText formControlName="relationship" placeholder="Relationship" />
+          <input pInputText formControlName="phone" placeholder="Phone *" />
+          <input pInputText formControlName="address" placeholder="Address" />
+        </div>
+        <div class="if-actions">
+          <p-button *ngIf="contactEditingId" label="Cancel" severity="secondary" [text]="true" (click)="cancelContact()" [disabled]="contactSaving" />
+          <p-button [label]="contactEditingId ? 'Update' : 'Add'" icon="pi pi-check" (click)="saveContact()" [loading]="contactSaving" [disabled]="contactForm.invalid" />
+        </div>
+      </form>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="card sec single" *ngIf="activeTab === 'activity'">
+      <div class="sec-head"><i class="pi pi-history ic violet"></i> Activity Log</div>
+      <div *ngIf="activityLoading" class="muted-sm"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+      <ul class="timeline" *ngIf="!activityLoading && activity.length > 0">
+        <li *ngFor="let a of activity" class="tl-item">
+          <span class="tl-dot" [class.ins]="a.action==='Insert'" [class.upd]="a.action==='Update'" [class.del]="a.action==='Delete'"></span>
+          <div class="tl-body">
+            <div class="tl-head"><b>{{ a.action }}</b> <span class="tl-by">by {{ a.userName || 'system' }}</span></div>
+            <div class="tl-meta" *ngIf="a.affectedColumns">Changed: {{ a.affectedColumns }}</div>
+            <div class="tl-time">{{ a.timestamp | date:'dd MMM yyyy, h:mm a' }}</div>
+          </div>
+        </li>
+      </ul>
+      <p class="muted-sm" *ngIf="!activityLoading && activity.length === 0">No recorded changes for this employee yet.</p>
+    </div>
+
+    <!-- Not-yet-ready tabs -->
+    <div class="card sec single soon-card" *ngIf="activeTab === 'skills'">
+      <i class="pi pi-clock"></i>
+      <p>The Skills overview is on the Overview tab. A dedicated Skills &amp; Certificates section (with certificate uploads) is coming next.</p>
+    </div>
+  </ng-container>
+</div>
+
+<div class="loading-wrap" *ngIf="loading && !profile"><i class="pi pi-spin pi-spinner"></i> Loading profile…</div>
+
+<!-- Edit Profile dialog -->
+<p-dialog [(visible)]="editVisible" [modal]="true" [style]="{ width: '46rem' }" header="Edit Profile" [closable]="!editSaving">
+  <form [formGroup]="form" class="edit-form">
+    <div class="alert alert-error" *ngIf="editError"><i class="pi pi-exclamation-circle"></i>{{ editError }}</div>
+    <div class="ef-grid">
+      <div class="field"><label>Photo URL</label><input pInputText formControlName="photoUrl" placeholder="https://… or /uploads/…" class="w-full" /></div>
+      <div class="field"><label>Blood Group</label>
+        <p-select formControlName="bloodGroup" [options]="bloodGroups" optionLabel="label" optionValue="value" [showClear]="true" placeholder="—" appendTo="body" styleClass="w-full" /></div>
+      <div class="field"><label>Marital Status</label>
+        <p-select formControlName="maritalStatus" [options]="maritalStatuses" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" /></div>
+      <div class="field"><label>Religion</label><input pInputText formControlName="religion" class="w-full" /></div>
+      <div class="field"><label>Nationality</label><input pInputText formControlName="nationality" placeholder="Bangladeshi" class="w-full" /></div>
+      <div class="field"><label>Work Location</label><input pInputText formControlName="workLocation" placeholder="Dhaka Factory" class="w-full" /></div>
+      <div class="field"><label>Probation Ends</label><input pInputText type="date" formControlName="probationEndDate" class="w-full" /></div>
+      <div class="field"><label>Confirmation Date</label><input pInputText type="date" formControlName="confirmationDate" class="w-full" /></div>
+      <div class="field"><label>Reporting To</label>
+        <p-select formControlName="reportingToEmployeeId" [options]="employees" optionLabel="fullName" optionValue="id" [filter]="true" filterBy="fullName,code" [showClear]="true" placeholder="Line manager" appendTo="body" styleClass="w-full" /></div>
+      <div class="field"><label>Login Account <small>(self-service)</small></label>
+        <p-select formControlName="userId" [options]="users" optionLabel="userName" optionValue="id" [filter]="true" filterBy="userName,fullName,email" [showClear]="true" placeholder="Link a user" appendTo="body" styleClass="w-full" /></div>
+      <div class="field span-2"><label>About Me</label><textarea pTextarea formControlName="aboutMe" rows="3" placeholder="Short bio…" class="w-full"></textarea></div>
+    </div>
+  </form>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="editVisible=false" [disabled]="editSaving" />
+    <p-button label="Save" icon="pi pi-check" (click)="saveEdit()" [loading]="editSaving" [disabled]="form.invalid" />
+  </ng-template>
+</p-dialog>
+
+<!-- Skills manager dialog -->
+<p-dialog [(visible)]="skillsVisible" [modal]="true" [style]="{ width: '34rem' }" header="Manage Skills">
+  <div class="alert alert-error" *ngIf="skillsError"><i class="pi pi-exclamation-circle"></i>{{ skillsError }}</div>
+  <div class="skill-list">
+    <div class="skill-item" *ngFor="let s of skills" [class.editing]="skillEditingId === s.id">
+      <div class="skill-info">
+        <div class="skill-top"><span>{{ s.name }}</span><span class="skill-pct">{{ s.proficiencyPercent }}%</span></div>
+        <div class="bar"><div class="bar-fill skill" [style.width.%]="s.proficiencyPercent"></div></div>
+      </div>
+      <div class="skill-act">
+        <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="editSkill(s)" />
+        <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="deleteSkill(s)" />
+      </div>
+    </div>
+    <p class="muted-sm" *ngIf="skills.length === 0">No skills yet — add one below.</p>
+  </div>
+
+  <form [formGroup]="skillForm" class="skill-form">
+    <div class="sf-row">
+      <div class="field grow"><label>Skill</label><input pInputText formControlName="name" placeholder="e.g. Production Management" class="w-full" /></div>
+      <div class="field"><label>Proficiency %</label><input pInputText type="number" formControlName="proficiencyPercent" min="0" max="100" class="pct-input" /></div>
+      <p-button [label]="skillEditingId ? 'Update' : 'Add'" icon="pi pi-check" (click)="saveSkill()" [loading]="skillSaving" [disabled]="skillForm.invalid" />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="skillsVisible=false" />
+  </ng-template>
+</p-dialog>
+
+<!-- QR code dialog -->
+<p-dialog [(visible)]="qrDialogVisible" [modal]="true" [style]="{ width: '22rem' }" header="Employee QR Code">
+  <div class="qr-dialog">
+    <img *ngIf="qrUrl" [src]="qrUrl" alt="QR" />
+    <div class="qr-code-label" *ngIf="profile">{{ profile.code }}</div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="qrDialogVisible=false" />
+  </ng-template>
+</p-dialog>

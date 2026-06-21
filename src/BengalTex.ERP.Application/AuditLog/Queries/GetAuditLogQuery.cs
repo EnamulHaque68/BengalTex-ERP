@@ -12,7 +12,8 @@ public sealed record GetAuditLogQuery(
     string? Action = null,
     string? UserName = null,
     DateOnly? FromDate = null,
-    DateOnly? ToDate = null
+    DateOnly? ToDate = null,
+    string? EntityKey = null
 ) : IRequest<ApiResponse<PagedResult<AuditLogEntryDto>>>;
 
 internal sealed class GetAuditLogQueryHandler
@@ -27,7 +28,7 @@ internal sealed class GetAuditLogQueryHandler
     {
         var result = await _service.QueryAsync(
             request.Parameters, request.EntityType, request.Action,
-            request.UserName, request.FromDate, request.ToDate, cancellationToken);
+            request.UserName, request.FromDate, request.ToDate, request.EntityKey, cancellationToken);
         return ApiResponse<PagedResult<AuditLogEntryDto>>.Ok(result);
     }
 }

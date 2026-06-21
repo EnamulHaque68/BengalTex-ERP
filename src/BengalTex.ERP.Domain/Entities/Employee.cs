@@ -40,6 +40,26 @@ public class Employee : BaseEntity
     public Gender Gender { get; set; } = Gender.Male;
     public EmploymentType EmploymentType { get; set; } = EmploymentType.Permanent;
 
+    // ── Profile details (HR profile page) ──────────────────────────────────
+    /// <summary>Relative path/URL of the employee's photo (via IFileStorage).</summary>
+    public string? PhotoUrl { get; set; }
+    public string? BloodGroup { get; set; }
+    public MaritalStatus MaritalStatus { get; set; } = MaritalStatus.Single;
+    public string? Religion { get; set; }
+    public string? Nationality { get; set; }
+    public string? WorkLocation { get; set; }
+    /// <summary>Short bio shown in the "About Me" card.</summary>
+    public string? AboutMe { get; set; }
+    public DateOnly? ProbationEndDate { get; set; }
+    public DateOnly? ConfirmationDate { get; set; }
+
+    /// <summary>Line manager — self-reference used by the "Reporting To" field.</summary>
+    public int? ReportingToEmployeeId { get; set; }
+    public Employee? ReportingTo { get; set; }
+
+    /// <summary>Links this employee to a login account (Identity user id) for self-service profile access.</summary>
+    public string? UserId { get; set; }
+
     /// <summary>Monthly basic salary in base currency (BDT). 0 for daily-wage workers paid per attendance.</summary>
     public decimal BasicSalary { get; set; }
 
@@ -74,6 +94,14 @@ public enum EmploymentType
     Permanent = 1,
     Contract = 2,
     DailyWage = 3
+}
+
+public enum MaritalStatus
+{
+    Single = 1,
+    Married = 2,
+    Divorced = 3,
+    Widowed = 4
 }
 
 public enum EmployeeStatus

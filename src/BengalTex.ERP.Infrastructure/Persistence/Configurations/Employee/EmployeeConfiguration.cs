@@ -22,6 +22,17 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<EmployeeEntity>
         builder.Property(e => e.Gender).HasConversion<string>().HasMaxLength(10);
         builder.Property(e => e.EmploymentType).HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(e => e.MaritalStatus).HasConversion<string>().HasMaxLength(20);
+
+        // ── Profile detail fields ──
+        builder.Property(e => e.PhotoUrl).HasMaxLength(500);
+        builder.Property(e => e.BloodGroup).HasMaxLength(10);
+        builder.Property(e => e.Religion).HasMaxLength(50);
+        builder.Property(e => e.Nationality).HasMaxLength(100);
+        builder.Property(e => e.WorkLocation).HasMaxLength(150);
+        builder.Property(e => e.AboutMe).HasMaxLength(1000);
+        builder.Property(e => e.UserId).HasMaxLength(450);
+        builder.HasIndex(e => e.UserId);
 
         builder.Property(e => e.BasicSalary).HasPrecision(18, 2);
         builder.Property(e => e.HouseRentAllowance).HasPrecision(18, 2);
@@ -58,10 +69,17 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<EmployeeEntity>
             .HasForeignKey(e => e.BankAccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Self-reference: line manager (NoAction to avoid a cascade cycle on the same table)
+        builder.HasOne(e => e.ReportingTo)
+            .WithMany()
+            .HasForeignKey(e => e.ReportingToEmployeeId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.HasIndex(e => e.DepartmentId);
         builder.HasIndex(e => e.DesignationId);
         builder.HasIndex(e => e.ShiftId);
         builder.HasIndex(e => e.BankAccountId);
+        builder.HasIndex(e => e.ReportingToEmployeeId);
 
         builder.Property(e => e.RowVersion).IsRowVersion();
     }

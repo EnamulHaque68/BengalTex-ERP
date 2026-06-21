@@ -131,6 +131,7 @@ export const NAV_MENU: NavItem[] = [
     title: 'HR & Payroll',
     icon: 'pi pi-users',
     children: [
+      { title: 'My Profile',        icon: 'pi pi-user',        route: '/employee-profile/me' },
       { title: 'Employees',         icon: 'pi pi-id-card',     route: '/employees',         permission: 'Employees.View' },
       { title: 'Attendance',        icon: 'pi pi-clock',       route: '/attendance',        permission: 'Attendance.View' },
       { title: 'Self Check-In',     icon: 'pi pi-map-marker',  route: '/attendance/check-in', permission: 'Attendance.CheckIn' },
