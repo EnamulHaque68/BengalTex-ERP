@@ -24,12 +24,15 @@ public sealed class AuditLogQueryService : IAuditLogQueryService
         string? userName = null,
         DateOnly? fromDate = null,
         DateOnly? toDate = null,
+        string? entityKey = null,
         CancellationToken ct = default)
     {
         var query = _db.AuditLogEntries.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(entityType))
             query = query.Where(a => a.EntityType == entityType);
+        if (!string.IsNullOrWhiteSpace(entityKey))
+            query = query.Where(a => a.EntityKey == entityKey);
         if (!string.IsNullOrWhiteSpace(action))
             query = query.Where(a => a.Action == action);
         if (!string.IsNullOrWhiteSpace(userName))

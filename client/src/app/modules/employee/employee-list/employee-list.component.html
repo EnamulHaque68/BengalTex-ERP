@@ -65,6 +65,8 @@
           </td>
           <td>
             <div class="row-actions">
+              <p-button icon="pi pi-user" severity="secondary" [text]="true" size="small"
+                        [routerLink]="['/employee-profile', e.id]" pTooltip="View profile" />
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         (click)="openEdit(e)" pTooltip="Edit" />
               <p-button icon="pi pi-history" severity="secondary" [text]="true" size="small"

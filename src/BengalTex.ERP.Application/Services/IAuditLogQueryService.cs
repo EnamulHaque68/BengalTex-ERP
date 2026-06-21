@@ -18,6 +18,7 @@ public interface IAuditLogQueryService
         string? userName = null,
         DateOnly? fromDate = null,
         DateOnly? toDate = null,
+        string? entityKey = null,
         CancellationToken ct = default);
 
     /// <summary>Distinct entity types present in the log — for the filter dropdown.</summary>

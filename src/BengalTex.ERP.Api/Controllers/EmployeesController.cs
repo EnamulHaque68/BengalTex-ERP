@@ -1,7 +1,10 @@
 using BengalTex.ERP.Api.Authorization;
+using BengalTex.ERP.Application.AuditLog.Queries;
+using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Common.Models;
 using BengalTex.ERP.Application.Employee.Commands;
 using BengalTex.ERP.Application.Employee.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Shared.Permissions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,8 +18,11 @@ namespace BengalTex.ERP.Api.Controllers;
 public class EmployeesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IQrCodeService _qr;
+    private readonly IFileStorage _files;
 
-    public EmployeesController(IMediator mediator) => _mediator = mediator;
+    public EmployeesController(IMediator mediator, IQrCodeService qr, IFileStorage files)
+    { _mediator = mediator; _qr = qr; _files = files; }
 
     [HttpGet]
     [HasPermission(Permissions.Employees.View)]
@@ -37,6 +43,119 @@ public class EmployeesController : ControllerBase
     {
         var result = await _mediator.Send(new GetEmployeeByIdQuery(id), ct);
         return Ok(result);
+    }
+
+    // ── Profile (HR profile page) ──
+    /// <summary>The current user's own profile (self-service) — any authenticated user.</summary>
+    [HttpGet("my-profile")]
+    public async Task<IActionResult> MyProfile(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetMyProfileQuery(), ct));
+
+    [HttpGet("{id:int}/profile")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> Profile(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeProfileQuery(id), ct));
+
+    [HttpPut("{id:int}/profile")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateEmployeeProfileCommand command, CancellationToken ct)
+    {
+        if (id != command.EmployeeId) return BadRequest("Route id and body id do not match.");
+        return Ok(await _mediator.Send(command, ct));
+    }
+
+    // ── Skills (profile) ──
+    [HttpGet("{id:int}/skills")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> GetSkills(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeSkillsQuery(id), ct));
+
+    [HttpPost("{id:int}/skills")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> AddSkill(int id, [FromBody] EmployeeSkillRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new CreateEmployeeSkillCommand(id, body.Name, body.ProficiencyPercent), ct));
+
+    [HttpPut("skills/{skillId:int}")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> UpdateSkill(int skillId, [FromBody] EmployeeSkillRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new UpdateEmployeeSkillCommand(skillId, body.Name, body.ProficiencyPercent), ct));
+
+    [HttpDelete("skills/{skillId:int}")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> DeleteSkill(int skillId, CancellationToken ct)
+        => Ok(await _mediator.Send(new DeleteEmployeeSkillCommand(skillId), ct));
+
+    // ── Education ──
+    [HttpGet("{id:int}/education")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> GetEducation(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeEducationQuery(id), ct));
+
+    [HttpPost("{id:int}/education")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> SaveEducation(int id, [FromBody] SaveEmployeeEducationCommand body, CancellationToken ct)
+        => Ok(await _mediator.Send(body with { EmployeeId = id }, ct));
+
+    [HttpDelete("education/{eduId:int}")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> DeleteEducation(int eduId, CancellationToken ct)
+        => Ok(await _mediator.Send(new DeleteEmployeeEducationCommand(eduId), ct));
+
+    // ── Emergency contacts ──
+    [HttpGet("{id:int}/contacts")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> GetContacts(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeContactsQuery(id), ct));
+
+    [HttpPost("{id:int}/contacts")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> SaveContact(int id, [FromBody] SaveEmployeeContactCommand body, CancellationToken ct)
+        => Ok(await _mediator.Send(body with { EmployeeId = id }, ct));
+
+    [HttpDelete("contacts/{contactId:int}")]
+    [HasPermission(Permissions.Employees.Edit)]
+    public async Task<IActionResult> DeleteContact(int contactId, CancellationToken ct)
+        => Ok(await _mediator.Send(new DeleteEmployeeContactCommand(contactId), ct));
+
+    // ── Activity log (this employee's change history; gated by Employees.View, not AuditLog.View) ──
+    [HttpGet("{id:int}/activity")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> Activity(int id, [FromQuery] PagedQueryParameters parameters, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetAuditLogQuery(parameters, "Employee", null, null, null, null, id.ToString()), ct));
+
+    // ── ID card: QR + photo ──
+    [HttpGet("{id:int}/qr")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> Qr(int id, CancellationToken ct)
+    {
+        var res = await _mediator.Send(new GetEmployeeByIdQuery(id), ct);
+        if (!res.Success || res.Data is null) return NotFound();
+        return File(_qr.GeneratePng(res.Data.Code, 8), "image/png", $"{res.Data.Code}.png");
+    }
+
+    [HttpPost("{id:int}/photo")]
+    [HasPermission(Permissions.Employees.Edit)]
+    [RequestSizeLimit(5_000_000)]
+    public async Task<IActionResult> UploadPhoto(int id, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return BadRequest("No file provided.");
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Only image files are allowed.");
+        await using var stream = file.OpenReadStream();
+        var stored = await _files.SaveAsync(stream, file.FileName, file.ContentType, "Employee", ct);
+        return Ok(await _mediator.Send(new SetEmployeePhotoCommand(id, stored.StoragePath), ct));
+    }
+
+    [HttpGet("{id:int}/photo")]
+    [HasPermission(Permissions.Employees.View)]
+    public async Task<IActionResult> Photo(int id, CancellationToken ct)
+    {
+        var path = await _mediator.Send(new GetEmployeePhotoPathQuery(id), ct);
+        if (string.IsNullOrEmpty(path) || !await _files.ExistsAsync(path, ct)) return NotFound();
+        var stream = await _files.OpenReadAsync(path, ct);
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var contentType = ext switch { ".png" => "image/png", ".webp" => "image/webp", ".gif" => "image/gif", _ => "image/jpeg" };
+        return File(stream, contentType);
     }
 
     // ── Service record: increments / promotions / transfers / disciplinary ──
@@ -109,6 +228,8 @@ public record AddEmployeeHistoryRequest(
     string? ToValue,
     decimal? Amount,
     string? Details);
+
+public record EmployeeSkillRequest(string Name, int ProficiencyPercent);
 
 public record CreateEmployeeRequest(
     string? Code,
