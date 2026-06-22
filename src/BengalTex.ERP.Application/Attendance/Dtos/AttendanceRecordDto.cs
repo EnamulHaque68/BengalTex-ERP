@@ -15,4 +15,13 @@ public sealed record AttendanceRecordDto(
     double? CheckInLatitude,
     double? CheckInLongitude,
     double? CheckInDistanceMeters,
-    bool? CheckInWithinFence);
+    bool? CheckInWithinFence,
+    // ── Location & network intelligence (P2) ──
+    string? CheckInAddress = null,
+    string? CheckInIpAddress = null,
+    string? CheckInDeviceType = null,
+    string? CheckInBrowser = null,
+    string? CheckInOs = null,
+    bool? CheckInIsProxyVpn = null,
+    string? CheckInIsp = null,
+    string? CheckInNetworkNote = null);

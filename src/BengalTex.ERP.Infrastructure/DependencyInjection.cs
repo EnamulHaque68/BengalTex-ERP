@@ -49,6 +49,13 @@ public static class DependencyInjection
         services.AddScoped<ISessionEnforcementService, SessionEnforcementService>();
         services.AddScoped<ISuspiciousActivityDetector, SuspiciousActivityDetector>();
         services.AddScoped<IGeoFenceService, GeoFenceService>();
+        services.AddScoped<IFaceMatchService, NoOpFaceMatchService>();
+
+        // Attendance location/network intelligence (reverse-geocode + VPN/proxy flag) — free no-key providers,
+        // best-effort + fail-safe. Singleton: stateless + shares a long-lived HttpClient and in-memory cache.
+        services.Configure<LocationIntelligenceSettings>(config.GetSection("Attendance:LocationIntelligence"));
+        services.AddSingleton<IReverseGeocodeService, NominatimReverseGeocodeService>();
+        services.AddSingleton<INetworkIntelligenceService, IpApiNetworkIntelligenceService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IRoleManagementService, RoleManagementService>();
 

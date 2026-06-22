@@ -3,6 +3,7 @@ using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using MapsterMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.Employee.Queries;
 
@@ -23,7 +24,9 @@ internal sealed class GetEmployeeByIdQueryHandler
     public async Task<ApiResponse<EmployeeDto>> Handle(
         GetEmployeeByIdQuery request, CancellationToken cancellationToken)
     {
-        var entity = await _repo.GetByIdAsync(request.Id, cancellationToken);
+        var entity = await _repo.Query()
+            .Include(e => e.ReportingTo)
+            .FirstOrDefaultAsync(e => e.Id == request.Id, cancellationToken);
         return entity is null
             ? ApiResponse<EmployeeDto>.Fail("Employee not found.")
             : ApiResponse<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(entity));

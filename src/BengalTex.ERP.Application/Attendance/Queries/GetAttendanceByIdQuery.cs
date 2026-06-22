@@ -27,7 +27,10 @@ internal sealed class GetAttendanceByIdQueryHandler
                 a.AttendanceDate, a.Status.ToString(),
                 a.CheckInTime, a.CheckOutTime, a.OvertimeHours, a.Notes,
                 a.CheckInLatitude, a.CheckInLongitude,
-                a.CheckInDistanceMeters, a.CheckInWithinFence))
+                a.CheckInDistanceMeters, a.CheckInWithinFence,
+                a.CheckInAddress, a.CheckInIpAddress, a.CheckInDeviceType,
+                a.CheckInBrowser, a.CheckInOs, a.CheckInIsProxyVpn,
+                a.CheckInIsp, a.CheckInNetworkNote))
             .FirstOrDefaultAsync(cancellationToken);
 
         return dto is null

@@ -14,13 +14,17 @@
   <p-card styleClass="table-card">
     <p-table [value]="items" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Code</th><th>Name</th><th>Grade</th><th>Description</th><th>Status</th><th style="width:110px">Actions</th></tr>
+        <tr><th>Code</th><th>Name</th><th>Grade</th><th>Access Role</th><th>Description</th><th>Status</th><th style="width:110px">Actions</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-d>
         <tr>
           <td><span class="code-badge" *ngIf="d.code">{{ d.code }}</span></td>
           <td class="fw-600">{{ d.name }}</td>
           <td class="num">{{ d.gradeLevel != null ? 'L' + d.gradeLevel : '—' }}</td>
+          <td>
+            <span *ngIf="d.accessRoleName" class="role-chip"><i class="pi pi-shield"></i> {{ d.accessRoleName }}</span>
+            <span *ngIf="!d.accessRoleName" class="muted">no access</span>
+          </td>
           <td class="muted">{{ d.description || '—' }}</td>
           <td><span class="status-badge" [class.active]="d.isActive" [class.inactive]="!d.isActive">{{ d.isActive ? 'Active' : 'Inactive' }}</span></td>
           <td>
@@ -31,7 +35,7 @@
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="empty-row"><i class="pi pi-id-card"></i><span>No designations.</span></td></tr></ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="7" class="empty-row"><i class="pi pi-id-card"></i><span>No designations.</span></td></tr></ng-template>
     </p-table>
   </p-card>
 </div>
@@ -56,6 +60,11 @@
       <div class="field check-field" *ngIf="dialogMode === 'edit'">
         <label>Active</label>
         <p-toggleSwitch formControlName="isActive" />
+      </div>
+      <div class="field col-span-2">
+        <label>Access Role <small>(dashboard access for employees with this designation)</small></label>
+        <p-select formControlName="accessRoleName" [options]="roles" optionLabel="label" optionValue="value"
+                  [showClear]="true" [filter]="true" filterBy="label" placeholder="(no access)" appendTo="body" class="w-full" styleClass="w-full" />
       </div>
       <div class="field col-span-2">
         <label>Description</label>

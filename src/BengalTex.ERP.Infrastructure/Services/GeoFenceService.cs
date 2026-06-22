@@ -59,6 +59,38 @@ public class GeoFenceService : IGeoFenceService
             AllowedRadiusMeters: (int)Math.Round(radius));
     }
 
+    public async Task<OfficeFenceResult> ValidateForEmployeeAsync(int employeeId, GeoLocation location, CancellationToken ct = default)
+    {
+        // The employee's authorized, active office locations (multi-location geo-fence).
+        var fences = await _db.EmployeeOfficeLocations
+            .Where(e => e.EmployeeId == employeeId && e.OfficeLocation.IsActive)
+            .Select(e => new { e.OfficeLocationId, e.OfficeLocation.Name, e.OfficeLocation.Latitude, e.OfficeLocation.Longitude, e.OfficeLocation.RadiusMeters })
+            .ToListAsync(ct);
+
+        if (fences.Count == 0)
+            return new OfficeFenceResult(HasAnyFence: false, IsInsideAnyFence: false, NearestDistanceMeters: 0, null, null, 0);
+
+        // Nearest authorized location; inside if within ANY location's radius.
+        (double Distance, int Id, string Name, double Radius)? nearest = null;
+        var insideAny = false;
+        foreach (var f in fences)
+        {
+            var dist = location.DistanceMetersTo(GeoLocation.Create(f.Latitude, f.Longitude));
+            if (dist <= f.RadiusMeters) insideAny = true;
+            if (nearest is null || dist < nearest.Value.Distance)
+                nearest = (dist, f.OfficeLocationId, f.Name, f.RadiusMeters);
+        }
+
+        var n = nearest!.Value;
+        return new OfficeFenceResult(
+            HasAnyFence: true,
+            IsInsideAnyFence: insideAny,
+            NearestDistanceMeters: n.Distance,
+            MatchedOfficeLocationId: n.Id,
+            MatchedLocationName: n.Name,
+            MatchedRadiusMeters: (int)Math.Round(n.Radius));
+    }
+
     private async Task<CachedFactoryGeoFence> GetFenceAsync(int factoryId, CancellationToken ct)
     {
         var cacheKey = $"geofence:factory:{factoryId}";

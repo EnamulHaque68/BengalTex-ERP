@@ -1,0 +1,27 @@
+:host { display: block; }
+.att-set { padding: 4px 2px 32px; max-width: 760px; }
+.as-head { margin-bottom: 18px;
+  h2 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -.4px; }
+  p { margin: 4px 0 0; color: var(--text-color-secondary, #6b7280); font-size: .9rem; }
+}
+.as-loading { padding: 40px; text-align: center; color: var(--text-color-secondary, #6b7280); i { margin-right: 8px; } }
+.as-form { display: flex; flex-direction: column; gap: 16px; }
+.as-card {
+  background: var(--surface-card, #fff); border: 1px solid var(--surface-border, #e5e7eb); border-radius: 14px; padding: 18px 20px;
+  h3 { margin: 0 0 14px; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    i { color: var(--primary-color, #6366f1); } }
+}
+.as-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;
+  label { display: flex; flex-direction: column; gap: 5px; font-size: .8rem; font-weight: 700; color: var(--text-color-secondary, #6b7280); }
+  input, select { border: 1px solid var(--surface-border, #d1d5db); border-radius: 8px; padding: 8px 10px; font-size: .9rem;
+    background: var(--surface-card, #fff); color: var(--text-color, #1f2937); }
+}
+.as-hint { margin: 12px 0 0; font-size: .8rem; color: var(--text-color-secondary, #9ca3af); }
+.as-toggle { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: .9rem; color: var(--text-color, #374151); cursor: pointer;
+  input { width: 18px; height: 18px; accent-color: var(--primary-color, #4f46e5); } }
+.as-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 10px 14px; font-size: .85rem; display: flex; gap: 8px; align-items: center; }
+.as-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+.as-saved { color: #15803d; font-weight: 700; font-size: .88rem; i { margin-right: 4px; } }
+.as-save { background: var(--primary-color, #4f46e5); color: #fff; border: none; cursor: pointer; font-weight: 700;
+  padding: 11px 22px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;
+  &:disabled { opacity: .6; cursor: not-allowed; } i { font-size: .95rem; } }

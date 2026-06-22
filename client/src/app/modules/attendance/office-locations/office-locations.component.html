@@ -1,0 +1,109 @@
+<div class="off-loc">
+  <div class="ol-head">
+    <div>
+      <h2>Office Locations</h2>
+      <p>Geo-fences for attendance. Assign employees to the locations they're allowed to check in from.</p>
+    </div>
+    <button class="ol-btn primary" (click)="openCreate()"><i class="pi pi-plus"></i> New location</button>
+  </div>
+
+  <div *ngIf="loading" class="ol-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+  <div *ngIf="!loading && error" class="ol-error"><i class="pi pi-exclamation-triangle"></i> {{ error }}</div>
+  <div *ngIf="!loading && locations.length === 0" class="ol-empty">
+    <i class="pi pi-map-marker"></i> No office locations yet. Create one to enable geo-fenced attendance.
+  </div>
+
+  <div class="ol-grid" *ngIf="!loading && locations.length">
+    <div class="ol-card" *ngFor="let l of locations" [class.inactive]="!l.isActive">
+      <div class="ol-card-top">
+        <span class="ol-type" [ngClass]="'t-' + l.type.toLowerCase()">{{ typeLabel(l.type) }}</span>
+        <span class="ol-state" [class.on]="l.isActive">{{ l.isActive ? 'Active' : 'Inactive' }}</span>
+      </div>
+      <div class="ol-name">{{ l.name }}</div>
+      <div class="ol-addr" *ngIf="l.address">{{ l.address }}</div>
+      <div class="ol-meta">
+        <span><i class="pi pi-compass"></i> {{ l.latitude | number:'1.4-6' }}, {{ l.longitude | number:'1.4-6' }}</span>
+        <span><i class="pi pi-circle"></i> {{ l.radiusMeters }} m radius</span>
+      </div>
+      <div class="ol-emp"><i class="pi pi-users"></i> {{ l.assignedEmployeeCount }} employee(s) authorized</div>
+      <div class="ol-actions">
+        <button (click)="openAssign(l)"><i class="pi pi-user-plus"></i> Assign</button>
+        <button (click)="openEdit(l)"><i class="pi pi-pencil"></i> Edit</button>
+        <button class="danger" (click)="remove(l)"><i class="pi pi-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Create / edit dialog ════ -->
+  <div class="ol-back" *ngIf="editOpen" (click)="editOpen = false">
+    <div class="ol-modal" (click)="$event.stopPropagation()">
+      <div class="ol-modal-head">
+        <span><i class="pi pi-map-marker"></i> {{ editId ? 'Edit' : 'New' }} office location</span>
+        <button class="ol-x" (click)="editOpen = false"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ol-modal-body">
+        <label class="ol-f">Name <input [(ngModel)]="form.name" placeholder="e.g. Main Factory — Gazipur"></label>
+        <div class="ol-f-row">
+          <label class="ol-f">Type
+            <select [(ngModel)]="form.type">
+              <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </label>
+          <label class="ol-f">Radius (m) <input type="number" min="5" [(ngModel)]="form.radiusMeters"></label>
+        </div>
+        <div class="ol-f-row">
+          <label class="ol-f">Latitude <input type="number" step="0.000001" [(ngModel)]="form.latitude"></label>
+          <label class="ol-f">Longitude <input type="number" step="0.000001" [(ngModel)]="form.longitude"></label>
+        </div>
+        <button type="button" class="ol-gps" (click)="useMyLocation()" [disabled]="gpsBusy">
+          <i class="pi" [ngClass]="gpsBusy ? 'pi-spin pi-spinner' : 'pi-map-marker'"></i> Use my current location
+        </button>
+        <label class="ol-f">Address (optional) <input [(ngModel)]="form.address" placeholder="Street, area, city"></label>
+        <label class="ol-toggle"><input type="checkbox" [(ngModel)]="form.isActive"> <span>Active</span></label>
+
+        <div class="ol-map" *ngIf="mapUrl">
+          <iframe [src]="mapUrl" loading="lazy" title="location preview"></iframe>
+        </div>
+
+        <div class="ol-error" *ngIf="editError"><i class="pi pi-exclamation-triangle"></i> {{ editError }}</div>
+      </div>
+      <div class="ol-modal-foot">
+        <button class="ol-btn ghost" (click)="editOpen = false" [disabled]="editBusy">Cancel</button>
+        <button class="ol-btn primary" (click)="saveLocation()" [disabled]="editBusy">
+          <i class="pi" [ngClass]="editBusy ? 'pi-spin pi-spinner' : 'pi-save'"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Assignment dialog ════ -->
+  <div class="ol-back" *ngIf="assignOpen" (click)="assignOpen = false">
+    <div class="ol-modal wide" (click)="$event.stopPropagation()">
+      <div class="ol-modal-head">
+        <span><i class="pi pi-users"></i> Authorize employees — {{ assignLoc?.name }}</span>
+        <button class="ol-x" (click)="assignOpen = false"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ol-assign-bar">
+        <input class="ol-search" [(ngModel)]="assignSearch" placeholder="Search name / code / department…">
+        <span class="ol-assign-count">{{ assignedCount }} selected</span>
+        <button class="ol-link" (click)="toggleAll(true)">Select all</button>
+        <button class="ol-link" (click)="toggleAll(false)">Clear</button>
+      </div>
+      <div class="ol-emp-list">
+        <label class="ol-emp-row" *ngFor="let e of filteredEmployees">
+          <input type="checkbox" [(ngModel)]="e.assigned">
+          <span class="ol-emp-name">{{ e.employeeName }}</span>
+          <span class="ol-emp-meta">{{ e.employeeCode }}<span *ngIf="e.department"> · {{ e.department }}</span></span>
+        </label>
+        <div *ngIf="filteredEmployees.length === 0" class="ol-empty sm">No matching employees.</div>
+      </div>
+      <div class="ol-error" *ngIf="assignError"><i class="pi pi-exclamation-triangle"></i> {{ assignError }}</div>
+      <div class="ol-modal-foot">
+        <button class="ol-btn ghost" (click)="assignOpen = false" [disabled]="assignBusy">Cancel</button>
+        <button class="ol-btn primary" (click)="saveAssign()" [disabled]="assignBusy">
+          <i class="pi" [ngClass]="assignBusy ? 'pi-spin pi-spinner' : 'pi-check'"></i> Save assignments
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

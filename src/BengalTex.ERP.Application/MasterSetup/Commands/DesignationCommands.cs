@@ -21,16 +21,16 @@ internal sealed class GetDesignationsQueryHandler : IRequestHandler<GetDesignati
     {
         var q = _repo.Query();
         if (!request.IncludeInactive) q = q.Where(d => d.IsActive);
-        var items = await q.OrderBy(d => d.GradeLevel).ThenBy(d => d.Name)
-            .Select(d => new DesignationDto(d.Id, d.Code, d.Name, d.GradeLevel, d.Description, d.IsActive))
+        var items = await q.OrderByDescending(d => d.GradeLevel).ThenBy(d => d.Name)
+            .Select(d => new DesignationDto(d.Id, d.Code, d.Name, d.GradeLevel, d.Description, d.IsActive, d.AccessRoleName))
             .ToListAsync(ct);
         return ApiResponse<IReadOnlyList<DesignationDto>>.Ok(items);
     }
 }
 
 // ── Create / Update / Delete ──
-public sealed record CreateDesignationCommand(string? Code, string Name, int? GradeLevel, string? Description) : IRequest<ApiResponse<int>>;
-public sealed record UpdateDesignationCommand(int Id, string? Code, string Name, int? GradeLevel, string? Description, bool IsActive) : IRequest<ApiResponse<int>>;
+public sealed record CreateDesignationCommand(string? Code, string Name, int? GradeLevel, string? Description, string? AccessRoleName = null) : IRequest<ApiResponse<int>>;
+public sealed record UpdateDesignationCommand(int Id, string? Code, string Name, int? GradeLevel, string? Description, bool IsActive, string? AccessRoleName = null) : IRequest<ApiResponse<int>>;
 public sealed record DeleteDesignationCommand(int Id) : IRequest<ApiResponse>;
 
 public sealed class CreateDesignationCommandValidator : AbstractValidator<CreateDesignationCommand>
@@ -73,6 +73,7 @@ internal sealed class CreateDesignationCommandHandler : IRequestHandler<CreateDe
             Name = name,
             GradeLevel = cmd.GradeLevel,
             Description = string.IsNullOrWhiteSpace(cmd.Description) ? null : cmd.Description.Trim(),
+            AccessRoleName = string.IsNullOrWhiteSpace(cmd.AccessRoleName) ? null : cmd.AccessRoleName.Trim(),
             IsActive = true
         };
         await _repo.AddAsync(d, ct);
@@ -95,6 +96,7 @@ internal sealed class UpdateDesignationCommandHandler : IRequestHandler<UpdateDe
         d.Name = cmd.Name.Trim();
         d.GradeLevel = cmd.GradeLevel;
         d.Description = string.IsNullOrWhiteSpace(cmd.Description) ? null : cmd.Description.Trim();
+        d.AccessRoleName = string.IsNullOrWhiteSpace(cmd.AccessRoleName) ? null : cmd.AccessRoleName.Trim();
         d.IsActive = cmd.IsActive;
         _repo.Update(d);
         await _uow.SaveChangesAsync(ct);
