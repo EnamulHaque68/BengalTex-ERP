@@ -34,7 +34,8 @@ public sealed record CreateEmployeeCommand(
     int? DesignationId,
     int? ShiftId,
     int? BankAccountId,
-    string? Notes
+    string? Notes,
+    int? ReportingToEmployeeId = null    // line manager / supervisor
 ) : IRequest<ApiResponse<EmployeeDto>>;
 
 public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmployeeCommand>
@@ -99,6 +100,9 @@ internal sealed class CreateEmployeeCommandHandler
         if (await _repo.AnyAsync(e => e.Code == code, cancellationToken))
             return ApiResponse<EmployeeDto>.Fail($"Employee code '{code}' already exists.");
 
+        if (cmd.ReportingToEmployeeId is int rid && !await _repo.AnyAsync(e => e.Id == rid, cancellationToken))
+            return ApiResponse<EmployeeDto>.Fail("The selected supervisor (Reporting To) doesn't exist.");
+
         var entity = new Domain.Entities.Employee
         {
             Code = code,
@@ -125,6 +129,7 @@ internal sealed class CreateEmployeeCommandHandler
             DesignationId = cmd.DesignationId,
             ShiftId = cmd.ShiftId,
             BankAccountId = cmd.BankAccountId,
+            ReportingToEmployeeId = cmd.ReportingToEmployeeId,
             Status = EmployeeStatus.Active,
             Notes = cmd.Notes,
             IsActive = true

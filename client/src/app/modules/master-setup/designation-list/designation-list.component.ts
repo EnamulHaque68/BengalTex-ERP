@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MasterSetupService } from '../../../services/master-setup.service';
 import { AuthService } from '../../../services/auth.service';
+import { RoleService } from '../../../services/role.service';
 import { DesignationDto } from '../../../models/master-setup.models';
 
 @Component({
@@ -12,6 +13,7 @@ import { DesignationDto } from '../../../models/master-setup.models';
 })
 export class DesignationListComponent implements OnInit {
   items: DesignationDto[] = [];
+  roles: { label: string; value: string }[] = [];
   loading = false;
   includeInactive = false;
   canManage = false;
@@ -29,6 +31,7 @@ export class DesignationListComponent implements OnInit {
   deleteError = '';
 
   constructor(private svc: MasterSetupService, private auth: AuthService,
+              private roleSvc: RoleService,
               private fb: FormBuilder, private zone: NgZone, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
@@ -37,10 +40,21 @@ export class DesignationListComponent implements OnInit {
       code: ['', Validators.maxLength(30)],
       name: ['', [Validators.required, Validators.maxLength(150)]],
       gradeLevel: [null as number | null, [Validators.min(1), Validators.max(10)]],
+      accessRoleName: [null as string | null],
       description: ['', Validators.maxLength(500)],
       isActive: [true]
     });
+    this.loadRoles();
     this.load();
+  }
+
+  private loadRoles(): void {
+    this.roleSvc.getAll().subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.roles = res.data.map(r => ({ label: r.name, value: r.name }));
+        this.cdr.detectChanges();
+      })
+    });
   }
 
   load(): void {
@@ -53,12 +67,12 @@ export class DesignationListComponent implements OnInit {
 
   openCreate(): void {
     this.dialogMode = 'create'; this.editingId = null; this.dialogError = '';
-    this.form.reset({ code: '', name: '', gradeLevel: null, description: '', isActive: true });
+    this.form.reset({ code: '', name: '', gradeLevel: null, accessRoleName: null, description: '', isActive: true });
     this.dialogVisible = true;
   }
   openEdit(d: DesignationDto): void {
     this.dialogMode = 'edit'; this.editingId = d.id; this.dialogError = '';
-    this.form.reset({ code: d.code ?? '', name: d.name, gradeLevel: d.gradeLevel, description: d.description ?? '', isActive: d.isActive });
+    this.form.reset({ code: d.code ?? '', name: d.name, gradeLevel: d.gradeLevel, accessRoleName: d.accessRoleName ?? null, description: d.description ?? '', isActive: d.isActive });
     this.dialogVisible = true;
   }
 
@@ -68,7 +82,8 @@ export class DesignationListComponent implements OnInit {
     const v = this.form.getRawValue();
     const base = {
       code: (v.code as string)?.trim() || null, name: v.name.trim(),
-      gradeLevel: v.gradeLevel, description: (v.description as string)?.trim() || null
+      gradeLevel: v.gradeLevel, accessRoleName: v.accessRoleName || null,
+      description: (v.description as string)?.trim() || null
     };
     const done = (res: any) => this.zone.run(() => { this.dialogSaving = false; if (res.success) { this.dialogVisible = false; this.load(); } else this.dialogError = res.message || 'Save failed.'; this.cdr.detectChanges(); });
     const err = (e: any) => this.zone.run(() => { this.dialogSaving = false; this.dialogError = e?.error?.message || 'Save failed.'; this.cdr.detectChanges(); });

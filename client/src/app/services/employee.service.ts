@@ -10,7 +10,9 @@ import {
   EmployeeListItemDto,
   UpdateEmployeeRequest,
   EmployeeHistoryEntryDto,
-  AddEmployeeHistoryRequest
+  AddEmployeeHistoryRequest,
+  EmployeeLoginStatusDto,
+  CreateEmployeeLoginRequest
 } from '../models/employee.models';
 import {
   EmployeeProfileDto, UpdateEmployeeProfileRequest, ProfileSkillDto, EmployeeSkillRequest,
@@ -64,6 +66,24 @@ export class EmployeeService {
 
   delete(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`);
+  }
+
+  // ── Login account management ──
+  getLoginStatus(id: number): Observable<ApiResponse<EmployeeLoginStatusDto>> {
+    return this.http.get<ApiResponse<EmployeeLoginStatusDto>>(`${this.base}/${id}/login`);
+  }
+  createLogin(id: number, data: CreateEmployeeLoginRequest): Observable<ApiResponse<EmployeeLoginStatusDto>> {
+    return this.http.post<ApiResponse<EmployeeLoginStatusDto>>(`${this.base}/${id}/login`, data);
+  }
+  resetLoginPassword(id: number, newPassword: string): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.base}/${id}/login/reset-password`, { newPassword });
+  }
+  setLoginRole(id: number, roleName: string | null): Observable<ApiResponse<EmployeeLoginStatusDto>> {
+    return this.http.post<ApiResponse<EmployeeLoginStatusDto>>(`${this.base}/${id}/login/role`, { roleName });
+  }
+  unlinkLogin(id: number, deactivate: boolean): Observable<ApiResponse<boolean>> {
+    const params = new HttpParams().set('deactivate', deactivate);
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/${id}/login`, { params });
   }
 
   // ── Profile ──

@@ -28,6 +28,7 @@ export interface DesignationDto {
   gradeLevel: number | null;
   description: string | null;
   isActive: boolean;
+  accessRoleName?: string | null;
 }
 
 export interface SaveDesignationRequest {
@@ -36,6 +37,7 @@ export interface SaveDesignationRequest {
   gradeLevel: number | null;
   description: string | null;
   isActive?: boolean;
+  accessRoleName?: string | null;
 }
 
 export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';

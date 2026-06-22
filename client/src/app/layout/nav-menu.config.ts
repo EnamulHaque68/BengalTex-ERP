@@ -132,8 +132,13 @@ export const NAV_MENU: NavItem[] = [
     icon: 'pi pi-users',
     children: [
       { title: 'My Profile',        icon: 'pi pi-user',        route: '/employee-profile/me' },
+      { title: 'My Attendance',     icon: 'pi pi-stopwatch',   route: '/attendance/my',     permission: 'Attendance.CheckIn' },
+      { title: 'Team Attendance',   icon: 'pi pi-users',       route: '/attendance/team',   permission: 'Attendance.ApproveFlagged' },
       { title: 'Employees',         icon: 'pi pi-id-card',     route: '/employees',         permission: 'Employees.View' },
       { title: 'Attendance',        icon: 'pi pi-clock',       route: '/attendance',        permission: 'Attendance.View' },
+      { title: 'Attendance Reports', icon: 'pi pi-chart-bar',  route: '/attendance/reports', permission: 'Attendance.View' },
+      { title: 'Office Locations',  icon: 'pi pi-map',         route: '/attendance/office-locations', permission: 'Attendance.ManualEntry' },
+      { title: 'Attendance Settings', icon: 'pi pi-cog',       route: '/attendance/settings', permission: 'Attendance.ManualEntry' },
       { title: 'Self Check-In',     icon: 'pi pi-map-marker',  route: '/attendance/check-in', permission: 'Attendance.CheckIn' },
       { title: 'Leaves',            icon: 'pi pi-calendar-times', route: '/leaves',         permission: 'Leaves.View' },
       { title: 'Holiday Calendar',  icon: 'pi pi-calendar',    route: '/leaves/holidays',   permission: 'Leaves.View' },

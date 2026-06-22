@@ -38,6 +38,7 @@
           <th>Name</th>
           <th>Designation</th>
           <th>Department</th>
+          <th>Reporting To</th>
           <th>Phone</th>
           <th>Type</th>
           <th>Basic Salary</th>
@@ -52,6 +53,10 @@
           <td class="fw-600">{{ e.fullName }}</td>
           <td>{{ e.designation || '—' }}</td>
           <td>{{ e.department || '—' }}</td>
+          <td>
+            <span *ngIf="e.reportingToName" class="reports-to"><i class="pi pi-sitemap"></i> {{ e.reportingToName }}</span>
+            <span *ngIf="!e.reportingToName" class="muted">—</span>
+          </td>
           <td class="num">{{ e.phone || '—' }}</td>
           <td>{{ e.employmentType }}</td>
           <td class="num">{{ formatCurrency(e.basicSalary) }}</td>
@@ -69,6 +74,8 @@
                         [routerLink]="['/employee-profile', e.id]" pTooltip="View profile" />
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         (click)="openEdit(e)" pTooltip="Edit" />
+              <p-button icon="pi pi-key" severity="secondary" [text]="true" size="small"
+                        (click)="openLogin(e)" pTooltip="Manage login account & access" />
               <p-button icon="pi pi-history" severity="secondary" [text]="true" size="small"
                         (click)="openHistory(e)" pTooltip="Service record (increments / promotions / disciplinary)" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
@@ -80,7 +87,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="empty-row">
+          <td colspan="10" class="empty-row">
             <i class="pi pi-users"></i>
             <span>No employees. Click "Add Employee" to create one.</span>
           </td>
@@ -246,6 +253,11 @@
         <p-select formControlName="bankAccountId" [options]="bankAccounts" optionLabel="accountName" optionValue="id"
                   [showClear]="true" [filter]="true" filterBy="accountName,bankName" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
       </div>
+      <div class="field">
+        <label>Reporting To (Supervisor)</label>
+        <p-select formControlName="reportingToEmployeeId" [options]="supervisorOptions" optionLabel="fullName" optionValue="id"
+                  [showClear]="true" [filter]="true" filterBy="fullName,code" placeholder="(no supervisor)" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
     </div>
 
     <div class="dialog-footer">
@@ -326,5 +338,78 @@
 
   <ng-template pTemplate="footer">
     <p-button label="Close" severity="secondary" [text]="true" (click)="historyVisible = false" />
+  </ng-template>
+</p-dialog>
+
+<!-- Manage Login Dialog -->
+<p-dialog [(visible)]="loginVisible" [header]="'Login & Access — ' + (loginEmployee?.fullName || '')"
+          [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <div *ngIf="loginLoading" class="login-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+
+  <div *ngIf="!loginLoading && loginStatus as s" class="login-body">
+    <div class="alert alert-error" *ngIf="loginError"><i class="pi pi-exclamation-circle"></i>{{ loginError }}</div>
+    <div class="alert alert-ok" *ngIf="loginInfo"><i class="pi pi-check-circle"></i>{{ loginInfo }}</div>
+
+    <!-- Designation access info -->
+    <div class="login-note">
+      <i class="pi pi-info-circle"></i>
+      <span *ngIf="s.designationName">Designation <strong>{{ s.designationName }}</strong>
+        <ng-container *ngIf="s.designationAccessRoleName">grants <strong>{{ s.designationAccessRoleName }}</strong> access.</ng-container>
+        <ng-container *ngIf="!s.designationAccessRoleName">has <strong>no access role</strong> set — set it in Master Setup → Designations.</ng-container>
+      </span>
+      <span *ngIf="!s.designationName">No designation assigned — set one to drive access.</span>
+    </div>
+
+    <!-- HAS login -->
+    <ng-container *ngIf="s.hasLogin">
+      <div class="login-card">
+        <div class="lc-row"><span>Username</span><b>{{ s.userName }}</b></div>
+        <div class="lc-row"><span>Email</span><b>{{ s.email }}</b></div>
+        <div class="lc-row"><span>Status</span>
+          <b [class.ok]="s.userIsActive" [class.bad]="!s.userIsActive">{{ s.userIsActive ? 'Active' : 'Inactive' }}</b></div>
+        <div class="lc-row"><span>Access role</span>
+          <b><span class="role-chip" *ngFor="let r of s.roles">{{ r }}</span><span *ngIf="s.roles.length === 0" class="muted">none</span></b></div>
+      </div>
+
+      <div class="login-actions">
+        <button class="lbtn" [disabled]="loginBusy" (click)="syncRole()" *ngIf="s.designationAccessRoleName && (s.roles.length === 0 || s.roles[0] !== s.designationAccessRoleName)">
+          <i class="pi pi-sync"></i> Sync access to designation ({{ s.designationAccessRoleName }})
+        </button>
+      </div>
+
+      <div class="login-sub">
+        <label>Reset password</label>
+        <div class="login-inline">
+          <input type="text" [(ngModel)]="resetPassword" placeholder="New password (min 8)" />
+          <button class="lbtn primary" [disabled]="loginBusy" (click)="doResetPassword()">Reset</button>
+        </div>
+      </div>
+
+      <div class="login-danger">
+        <button class="lbtn ghost" [disabled]="loginBusy" (click)="unlinkLogin(false)">Unlink</button>
+        <button class="lbtn danger" [disabled]="loginBusy" (click)="unlinkLogin(true)">Unlink & deactivate</button>
+      </div>
+    </ng-container>
+
+    <!-- NO login yet -->
+    <ng-container *ngIf="!s.hasLogin">
+      <div class="login-create">
+        <div class="lc-field"><label>Username</label><input type="text" [(ngModel)]="newUserName" placeholder="login username" /></div>
+        <div class="lc-field"><label>Email <small>(must be unique)</small></label><input type="text" [(ngModel)]="newEmail" placeholder="leave blank to auto-generate" /></div>
+        <div class="lc-field"><label>Password</label><input type="text" [(ngModel)]="newPassword" placeholder="min 8 characters" /></div>
+        <div class="lc-grant">
+          Access on create:
+          <span class="role-chip" *ngIf="s.designationAccessRoleName">{{ s.designationAccessRoleName }}</span>
+          <span class="muted" *ngIf="!s.designationAccessRoleName">no access role (self-service only)</span>
+        </div>
+        <button class="lbtn primary block" [disabled]="loginBusy" (click)="createLogin()">
+          <i class="pi" [ngClass]="loginBusy ? 'pi-spin pi-spinner' : 'pi-user-plus'"></i> Create login account
+        </button>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="loginVisible = false" />
   </ng-template>
 </p-dialog>

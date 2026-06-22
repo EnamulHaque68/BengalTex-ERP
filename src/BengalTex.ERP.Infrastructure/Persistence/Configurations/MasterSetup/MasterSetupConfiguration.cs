@@ -38,6 +38,7 @@ public class DesignationConfiguration : IEntityTypeConfiguration<Designation>
         builder.Property(d => d.Code).HasMaxLength(30);
         builder.Property(d => d.Name).IsRequired().HasMaxLength(150);
         builder.Property(d => d.Description).HasMaxLength(500);
+        builder.Property(d => d.AccessRoleName).HasMaxLength(256);
 
         builder.HasIndex(d => d.Name);
         builder.HasIndex(d => d.IsActive);

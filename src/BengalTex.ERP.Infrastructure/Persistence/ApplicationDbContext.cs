@@ -50,6 +50,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<EmployeeHistoryEntry> EmployeeHistoryEntries => Set<EmployeeHistoryEntry>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<AttendanceBreak> AttendanceBreaks => Set<AttendanceBreak>();
+    public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
+    public DbSet<AttendanceSettings> AttendanceSettings => Set<AttendanceSettings>();
+    public DbSet<OfficeLocation> OfficeLocations => Set<OfficeLocation>();
+    public DbSet<EmployeeOfficeLocation> EmployeeOfficeLocations => Set<EmployeeOfficeLocation>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<SubcontractOrder> SubcontractOrders => Set<SubcontractOrder>();
     public DbSet<SubcontractLine> SubcontractLines => Set<SubcontractLine>();

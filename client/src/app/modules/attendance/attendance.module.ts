@@ -16,14 +16,27 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SharedModule } from '../../shared/shared.module';
 import { AttendanceListComponent } from './attendance-list/attendance-list.component';
 import { SelfCheckInComponent } from './self-check-in/self-check-in.component';
+import { MyAttendanceComponent } from './my-attendance/my-attendance.component';
+import { TeamAttendanceComponent } from './team-attendance/team-attendance.component';
+import { AttendanceSettingsComponent } from './attendance-settings/attendance-settings.component';
+import { OfficeLocationsComponent } from './office-locations/office-locations.component';
+import { AttendanceReportsComponent } from './attendance-reports/attendance-reports.component';
 
 const routes: Routes = [
   { path: '', component: AttendanceListComponent },
+  { path: 'my', component: MyAttendanceComponent },
+  { path: 'team', component: TeamAttendanceComponent },
+  { path: 'settings', component: AttendanceSettingsComponent },
+  { path: 'office-locations', component: OfficeLocationsComponent },
+  { path: 'reports', component: AttendanceReportsComponent },
   { path: 'check-in', component: SelfCheckInComponent }
 ];
 
 @NgModule({
-  declarations: [AttendanceListComponent, SelfCheckInComponent],
+  declarations: [
+    AttendanceListComponent, SelfCheckInComponent, MyAttendanceComponent, TeamAttendanceComponent,
+    AttendanceSettingsComponent, OfficeLocationsComponent, AttendanceReportsComponent
+  ],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

@@ -36,7 +36,8 @@ public sealed record UpdateEmployeeCommand(
     int? BankAccountId,
     string Status,                 // "Active" | "Inactive" | "Terminated"
     string? Notes,
-    bool IsActive
+    bool IsActive,
+    int? ReportingToEmployeeId = null    // line manager / supervisor
 ) : IRequest<ApiResponse<EmployeeDto>>;
 
 public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmployeeCommand>
@@ -67,6 +68,8 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
         RuleFor(x => x.FoodAllowance).GreaterThanOrEqualTo(0);
         RuleFor(x => x.PfRate).InclusiveBetween(0, 100);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x).Must(x => x.ReportingToEmployeeId != x.Id)
+            .WithMessage("An employee can't report to themselves.");
     }
 }
 
@@ -91,6 +94,9 @@ internal sealed class UpdateEmployeeCommandHandler
         var entity = await _repo.GetByIdAsync(cmd.Id, cancellationToken);
         if (entity is null) return ApiResponse<EmployeeDto>.Fail("Employee not found.");
 
+        if (cmd.ReportingToEmployeeId is int rid && !await _repo.AnyAsync(e => e.Id == rid, cancellationToken))
+            return ApiResponse<EmployeeDto>.Fail("The selected supervisor (Reporting To) doesn't exist.");
+
         entity.FullName = cmd.FullName;
         entity.Designation = cmd.Designation;
         entity.Department = cmd.Department;
@@ -114,6 +120,7 @@ internal sealed class UpdateEmployeeCommandHandler
         entity.DesignationId = cmd.DesignationId;
         entity.ShiftId = cmd.ShiftId;
         entity.BankAccountId = cmd.BankAccountId;
+        entity.ReportingToEmployeeId = cmd.ReportingToEmployeeId;
         entity.Status = Enum.Parse<EmployeeStatus>(cmd.Status);
         entity.Notes = cmd.Notes;
         entity.IsActive = cmd.IsActive;

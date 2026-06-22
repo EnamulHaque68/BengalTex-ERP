@@ -8,7 +8,8 @@ public record DepartmentDto(
 
 public record DesignationDto(
     int Id, string? Code, string Name,
-    int? GradeLevel, string? Description, bool IsActive);
+    int? GradeLevel, string? Description, bool IsActive,
+    string? AccessRoleName = null);
 
 public record ShiftDto(
     int Id, string Code, string Name,

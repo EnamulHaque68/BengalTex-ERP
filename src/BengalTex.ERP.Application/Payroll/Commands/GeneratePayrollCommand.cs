@@ -88,7 +88,7 @@ internal sealed class GeneratePayrollCommandHandler
             byEmployee.TryGetValue(emp.Id, out var recs);
             recs ??= new();
 
-            decimal presentDays = recs.Count(r => r.Status == AttendanceStatus.Present || r.Status == AttendanceStatus.Late)
+            decimal presentDays = recs.Count(r => r.Status.CountsAsFullPresent())
                                   + 0.5m * recs.Count(r => r.Status == AttendanceStatus.HalfDay);
             decimal absentDays = recs.Count(r => r.Status == AttendanceStatus.Absent);
             decimal leaveDays = recs.Count(r => r.Status == AttendanceStatus.Leave);

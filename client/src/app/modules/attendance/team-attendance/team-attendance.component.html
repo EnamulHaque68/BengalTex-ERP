@@ -1,0 +1,246 @@
+<div class="team-att">
+
+  <div class="ta-head">
+    <div>
+      <h2>Team Attendance</h2>
+      <p class="ta-sub" *ngIf="data">
+        {{ data.seesAll ? 'Organisation-wide view' : 'Your direct reports' }}
+      </p>
+    </div>
+    <div class="ta-tabs">
+      <button [class.active]="tab === 'team'" (click)="switchTab('team')"><i class="pi pi-users"></i> Team</button>
+      <button [class.active]="tab === 'requests'" (click)="switchTab('requests')">
+        <i class="pi pi-inbox"></i> Requests
+        <span class="ta-badge" *ngIf="data && data.summary.pendingApprovals > 0">{{ data.summary.pendingApprovals }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary tiles -->
+  <div class="ta-tiles" *ngIf="data">
+    <div class="ta-tile"><span class="n">{{ data.summary.teamSize }}</span><span class="l">Team size</span></div>
+    <div class="ta-tile present"><span class="n">{{ data.summary.presentToday }}</span><span class="l">Present today</span></div>
+    <div class="ta-tile pending"><span class="n">{{ data.summary.pendingApprovals }}</span><span class="l">Pending approvals</span></div>
+    <div class="ta-tile flagged"><span class="n">{{ data.summary.flaggedToday }}</span><span class="l">Flagged today</span></div>
+  </div>
+
+  <!-- ════════ TEAM TAB ════════ -->
+  <ng-container *ngIf="tab === 'team'">
+    <div class="ta-filters">
+      <label>From <input type="date" [(ngModel)]="fromDate"></label>
+      <label>To <input type="date" [(ngModel)]="toDate"></label>
+      <label class="ta-check"><input type="checkbox" [(ngModel)]="onlyFlagged"> Flagged only</label>
+      <button class="ta-btn primary" (click)="loadTeam()"><i class="pi pi-search"></i> Apply</button>
+    </div>
+
+    <div *ngIf="loading" class="ta-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+    <div *ngIf="!loading && error" class="ta-error"><i class="pi pi-exclamation-triangle"></i> {{ error }}</div>
+
+    <div *ngIf="!loading && data && data.rows.length === 0" class="ta-empty">
+      <i class="pi pi-inbox"></i> No attendance found for this range.
+    </div>
+
+    <div class="ta-table-wrap" *ngIf="!loading && data && data.rows.length">
+      <table class="ta-table">
+        <thead>
+          <tr>
+            <th>Employee</th><th>Date</th><th>Status</th><th>In</th><th>Out</th>
+            <th>Hours</th><th>Location</th><th>Device</th><th>Flags</th><th>Selfie</th><th>Approval</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of data.rows" [ngClass]="rowClass(r)">
+            <td>
+              <div class="ta-emp"><span class="ta-emp-name">{{ r.employeeName }}</span>
+                <span class="ta-emp-meta">{{ r.employeeCode }}<span *ngIf="r.designation"> · {{ r.designation }}</span></span></div>
+            </td>
+            <td class="nowrap">{{ r.attendanceDate | date:'dd MMM' }}</td>
+            <td><span class="ta-status" [ngClass]="'st-' + r.status.toLowerCase()">{{ statusLabel(r.status) }}</span></td>
+            <td class="nowrap">{{ r.checkInTime || '—' }} <i *ngIf="r.isLate" class="pi pi-clock late-ic" pTooltip="Late"></i></td>
+            <td class="nowrap">{{ r.checkOutTime || '—' }} <i *ngIf="r.isEarlyLeave" class="pi pi-sign-out early-ic" pTooltip="Early leave"></i></td>
+            <td class="nowrap">{{ r.workingHoursLabel || '—' }}</td>
+            <td class="ta-loc-cell">
+              <div class="ta-loc-top">
+                <span class="ta-loc" [ngClass]="{ ok: r.withinFence === true, bad: r.withinFence === false }">
+                  <i class="pi pi-map-marker"></i>
+                  {{ r.withinFence === true ? 'Inside' : r.withinFence === false ? 'Outside' : '—' }}
+                  <span class="dim" *ngIf="r.distanceMeters != null"> {{ formatDistance(r.distanceMeters) }}</span>
+                </span>
+                <button *ngIf="hasGeo(r)" class="ta-map-btn" (click)="openMap(r, 'in')" pTooltip="View on map">
+                  <i class="pi pi-map"></i> Map
+                </button>
+              </div>
+              <div class="ta-addr" *ngIf="r.address || r.matchedLocationName">
+                <span *ngIf="r.matchedLocationName" class="ta-addr-name">{{ r.matchedLocationName }}</span>
+                <span *ngIf="r.address">{{ r.address }}</span>
+              </div>
+              <div class="ta-addr dim" *ngIf="!r.address && !r.matchedLocationName && hasGeo(r)">
+                {{ r.latitude | number:'1.4-5' }}, {{ r.longitude | number:'1.4-5' }}
+              </div>
+            </td>
+            <td>
+              <span class="dim sm" [pTooltip]="(r.ipAddress || '') + (r.networkNote ? ' · ' + r.networkNote : '')">
+                {{ r.deviceType || '—' }}<span *ngIf="r.browser"> · {{ r.browser }}</span>
+              </span>
+            </td>
+            <td>
+              <div class="ta-flags">
+                <span *ngFor="let f of r.flags" class="ta-flag" [ngClass]="'fl-' + f.severity" [pTooltip]="f.label">
+                  {{ f.code }}
+                </span>
+                <span *ngIf="r.flags.length === 0" class="dim sm">—</span>
+              </div>
+            </td>
+            <td>
+              <button *ngIf="r.hasCheckInSelfie" class="ta-selfie-btn" (click)="viewSelfie(r, 'in')" pTooltip="View check-in selfie">
+                <i class="pi pi-camera"></i>
+              </button>
+              <span *ngIf="!r.hasCheckInSelfie" class="dim sm">—</span>
+            </td>
+            <td>
+              <ng-container *ngIf="r.approvalStatus === 'Pending'">
+                <div class="ta-actions">
+                  <button class="ta-btn ok" (click)="quickApproveAttendance(r)" pTooltip="Approve"><i class="pi pi-check"></i></button>
+                  <button class="ta-btn no" (click)="openDecide('attendance', r.id, false, 'check-in')" pTooltip="Reject"><i class="pi pi-times"></i></button>
+                </div>
+              </ng-container>
+              <span *ngIf="r.approvalStatus === 'Approved'" class="ta-appr ok"><i class="pi pi-verified"></i> Approved</span>
+              <span *ngIf="r.approvalStatus === 'Rejected'" class="ta-appr bad" [pTooltip]="r.rejectionReason || ''"><i class="pi pi-ban"></i> Rejected</span>
+              <span *ngIf="r.approvalStatus === 'NotRequired'" class="dim sm">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ════════ REQUESTS TAB ════════ -->
+  <ng-container *ngIf="tab === 'requests'">
+    <div class="ta-filters">
+      <label>Status
+        <select [(ngModel)]="reqStatus" (change)="loadRequests()">
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="">All</option>
+        </select>
+      </label>
+      <button class="ta-btn primary" (click)="loadRequests()"><i class="pi pi-refresh"></i> Refresh</button>
+    </div>
+
+    <div *ngIf="reqLoading" class="ta-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+    <div *ngIf="!reqLoading && reqError" class="ta-error"><i class="pi pi-exclamation-triangle"></i> {{ reqError }}</div>
+    <div *ngIf="!reqLoading && requests.length === 0" class="ta-empty"><i class="pi pi-inbox"></i> No requests.</div>
+
+    <div class="ta-req" *ngFor="let q of requests">
+      <div class="ta-req-main">
+        <div class="ta-req-top">
+          <span class="ta-emp-name">{{ q.employeeName }}</span>
+          <span class="ta-emp-meta">{{ q.employeeCode }}</span>
+          <span class="ta-reqtype">{{ statusLabel(q.requestType) }}</span>
+          <span class="ta-req-status" [ngClass]="'rq-' + q.status.toLowerCase()">{{ q.status }}</span>
+        </div>
+        <div class="ta-req-detail">
+          <span><i class="pi pi-calendar"></i> {{ q.requestDate | date:'dd MMM yyyy' }}</span>
+          <span *ngIf="q.requestedCheckInTime"><i class="pi pi-sign-in"></i> {{ q.requestedCheckInTime }}</span>
+          <span *ngIf="q.requestedCheckOutTime"><i class="pi pi-sign-out"></i> {{ q.requestedCheckOutTime }}</span>
+          <span *ngIf="q.requestedStatus" class="ta-reqtype sm">{{ statusLabel(q.requestedStatus) }}</span>
+        </div>
+        <div class="ta-req-reason">"{{ q.reason }}"</div>
+        <div class="ta-req-review" *ngIf="q.reviewedByName">
+          Reviewed by {{ q.reviewedByName }} <span *ngIf="q.reviewNote">— {{ q.reviewNote }}</span>
+        </div>
+      </div>
+      <div class="ta-req-actions" *ngIf="q.status === 'Pending'">
+        <button class="ta-btn ok wide" (click)="openDecide('request', q.id, true, 'request')"><i class="pi pi-check"></i> Approve</button>
+        <button class="ta-btn no wide" (click)="openDecide('request', q.id, false, 'request')"><i class="pi pi-times"></i> Reject</button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ════════ Selfie modal ════════ -->
+  <div class="ta-modal-back" *ngIf="selfieOpen" (click)="closeSelfie()">
+    <div class="ta-modal selfie" (click)="$event.stopPropagation()">
+      <div class="ta-modal-head">
+        <span><i class="pi pi-camera"></i> Check-in selfie — {{ selfieRow?.employeeName }}</span>
+        <button class="ta-x" (click)="closeSelfie()"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ta-selfie-body">
+        <div *ngIf="selfieLoading" class="ta-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+        <img *ngIf="!selfieLoading && selfieUrl" [src]="selfieUrl" alt="check-in selfie" />
+        <div *ngIf="!selfieLoading && !selfieUrl" class="ta-error">Selfie not available.</div>
+        <div class="ta-selfie-meta" *ngIf="selfieRow">
+          <span><i class="pi pi-clock"></i> {{ selfieRow.checkInTime }}</span>
+          <span *ngIf="selfieRow.matchedLocationName"><i class="pi pi-map-marker"></i> {{ selfieRow.matchedLocationName }}</span>
+          <span *ngIf="selfieRow.address" class="dim">{{ selfieRow.address }}</span>
+        </div>
+      </div>
+      <div class="ta-modal-foot" *ngIf="selfieRow && selfieRow.approvalStatus === 'Pending'">
+        <button class="ta-btn no wide" (click)="closeSelfie(); openDecide('attendance', selfieRow.id, false, 'check-in')">
+          <i class="pi pi-times"></i> Reject
+        </button>
+        <button class="ta-btn ok wide" (click)="quickApproveAttendance(selfieRow); closeSelfie()">
+          <i class="pi pi-check"></i> Approve
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ Map modal (location verification) ════════ -->
+  <div class="ta-modal-back" *ngIf="mapOpen" (click)="closeMap()">
+    <div class="ta-modal map" (click)="$event.stopPropagation()">
+      <div class="ta-modal-head">
+        <span><i class="pi pi-map"></i> Check-in location — {{ mapRow?.employeeName }}</span>
+        <button class="ta-x" (click)="closeMap()"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ta-map-body" *ngIf="mapRow as m">
+        <div class="ta-map-meta">
+          <span class="ta-loc" [ngClass]="{ ok: m.withinFence === true, bad: m.withinFence === false }">
+            <i class="pi pi-map-marker"></i>
+            {{ m.withinFence === true ? 'Within office area' : m.withinFence === false ? 'Outside office area' : 'Location captured' }}
+            <span class="dim" *ngIf="m.distanceMeters != null"> · {{ formatDistance(m.distanceMeters) }} from office</span>
+          </span>
+          <div class="ta-map-addr" *ngIf="m.address"><i class="pi pi-compass"></i> {{ m.address }}</div>
+          <div class="ta-map-addr" *ngIf="m.matchedLocationName"><i class="pi pi-building"></i> Nearest office: {{ m.matchedLocationName }}</div>
+        </div>
+        <div class="ta-map-frame" *ngIf="mapUrl">
+          <iframe [src]="mapUrl" loading="lazy" title="check-in location map"></iframe>
+        </div>
+        <div class="ta-error" *ngIf="!mapUrl">No GPS coordinates were captured for this check-in.</div>
+        <a *ngIf="mapUrl" class="ta-map-open" [href]="osmLink(m)" target="_blank" rel="noopener">Open full map <i class="pi pi-external-link"></i></a>
+      </div>
+      <div class="ta-modal-foot" *ngIf="mapRow && mapRow.approvalStatus === 'Pending'">
+        <button class="ta-btn no wide" (click)="closeMap(); openDecide('attendance', mapRow.id, false, 'check-in')">
+          <i class="pi pi-times"></i> Reject
+        </button>
+        <button class="ta-btn ok wide" (click)="quickApproveAttendance(mapRow); closeMap()">
+          <i class="pi pi-check"></i> Approve
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ Decision dialog ════════ -->
+  <div class="ta-modal-back" *ngIf="decideOpen" (click)="decideOpen = false">
+    <div class="ta-modal" (click)="$event.stopPropagation()">
+      <div class="ta-modal-head">
+        <span>{{ decideTitle }}</span>
+        <button class="ta-x" (click)="decideOpen = false"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ta-modal-body">
+        <label class="ta-field">
+          {{ decideApprove ? 'Note (optional)' : 'Reason (required)' }}
+          <textarea rows="3" [(ngModel)]="decideNote" placeholder="Add a note…"></textarea>
+        </label>
+        <div class="ta-error" *ngIf="decideError"><i class="pi pi-exclamation-triangle"></i> {{ decideError }}</div>
+      </div>
+      <div class="ta-modal-foot">
+        <button class="ta-btn ghost" (click)="decideOpen = false" [disabled]="decideBusy">Cancel</button>
+        <button class="ta-btn wide" [ngClass]="decideApprove ? 'ok' : 'no'" [disabled]="decideBusy" (click)="confirmDecide()">
+          <i class="pi" [ngClass]="decideBusy ? 'pi-spin pi-spinner' : (decideApprove ? 'pi-check' : 'pi-times')"></i>
+          {{ decideApprove ? 'Approve' : 'Reject' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

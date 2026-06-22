@@ -5,7 +5,7 @@ import { MasterSetupService } from '../../../services/master-setup.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   EmployeeListItemDto, GENDERS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES,
-  EMPLOYEE_HISTORY_TYPES, EmployeeHistoryEntryDto
+  EMPLOYEE_HISTORY_TYPES, EmployeeHistoryEntryDto, EmployeeLoginStatusDto
 } from '../../../models/employee.models';
 import {
   DepartmentDto, DesignationDto, ShiftDto, BankAccountDto
@@ -39,6 +39,9 @@ export class EmployeeListComponent implements OnInit {
   shifts: ShiftDto[] = [];
   bankAccounts: BankAccountDto[] = [];
 
+  // Supervisor (Reporting To) picker — all employees, minus the one being edited
+  allEmployees: EmployeeListItemDto[] = [];
+
   // Dialog
   dialogVisible = false;
   dialogMode: 'create' | 'edit' = 'create';
@@ -52,6 +55,19 @@ export class EmployeeListComponent implements OnInit {
   deletingEmployee: EmployeeListItemDto | null = null;
   deleting = false;
   deleteError = '';
+
+  // Manage Login
+  loginVisible = false;
+  loginEmployee: EmployeeListItemDto | null = null;
+  loginLoading = false;
+  loginBusy = false;
+  loginError = '';
+  loginInfo = '';
+  loginStatus: EmployeeLoginStatusDto | null = null;
+  newUserName = '';
+  newEmail = '';
+  newPassword = '';
+  resetPassword = '';
 
   // Service-record history
   readonly historyTypes = EMPLOYEE_HISTORY_TYPES;
@@ -145,6 +161,12 @@ export class EmployeeListComponent implements OnInit {
     this.masterSvc.getDesignations(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.designations = res.data; this.cdr.detectChanges(); }) });
     this.masterSvc.getShifts(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.shifts = res.data; this.cdr.detectChanges(); }) });
     this.masterSvc.getBankAccounts(false).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.bankAccounts = res.data; this.cdr.detectChanges(); }) });
+    this.service.getAll({ page: 1, pageSize: 1000, search: '' }).subscribe({ next: (res) => this.zone.run(() => { if (res.success && res.data) this.allEmployees = res.data.items; this.cdr.detectChanges(); }) });
+  }
+
+  /** Supervisor options for the form — exclude the employee currently being edited. */
+  get supervisorOptions(): EmployeeListItemDto[] {
+    return this.editingId ? this.allEmployees.filter(e => e.id !== this.editingId) : this.allEmployees;
   }
 
   private todayIso(): string {
@@ -177,6 +199,7 @@ export class EmployeeListComponent implements OnInit {
       designationId: [null as number | null],
       shiftId: [null as number | null],
       bankAccountId: [null as number | null],
+      reportingToEmployeeId: [null as number | null],
       status: ['Active'],
       notes: ['', Validators.maxLength(2000)],
       isActive: [true]
@@ -252,6 +275,7 @@ export class EmployeeListComponent implements OnInit {
       designationId: null,
       shiftId: null,
       bankAccountId: null,
+      reportingToEmployeeId: null,
       status: 'Active',
       notes: '',
       isActive: true
@@ -294,6 +318,7 @@ export class EmployeeListComponent implements OnInit {
             designationId: e.designationId,
             shiftId: e.shiftId,
             bankAccountId: e.bankAccountId,
+            reportingToEmployeeId: e.reportingToEmployeeId,
             status: e.status,
             notes: e.notes ?? '',
             isActive: e.isActive
@@ -335,6 +360,7 @@ export class EmployeeListComponent implements OnInit {
       designationId: v.designationId,
       shiftId: v.shiftId,
       bankAccountId: v.bankAccountId,
+      reportingToEmployeeId: v.reportingToEmployeeId ?? null,
       notes: (v.notes as string)?.trim() || null
     };
 
@@ -369,6 +395,96 @@ export class EmployeeListComponent implements OnInit {
       this.dialogSaving = false;
       this.dialogError = err?.error?.message || 'Save failed.';
       this.cdr.detectChanges();
+    });
+  }
+
+  // ─── Manage Login ──────────────────────────────────────────────────────────
+
+  openLogin(emp: EmployeeListItemDto): void {
+    this.loginEmployee = emp;
+    this.loginVisible = true;
+    this.loginStatus = null;
+    this.loginError = ''; this.loginInfo = '';
+    this.newUserName = ''; this.newEmail = ''; this.newPassword = ''; this.resetPassword = '';
+    this.loadLoginStatus();
+  }
+
+  private loadLoginStatus(): void {
+    if (!this.loginEmployee) return;
+    this.loginLoading = true; this.cdr.detectChanges();
+    this.service.getLoginStatus(this.loginEmployee.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.loginLoading = false;
+        if (res.success && res.data) {
+          this.loginStatus = res.data;
+          this.newUserName = res.data.suggestedUserName;
+          this.newEmail = res.data.employeeEmail ?? '';
+        } else this.loginError = res.message || 'Could not load login status.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.loginLoading = false; this.loginError = err?.error?.message || 'Could not load login status.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  createLogin(): void {
+    if (!this.loginEmployee || this.loginBusy) return;
+    if (!this.newUserName.trim() || this.newPassword.length < 8) {
+      this.loginError = 'Username required and password must be at least 8 characters.'; this.cdr.detectChanges(); return;
+    }
+    this.loginBusy = true; this.loginError = ''; this.loginInfo = ''; this.cdr.detectChanges();
+    this.service.createLogin(this.loginEmployee.id, {
+      userName: this.newUserName.trim(), password: this.newPassword,
+      roleName: this.loginStatus?.designationAccessRoleName ?? null,
+      email: this.newEmail.trim() || null
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.loginBusy = false;
+        if (res.success && res.data) { this.loginStatus = res.data; this.newPassword = ''; this.loginInfo = 'Login account created.'; }
+        else this.loginError = res.message || 'Could not create login.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.loginBusy = false; this.loginError = err?.error?.message || 'Could not create login.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  doResetPassword(): void {
+    if (!this.loginEmployee || this.loginBusy) return;
+    if (this.resetPassword.length < 8) { this.loginError = 'Password must be at least 8 characters.'; this.cdr.detectChanges(); return; }
+    this.loginBusy = true; this.loginError = ''; this.loginInfo = ''; this.cdr.detectChanges();
+    this.service.resetLoginPassword(this.loginEmployee.id, this.resetPassword).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.loginBusy = false;
+        if (res.success) { this.resetPassword = ''; this.loginInfo = 'Password reset.'; } else this.loginError = res.message || 'Could not reset password.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.loginBusy = false; this.loginError = err?.error?.message || 'Could not reset password.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  syncRole(): void {
+    if (!this.loginEmployee || this.loginBusy) return;
+    this.loginBusy = true; this.loginError = ''; this.loginInfo = ''; this.cdr.detectChanges();
+    this.service.setLoginRole(this.loginEmployee.id, this.loginStatus?.designationAccessRoleName ?? null).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.loginBusy = false;
+        if (res.success && res.data) { this.loginStatus = res.data; this.loginInfo = 'Access synced to designation.'; } else this.loginError = res.message || 'Could not sync access.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.loginBusy = false; this.loginError = err?.error?.message || 'Could not sync access.'; this.cdr.detectChanges(); })
+    });
+  }
+
+  unlinkLogin(deactivate: boolean): void {
+    if (!this.loginEmployee || this.loginBusy) return;
+    if (!confirm(deactivate ? 'Unlink AND deactivate this login?' : 'Unlink this login from the employee?')) return;
+    this.loginBusy = true; this.loginError = ''; this.loginInfo = ''; this.cdr.detectChanges();
+    this.service.unlinkLogin(this.loginEmployee.id, deactivate).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.loginBusy = false;
+        if (res.success) { this.loginInfo = 'Login unlinked.'; this.loadLoginStatus(); } else this.loginError = res.message || 'Could not unlink.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.loginBusy = false; this.loginError = err?.error?.message || 'Could not unlink.'; this.cdr.detectChanges(); })
     });
   }
 

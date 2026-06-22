@@ -47,6 +47,8 @@ export interface EmployeeDto {
   status: string;
   notes: string | null;
   isActive: boolean;
+  reportingToEmployeeId: number | null;
+  reportingToName: string | null;
 }
 
 export interface EmployeeListItemDto {
@@ -60,6 +62,8 @@ export interface EmployeeListItemDto {
   basicSalary: number;
   status: string;
   isActive: boolean;
+  reportingToEmployeeId?: number | null;
+  reportingToName?: string | null;
 }
 
 export const EMPLOYEE_HISTORY_TYPES: { label: string; value: string }[] = [
@@ -93,6 +97,31 @@ export interface AddEmployeeHistoryRequest {
   details: string | null;
 }
 
+// ─── Employee login account (dashboard access per designation) ──────────────
+
+export interface EmployeeLoginStatusDto {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  hasLogin: boolean;
+  userId: string | null;
+  userName: string | null;
+  email: string | null;
+  userIsActive: boolean | null;
+  roles: string[];
+  designationName: string | null;
+  designationAccessRoleName: string | null;
+  suggestedUserName: string;
+  employeeEmail: string | null;
+}
+
+export interface CreateEmployeeLoginRequest {
+  userName: string;
+  password: string;
+  roleName: string | null;
+  email: string | null;
+}
+
 export interface CreateEmployeeRequest {
   code: string | null;
   fullName: string;
@@ -119,6 +148,7 @@ export interface CreateEmployeeRequest {
   shiftId: number | null;
   bankAccountId: number | null;
   notes: string | null;
+  reportingToEmployeeId: number | null;
 }
 
 export interface UpdateEmployeeRequest {
@@ -148,4 +178,5 @@ export interface UpdateEmployeeRequest {
   status: string;
   notes: string | null;
   isActive: boolean;
+  reportingToEmployeeId: number | null;
 }

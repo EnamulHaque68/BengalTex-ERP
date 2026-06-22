@@ -30,7 +30,9 @@ public record EmployeeDto(
     int? BankAccountId,
     string Status,                 // enum as string
     string? Notes,
-    bool IsActive);
+    bool IsActive,
+    int? ReportingToEmployeeId = null,
+    string? ReportingToName = null);
 
 /// <summary>Compact employee for list/table views.</summary>
 public record EmployeeListItemDto(
@@ -43,4 +45,6 @@ public record EmployeeListItemDto(
     string EmploymentType,
     decimal BasicSalary,
     string Status,
-    bool IsActive);
+    bool IsActive,
+    int? ReportingToEmployeeId = null,
+    string? ReportingToName = null);

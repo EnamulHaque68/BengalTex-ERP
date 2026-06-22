@@ -1,0 +1,53 @@
+:host { display: block; }
+.att-rep { padding: 4px 2px 32px; }
+.dim { color: var(--text-color-secondary, #9ca3af); }
+
+.ar-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+  h2 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -.4px; } }
+.ar-tabs { display: flex; gap: 6px; background: var(--surface-100, #f3f4f6); padding: 4px; border-radius: 11px;
+  button { border: none; background: transparent; cursor: pointer; font-weight: 700; font-size: .82rem; padding: 8px 14px;
+    border-radius: 8px; color: var(--text-color-secondary, #6b7280); display: inline-flex; align-items: center; gap: 6px;
+    &.active { background: var(--surface-card, #fff); color: var(--primary-color, #4f46e5); box-shadow: 0 1px 4px rgba(0,0,0,.08); } } }
+
+.ar-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 14px;
+  label { display: flex; flex-direction: column; font-size: .74rem; font-weight: 700; color: var(--text-color-secondary, #6b7280); gap: 4px; }
+  input, select { border: 1px solid var(--surface-border, #d1d5db); border-radius: 8px; padding: 7px 10px; font-size: .85rem;
+    background: var(--surface-card, #fff); color: var(--text-color, #1f2937); } }
+.ar-btn { background: var(--primary-color, #4f46e5); color: #fff; border: none; cursor: pointer; font-weight: 700; font-size: .82rem;
+  padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; }
+
+.ar-loading, .ar-empty { padding: 30px; text-align: center; color: var(--text-color-secondary, #6b7280); i { margin-right: 8px; } }
+.ar-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 10px 14px; font-size: .85rem; }
+.ar-holiday { background: #f3e8ff; color: #6b21a8; border-radius: 10px; padding: 9px 14px; font-weight: 700; font-size: .85rem; margin-bottom: 12px; i { margin-right: 6px; } }
+.ar-excount { font-size: .85rem; color: var(--text-color-secondary, #6b7280); margin-bottom: 10px; }
+
+.ar-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 640px) { .ar-stats { grid-template-columns: repeat(3, 1fr); } }
+.ar-stat { background: var(--surface-card, #fff); border: 1px solid var(--surface-border, #e5e7eb); border-radius: 12px; padding: 12px 14px; text-align: center;
+  .n { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1; }
+  .l { font-size: .72rem; color: var(--text-color-secondary, #6b7280); font-weight: 600; }
+  &.present .n { color: #047857; } &.absent .n { color: #b91c1c; } &.late .n { color: #b45309; } &.leave .n { color: #1d4ed8; }
+}
+
+.ar-table-wrap { overflow-x: auto; border: 1px solid var(--surface-border, #e5e7eb); border-radius: 12px; }
+.ar-table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 760px;
+  thead th { text-align: left; padding: 10px 12px; background: var(--surface-50, #f9fafb); font-size: .7rem; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--text-color-secondary, #6b7280); border-bottom: 1px solid var(--surface-border, #e5e7eb); white-space: nowrap; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--surface-border, #f1f1f1); vertical-align: middle; }
+  tbody tr:hover { background: var(--surface-50, #fafafa); }
+  td.num { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .present-n { color: #047857; } .absent-n { color: #b91c1c; } .late-n { color: #b45309; }
+}
+.ar-emp { display: flex; flex-direction: column; span { font-weight: 700; } small { color: var(--text-color-secondary, #9ca3af); } }
+.ar-status { padding: 2px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; white-space: nowrap;
+  background: var(--surface-100, #f3f4f6); color: var(--text-color, #374151);
+  &.st-present, &.st-ontime, &.st-overtime, &.st-offdaywork, &.st-holidaywork { background: #dcfce7; color: #166534; }
+  &.st-late, &.st-earlyleave { background: #fef3c7; color: #92400e; }
+  &.st-absent { background: #fee2e2; color: #991b1b; }
+  &.st-leave { background: #dbeafe; color: #1e40af; }
+  &.st-holiday { background: #f3e8ff; color: #6b21a8; }
+  &.st-weeklyoff { background: #e5e7eb; color: #374151; }
+  &.st-halfday { background: #e0e7ff; color: #3730a3; }
+}
+.late-ic { color: #d97706; margin-left: 4px; }
+.geo-ok { color: #15803d; } .geo-bad { color: #b91c1c; }

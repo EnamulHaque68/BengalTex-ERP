@@ -1,0 +1,118 @@
+<div class="att-rep">
+  <div class="ar-head">
+    <h2>Attendance Reports</h2>
+    <div class="ar-tabs">
+      <button [class.active]="tab === 'daily'" (click)="switchTab('daily')"><i class="pi pi-calendar"></i> Daily Register</button>
+      <button [class.active]="tab === 'monthly'" (click)="switchTab('monthly')"><i class="pi pi-th-large"></i> Monthly Summary</button>
+      <button [class.active]="tab === 'exceptions'" (click)="switchTab('exceptions')"><i class="pi pi-flag"></i> Exceptions</button>
+    </div>
+  </div>
+
+  <!-- ════ DAILY ════ -->
+  <ng-container *ngIf="tab === 'daily'">
+    <div class="ar-filters">
+      <label>Date <input type="date" [(ngModel)]="date"></label>
+      <button class="ar-btn" (click)="loadDaily()"><i class="pi pi-search"></i> Load</button>
+    </div>
+    <div *ngIf="dailyLoading" class="ar-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+    <div *ngIf="dailyError" class="ar-error">{{ dailyError }}</div>
+
+    <ng-container *ngIf="!dailyLoading && daily as d">
+      <div class="ar-holiday" *ngIf="d.isHoliday"><i class="pi pi-star"></i> Holiday: {{ d.holidayName }}</div>
+      <div class="ar-stats">
+        <div class="ar-stat"><span class="n">{{ d.total }}</span><span class="l">Employees</span></div>
+        <div class="ar-stat present"><span class="n">{{ d.present }}</span><span class="l">Present</span></div>
+        <div class="ar-stat absent"><span class="n">{{ d.absent }}</span><span class="l">Absent</span></div>
+        <div class="ar-stat late"><span class="n">{{ d.late }}</span><span class="l">Late</span></div>
+        <div class="ar-stat leave"><span class="n">{{ d.onLeave }}</span><span class="l">On leave</span></div>
+      </div>
+      <div class="ar-table-wrap">
+        <table class="ar-table">
+          <thead><tr><th>Employee</th><th>Dept</th><th>Status</th><th>In</th><th>Out</th><th>Hours</th><th>Geo</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of d.rows">
+              <td><div class="ar-emp"><span>{{ r.employeeName }}</span><small>{{ r.employeeCode }}</small></div></td>
+              <td>{{ r.department || '—' }}</td>
+              <td><span class="ar-status" [ngClass]="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
+                <i *ngIf="r.isLate" class="pi pi-clock late-ic" pTooltip="Late"></i></td>
+              <td>{{ r.checkInTime || '—' }}</td>
+              <td>{{ r.checkOutTime || '—' }}</td>
+              <td>{{ r.workingHoursLabel || '—' }}</td>
+              <td>
+                <i *ngIf="r.withinFence === true" class="pi pi-check-circle geo-ok" pTooltip="Within fence"></i>
+                <i *ngIf="r.withinFence === false" class="pi pi-exclamation-circle geo-bad" pTooltip="Outside fence"></i>
+                <span *ngIf="r.withinFence === null" class="dim">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ════ MONTHLY ════ -->
+  <ng-container *ngIf="tab === 'monthly'">
+    <div class="ar-filters">
+      <label>Month <select [(ngModel)]="month"><option *ngFor="let m of months" [value]="m.v">{{ m.l }}</option></select></label>
+      <label>Year <input type="number" [(ngModel)]="year" style="width:90px"></label>
+      <button class="ar-btn" (click)="loadMonthly()"><i class="pi pi-search"></i> Load</button>
+    </div>
+    <div *ngIf="monthlyLoading" class="ar-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+    <div *ngIf="monthlyError" class="ar-error">{{ monthlyError }}</div>
+
+    <div class="ar-table-wrap" *ngIf="!monthlyLoading && monthly as mo">
+      <table class="ar-table">
+        <thead><tr><th>Employee</th><th>Dept</th><th>Present</th><th>Absent</th><th>Late</th><th>Leave</th>
+          <th>Holiday wk</th><th>Off-day wk</th><th>OT hrs</th><th>Worked</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of mo.rows">
+            <td><div class="ar-emp"><span>{{ r.employeeName }}</span><small>{{ r.employeeCode }}</small></div></td>
+            <td>{{ r.department || '—' }}</td>
+            <td class="num present-n">{{ r.presentDays }}</td>
+            <td class="num absent-n">{{ r.absentDays }}</td>
+            <td class="num late-n">{{ r.lateDays }}</td>
+            <td class="num">{{ r.leaveDays }}</td>
+            <td class="num">{{ r.holidayWorkDays }}</td>
+            <td class="num">{{ r.offdayWorkDays }}</td>
+            <td class="num">{{ r.overtimeHours }}</td>
+            <td>{{ r.totalWorkedLabel }}</td>
+          </tr>
+          <tr *ngIf="mo.rows.length === 0"><td colspan="10" class="ar-empty">No data for this month.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ════ EXCEPTIONS ════ -->
+  <ng-container *ngIf="tab === 'exceptions'">
+    <div class="ar-filters">
+      <label>Type <select [(ngModel)]="exType"><option *ngFor="let t of exceptionTypes" [value]="t.value">{{ t.label }}</option></select></label>
+      <label>From <input type="date" [(ngModel)]="exFrom"></label>
+      <label>To <input type="date" [(ngModel)]="exTo"></label>
+      <button class="ar-btn" (click)="loadExceptions()"><i class="pi pi-search"></i> Load</button>
+    </div>
+    <div *ngIf="exLoading" class="ar-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+    <div *ngIf="exError" class="ar-error">{{ exError }}</div>
+
+    <ng-container *ngIf="!exLoading && exceptions as ex">
+      <div class="ar-excount"><strong>{{ ex.count }}</strong> result(s)</div>
+      <div class="ar-table-wrap">
+        <table class="ar-table">
+          <thead><tr><th>Employee</th><th>Dept</th><th>Date</th><th>Status</th><th>In</th><th>Out</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of ex.rows">
+              <td><div class="ar-emp"><span>{{ r.employeeName }}</span><small>{{ r.employeeCode }}</small></div></td>
+              <td>{{ r.department || '—' }}</td>
+              <td>{{ r.attendanceDate | date:'dd MMM' }}</td>
+              <td><span class="ar-status" [ngClass]="statusClass(r.status)">{{ statusLabel(r.status) }}</span></td>
+              <td>{{ r.checkInTime || '—' }}</td>
+              <td>{{ r.checkOutTime || '—' }}</td>
+              <td class="dim">{{ r.detail }}</td>
+            </tr>
+            <tr *ngIf="ex.rows.length === 0"><td colspan="7" class="ar-empty">No exceptions found. 🎉</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>

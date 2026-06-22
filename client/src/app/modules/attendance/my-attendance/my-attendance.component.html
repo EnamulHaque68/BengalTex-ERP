@@ -1,0 +1,341 @@
+<div class="my-att">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="ma-loading">
+    <i class="pi pi-spin pi-spinner"></i> Loading your attendance…
+  </div>
+
+  <!-- Load error / not linked -->
+  <div *ngIf="!loading && loadError" class="ma-error-card">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <div class="ma-error-title">Can't show your attendance</div>
+      <div class="ma-error-msg">{{ loadError }}</div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading && data as d">
+
+    <!-- ── Header ── -->
+    <div class="ma-topbar">
+      <div>
+        <div class="ma-crumb">Dashboard <i class="pi pi-angle-right"></i> Attendance <i class="pi pi-angle-right"></i> My Attendance</div>
+        <h2>My Attendance</h2>
+        <p>Track your daily attendance and working hours</p>
+      </div>
+      <button class="ma-req-trigger" (click)="openRequest()"><i class="pi pi-file-edit"></i> Request correction</button>
+    </div>
+
+    <!-- ── KPI hero strip ── -->
+    <div class="ma-kpis">
+      <div class="ma-kpi">
+        <div class="ma-kpi-ic green"><i class="pi pi-check-circle"></i></div>
+        <div class="ma-kpi-body">
+          <span class="ma-kpi-label">Today's Status</span>
+          <span class="ma-kpi-value">{{ d.todayStatus.checkOutTime ? 'Checked Out' : d.todayStatus.hasRecord ? 'Checked In' : 'Not Checked In' }}</span>
+          <span class="ma-kpi-sub" *ngIf="d.todayStatus.checkInTime">{{ d.todayStatus.checkInTime }}
+            <span *ngIf="d.todayStatus.matchedLocationName"> · {{ d.todayStatus.matchedLocationName }}</span></span>
+          <span class="ma-kpi-sub" *ngIf="!d.todayStatus.checkInTime">Tap Check In below</span>
+        </div>
+      </div>
+
+      <div class="ma-kpi">
+        <div class="ma-kpi-ic blue"><i class="pi pi-clock"></i></div>
+        <div class="ma-kpi-body">
+          <span class="ma-kpi-label">Working Hours</span>
+          <span class="ma-kpi-value">{{ liveLabel }} <small>/ 08h 00m</small></span>
+          <span class="ma-kpi-sub">{{ d.todayStatus.checkOutTime ? 'Completed' : d.todayStatus.onBreak ? 'On break' : d.todayStatus.hasRecord ? 'Working Now' : '—' }}</span>
+        </div>
+      </div>
+
+      <div class="ma-kpi">
+        <div class="ma-kpi-ic indigo"><i class="pi pi-calendar"></i></div>
+        <div class="ma-kpi-body">
+          <span class="ma-kpi-label">This Month</span>
+          <span class="ma-kpi-value">{{ d.month.presentDays }} <small>Present Days</small></span>
+          <span class="ma-kpi-sub">{{ d.month.absentDays }} Absent, {{ d.month.leaveDays }} Leave</span>
+        </div>
+      </div>
+
+      <div class="ma-kpi">
+        <div class="ma-kpi-ic violet"><i class="pi pi-history"></i></div>
+        <div class="ma-kpi-body">
+          <span class="ma-kpi-label">Overtime (This Month)</span>
+          <span class="ma-kpi-value">{{ d.month.overtimeHours }}h <small>Total OT</small></span>
+          <span class="ma-kpi-sub">{{ d.month.lateDays }} late day(s)</span>
+        </div>
+      </div>
+
+      <div class="ma-kpi">
+        <div class="ma-kpi-ic" [ngClass]="{
+            'amber': d.todayStatus.approvalStatus === 'Pending',
+            'green': d.todayStatus.approvalStatus === 'Approved',
+            'red': d.todayStatus.approvalStatus === 'Rejected',
+            'grey': d.todayStatus.approvalStatus === 'NotRequired' }"><i class="pi pi-verified"></i></div>
+        <div class="ma-kpi-body">
+          <span class="ma-kpi-label">Approval Status</span>
+          <span class="ma-kpi-value sm">{{ d.todayStatus.approvalStatus === 'NotRequired' ? 'Not Required' : d.todayStatus.approvalStatus }}</span>
+          <span class="ma-kpi-sub">Supervisor approval</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Check In/Out + Calendar ── -->
+    <div class="ma-row-main">
+
+      <!-- Check In / Check Out -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <span class="ma-card-title"><i class="pi pi-id-card"></i> Check In / Check Out</span>
+          <span class="ma-chip" [ngClass]="d.todayStatus.checkOutTime ? 'done' : d.todayStatus.hasRecord ? 'in' : 'out'">
+            {{ d.todayStatus.checkOutTime ? 'Checked Out' : d.todayStatus.hasRecord ? 'Checked In' : 'Not Checked In' }}
+          </span>
+        </div>
+
+        <div class="ma-cio">
+          <!-- circular fingerprint ring -->
+          <div class="ma-ring-wrap" [class.clickable]="canCheckIn" (click)="canCheckIn ? startCheckIn() : null">
+            <svg viewBox="0 0 120 120" class="ma-ring">
+              <circle cx="60" cy="60" r="52" class="ring-track"></circle>
+              <circle cx="60" cy="60" r="52" class="ring-progress" [style.stroke-dasharray]="ringDash"></circle>
+            </svg>
+            <div class="ma-ring-center">
+              <svg class="ma-finger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M12 11c0 3-.5 5.5-1.5 7.5"/><path d="M8.5 8.5a5 5 0 0 1 7 4.5c0 2 .3 4-.5 6"/>
+                <path d="M5.5 11a6.5 6.5 0 0 1 13 0c0 1.5 0 3-.5 4.5"/><path d="M12 7.5a3.5 3.5 0 0 1 3.5 3.5c0 2.5 0 4-.7 6.2"/>
+              </svg>
+              <span class="ma-ring-lbl" *ngIf="d.todayStatus.hasRecord">{{ d.todayStatus.checkOutTime ? 'Checked Out' : 'Checked In' }}</span>
+              <span class="ma-ring-lbl" *ngIf="!d.todayStatus.hasRecord">Tap to Check In</span>
+              <span class="ma-ring-time" *ngIf="d.todayStatus.checkInTime">{{ d.todayStatus.checkInTime }}</span>
+              <span class="ma-ring-date">{{ d.today | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+
+          <!-- verification info -->
+          <div class="ma-verify-list">
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-map-marker"></i> Location Status</span>
+              <span class="v" [ngClass]="{ ok: d.todayStatus.withinFence === true, bad: d.todayStatus.withinFence === false }">
+                {{ d.todayStatus.locationStatus || (latitude ? 'Captured' : '—') }}
+                <small *ngIf="d.todayStatus.distanceMeters != null">{{ formatDistance(d.todayStatus.distanceMeters) }}</small>
+              </span>
+            </div>
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-compass"></i> GPS Location</span>
+              <span class="v">{{ (d.todayStatus.latitude ?? latitude) != null ? ((d.todayStatus.latitude ?? latitude) | number:'1.4-4') + '°, ' + ((d.todayStatus.longitude ?? longitude) | number:'1.4-4') + '°' : '—' }}</span>
+            </div>
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-mobile"></i> Device</span>
+              <span class="v">{{ d.todayStatus.deviceType || '—' }}<span *ngIf="d.todayStatus.os"> · {{ d.todayStatus.os }}</span></span>
+            </div>
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-globe"></i> IP Address</span>
+              <span class="v">{{ d.todayStatus.ipAddress || '—' }}</span>
+            </div>
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-wifi"></i> Network</span>
+              <span class="v">{{ d.todayStatus.network || '—' }}</span>
+            </div>
+            <div class="ma-vl">
+              <span class="k"><i class="pi pi-shield"></i> VPN / Proxy</span>
+              <span class="v" [ngClass]="{ bad: d.todayStatus.isProxyVpn === true, ok: d.todayStatus.isProxyVpn === false }">
+                {{ d.todayStatus.isProxyVpn === true ? (d.todayStatus.networkNote || 'Detected') : d.todayStatus.isProxyVpn === false ? 'Not Detected' : 'Not checked' }}
+                <i *ngIf="d.todayStatus.isProxyVpn === false" class="pi pi-check-circle"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- address + map -->
+        <div class="ma-addr-line" *ngIf="d.todayStatus.address">
+          <i class="pi pi-map"></i> {{ d.todayStatus.address }}
+          <a *ngIf="mapUrl" [href]="osmLink" target="_blank" rel="noopener">View map</a>
+        </div>
+
+        <!-- actions -->
+        <div class="ma-cio-actions">
+          <button class="ma-act in" *ngIf="canCheckIn" [disabled]="busy" (click)="startCheckIn()">
+            <i class="pi" [ngClass]="busy ? 'pi-spin pi-spinner' : 'pi-sign-in'"></i> Check In
+          </button>
+          <button class="ma-act out" *ngIf="canCheckOut" [disabled]="busy" (click)="startCheckOut()">
+            <i class="pi" [ngClass]="busy ? 'pi-spin pi-spinner' : 'pi-sign-out'"></i> Check Out
+          </button>
+          <button class="ma-act break" *ngIf="canBreakOut" [disabled]="busy" (click)="doBreakOut()"><i class="pi pi-pause"></i> Break Out</button>
+          <button class="ma-act breakin" *ngIf="canBreakIn" [disabled]="busy" (click)="doBreakIn()"><i class="pi pi-play"></i> Break In</button>
+          <button class="ma-act ghost" *ngIf="!canBreakOut && !canBreakIn && d.todayStatus.hasRecord" disabled><i class="pi pi-pause"></i> Break</button>
+        </div>
+        <div class="ma-action-error" *ngIf="actionError"><i class="pi pi-times-circle"></i> {{ actionError }}</div>
+        <div class="ma-gps-hint" *ngIf="gpsState === 'denied' || gpsState === 'error'">
+          <i class="pi pi-info-circle"></i> {{ gpsError }} <a (click)="requestGps()">Retry</a>
+        </div>
+      </div>
+
+      <!-- Attendance Calendar -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <span class="ma-card-title"><i class="pi pi-calendar"></i> Attendance Calendar</span>
+          <span class="ma-month-pill">{{ d.today | date:'MMMM yyyy' }}</span>
+        </div>
+        <div class="ma-cal-head"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+        <div class="ma-cal">
+          <div class="ma-cal-day" *ngFor="let c of calendarCells"
+               [ngClass]="dayClass(c.status)" [class.empty]="!c.date" [class.is-today]="c.date === d.today"
+               [pTooltip]="c.status ? statusLabel(c.status) : ''" tooltipPosition="top">
+            <span class="dnum">{{ c.day || '' }}</span>
+            <i class="ddot" *ngIf="c.status"></i>
+          </div>
+        </div>
+        <div class="ma-legend">
+          <span><i class="lg d-present"></i> Present</span>
+          <span><i class="lg d-late"></i> Late</span>
+          <span><i class="lg d-absent"></i> Absent</span>
+          <span><i class="lg d-leave"></i> Leave</span>
+          <span><i class="lg d-holiday"></i> Offday</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Alerts + History ── -->
+    <div class="ma-grid2">
+
+      <!-- Today's Alerts -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <span class="ma-card-title"><i class="pi pi-bell"></i> Today's Alerts</span>
+        </div>
+        <div class="ma-alerts">
+          <div class="ma-alert" *ngFor="let a of d.alerts" [ngClass]="'al-' + a.severity">
+            <i class="pi" [ngClass]="{ 'pi-exclamation-circle': a.severity === 'critical', 'pi-map-marker': a.severity === 'warning', 'pi-shield': a.severity === 'info' }"></i>
+            <div class="ma-alert-body">
+              <div class="ma-alert-title">{{ a.title }}</div>
+              <div class="ma-alert-detail" *ngIf="a.detail">{{ a.detail }}</div>
+            </div>
+            <span class="ma-alert-time" *ngIf="a.time">{{ a.time }}</span>
+          </div>
+          <div *ngIf="d.alerts.length === 0" class="ma-empty-sm">No alerts today 🎉</div>
+        </div>
+      </div>
+
+      <!-- Today's Attendance History -->
+      <div class="ma-card">
+        <div class="ma-card-head">
+          <span class="ma-card-title"><i class="pi pi-history"></i> Today's Attendance History</span>
+        </div>
+        <table class="ma-hist">
+          <thead><tr><th>Time</th><th>Status</th><th>Location</th><th>Remarks</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let h of d.history">
+              <td class="t">{{ h.time }}</td>
+              <td>
+                <span class="ma-ev" [ngClass]="{
+                    'in': h.event === 'Check In', 'out': h.event === 'Check Out',
+                    'bo': h.event === 'Break Out', 'bi': h.event === 'Break In' }">
+                  <i class="pi" [ngClass]="{ 'pi-sign-in': h.event === 'Check In', 'pi-sign-out': h.event === 'Check Out', 'pi-pause': h.event === 'Break Out', 'pi-play': h.event === 'Break In' }"></i>
+                  {{ h.event }}
+                </span>
+              </td>
+              <td class="loc">{{ h.location || '—' }}</td>
+              <td>
+                <span *ngIf="h.remark" class="ma-remark" [class.ok]="h.remark === 'On Time'" [class.warn]="h.remark === 'Late' || h.remark === 'Early leave'">{{ h.remark }}</span>
+                <span *ngIf="!h.remark" class="dim">-</span>
+              </td>
+            </tr>
+            <tr *ngIf="d.history.length === 0"><td colspan="4" class="ma-empty-sm">No activity yet today.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── My Team Attendance (supervisors only) ── -->
+    <div class="ma-card ma-team" *ngIf="canSupervise && team">
+      <div class="ma-card-head">
+        <span class="ma-card-title"><i class="pi pi-users"></i> My Team Attendance <small>(Under My Supervision)</small></span>
+        <a class="ma-link" (click)="goTeam()">View All Team</a>
+      </div>
+      <div class="ma-team-stats">
+        <div class="ma-ts"><div class="ic blue"><i class="pi pi-users"></i></div><span class="n">{{ team.summary.teamSize }}</span><span class="l">Total Members</span></div>
+        <div class="ma-ts"><div class="ic green"><i class="pi pi-check"></i></div><span class="n">{{ teamPresent }}</span><span class="l">Present</span></div>
+        <div class="ma-ts"><div class="ic amber"><i class="pi pi-clock"></i></div><span class="n">{{ teamLate }}</span><span class="l">Late</span></div>
+        <div class="ma-ts"><div class="ic red"><i class="pi pi-times"></i></div><span class="n">{{ teamAbsent }}</span><span class="l">Absent</span></div>
+        <div class="ma-ts"><div class="ic indigo"><i class="pi pi-calendar-times"></i></div><span class="n">{{ teamLeave }}</span><span class="l">On Leave</span></div>
+        <div class="ma-ts"><div class="ic violet"><i class="pi pi-hourglass"></i></div><span class="n">{{ team.summary.pendingApprovals }}</span><span class="l">Pending Approval</span></div>
+      </div>
+      <div class="ma-team-foot" *ngIf="team.summary.pendingApprovals > 0">
+        <span><i class="pi pi-info-circle"></i> You have <strong>{{ team.summary.pendingApprovals }}</strong> attendance(s) pending for approval</span>
+        <button class="ma-review-btn" (click)="goTeam()"><i class="pi pi-verified"></i> Review &amp; Approve</button>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ── Selfie capture modal ── -->
+  <div class="ma-selfie-backdrop" *ngIf="selfieOpen" (click)="closeSelfie()">
+    <div class="ma-selfie" (click)="$event.stopPropagation()">
+      <div class="ma-selfie-head">
+        <span><i class="pi pi-camera"></i> Verify it's you — {{ selfieFor === 'in' ? 'Check In' : 'Check Out' }}</span>
+        <button class="ma-x" (click)="closeSelfie()"><i class="pi pi-times"></i></button>
+      </div>
+
+      <div class="ma-selfie-body">
+        <div class="ma-cam-frame">
+          <video #video *ngIf="!capturedSelfie" autoplay playsinline muted class="ma-cam"></video>
+          <img *ngIf="capturedSelfie" [src]="capturedSelfie" class="ma-cam" alt="selfie preview" />
+          <canvas #canvas hidden></canvas>
+          <div class="ma-cam-loading" *ngIf="!cameraReady && !capturedSelfie && !cameraError">
+            <i class="pi pi-spin pi-spinner"></i> Starting camera…
+          </div>
+        </div>
+        <div class="ma-cam-error" *ngIf="cameraError"><i class="pi pi-exclamation-triangle"></i> {{ cameraError }}</div>
+        <div class="ma-cam-hint" *ngIf="!cameraError">Center your face in the frame and capture. This prevents buddy-punching.</div>
+      </div>
+
+      <div class="ma-selfie-foot">
+        <button class="ma-btn ghost" (click)="closeSelfie()" [disabled]="busy">Cancel</button>
+        <button class="ma-btn primary" *ngIf="!capturedSelfie" [disabled]="!cameraReady" (click)="capture()">
+          <i class="pi pi-camera"></i> Capture
+        </button>
+        <button class="ma-btn ghost" *ngIf="capturedSelfie" [disabled]="busy" (click)="retake()">
+          <i class="pi pi-refresh"></i> Retake
+        </button>
+        <button class="ma-btn primary" *ngIf="capturedSelfie" [disabled]="busy" (click)="confirmSelfie()">
+          <i class="pi" [ngClass]="busy ? 'pi-spin pi-spinner' : 'pi-check'"></i>
+          {{ selfieFor === 'in' ? 'Confirm Check In' : 'Confirm Check Out' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Correction request dialog ── -->
+  <div class="ma-selfie-backdrop" *ngIf="reqOpen" (click)="reqOpen = false">
+    <div class="ma-reqdlg" (click)="$event.stopPropagation()">
+      <div class="ma-selfie-head">
+        <span><i class="pi pi-file-edit"></i> Request attendance correction</span>
+        <button class="ma-x" (click)="reqOpen = false"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="ma-reqdlg-body">
+        <label class="ma-rf">Type
+          <select [(ngModel)]="reqForm.requestType">
+            <option *ngFor="let t of requestTypes" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </label>
+        <label class="ma-rf">Date
+          <input type="date" [(ngModel)]="reqForm.requestDate">
+        </label>
+        <div class="ma-rf-row">
+          <label class="ma-rf">Check-in <input type="time" [(ngModel)]="reqForm.requestedCheckInTime"></label>
+          <label class="ma-rf">Check-out <input type="time" [(ngModel)]="reqForm.requestedCheckOutTime"></label>
+        </div>
+        <label class="ma-rf">Reason
+          <textarea rows="3" [(ngModel)]="reqForm.reason" placeholder="Explain why this correction is needed…"></textarea>
+        </label>
+        <div class="ma-action-error inline" *ngIf="reqError"><i class="pi pi-times-circle"></i> {{ reqError }}</div>
+      </div>
+      <div class="ma-selfie-foot">
+        <button class="ma-btn ghost" (click)="reqOpen = false" [disabled]="reqBusy">Cancel</button>
+        <button class="ma-btn primary" [disabled]="reqBusy" (click)="submitRequest()">
+          <i class="pi" [ngClass]="reqBusy ? 'pi-spin pi-spinner' : 'pi-send'"></i> Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

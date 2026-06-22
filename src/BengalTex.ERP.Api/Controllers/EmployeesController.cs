@@ -175,6 +175,32 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> DeleteHistory(int historyId, CancellationToken ct)
         => Ok(await _mediator.Send(new DeleteEmployeeHistoryCommand(historyId), ct));
 
+    // ── Login account: give an employee dashboard access per their designation ──
+    [HttpGet("{id:int}/login")]
+    [HasPermission(Permissions.Users.View)]
+    public async Task<IActionResult> LoginStatus(int id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetEmployeeLoginStatusQuery(id), ct));
+
+    [HttpPost("{id:int}/login")]
+    [HasPermission(Permissions.Users.Create)]
+    public async Task<IActionResult> CreateLogin(int id, [FromBody] CreateEmployeeLoginRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new CreateEmployeeLoginCommand(id, body.UserName, body.Password, body.RoleName, body.Email), ct));
+
+    [HttpPost("{id:int}/login/reset-password")]
+    [HasPermission(Permissions.Users.Edit)]
+    public async Task<IActionResult> ResetLoginPassword(int id, [FromBody] ResetEmployeeLoginPasswordRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new ResetEmployeeLoginPasswordCommand(id, body.NewPassword), ct));
+
+    [HttpPost("{id:int}/login/role")]
+    [HasPermission(Permissions.Users.ManageRoles)]
+    public async Task<IActionResult> SetLoginRole(int id, [FromBody] SetEmployeeLoginRoleRequest body, CancellationToken ct)
+        => Ok(await _mediator.Send(new SetEmployeeLoginRoleCommand(id, body.RoleName), ct));
+
+    [HttpDelete("{id:int}/login")]
+    [HasPermission(Permissions.Users.Edit)]
+    public async Task<IActionResult> UnlinkLogin(int id, [FromQuery] bool deactivate = false, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new UnlinkEmployeeLoginCommand(id, deactivate), ct));
+
     [HttpPost]
     [HasPermission(Permissions.Employees.Create)]
     public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request, CancellationToken ct)
@@ -188,7 +214,7 @@ public class EmployeesController : ControllerBase
             request.TransportAllowance, request.FoodAllowance,
             request.IsPfMember, request.PfRate, request.IsTaxable,
             request.DepartmentId, request.DesignationId, request.ShiftId, request.BankAccountId,
-            request.Notes
+            request.Notes, request.ReportingToEmployeeId
         ), ct);
         return Ok(result);
     }
@@ -206,7 +232,7 @@ public class EmployeesController : ControllerBase
             request.TransportAllowance, request.FoodAllowance,
             request.IsPfMember, request.PfRate, request.IsTaxable,
             request.DepartmentId, request.DesignationId, request.ShiftId, request.BankAccountId,
-            request.Status, request.Notes, request.IsActive
+            request.Status, request.Notes, request.IsActive, request.ReportingToEmployeeId
         ), ct);
         return Ok(result);
     }
@@ -256,7 +282,8 @@ public record CreateEmployeeRequest(
     int? DesignationId,
     int? ShiftId,
     int? BankAccountId,
-    string? Notes);
+    string? Notes,
+    int? ReportingToEmployeeId = null);
 
 public record UpdateEmployeeRequest(
     string FullName,
@@ -284,4 +311,9 @@ public record UpdateEmployeeRequest(
     int? BankAccountId,
     string Status,
     string? Notes,
-    bool IsActive);
+    bool IsActive,
+    int? ReportingToEmployeeId = null);
+
+public record CreateEmployeeLoginRequest(string UserName, string Password, string? RoleName, string? Email = null);
+public record ResetEmployeeLoginPasswordRequest(string NewPassword);
+public record SetEmployeeLoginRoleRequest(string? RoleName);

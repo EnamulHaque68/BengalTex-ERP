@@ -1,0 +1,59 @@
+<div class="att-set">
+  <div class="as-head">
+    <h2>Attendance Settings</h2>
+    <p>Company-wide attendance policy — office hours, grace, geo-fence behaviour and verification.</p>
+  </div>
+
+  <div *ngIf="loading" class="as-loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+
+  <form *ngIf="!loading && model as m" class="as-form" (ngSubmit)="save()">
+    <section class="as-card">
+      <h3><i class="pi pi-clock"></i> Office hours</h3>
+      <div class="as-grid">
+        <label>Start time <input type="time" [(ngModel)]="m.officeStartTime" name="start"></label>
+        <label>End time <input type="time" [(ngModel)]="m.officeEndTime" name="end"></label>
+        <label>Grace period (min) <input type="number" min="0" max="240" [(ngModel)]="m.gracePeriodMinutes" name="grace"></label>
+      </div>
+      <p class="as-hint">Check-in after <strong>start + grace</strong> is marked Late.</p>
+    </section>
+
+    <section class="as-card">
+      <h3><i class="pi pi-map-marker"></i> Geo-fence</h3>
+      <div class="as-grid">
+        <label>Outside-fence behaviour
+          <select [(ngModel)]="m.outsideFenceMode" name="fenceMode">
+            <option value="Flag">Flag (allow, mark for review)</option>
+            <option value="Block">Block (reject check-in)</option>
+          </select>
+        </label>
+        <label>Default radius (m) <input type="number" min="5" [(ngModel)]="m.defaultRadiusMeters" name="radius"></label>
+      </div>
+      <p class="as-hint">Set up office locations under <strong>Office Locations</strong> and assign employees there.</p>
+    </section>
+
+    <section class="as-card">
+      <h3><i class="pi pi-verified"></i> Verification</h3>
+      <label class="as-toggle"><input type="checkbox" [(ngModel)]="m.requireSelfie" name="selfie">
+        <span><strong>Require selfie</strong> at check-in (anti buddy-punch)</span></label>
+      <label class="as-toggle"><input type="checkbox" [(ngModel)]="m.requireSupervisorApproval" name="approval">
+        <span><strong>Require supervisor approval</strong> for every check-in</span></label>
+    </section>
+
+    <section class="as-card">
+      <h3><i class="pi pi-briefcase"></i> Attendance modes</h3>
+      <label class="as-toggle"><input type="checkbox" [(ngModel)]="m.allowRemote" name="remote">
+        <span><strong>Allow remote</strong> (work-from-home) attendance</span></label>
+      <label class="as-toggle"><input type="checkbox" [(ngModel)]="m.allowFieldVisit" name="field">
+        <span><strong>Allow field visit</strong> attendance</span></label>
+    </section>
+
+    <div class="as-error" *ngIf="error"><i class="pi pi-exclamation-triangle"></i> {{ error }}</div>
+
+    <div class="as-actions">
+      <span class="as-saved" *ngIf="saved"><i class="pi pi-check-circle"></i> Saved</span>
+      <button type="submit" class="as-save" [disabled]="saving">
+        <i class="pi" [ngClass]="saving ? 'pi-spin pi-spinner' : 'pi-save'"></i> Save settings
+      </button>
+    </div>
+  </form>
+</div>

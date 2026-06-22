@@ -56,12 +56,12 @@ public class DesignationsController : ControllerBase
     [HttpPost]
     [HasPermission(Permissions.MasterSetup.ManageDesignations)]
     public async Task<IActionResult> Create([FromBody] CreateDesignationRequest req, CancellationToken ct)
-        => Ok(await _mediator.Send(new CreateDesignationCommand(req.Code, req.Name, req.GradeLevel, req.Description), ct));
+        => Ok(await _mediator.Send(new CreateDesignationCommand(req.Code, req.Name, req.GradeLevel, req.Description, req.AccessRoleName), ct));
 
     [HttpPut("{id:int}")]
     [HasPermission(Permissions.MasterSetup.ManageDesignations)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateDesignationRequest req, CancellationToken ct)
-        => Ok(await _mediator.Send(new UpdateDesignationCommand(id, req.Code, req.Name, req.GradeLevel, req.Description, req.IsActive), ct));
+        => Ok(await _mediator.Send(new UpdateDesignationCommand(id, req.Code, req.Name, req.GradeLevel, req.Description, req.IsActive, req.AccessRoleName), ct));
 
     [HttpDelete("{id:int}")]
     [HasPermission(Permissions.MasterSetup.ManageDesignations)]
@@ -69,8 +69,8 @@ public class DesignationsController : ControllerBase
         => Ok(await _mediator.Send(new DeleteDesignationCommand(id), ct));
 }
 
-public record CreateDesignationRequest(string? Code, string Name, int? GradeLevel, string? Description);
-public record UpdateDesignationRequest(string? Code, string Name, int? GradeLevel, string? Description, bool IsActive);
+public record CreateDesignationRequest(string? Code, string Name, int? GradeLevel, string? Description, string? AccessRoleName = null);
+public record UpdateDesignationRequest(string? Code, string Name, int? GradeLevel, string? Description, bool IsActive, string? AccessRoleName = null);
 
 
 [ApiController]
