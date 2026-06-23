@@ -12,6 +12,7 @@ import { CompanyDto } from '../../../models/company.models';
   styleUrl: './delivery-note-print.component.scss'
 })
 export class DeliveryNotePrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   dn: DeliveryNoteDto | null = null;
   company: CompanyDto | null = null;

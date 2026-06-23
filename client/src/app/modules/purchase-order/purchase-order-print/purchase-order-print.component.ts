@@ -13,6 +13,7 @@ import { numberToWords } from '../../../shared/number-to-words.util';
   styleUrl: './purchase-order-print.component.scss'
 })
 export class PurchaseOrderPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   po: PurchaseOrderDto | null = null;
   company: CompanyDto | null = null;

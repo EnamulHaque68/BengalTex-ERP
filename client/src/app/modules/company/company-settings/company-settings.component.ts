@@ -17,12 +17,20 @@ export class CompanySettingsComponent implements OnInit {
   successMessage = '';
   companyExists = false;
 
+  // Logo
+  hasLogo = false;
+  logoUploading = false;
+  logoError = '';
+  private logoVersion = Date.now();   // cache-bust the <img> after upload
+
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {}
+
+  get logoSrc(): string { return this.companyService.logoUrl(this.logoVersion); }
 
   ngOnInit(): void {
     this.buildForm();
@@ -56,6 +64,7 @@ export class CompanySettingsComponent implements OnInit {
           this.loading = false;
           if (res.success && res.data) {
             this.companyExists = true;
+            this.hasLogo = !!res.data.logoUrl;
             this.patchForm(res.data);
           }
           this.cdr.detectChanges();
@@ -133,6 +142,43 @@ export class CompanySettingsComponent implements OnInit {
           this.cdr.detectChanges();
         });
       }
+    });
+  }
+
+  // ── Logo upload (auto-used on invoices, payslips, reports, app branding) ──
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!this.companyExists) { this.logoError = 'Save the company profile first, then upload a logo.'; return; }
+    if (!file.type.startsWith('image/')) { this.logoError = 'Please choose an image file.'; return; }
+    if (file.size > 5_000_000) { this.logoError = 'Image must be under 5 MB.'; return; }
+
+    this.logoUploading = true; this.logoError = '';
+    this.cdr.detectChanges();
+    this.companyService.uploadLogo(file).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.logoUploading = false;
+        if (res.success) {
+          this.hasLogo = true; this.logoVersion = Date.now();
+          this.form.patchValue({ logoUrl: res.data?.logoUrl ?? '' });   // keep form in sync so Save won't clobber it
+        } else this.logoError = res.message || 'Upload failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.logoUploading = false;
+        this.logoError = err?.error?.message || 'Upload failed.';
+        this.cdr.detectChanges();
+      })
+    });
+    input.value = '';
+  }
+
+  removeLogo(): void {
+    if (!confirm('Remove the company logo?')) return;
+    this.companyService.deleteLogo().subscribe({
+      next: () => this.zone.run(() => { this.hasLogo = false; this.logoVersion = Date.now(); this.form.patchValue({ logoUrl: '' }); this.cdr.detectChanges(); }),
+      error: (err) => this.zone.run(() => { this.logoError = err?.error?.message || 'Could not remove.'; this.cdr.detectChanges(); })
     });
   }
 }

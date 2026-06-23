@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PayrollService } from '../../../services/payroll.service';
+import { CompanyService } from '../../../services/company.service';
 import { PayslipPrintDto } from '../../../models/payroll.models';
 import { numberToWords } from '../../../shared/number-to-words.util';
 
@@ -16,11 +17,14 @@ export class PayslipPrintComponent implements OnInit {
 
   constructor(
     private svc: PayrollService,
+    private companySvc: CompanyService,
     private route: ActivatedRoute,
     private router: Router,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {}
+
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));

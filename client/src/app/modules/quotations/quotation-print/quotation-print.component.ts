@@ -13,6 +13,7 @@ import { numberToWords } from '../../../shared/number-to-words.util';
   styleUrl: './quotation-print.component.scss'
 })
 export class QuotationPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   quote: QuotationDto | null = null;
   company: CompanyDto | null = null;

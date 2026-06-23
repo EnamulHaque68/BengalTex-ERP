@@ -13,6 +13,7 @@ import { numberToWords } from '../../../shared/number-to-words.util';
   styleUrl: './receipt-print.component.scss'
 })
 export class ReceiptPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   receipt: ReceiptDto | null = null;
   company: CompanyDto | null = null;

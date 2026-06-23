@@ -1,3 +1,21 @@
+.logo-field { grid-column: 1 / -1; }
+.logo-row { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.logo-box {
+  width: 120px; height: 120px; border: 1px dashed #d1d5db; border-radius: 12px; flex-shrink: 0;
+  display: grid; place-items: center; overflow: hidden; background: #fafafa;
+  img { width: 100%; height: 100%; object-fit: contain; }
+}
+.logo-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #9ca3af; font-size: .78rem;
+  i { font-size: 1.5rem; } }
+.logo-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.logo-upload-btn {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 700; font-size: .85rem;
+  background: var(--primary-color, #4f46e5); color: #fff; padding: 9px 16px; border-radius: 9px;
+  &.disabled { opacity: .55; cursor: not-allowed; }
+}
+.logo-remove-btn { background: none; border: none; color: #b91c1c; cursor: pointer; font-weight: 700; font-size: .8rem; text-decoration: underline; padding: 0; }
+.logo-hint { color: #6b7280; font-size: .74rem; max-width: 320px; }
+
 .page-shell {
   padding: 1.5rem 2rem;
   max-width: 900px;

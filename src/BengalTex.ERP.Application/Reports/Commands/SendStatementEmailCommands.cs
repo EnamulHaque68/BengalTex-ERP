@@ -71,6 +71,7 @@ internal sealed class StatementEmailDispatcher
     private readonly IRepository<Domain.Entities.Company> _companyRepo;
     private readonly IUnitOfWork _uow;
     private readonly IEmailSender _emailSender;
+    private readonly IFileStorage _files;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<StatementEmailDispatcher> _logger;
 
@@ -79,21 +80,23 @@ internal sealed class StatementEmailDispatcher
         IRepository<Domain.Entities.Company> companyRepo,
         IUnitOfWork uow,
         IEmailSender emailSender,
+        IFileStorage files,
         ICurrentUserService currentUser,
         ILogger<StatementEmailDispatcher> logger)
     {
         _sentRepo = sentRepo; _companyRepo = companyRepo; _uow = uow;
-        _emailSender = emailSender; _currentUser = currentUser; _logger = logger;
+        _emailSender = emailSender; _files = files; _currentUser = currentUser; _logger = logger;
     }
 
-    public async Task<(string CompanyName, string? CompanyAddress)> GetCompanyAsync(CancellationToken ct)
+    public async Task<(string CompanyName, string? CompanyAddress, byte[]? CompanyLogo)> GetCompanyAsync(CancellationToken ct)
     {
         var company = await _companyRepo.Query().AsNoTracking().FirstOrDefaultAsync(ct);
-        if (company is null) return ("Our Company", null);
+        if (company is null) return ("Our Company", null, null);
         var address = string.Join(", ",
             new[] { company.AddressLine1, company.AddressLine2, company.City, company.Country }
                 .Where(s => !string.IsNullOrWhiteSpace(s)));
-        return (company.Name, address);
+        var logo = await Company.CompanyLogoLoader.LoadAsync(company.LogoUrl, _files, ct);
+        return (company.Name, address, logo);
     }
 
     public async Task<ApiResponse<long>> SendAsync(
@@ -159,8 +162,8 @@ internal sealed class SendCustomerStatementEmailCommandHandler
             return ApiResponse<long>.Fail(res.Message ?? "Statement could not be generated.");
         var report = res.Data;
 
-        var (companyName, companyAddress) = await _dispatcher.GetCompanyAsync(ct);
-        var pdfBytes = _pdf.RenderCustomerStatement(report, companyName, companyAddress);
+        var (companyName, companyAddress, companyLogo) = await _dispatcher.GetCompanyAsync(ct);
+        var pdfBytes = _pdf.RenderCustomerStatement(report, companyName, companyAddress, companyLogo);
         var attachment = new EmailAttachment(
             $"Statement-{report.CustomerCode}-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.pdf",
             "application/pdf", pdfBytes);
@@ -191,8 +194,8 @@ internal sealed class SendSupplierStatementEmailCommandHandler
             return ApiResponse<long>.Fail(res.Message ?? "Statement could not be generated.");
         var report = res.Data;
 
-        var (companyName, companyAddress) = await _dispatcher.GetCompanyAsync(ct);
-        var pdfBytes = _pdf.RenderSupplierStatement(report, companyName, companyAddress);
+        var (companyName, companyAddress, companyLogo) = await _dispatcher.GetCompanyAsync(ct);
+        var pdfBytes = _pdf.RenderSupplierStatement(report, companyName, companyAddress, companyLogo);
         var attachment = new EmailAttachment(
             $"Supplier-Statement-{report.SupplierCode}-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.pdf",
             "application/pdf", pdfBytes);

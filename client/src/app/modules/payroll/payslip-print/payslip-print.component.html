@@ -8,7 +8,7 @@
     <div class="doc">
       <header class="doc-header">
         <div class="brand">
-          <img *ngIf="slip.companyLogoUrl" [src]="slip.companyLogoUrl" alt="Logo" class="logo" />
+          <img *ngIf="slip.companyLogoUrl" [src]="logoSrc" alt="Logo" class="logo" />
           <div>
             <div class="co-name">{{ slip.companyName }}</div>
             <div class="co-line">{{ slip.companyAddressLine1 }}<span *ngIf="slip.companyAddressLine2">, {{ slip.companyAddressLine2 }}</span></div>

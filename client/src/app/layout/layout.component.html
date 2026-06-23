@@ -3,7 +3,8 @@
   <!-- Sidebar -->
   <aside class="layout-sidebar">
     <div class="brand">
-      <i class="pi pi-bolt brand-mark"></i>
+      <img *ngIf="logoOk" [src]="companyLogoUrl" class="brand-logo" alt="Company logo" (error)="logoOk = false" />
+      <i *ngIf="!logoOk" class="pi pi-bolt brand-mark"></i>
       <span class="brand-text" *ngIf="!collapsed">Bengal TEX <span class="brand-erp">ERP</span></span>
     </div>
     <app-sidebar [collapsed]="collapsed"></app-sidebar>
@@ -34,13 +35,34 @@
           <i class="pi pi-bell"></i>
         </a>
         <div class="topbar-user">
-          <div class="user-meta">
-            <span class="user-name">{{ userName }}</span>
-            <span class="user-role" *ngIf="userRole">{{ userRole }}</span>
-          </div>
-          <button type="button" class="icon-btn logout-btn" (click)="logout()" pTooltip="Logout" tooltipPosition="bottom">
-            <i class="pi pi-sign-out"></i>
+          <button type="button" class="user-trigger" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
+            <span class="avatar">
+              <img *ngIf="avatarUrl" [src]="avatarUrl" alt="" />
+              <span *ngIf="!avatarUrl" class="avatar-initials">{{ initials }}</span>
+            </span>
+            <span class="user-meta">
+              <span class="user-name">{{ userName }}</span>
+              <span class="user-role" *ngIf="userRole">{{ userRole }}</span>
+            </span>
+            <i class="pi pi-chevron-down user-caret"></i>
           </button>
+
+          <!-- dropdown -->
+          <div class="user-backdrop" *ngIf="userMenuOpen" (click)="closeUserMenu()"></div>
+          <div class="user-pop" *ngIf="userMenuOpen">
+            <div class="up-head">
+              <span class="up-avatar">
+                <img *ngIf="avatarUrl" [src]="avatarUrl" alt="" />
+                <span *ngIf="!avatarUrl" class="avatar-initials lg">{{ initials }}</span>
+              </span>
+              <span class="up-name">{{ userName }}</span>
+              <span class="up-role" *ngIf="userRole">{{ userRole }}</span>
+            </div>
+            <div class="up-divider"></div>
+            <button type="button" class="up-logout" (click)="closeUserMenu(); logout()">
+              <i class="pi pi-sign-out"></i> Logout
+            </button>
+          </div>
         </div>
       </div>
     </header>

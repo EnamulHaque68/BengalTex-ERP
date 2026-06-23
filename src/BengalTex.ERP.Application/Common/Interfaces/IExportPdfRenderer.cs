@@ -8,7 +8,7 @@ namespace BengalTex.ERP.Application.Common.Interfaces;
 /// </summary>
 public interface IExportPdfRenderer
 {
-    byte[] RenderCommercialInvoice(CustomerInvoiceDto invoice, string companyName, string? companyAddress);
+    byte[] RenderCommercialInvoice(CustomerInvoiceDto invoice, string companyName, string? companyAddress, byte[]? companyLogo = null);
 
-    byte[] RenderPackingList(CustomerInvoiceDto invoice, string companyName, string? companyAddress);
+    byte[] RenderPackingList(CustomerInvoiceDto invoice, string companyName, string? companyAddress, byte[]? companyLogo = null);
 }

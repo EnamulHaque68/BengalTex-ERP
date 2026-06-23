@@ -14,14 +14,14 @@ namespace BengalTex.ERP.Infrastructure.Services;
 /// </summary>
 public sealed class ExportPdfRenderer : IExportPdfRenderer
 {
-    public byte[] RenderCommercialInvoice(CustomerInvoiceDto inv, string companyName, string? companyAddress)
+    public byte[] RenderCommercialInvoice(CustomerInvoiceDto inv, string companyName, string? companyAddress, byte[]? companyLogo = null)
     {
         var doc = Document.Create(c =>
         {
             c.Page(p =>
             {
                 Common(p);
-                p.Header().Element(h => RenderHeader(h, "COMMERCIAL INVOICE", companyName, companyAddress));
+                p.Header().Element(h => RenderHeader(h, "COMMERCIAL INVOICE", companyName, companyAddress, companyLogo));
                 p.Content().Element(content =>
                 {
                     content.Column(col =>
@@ -46,14 +46,14 @@ public sealed class ExportPdfRenderer : IExportPdfRenderer
         return doc.GeneratePdf();
     }
 
-    public byte[] RenderPackingList(CustomerInvoiceDto inv, string companyName, string? companyAddress)
+    public byte[] RenderPackingList(CustomerInvoiceDto inv, string companyName, string? companyAddress, byte[]? companyLogo = null)
     {
         var doc = Document.Create(c =>
         {
             c.Page(p =>
             {
                 Common(p);
-                p.Header().Element(h => RenderHeader(h, "PACKING LIST", companyName, companyAddress));
+                p.Header().Element(h => RenderHeader(h, "PACKING LIST", companyName, companyAddress, companyLogo));
                 p.Content().Element(content =>
                 {
                     content.Column(col =>
@@ -85,12 +85,14 @@ public sealed class ExportPdfRenderer : IExportPdfRenderer
         p.DefaultTextStyle(t => t.FontSize(9).FontFamily("Arial").FontColor(Colors.Grey.Darken4));
     }
 
-    private static void RenderHeader(IContainer container, string title, string companyName, string? companyAddress)
+    private static void RenderHeader(IContainer container, string title, string companyName, string? companyAddress, byte[]? logo = null)
     {
         container.Column(col =>
         {
             col.Item().Row(row =>
             {
+                if (logo is { Length: > 0 })
+                    row.ConstantItem(58).PaddingRight(8).AlignMiddle().Height(46).Image(logo).FitArea();
                 row.RelativeItem().Column(c =>
                 {
                     c.Item().Text(companyName).Bold().FontSize(14).FontColor(Colors.Grey.Darken4);

@@ -13,6 +13,7 @@ import { numberToWords } from '../../../shared/number-to-words.util';
   styleUrl: './payment-print.component.scss'
 })
 export class PaymentPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   pay: PaymentDto | null = null;
   company: CompanyDto | null = null;

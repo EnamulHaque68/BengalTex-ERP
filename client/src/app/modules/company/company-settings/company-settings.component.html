@@ -113,9 +113,27 @@
           <input pInputText formControlName="website" placeholder="https://bengaltex.com" class="w-full" />
         </div>
 
-        <div class="field">
-          <label>Logo URL</label>
-          <input pInputText formControlName="logoUrl" placeholder="https://..." class="w-full" />
+        <input type="hidden" formControlName="logoUrl" />
+
+        <div class="field logo-field">
+          <label>Company Logo</label>
+          <div class="logo-row">
+            <div class="logo-box">
+              <img *ngIf="hasLogo" [src]="logoSrc" alt="Company logo" />
+              <div *ngIf="!hasLogo" class="logo-empty"><i class="pi pi-image"></i><span>No logo</span></div>
+            </div>
+            <div class="logo-actions">
+              <label class="logo-upload-btn" [class.disabled]="logoUploading || !companyExists">
+                <i class="pi" [ngClass]="logoUploading ? 'pi-spin pi-spinner' : 'pi-upload'"></i>
+                {{ logoUploading ? 'Uploading…' : (hasLogo ? 'Replace logo' : 'Upload logo') }}
+                <input type="file" accept="image/*" (change)="onLogoSelected($event)" [disabled]="logoUploading || !companyExists" hidden />
+              </label>
+              <button type="button" class="logo-remove-btn" *ngIf="hasLogo" (click)="removeLogo()">Remove</button>
+              <small class="logo-hint">PNG/JPG/SVG, max 5 MB. Auto-used on invoices, payslips, reports & app branding.</small>
+              <small class="p-error" *ngIf="logoError">{{ logoError }}</small>
+              <small class="logo-hint" *ngIf="!companyExists">Save the company profile first to enable upload.</small>
+            </div>
+          </div>
         </div>
 
       </div>

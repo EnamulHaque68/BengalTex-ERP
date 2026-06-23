@@ -9,7 +9,7 @@
       <!-- Header -->
       <header class="doc-header">
         <div class="brand">
-          <img *ngIf="company.logoUrl" [src]="company.logoUrl" alt="Logo" class="logo" />
+          <img *ngIf="company.logoUrl" [src]="logoSrc" alt="Logo" class="logo" />
           <div>
             <div class="co-name">{{ company.name }}</div>
             <div class="co-line">{{ company.addressLine1 }}<span *ngIf="company.addressLine2">, {{ company.addressLine2 }}</span></div>

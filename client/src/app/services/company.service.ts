@@ -18,6 +18,21 @@ export class CompanyService {
   updateCompany(data: Omit<CompanyDto, 'id' | 'isActive'>): Observable<ApiResponse<CompanyDto>> {
     return this.http.put<ApiResponse<CompanyDto>>(this.base, data);
   }
+
+  /** Public logo URL — usable directly in <img src>. Cache-busted via the optional token. */
+  logoUrl(cacheBust?: string | number): string {
+    return `${this.base}/logo${cacheBust ? `?v=${cacheBust}` : ''}`;
+  }
+
+  uploadLogo(file: File): Observable<ApiResponse<CompanyDto>> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ApiResponse<CompanyDto>>(`${this.base}/logo`, form);
+  }
+
+  deleteLogo(): Observable<ApiResponse<CompanyDto>> {
+    return this.http.delete<ApiResponse<CompanyDto>>(`${this.base}/logo`);
+  }
 }
 
 @Injectable({ providedIn: 'root' })
