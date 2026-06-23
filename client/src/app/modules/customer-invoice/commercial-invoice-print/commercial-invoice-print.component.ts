@@ -16,6 +16,7 @@ import { numberToWords } from '../../../shared/number-to-words.util';
   styleUrl: './commercial-invoice-print.component.scss'
 })
 export class CommercialInvoicePrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   invoice: CustomerInvoiceDto | null = null;
   company: CompanyDto | null = null;

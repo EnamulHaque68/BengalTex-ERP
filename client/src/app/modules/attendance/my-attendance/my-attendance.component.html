@@ -33,8 +33,7 @@
         <div class="ma-kpi-body">
           <span class="ma-kpi-label">Today's Status</span>
           <span class="ma-kpi-value">{{ d.todayStatus.checkOutTime ? 'Checked Out' : d.todayStatus.hasRecord ? 'Checked In' : 'Not Checked In' }}</span>
-          <span class="ma-kpi-sub" *ngIf="d.todayStatus.checkInTime">{{ d.todayStatus.checkInTime }}
-            <span *ngIf="d.todayStatus.matchedLocationName"> · {{ d.todayStatus.matchedLocationName }}</span></span>
+          <span class="ma-kpi-sub" *ngIf="d.todayStatus.checkInTime">In {{ d.todayStatus.checkInTime }}<span *ngIf="d.todayStatus.checkOutTime"> · Out {{ d.todayStatus.checkOutTime }}</span></span>
           <span class="ma-kpi-sub" *ngIf="!d.todayStatus.checkInTime">Tap Check In below</span>
         </div>
       </div>
@@ -106,8 +105,11 @@
               </svg>
               <span class="ma-ring-lbl" *ngIf="d.todayStatus.hasRecord">{{ d.todayStatus.checkOutTime ? 'Checked Out' : 'Checked In' }}</span>
               <span class="ma-ring-lbl" *ngIf="!d.todayStatus.hasRecord">Tap to Check In</span>
-              <span class="ma-ring-time" *ngIf="d.todayStatus.checkInTime">{{ d.todayStatus.checkInTime }}</span>
-              <span class="ma-ring-date">{{ d.today | date:'dd MMM yyyy' }}</span>
+              <div class="ma-ring-io" *ngIf="d.todayStatus.checkInTime">
+                <span class="rio"><b>In</b> {{ d.todayStatus.checkInTime }}</span>
+                <span class="rio" *ngIf="d.todayStatus.checkOutTime"><b>Out</b> {{ d.todayStatus.checkOutTime }}</span>
+              </div>
+              <span class="ma-ring-date">{{ d.today | date:'dd MMM' }}</span>
             </div>
           </div>
 

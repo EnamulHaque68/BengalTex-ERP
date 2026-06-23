@@ -2,6 +2,7 @@ using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.Employee.Commands;
 
@@ -34,4 +35,26 @@ internal sealed class GetEmployeePhotoPathQueryHandler : IRequestHandler<GetEmpl
     public GetEmployeePhotoPathQueryHandler(IRepository<Domain.Entities.Employee> repo) => _repo = repo;
     public async Task<string?> Handle(GetEmployeePhotoPathQuery req, CancellationToken ct)
         => (await _repo.GetByIdAsync(req.EmployeeId, ct))?.PhotoUrl;
+}
+
+/// <summary>
+/// Self-service: returns the logged-in user's own photo storage path (resolved via Employee.UserId),
+/// so any authenticated user can show their avatar in the topbar without needing Employees.View.
+/// </summary>
+public sealed record GetMyPhotoPathQuery : IRequest<string?>;
+
+internal sealed class GetMyPhotoPathQueryHandler : IRequestHandler<GetMyPhotoPathQuery, string?>
+{
+    private readonly IRepository<Domain.Entities.Employee> _repo;
+    private readonly ICurrentUserService _currentUser;
+    public GetMyPhotoPathQueryHandler(IRepository<Domain.Entities.Employee> repo, ICurrentUserService currentUser)
+    { _repo = repo; _currentUser = currentUser; }
+
+    public async Task<string?> Handle(GetMyPhotoPathQuery req, CancellationToken ct)
+    {
+        var uid = _currentUser.UserId;
+        if (string.IsNullOrEmpty(uid)) return null;
+        var e = await _repo.Query().AsNoTracking().FirstOrDefaultAsync(x => x.UserId == uid, ct);
+        return e?.PhotoUrl;
+    }
 }

@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +15,10 @@ export class LoginComponent implements OnInit {
   loading = false;
   errorMessage = '';
   private deviceFingerprint: string | undefined;
+
+  /** Public company logo (works pre-login); falls back to the building icon on 404. */
+  readonly companyLogoUrl = `${environment.apiBaseUrl}/api/company/logo`;
+  logoOk = true;
 
   constructor(
     private fb: FormBuilder,

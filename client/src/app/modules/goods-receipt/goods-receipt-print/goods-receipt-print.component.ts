@@ -12,6 +12,7 @@ import { CompanyDto } from '../../../models/company.models';
   styleUrl: './goods-receipt-print.component.scss'
 })
 export class GoodsReceiptPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   grn: GoodsReceiptDto | null = null;
   company: CompanyDto | null = null;

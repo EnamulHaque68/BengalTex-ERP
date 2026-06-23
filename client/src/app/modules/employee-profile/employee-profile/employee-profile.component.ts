@@ -4,6 +4,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { UserService } from '../../../services/user.service';
+import { AvatarRefreshService } from '../../../services/avatar-refresh.service';
 import { EmployeeProfileDto, ProfileSkillDto, ProfileActivityDto, MARITAL_STATUSES, BLOOD_GROUPS } from '../../../models/employee-profile.models';
 import { EmployeeListItemDto } from '../../../models/employee.models';
 import { UserListItemDto } from '../../../models/user.models';
@@ -81,6 +82,7 @@ export class EmployeeProfileComponent implements OnInit {
     private route: ActivatedRoute,
     private svc: EmployeeService,
     private userService: UserService,
+    private avatarRefresh: AvatarRefreshService,
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
     private zone: NgZone,
@@ -169,7 +171,7 @@ export class EmployeeProfileComponent implements OnInit {
     this.svc.uploadPhoto(this.profile.id, file).subscribe({
       next: (res) => this.zone.run(() => {
         this.uploading = false;
-        if (res.success) this.load();
+        if (res.success) { this.load(); this.avatarRefresh.notify(); }   // refresh topbar avatar instantly
         else this.error = res.message || 'Photo upload failed.';
         this.cdr.detectChanges();
       }),

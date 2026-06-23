@@ -48,6 +48,7 @@ internal sealed class SendExportBundleEmailCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly IEmailSender _emailSender;
     private readonly IExportPdfRenderer _pdf;
+    private readonly IFileStorage _files;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<SendExportBundleEmailCommandHandler> _logger;
 
@@ -58,11 +59,12 @@ internal sealed class SendExportBundleEmailCommandHandler
         IUnitOfWork uow,
         IEmailSender emailSender,
         IExportPdfRenderer pdf,
+        IFileStorage files,
         ICurrentUserService currentUser,
         ILogger<SendExportBundleEmailCommandHandler> logger)
     {
         _mediator = mediator; _repo = repo; _companyRepo = companyRepo; _uow = uow;
-        _emailSender = emailSender; _pdf = pdf; _currentUser = currentUser; _logger = logger;
+        _emailSender = emailSender; _pdf = pdf; _files = files; _currentUser = currentUser; _logger = logger;
     }
 
     public async Task<ApiResponse<long>> Handle(SendExportBundleEmailCommand cmd, CancellationToken ct)
@@ -80,8 +82,9 @@ internal sealed class SendExportBundleEmailCommandHandler
                 new[] { company.AddressLine1, company.AddressLine2, company.City, company.Country }
                     .Where(s => !string.IsNullOrWhiteSpace(s)));
 
-        var ciPdf = _pdf.RenderCommercialInvoice(inv, companyName, companyAddress);
-        var plPdf = _pdf.RenderPackingList(inv, companyName, companyAddress);
+        var logo = await Company.CompanyLogoLoader.LoadAsync(company?.LogoUrl, _files, ct);
+        var ciPdf = _pdf.RenderCommercialInvoice(inv, companyName, companyAddress, logo);
+        var plPdf = _pdf.RenderPackingList(inv, companyName, companyAddress, logo);
         var attachments = new List<EmailAttachment>
         {
             new($"Commercial-Invoice-{inv.Code}.pdf", "application/pdf", ciPdf),

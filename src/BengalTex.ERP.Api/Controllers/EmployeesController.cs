@@ -158,6 +158,18 @@ public class EmployeesController : ControllerBase
         return File(stream, contentType);
     }
 
+    /// <summary>Serves the logged-in user's own avatar (self-service, no permission). 404 → frontend shows initials.</summary>
+    [HttpGet("my-photo")]
+    public async Task<IActionResult> MyPhoto(CancellationToken ct)
+    {
+        var path = await _mediator.Send(new GetMyPhotoPathQuery(), ct);
+        if (string.IsNullOrEmpty(path) || !await _files.ExistsAsync(path, ct)) return NotFound();
+        var stream = await _files.OpenReadAsync(path, ct);
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var contentType = ext switch { ".png" => "image/png", ".webp" => "image/webp", ".gif" => "image/gif", _ => "image/jpeg" };
+        return File(stream, contentType);
+    }
+
     // ── Service record: increments / promotions / transfers / disciplinary ──
     [HttpGet("{id:int}/history")]
     [HasPermission(Permissions.Employees.View)]

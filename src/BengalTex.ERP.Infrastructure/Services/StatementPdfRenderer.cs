@@ -32,7 +32,7 @@ public sealed class StatementPdfRenderer : IStatementPdfRenderer
         string ClosingNote,
         IReadOnlyList<Line> Lines);
 
-    public byte[] RenderCustomerStatement(CustomerStatementReportDto r, string companyName, string? companyAddress)
+    public byte[] RenderCustomerStatement(CustomerStatementReportDto r, string companyName, string? companyAddress, byte[]? companyLogo = null)
         => Render(new View(
             "STATEMENT OF ACCOUNT",
             "STATEMENT FOR",
@@ -44,9 +44,9 @@ public sealed class StatementPdfRenderer : IStatementPdfRenderer
                 ? $"Balance due to {companyName}: {Money(r.ClosingBalance)}"
                 : "No balance due — credit on account.",
             r.Lines.Select(l => new Line(l.Date, l.Type, l.Reference, l.DocumentRef, l.Debit, l.Credit, l.RunningBalance)).ToList()),
-            companyName, companyAddress);
+            companyName, companyAddress, companyLogo);
 
-    public byte[] RenderSupplierStatement(SupplierStatementReportDto r, string companyName, string? companyAddress)
+    public byte[] RenderSupplierStatement(SupplierStatementReportDto r, string companyName, string? companyAddress, byte[]? companyLogo = null)
         => Render(new View(
             "SUPPLIER STATEMENT OF ACCOUNT",
             "STATEMENT FOR",
@@ -58,9 +58,9 @@ public sealed class StatementPdfRenderer : IStatementPdfRenderer
                 ? $"Payable to {r.SupplierName}: {Money(r.ClosingBalance)}"
                 : "No payable outstanding — credit held with supplier.",
             r.Lines.Select(l => new Line(l.Date, l.Type, l.Reference, l.DocumentRef, l.Debit, l.Credit, l.RunningBalance)).ToList()),
-            companyName, companyAddress);
+            companyName, companyAddress, companyLogo);
 
-    private static byte[] Render(View v, string companyName, string? companyAddress)
+    private static byte[] Render(View v, string companyName, string? companyAddress, byte[]? companyLogo = null)
     {
         var doc = Document.Create(c =>
         {
@@ -75,6 +75,8 @@ public sealed class StatementPdfRenderer : IStatementPdfRenderer
                 {
                     col.Item().Row(row =>
                     {
+                        if (companyLogo is { Length: > 0 })
+                            row.ConstantItem(58).PaddingRight(8).AlignMiddle().Height(46).Image(companyLogo).FitArea();
                         row.RelativeItem().Column(cc =>
                         {
                             cc.Item().Text(companyName).Bold().FontSize(14);

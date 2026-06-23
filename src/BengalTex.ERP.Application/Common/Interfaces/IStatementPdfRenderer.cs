@@ -9,7 +9,7 @@ namespace BengalTex.ERP.Application.Common.Interfaces;
 /// </summary>
 public interface IStatementPdfRenderer
 {
-    byte[] RenderCustomerStatement(CustomerStatementReportDto report, string companyName, string? companyAddress);
+    byte[] RenderCustomerStatement(CustomerStatementReportDto report, string companyName, string? companyAddress, byte[]? companyLogo = null);
 
-    byte[] RenderSupplierStatement(SupplierStatementReportDto report, string companyName, string? companyAddress);
+    byte[] RenderSupplierStatement(SupplierStatementReportDto report, string companyName, string? companyAddress, byte[]? companyLogo = null);
 }

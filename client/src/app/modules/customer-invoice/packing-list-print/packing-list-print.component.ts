@@ -14,6 +14,7 @@ import { CustomerDto } from '../../../models/customer.models';
   styleUrl: './packing-list-print.component.scss'
 })
 export class PackingListPrintComponent implements OnInit {
+  get logoSrc(): string { return this.companySvc.logoUrl(); }
   loading = false;
   invoice: CustomerInvoiceDto | null = null;
   company: CompanyDto | null = null;

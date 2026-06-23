@@ -64,7 +64,9 @@
 .ma-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .ma-finger { width: 34px; height: 34px; color: #22c55e; margin-bottom: 4px; }
 .ma-ring-lbl { font-size: .8rem; font-weight: 800; color: var(--text-color, #1f2937); }
-.ma-ring-time { font-size: 1.05rem; font-weight: 800; color: #16a34a; line-height: 1.1; }
+.ma-ring-io { display: flex; flex-direction: column; align-items: center; gap: 1px; margin: 2px 0; }
+.ma-ring-io .rio { font-size: .82rem; font-weight: 800; color: #16a34a; line-height: 1.15; font-variant-numeric: tabular-nums;
+  b { font-weight: 600; font-size: .6rem; color: var(--text-color-secondary, #9ca3af); margin-right: 3px; text-transform: uppercase; } }
 .ma-ring-date { font-size: .68rem; color: var(--text-color-secondary, #9ca3af); }
 
 .ma-verify-list { display: flex; flex-direction: column; gap: 10px; flex: 0 1 460px; min-width: 280px; }
