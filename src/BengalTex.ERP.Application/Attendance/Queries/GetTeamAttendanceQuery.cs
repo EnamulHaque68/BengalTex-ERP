@@ -62,6 +62,7 @@ internal sealed class GetTeamAttendanceQueryHandler : IRequestHandler<GetTeamAtt
                 HasCheckInSelfie = a.CheckInSelfieUrl != null, HasCheckOutSelfie = a.CheckOutSelfieUrl != null,
                 a.CheckInWithinFence, a.CheckInDistanceMeters, MatchedLocationName = a.MatchedOfficeLocation!.Name,
                 a.CheckInAddress, a.CheckInLatitude, a.CheckInLongitude,
+                a.CheckOutWithinFence, a.CheckOutDistanceMeters, a.CheckOutAddress, a.CheckOutLatitude, a.CheckOutLongitude,
                 a.CheckInDeviceType, a.CheckInBrowser, a.CheckInOs, a.CheckInIsProxyVpn, a.CheckInNetworkNote, a.CheckInIpAddress,
                 a.FaceMatchStatus, a.ApprovalStatus, ApprovedByName = a.ApprovedByEmployee!.FullName, a.ApprovedAt, a.RejectionReason
             })
@@ -79,6 +80,7 @@ internal sealed class GetTeamAttendanceQueryHandler : IRequestHandler<GetTeamAtt
                 a.IsLate, a.IsEarlyLeave,
                 a.HasCheckInSelfie, a.HasCheckOutSelfie, a.CheckInWithinFence, a.CheckInDistanceMeters,
                 a.MatchedLocationName, a.CheckInAddress, a.CheckInLatitude, a.CheckInLongitude,
+                a.CheckOutWithinFence, a.CheckOutDistanceMeters, a.CheckOutAddress, a.CheckOutLatitude, a.CheckOutLongitude,
                 a.CheckInDeviceType, a.CheckInBrowser, a.CheckInOs, a.CheckInIsProxyVpn, a.CheckInNetworkNote, a.CheckInIpAddress,
                 a.ApprovalStatus.ToString(), a.ApprovedByName, a.ApprovedAt, a.RejectionReason, flags);
         }).ToList();

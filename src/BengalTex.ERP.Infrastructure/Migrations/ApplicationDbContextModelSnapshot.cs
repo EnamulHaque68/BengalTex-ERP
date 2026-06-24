@@ -369,6 +369,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool?>("CheckInWithinFence")
                         .HasColumnType("bit");
 
+                    b.Property<string>("CheckOutAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<double?>("CheckOutDistanceMeters")
                         .HasColumnType("float");
 

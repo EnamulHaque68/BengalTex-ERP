@@ -52,6 +52,8 @@ public class AttendanceRecord : BaseTransactionalEntity
     public double? CheckOutLongitude { get; set; }
     public double? CheckOutDistanceMeters { get; set; }
     public bool? CheckOutWithinFence { get; set; }
+    /// <summary>Reverse-geocoded human address of the check-out GPS point (best-effort). Mirrors CheckInAddress.</summary>
+    public string? CheckOutAddress { get; set; }
 
     /// <summary>Total worked minutes (check-out − check-in − breaks). Null until checked out.</summary>
     public int? WorkedMinutes { get; set; }

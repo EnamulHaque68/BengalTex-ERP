@@ -24,6 +24,11 @@ export class CompanyService {
     return `${this.base}/logo${cacheBust ? `?v=${cacheBust}` : ''}`;
   }
 
+  /** Logo as a blob — used where the image must be inlined (e.g. ID card captured to PDF). */
+  getLogoBlob(): Observable<Blob> {
+    return this.http.get(`${this.base}/logo`, { responseType: 'blob' });
+  }
+
   uploadLogo(file: File): Observable<ApiResponse<CompanyDto>> {
     const form = new FormData();
     form.append('file', file);

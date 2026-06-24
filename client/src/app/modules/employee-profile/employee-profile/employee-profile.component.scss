@@ -140,7 +140,10 @@
 
 .idcard.land .ic-banner { position: relative; z-index: 1; display: flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.85rem 0; color: #fff; height: 46px; box-sizing: border-box; }
 .idcard.land .ic-banner.sm { padding-top: 0.6rem; }
-.idcard.land .ic-logo { width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+.idcard.land .ic-logo { width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; overflow: hidden; flex-shrink: 0; }
+.idcard.land .ic-logo.has-logo { background: #fff; }
+.idcard.land .ic-logo img { width: 100%; height: 100%; object-fit: contain; padding: 2px; box-sizing: border-box; }
+.idcard.land .ic-logo.sm { width: 18px; height: 18px; border-radius: 5px; }
 .idcard.land .ic-brandwrap { display: flex; flex-direction: column; line-height: 1.05; }
 .idcard.land .ic-brand { font-weight: 800; letter-spacing: 0.04em; font-size: 0.92rem; }
 .idcard.land .ic-sub { font-size: 0.52rem; letter-spacing: 0.16em; opacity: 0.9; }

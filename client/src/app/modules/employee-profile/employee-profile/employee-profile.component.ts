@@ -4,6 +4,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { UserService } from '../../../services/user.service';
+import { CompanyService } from '../../../services/company.service';
 import { AvatarRefreshService } from '../../../services/avatar-refresh.service';
 import { EmployeeProfileDto, ProfileSkillDto, ProfileActivityDto, MARITAL_STATUSES, BLOOD_GROUPS } from '../../../models/employee-profile.models';
 import { EmployeeListItemDto } from '../../../models/employee.models';
@@ -69,6 +70,7 @@ export class EmployeeProfileComponent implements OnInit {
   // ID card / media
   photoUrl: SafeUrl | null = null;
   qrUrl: SafeUrl | null = null;
+  companyLogo: SafeUrl | null = null;   // company logo for the ID card header (blob → inlined for PDF capture)
   uploading = false;
   qrDialogVisible = false;
   idTemplate: 'blue' | 'dark' | 'gradient' = 'blue';
@@ -82,6 +84,7 @@ export class EmployeeProfileComponent implements OnInit {
     private route: ActivatedRoute,
     private svc: EmployeeService,
     private userService: UserService,
+    private companySvc: CompanyService,
     private avatarRefresh: AvatarRefreshService,
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
@@ -89,7 +92,15 @@ export class EmployeeProfileComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
+  private loadCompanyLogo(): void {
+    this.companySvc.getLogoBlob().subscribe({
+      next: (b) => this.zone.run(() => { this.companyLogo = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(b)); this.cdr.detectChanges(); }),
+      error: () => this.zone.run(() => { this.companyLogo = null; this.cdr.detectChanges(); })   // no logo → bolt fallback
+    });
+  }
+
   ngOnInit(): void {
+    this.loadCompanyLogo();
     this.buildForm();
     this.skillForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
