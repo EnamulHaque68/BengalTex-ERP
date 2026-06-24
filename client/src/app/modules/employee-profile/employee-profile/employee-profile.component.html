@@ -206,7 +206,10 @@
             <div class="idcard land front" [ngClass]="'t-' + idTemplate">
               <span class="ic-white"></span>
               <div class="ic-banner">
-                <span class="ic-logo"><i class="pi pi-bolt"></i></span>
+                <span class="ic-logo" [class.has-logo]="companyLogo">
+                  <img *ngIf="companyLogo" [src]="companyLogo" alt="Logo" />
+                  <i *ngIf="!companyLogo" class="pi pi-bolt"></i>
+                </span>
                 <span class="ic-brandwrap"><span class="ic-brand">BENGAL TEX</span><span class="ic-sub">ERP SYSTEM</span></span>
               </div>
               <div class="ic-main">
@@ -229,7 +232,10 @@
             <div class="side-label">Back Side</div>
             <div class="idcard land back" [ngClass]="'t-' + idTemplate">
               <span class="ic-white back"></span>
-              <div class="ic-banner sm"><span class="ic-brand">BENGAL TEX</span></div>
+              <div class="ic-banner sm">
+                <span class="ic-logo sm" *ngIf="companyLogo" [class.has-logo]="companyLogo"><img [src]="companyLogo" alt="Logo" /></span>
+                <span class="ic-brand">BENGAL TEX</span>
+              </div>
               <div class="ic-back-body">
                 <div class="bk"><label>Join Date</label><span>{{ p.joiningDate | date:'dd MMM yyyy' }}</span></div>
                 <div class="bk"><label>Phone</label><span>{{ p.phone || '—' }}</span></div>

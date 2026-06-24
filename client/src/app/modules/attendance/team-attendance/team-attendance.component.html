@@ -60,22 +60,45 @@
             <td class="nowrap">{{ r.checkOutTime || '—' }} <i *ngIf="r.isEarlyLeave" class="pi pi-sign-out early-ic" pTooltip="Early leave"></i></td>
             <td class="nowrap">{{ r.workingHoursLabel || '—' }}</td>
             <td class="ta-loc-cell">
-              <div class="ta-loc-top">
-                <span class="ta-loc" [ngClass]="{ ok: r.withinFence === true, bad: r.withinFence === false }">
-                  <i class="pi pi-map-marker"></i>
-                  {{ r.withinFence === true ? 'Inside' : r.withinFence === false ? 'Outside' : '—' }}
-                  <span class="dim" *ngIf="r.distanceMeters != null"> {{ formatDistance(r.distanceMeters) }}</span>
-                </span>
-                <button *ngIf="hasGeo(r)" class="ta-map-btn" (click)="openMap(r, 'in')" pTooltip="View on map">
-                  <i class="pi pi-map"></i> Map
-                </button>
+              <!-- Check-IN location -->
+              <div class="ta-punch">
+                <div class="ta-loc-top">
+                  <span class="ta-punch-tag in">IN</span>
+                  <span class="ta-loc" [ngClass]="{ ok: r.withinFence === true, bad: r.withinFence === false }">
+                    <i class="pi pi-map-marker"></i>
+                    {{ r.withinFence === true ? 'Inside' : r.withinFence === false ? 'Outside' : '—' }}
+                    <span class="dim" *ngIf="r.distanceMeters != null"> {{ formatDistance(r.distanceMeters) }}</span>
+                  </span>
+                  <button *ngIf="hasGeo(r, 'in')" class="ta-map-btn" (click)="openMap(r, 'in')" pTooltip="View check-in on map">
+                    <i class="pi pi-map"></i> Map
+                  </button>
+                </div>
+                <div class="ta-addr" *ngIf="r.address || r.matchedLocationName">
+                  <span *ngIf="r.matchedLocationName" class="ta-addr-name">{{ r.matchedLocationName }}</span>
+                  <span *ngIf="r.address">{{ r.address }}</span>
+                </div>
+                <div class="ta-addr dim" *ngIf="!r.address && !r.matchedLocationName && hasGeo(r, 'in')">
+                  {{ r.latitude | number:'1.4-5' }}, {{ r.longitude | number:'1.4-5' }}
+                </div>
               </div>
-              <div class="ta-addr" *ngIf="r.address || r.matchedLocationName">
-                <span *ngIf="r.matchedLocationName" class="ta-addr-name">{{ r.matchedLocationName }}</span>
-                <span *ngIf="r.address">{{ r.address }}</span>
-              </div>
-              <div class="ta-addr dim" *ngIf="!r.address && !r.matchedLocationName && hasGeo(r)">
-                {{ r.latitude | number:'1.4-5' }}, {{ r.longitude | number:'1.4-5' }}
+
+              <!-- Check-OUT location (mirrors check-in) -->
+              <div class="ta-punch" *ngIf="r.checkOutTime">
+                <div class="ta-loc-top">
+                  <span class="ta-punch-tag out">OUT</span>
+                  <span class="ta-loc" [ngClass]="{ ok: r.checkOutWithinFence === true, bad: r.checkOutWithinFence === false }">
+                    <i class="pi pi-map-marker"></i>
+                    {{ r.checkOutWithinFence === true ? 'Inside' : r.checkOutWithinFence === false ? 'Outside' : '—' }}
+                    <span class="dim" *ngIf="r.checkOutDistanceMeters != null"> {{ formatDistance(r.checkOutDistanceMeters) }}</span>
+                  </span>
+                  <button *ngIf="hasGeo(r, 'out')" class="ta-map-btn" (click)="openMap(r, 'out')" pTooltip="View check-out on map">
+                    <i class="pi pi-map"></i> Map
+                  </button>
+                </div>
+                <div class="ta-addr" *ngIf="r.checkOutAddress">{{ r.checkOutAddress }}</div>
+                <div class="ta-addr dim" *ngIf="!r.checkOutAddress && hasGeo(r, 'out')">
+                  {{ r.checkOutLatitude | number:'1.4-5' }}, {{ r.checkOutLongitude | number:'1.4-5' }}
+                </div>
               </div>
             </td>
             <td>
@@ -190,23 +213,24 @@
   <div class="ta-modal-back" *ngIf="mapOpen" (click)="closeMap()">
     <div class="ta-modal map" (click)="$event.stopPropagation()">
       <div class="ta-modal-head">
-        <span><i class="pi pi-map"></i> Check-in location — {{ mapRow?.employeeName }}</span>
+        <span><i class="pi pi-map"></i> {{ mapWhich === 'out' ? 'Check-out' : 'Check-in' }} location — {{ mapRow?.employeeName }}</span>
         <button class="ta-x" (click)="closeMap()"><i class="pi pi-times"></i></button>
       </div>
       <div class="ta-map-body" *ngIf="mapRow as m">
         <div class="ta-map-meta">
-          <span class="ta-loc" [ngClass]="{ ok: m.withinFence === true, bad: m.withinFence === false }">
+          <span class="ta-punch-tag" [ngClass]="mapWhich === 'out' ? 'out' : 'in'">{{ mapWhich === 'out' ? 'CHECK-OUT' : 'CHECK-IN' }} {{ mapWhich === 'out' ? m.checkOutTime : m.checkInTime }}</span>
+          <span class="ta-loc" [ngClass]="{ ok: mapWithinFence === true, bad: mapWithinFence === false }">
             <i class="pi pi-map-marker"></i>
-            {{ m.withinFence === true ? 'Within office area' : m.withinFence === false ? 'Outside office area' : 'Location captured' }}
-            <span class="dim" *ngIf="m.distanceMeters != null"> · {{ formatDistance(m.distanceMeters) }} from office</span>
+            {{ mapWithinFence === true ? 'Within office area' : mapWithinFence === false ? 'Outside office area' : 'Location captured' }}
+            <span class="dim" *ngIf="mapDistance != null"> · {{ formatDistance(mapDistance) }} from office</span>
           </span>
-          <div class="ta-map-addr" *ngIf="m.address"><i class="pi pi-compass"></i> {{ m.address }}</div>
-          <div class="ta-map-addr" *ngIf="m.matchedLocationName"><i class="pi pi-building"></i> Nearest office: {{ m.matchedLocationName }}</div>
+          <div class="ta-map-addr" *ngIf="mapAddress"><i class="pi pi-compass"></i> {{ mapAddress }}</div>
+          <div class="ta-map-addr" *ngIf="mapWhich === 'in' && m.matchedLocationName"><i class="pi pi-building"></i> Nearest office: {{ m.matchedLocationName }}</div>
         </div>
         <div class="ta-map-frame" *ngIf="mapUrl">
-          <iframe [src]="mapUrl" loading="lazy" title="check-in location map"></iframe>
+          <iframe [src]="mapUrl" loading="lazy" title="location map"></iframe>
         </div>
-        <div class="ta-error" *ngIf="!mapUrl">No GPS coordinates were captured for this check-in.</div>
+        <div class="ta-error" *ngIf="!mapUrl">No GPS coordinates were captured for this {{ mapWhich === 'out' ? 'check-out' : 'check-in' }}.</div>
         <a *ngIf="mapUrl" class="ta-map-open" [href]="osmLink(m)" target="_blank" rel="noopener">Open full map <i class="pi pi-external-link"></i></a>
       </div>
       <div class="ta-modal-foot" *ngIf="mapRow && mapRow.approvalStatus === 'Pending'">

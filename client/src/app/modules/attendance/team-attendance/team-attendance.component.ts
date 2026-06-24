@@ -138,16 +138,29 @@ export class TeamAttendanceComponent implements OnInit, OnDestroy {
   }
 
   // ── Map review (confirm where the employee checked in/out) ──
-  hasGeo(row: TeamAttendanceRowDto): boolean {
-    return row.latitude != null && row.longitude != null;
+  /** Returns [lat, lon] for the requested punch, or null when not captured. */
+  private coords(row: TeamAttendanceRowDto, which: 'in' | 'out'): [number, number] | null {
+    const lat = which === 'out' ? row.checkOutLatitude : row.latitude;
+    const lon = which === 'out' ? row.checkOutLongitude : row.longitude;
+    return lat != null && lon != null ? [lat, lon] : null;
   }
+
+  hasGeo(row: TeamAttendanceRowDto, which: 'in' | 'out' = 'in'): boolean {
+    return this.coords(row, which) != null;
+  }
+
+  /** Address/distance/within-fence for whichever punch is in the open map modal. */
+  get mapAddress(): string | null { return this.mapWhich === 'out' ? (this.mapRow?.checkOutAddress ?? null) : (this.mapRow?.address ?? null); }
+  get mapDistance(): number | null { return this.mapWhich === 'out' ? (this.mapRow?.checkOutDistanceMeters ?? null) : (this.mapRow?.distanceMeters ?? null); }
+  get mapWithinFence(): boolean | null { return this.mapWhich === 'out' ? (this.mapRow?.checkOutWithinFence ?? null) : (this.mapRow?.withinFence ?? null); }
 
   openMap(row: TeamAttendanceRowDto, which: 'in' | 'out' = 'in'): void {
     this.mapRow = row;
     this.mapWhich = which;
     this.mapOpen = true;
-    const lat = row.latitude, lon = row.longitude;
-    if (lat != null && lon != null) {
+    const c = this.coords(row, which);
+    if (c) {
+      const [lat, lon] = c;
       const d = 0.0025; // ~250 m bbox
       const bbox = `${(lon - d).toFixed(5)},${(lat - d).toFixed(5)},${(lon + d).toFixed(5)},${(lat + d).toFixed(5)}`;
       const url = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat.toFixed(6)},${lon.toFixed(6)}`;
@@ -161,8 +174,10 @@ export class TeamAttendanceComponent implements OnInit, OnDestroy {
   closeMap(): void { this.mapOpen = false; this.mapUrl = null; this.cdr.detectChanges(); }
 
   osmLink(row: TeamAttendanceRowDto): string {
-    if (row.latitude == null || row.longitude == null) return '#';
-    return `https://www.openstreetmap.org/?mlat=${row.latitude}&mlon=${row.longitude}#map=18/${row.latitude}/${row.longitude}`;
+    const c = this.coords(row, this.mapWhich);
+    if (!c) return '#';
+    const [lat, lon] = c;
+    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=18/${lat}/${lon}`;
   }
 
   // ── Decision dialog ──

@@ -27,6 +27,7 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
 
         // ── Location & network intelligence (P2) ──
         builder.Property(a => a.CheckInAddress).HasMaxLength(500);
+        builder.Property(a => a.CheckOutAddress).HasMaxLength(500);
         builder.Property(a => a.CheckInIpAddress).HasMaxLength(64);
         builder.Property(a => a.CheckInDeviceType).HasMaxLength(20);
         builder.Property(a => a.CheckInBrowser).HasMaxLength(60);

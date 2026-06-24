@@ -40,16 +40,18 @@ internal sealed class SelfCheckOutCommandHandler : IRequestHandler<SelfCheckOutC
     private readonly ICurrentUserService _currentUser;
     private readonly IGeoFenceService _geoFence;
     private readonly IFileStorage _files;
+    private readonly IReverseGeocodeService _geocode;
     private readonly IDateTimeProvider _clock;
     private readonly IMediator _mediator;
 
     public SelfCheckOutCommandHandler(
         IRepository<AttendanceRecord, long> repo, IRepository<Domain.Entities.Employee> employeeRepo,
         IRepository<AttendanceSettings> settingsRepo, IUnitOfWork uow, ICurrentUserService currentUser,
-        IGeoFenceService geoFence, IFileStorage files, IDateTimeProvider clock, IMediator mediator)
+        IGeoFenceService geoFence, IFileStorage files, IReverseGeocodeService geocode,
+        IDateTimeProvider clock, IMediator mediator)
     {
         _repo = repo; _employeeRepo = employeeRepo; _settingsRepo = settingsRepo; _uow = uow;
-        _currentUser = currentUser; _geoFence = geoFence; _files = files; _clock = clock; _mediator = mediator;
+        _currentUser = currentUser; _geoFence = geoFence; _files = files; _geocode = geocode; _clock = clock; _mediator = mediator;
     }
 
     public async Task<ApiResponse<AttendanceRecordDto>> Handle(SelfCheckOutCommand cmd, CancellationToken ct)
@@ -68,13 +70,14 @@ internal sealed class SelfCheckOutCommandHandler : IRequestHandler<SelfCheckOutC
         var policy = AttendancePolicyValues.From(await _settingsRepo.Query().FirstOrDefaultAsync(ct));
         var selfiePath = await AttendanceSelfie.SaveAsync(_files, cmd.SelfieBase64, $"checkout-{employee.Code}-{today:yyyyMMdd}", ct);
 
-        // Geo capture (informational on check-out)
-        double? distance = null; bool? insideFence = null;
+        // Geo capture (informational on check-out) + reverse-geocoded address (best-effort, mirrors check-in)
+        double? distance = null; bool? insideFence = null; string? address = null;
         if (cmd.Latitude.HasValue && cmd.Longitude.HasValue)
         {
             var loc = GeoLocation.Create(cmd.Latitude.Value, cmd.Longitude.Value);
             var office = await _geoFence.ValidateForEmployeeAsync(employee.Id, loc, ct);
             if (office.HasAnyFence) { distance = office.NearestDistanceMeters; insideFence = office.IsInsideAnyFence; }
+            try { address = await _geocode.ReverseAsync(cmd.Latitude.Value, cmd.Longitude.Value, ct); } catch { /* fail-safe */ }
         }
 
         var now = _clock.UtcNow.ToLocalTime();
@@ -88,6 +91,7 @@ internal sealed class SelfCheckOutCommandHandler : IRequestHandler<SelfCheckOutC
         record.CheckOutLongitude = cmd.Longitude;
         record.CheckOutDistanceMeters = distance;
         record.CheckOutWithinFence = insideFence;
+        record.CheckOutAddress = address;
         record.CheckOutSelfieUrl = selfiePath ?? record.CheckOutSelfieUrl;
         record.WorkedMinutes = worked;
         record.IsEarlyLeave = isEarlyLeave;

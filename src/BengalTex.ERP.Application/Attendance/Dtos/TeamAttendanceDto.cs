@@ -24,6 +24,12 @@ public sealed record TeamAttendanceRowDto(
     string? Address,
     double? Latitude,
     double? Longitude,
+    // Check-out verification (mirrors check-in)
+    bool? CheckOutWithinFence,
+    double? CheckOutDistanceMeters,
+    string? CheckOutAddress,
+    double? CheckOutLatitude,
+    double? CheckOutLongitude,
     string? DeviceType,
     string? Browser,
     string? Os,

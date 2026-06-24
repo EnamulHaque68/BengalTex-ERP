@@ -98,8 +98,15 @@
   display: inline-flex; align-items: center; gap: 4px; font-size: .8rem;
   &.ok { color: #15803d; } &.bad { color: #b91c1c; }
 }
-.ta-loc-cell { min-width: 180px; }
-.ta-loc-top { display: flex; align-items: center; gap: 8px; }
+.ta-loc-cell { min-width: 190px; }
+.ta-punch { padding: 2px 0; }
+.ta-punch + .ta-punch { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--surface-border, #eef0f4); }
+.ta-punch-tag {
+  font-size: .6rem; font-weight: 800; padding: 1px 6px; border-radius: 5px; letter-spacing: .3px; flex-shrink: 0;
+  &.in { background: #e0e7ff; color: #3730a3; }
+  &.out { background: #ccfbf1; color: #0f766e; }
+}
+.ta-loc-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .ta-map-btn {
   border: 1px solid var(--surface-border, #e5e7eb); background: var(--surface-card, #fff); cursor: pointer;
   font-size: .7rem; font-weight: 700; padding: 3px 8px; border-radius: 7px; color: var(--primary-color, #4f46e5);

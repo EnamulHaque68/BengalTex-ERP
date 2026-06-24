@@ -181,6 +181,11 @@ export interface TeamAttendanceRowDto {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  checkOutWithinFence: boolean | null;
+  checkOutDistanceMeters: number | null;
+  checkOutAddress: string | null;
+  checkOutLatitude: number | null;
+  checkOutLongitude: number | null;
   deviceType: string | null;
   browser: string | null;
   os: string | null;
