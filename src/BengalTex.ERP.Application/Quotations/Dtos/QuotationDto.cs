@@ -20,6 +20,7 @@ public record QuotationDto(
     DateTimeOffset? DecidedAt,
     string? DecidedBy,
     long? ConvertedSalesOrderId,
+    long? ConvertedProformaInvoiceId,
     IReadOnlyList<QuotationLineDto> Lines);
 
 public record QuotationLineDto(
@@ -50,4 +51,6 @@ public record QuotationListItemDto(
     decimal TotalAmount,
     string Status,
     int Version,
-    int LineCount);
+    int LineCount,
+    long? ConvertedSalesOrderId = null,
+    long? ConvertedProformaInvoiceId = null);

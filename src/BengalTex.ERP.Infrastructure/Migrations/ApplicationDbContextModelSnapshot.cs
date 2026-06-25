@@ -6311,6 +6311,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<long?>("ConvertedCustomerInvoiceId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("ConvertedSalesOrderId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -6319,6 +6322,21 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.Property<int>("CurrencyId")
                         .HasColumnType("int");
+
+                    b.Property<string>("CustomerConfirmationAttachment")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("CustomerConfirmationDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CustomerConfirmationReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerConfirmationType")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
@@ -6351,6 +6369,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<long?>("QuotationId")
+                        .HasColumnType("bigint");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -6404,6 +6425,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("IssueDate");
+
+                    b.HasIndex("QuotationId");
 
                     b.HasIndex("SalesOrderId");
 
@@ -7164,6 +7187,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<long?>("ConvertedProformaInvoiceId")
+                        .HasColumnType("bigint");
+
                     b.Property<long?>("ConvertedSalesOrderId")
                         .HasColumnType("bigint");
 
@@ -7680,6 +7706,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -12150,6 +12180,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Quotation", "Quotation")
+                        .WithMany()
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrder", "SalesOrder")
                         .WithMany()
                         .HasForeignKey("SalesOrderId")
@@ -12160,6 +12195,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Currency");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Quotation");
 
                     b.Navigation("SalesOrder");
                 });

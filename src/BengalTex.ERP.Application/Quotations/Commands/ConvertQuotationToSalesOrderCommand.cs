@@ -19,13 +19,17 @@ internal sealed class ConvertQuotationToSalesOrderCommandHandler
     : IRequestHandler<ConvertQuotationToSalesOrderCommand, ApiResponse<QuotationDto>>
 {
     private readonly IRepository<Domain.Entities.Quotation, long> _repo;
+    private readonly IRepository<Domain.Entities.ProformaInvoice, long> _proformaRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public ConvertQuotationToSalesOrderCommandHandler(
-        IRepository<Domain.Entities.Quotation, long> repo, IUnitOfWork uow, IMediator mediator)
+        IRepository<Domain.Entities.Quotation, long> repo,
+        IRepository<Domain.Entities.ProformaInvoice, long> proformaRepo,
+        IUnitOfWork uow, IMediator mediator)
     {
         _repo = repo;
+        _proformaRepo = proformaRepo;
         _uow = uow;
         _mediator = mediator;
     }
@@ -36,6 +40,20 @@ internal sealed class ConvertQuotationToSalesOrderCommandHandler
         if (q is null) return ApiResponse<QuotationDto>.Fail("Quotation not found.");
         if (q.Status != QuotationStatus.Accepted)
             return ApiResponse<QuotationDto>.Fail("Only an accepted quotation can be converted to a sales order.");
+
+        // Rule: at most one active Sales Order per quotation.
+        if (q.ConvertedSalesOrderId.HasValue)
+            return ApiResponse<QuotationDto>.Fail("This quotation already has a sales order.");
+
+        // Rule: if a (non-cancelled) Proforma was generated for this quotation, the Sales Order
+        // must be created from that Proforma (after customer confirmation), not directly.
+        var hasActiveProforma = await _proformaRepo.Query().AnyAsync(
+            p => p.QuotationId == q.Id
+                 && p.Status != ProformaInvoiceStatus.Cancelled
+                 && p.Status != ProformaInvoiceStatus.Expired, ct);
+        if (hasActiveProforma)
+            return ApiResponse<QuotationDto>.Fail(
+                "A proforma invoice was generated for this quotation. Create the sales order from that proforma (after customer confirmation) instead.");
 
         var soCommand = new CreateSalesOrderCommand(
             CustomerId: q.CustomerId,
@@ -48,7 +66,8 @@ internal sealed class ConvertQuotationToSalesOrderCommandHandler
             ExchangeRate: q.ExchangeRate,
             Lines: q.Lines.OrderBy(l => l.SortOrder)
                 .Select(l => new SalesOrderLineInput(l.ProductId, l.Quantity, l.UnitPrice, l.Description))
-                .ToList());
+                .ToList(),
+            Source: Domain.Entities.SalesOrderSource.Quotation);
 
         var soResult = await _mediator.Send(soCommand, ct);   // creates + saves the Sales Order
         if (!soResult.Success || soResult.Data is null)

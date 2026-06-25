@@ -7,7 +7,7 @@ import { CurrencyService } from '../../../services/currency.service';
 import { SalesOrderService } from '../../../services/sales-order.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
-  ProformaInvoiceDto, PFM_STATUSES, ProformaInvoiceLineDto
+  ProformaInvoiceDto, PFM_STATUSES, ProformaInvoiceLineDto, CONFIRMATION_TYPES
 } from '../../../models/proforma-invoice.models';
 import { CustomerListItemDto } from '../../../models/customer.models';
 import { ProductListItemDto } from '../../../models/product.models';
@@ -60,13 +60,23 @@ export class ProformaInvoiceListComponent implements OnInit {
   openEmail(row: { id: number }): void { this.emailSourceId = row.id; this.emailDlgOpen = true; }
   onEmailSent(ev: { sourceCode: string }): void { this.actionMessage = `Email sent for ${ev.sourceCode}.`; this.cdr.detectChanges(); }
 
-  // Convert dialog
+  // Convert dialog (→ Customer Invoice)
   convertVisible = false;
   convertTarget: ProformaInvoiceDto | null = null;
   convertSalesOrders: any[] = [];
   convertForm!: FormGroup;
   converting = false;
   convertError = '';
+
+  // Convert-to-Sales-Order dialog (Customer Confirmation)
+  readonly confirmationTypes = CONFIRMATION_TYPES;
+  soConvertVisible = false;
+  soConvertTarget: ProformaInvoiceDto | null = null;
+  soConverting = false;
+  soConvertError = '';
+  soConfirm = { type: 'PurchaseOrder', reference: '', date: this.todayIso() };
+  private confirmationFile: File | null = null;
+  confirmationFileName = '';
 
   constructor(
     private service: ProformaInvoiceService,
@@ -463,5 +473,61 @@ export class ProformaInvoiceListComponent implements OnInit {
         this.cdr.detectChanges();
       })
     });
+  }
+
+  // ── Convert to Sales Order (with Customer Confirmation) ──────────────────
+  /** Available when a proforma came from a quotation, is Accepted, and not yet converted. */
+  canConvertToSo(p: ProformaInvoiceDto): boolean {
+    return !!p.quotationId && p.status === 'Accepted' && !p.convertedSalesOrderId && !p.convertedCustomerInvoiceId;
+  }
+
+  openConvertToSo(p: ProformaInvoiceDto): void {
+    this.soConvertTarget = p;
+    this.soConvertError = '';
+    this.soConfirm = { type: 'PurchaseOrder', reference: '', date: this.todayIso() };
+    this.confirmationFile = null;
+    this.confirmationFileName = '';
+    this.soConvertVisible = true;
+    this.cdr.detectChanges();
+  }
+
+  onConfirmationFile(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] || null;
+    this.confirmationFile = file;
+    this.confirmationFileName = file?.name || '';
+    this.cdr.detectChanges();
+  }
+
+  doConvertToSo(): void {
+    if (!this.soConvertTarget || this.soConverting) return;
+    if (!this.soConfirm.type) { this.soConvertError = 'Select how the customer confirmed.'; this.cdr.detectChanges(); return; }
+    this.soConverting = true; this.soConvertError = ''; this.cdr.detectChanges();
+    const id = this.soConvertTarget.id;
+
+    const proceed = (attachmentPath: string | null) => {
+      this.service.convertToSalesOrder(id, {
+        customerConfirmationType: this.soConfirm.type,
+        customerConfirmationReference: this.soConfirm.reference?.trim() || null,
+        customerConfirmationDate: this.soConfirm.date || null,
+        customerConfirmationAttachment: attachmentPath
+      }).subscribe({
+        next: (res) => this.zone.run(() => {
+          this.soConverting = false;
+          if (res.success) { this.soConvertVisible = false; this.actionMessage = res.message || 'Converted to sales order.'; this.load(); }
+          else this.soConvertError = res.message || 'Convert failed.';
+          this.cdr.detectChanges();
+        }),
+        error: (err) => this.zone.run(() => { this.soConverting = false; this.soConvertError = err?.error?.message || 'Convert failed.'; this.cdr.detectChanges(); })
+      });
+    };
+
+    if (this.confirmationFile) {
+      this.service.uploadConfirmation(id, this.confirmationFile).subscribe({
+        next: (res: any) => this.zone.run(() => proceed(res?.storagePath ?? null)),
+        error: () => this.zone.run(() => { this.soConverting = false; this.soConvertError = 'Could not upload the attachment.'; this.cdr.detectChanges(); })
+      });
+    } else {
+      proceed(null);
+    }
   }
 }

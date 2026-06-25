@@ -25,7 +25,8 @@ public sealed record CreateSalesOrderCommand(
     string? Notes,
     int CurrencyId,
     decimal ExchangeRate,
-    IReadOnlyList<SalesOrderLineInput> Lines
+    IReadOnlyList<SalesOrderLineInput> Lines,
+    Domain.Entities.SalesOrderSource? Source = null   // traceability: Quotation | ProformaInvoice (null = direct)
 ) : IRequest<ApiResponse<SalesOrderDto>>;
 
 public sealed class CreateSalesOrderCommandValidator : AbstractValidator<CreateSalesOrderCommand>
@@ -109,6 +110,7 @@ internal sealed class CreateSalesOrderCommandHandler
             CustomerPoRef = string.IsNullOrWhiteSpace(cmd.CustomerPoRef) ? null : cmd.CustomerPoRef.Trim(),
             DeliveryAddress = string.IsNullOrWhiteSpace(cmd.DeliveryAddress) ? null : cmd.DeliveryAddress.Trim(),
             Status = Domain.Entities.SalesOrderStatus.Draft,
+            Source = cmd.Source,
             CurrencyId = cmd.CurrencyId,
             ExchangeRate = cmd.ExchangeRate,
             Notes = cmd.Notes,

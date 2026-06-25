@@ -81,8 +81,11 @@
               <p-button icon="pi pi-clock" severity="warn" [text]="true" size="small"
                         *ngIf="p.status === 'Sent' || p.status === 'Accepted'" [loading]="rowActionId === p.id"
                         (click)="expire(p)" pTooltip="Mark Expired" />
+              <p-button icon="pi pi-shopping-bag" label="Sales Order" severity="help" [outlined]="true" size="small"
+                        *ngIf="canConvertToSo(p)"
+                        (click)="openConvertToSo(p)" pTooltip="Convert to Sales Order (after customer confirmation)" />
               <p-button icon="pi pi-arrow-right" severity="success" [text]="true" size="small"
-                        *ngIf="p.status === 'Accepted'"
+                        *ngIf="p.status === 'Accepted' && !p.quotationId"
                         (click)="openConvert(p)" pTooltip="Convert to Customer Invoice" />
               <p-button icon="pi pi-envelope" severity="info" [text]="true" size="small"
                         *ngIf="p.status === 'Sent' || p.status === 'Accepted'"
@@ -290,6 +293,47 @@
                 [loading]="converting" [disabled]="convertForm.invalid || converting" />
     </div>
   </form>
+</p-dialog>
+
+<!-- Convert to Sales Order — Customer Confirmation -->
+<p-dialog [(visible)]="soConvertVisible" header="Convert to Sales Order" [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+  <div *ngIf="soConvertTarget as p" class="so-convert">
+    <p class="so-hint">
+      Record how <strong>{{ p.customerName }}</strong> confirmed the order against proforma
+      <strong>{{ p.code }}</strong>. This becomes the Sales Order.
+    </p>
+    <div class="alert alert-error" *ngIf="soConvertError"><i class="pi pi-exclamation-circle"></i>{{ soConvertError }}</div>
+
+    <div class="dialog-grid">
+      <div class="field col-span-2">
+        <label>Customer Confirmation *</label>
+        <p-select [(ngModel)]="soConfirm.type" [options]="confirmationTypes" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" placeholder="How did the customer confirm?" />
+      </div>
+      <div class="field">
+        <label>Reference No <small>(PO / LC / payment ref)</small></label>
+        <input pInputText [(ngModel)]="soConfirm.reference" placeholder="e.g. PO-2026-001" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Confirmation Date</label>
+        <input pInputText type="date" [(ngModel)]="soConfirm.date" class="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Attachment <small>(PO PDF / LC copy / signed PI / email screenshot — optional)</small></label>
+        <div class="so-file">
+          <label class="so-file-btn"><i class="pi pi-paperclip"></i> Choose file
+            <input type="file" accept=".pdf,image/*" (change)="onConfirmationFile($event)" hidden /></label>
+          <span class="so-file-name" *ngIf="confirmationFileName">{{ confirmationFileName }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="soConvertVisible = false" [disabled]="soConverting" />
+      <p-button [label]="soConverting ? 'Converting...' : 'Confirm & Create Sales Order'" icon="pi pi-shopping-bag"
+                [loading]="soConverting" (click)="doConvertToSo()" [disabled]="soConverting" />
+    </div>
+  </div>
 </p-dialog>
 
 <app-send-email-dialog

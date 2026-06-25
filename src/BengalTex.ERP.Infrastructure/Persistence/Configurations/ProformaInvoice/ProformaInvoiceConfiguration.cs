@@ -23,9 +23,15 @@ public class ProformaInvoiceConfiguration : IEntityTypeConfiguration<ProformaInv
 
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
 
+        // ── Quotation→Proforma→SO workflow + customer confirmation ──
+        builder.Property(p => p.CustomerConfirmationType).HasMaxLength(30);
+        builder.Property(p => p.CustomerConfirmationReference).HasMaxLength(200);
+        builder.Property(p => p.CustomerConfirmationAttachment).HasMaxLength(500);
+
         builder.HasIndex(p => p.Code).IsUnique();
         builder.HasIndex(p => p.CustomerId);
         builder.HasIndex(p => p.SalesOrderId);
+        builder.HasIndex(p => p.QuotationId);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.IssueDate);
 
@@ -36,6 +42,11 @@ public class ProformaInvoiceConfiguration : IEntityTypeConfiguration<ProformaInv
         builder.HasOne(p => p.SalesOrder).WithMany()
             .HasForeignKey(p => p.SalesOrderId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Source quotation (pre-order flow). NoAction — quotation also points back, avoid cascade cycles.
+        builder.HasOne(p => p.Quotation).WithMany()
+            .HasForeignKey(p => p.QuotationId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(p => p.Currency).WithMany()
             .HasForeignKey(p => p.CurrencyId)

@@ -5,7 +5,8 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
-  ProformaInvoiceDto, CreateProformaInvoiceRequest, UpdateProformaInvoiceRequest, ConvertProformaRequest
+  ProformaInvoiceDto, CreateProformaInvoiceRequest, UpdateProformaInvoiceRequest, ConvertProformaRequest,
+  ConvertProformaToSoRequest
 } from '../models/proforma-invoice.models';
 
 @Injectable({ providedIn: 'root' })
@@ -49,4 +50,17 @@ export class ProformaInvoiceService {
   convert(id: number, data: ConvertProformaRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(`${this.base}/${id}/convert`, data);
   }
+
+  convertToSalesOrder(id: number, data: ConvertProformaToSoRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/${id}/convert-to-sales-order`, data);
+  }
+
+  /** Uploads a confirmation document → returns the storage path to include in convertToSalesOrder. */
+  uploadConfirmation(id: number, file: File): Observable<ApiResponse<{ storagePath: string }> | { storagePath: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ storagePath: string }>(`${this.base}/${id}/confirmation-attachment`, form);
+  }
+
+  confirmationUrl(id: number): string { return `${this.base}/${id}/confirmation-attachment`; }
 }

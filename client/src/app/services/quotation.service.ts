@@ -39,4 +39,5 @@ export class QuotationService {
   reject(id: number): Observable<ApiResponse<QuotationDto>> { return this.http.post<ApiResponse<QuotationDto>>(`${this.base}/${id}/reject`, {}); }
   revise(id: number): Observable<ApiResponse<QuotationDto>> { return this.http.post<ApiResponse<QuotationDto>>(`${this.base}/${id}/revise`, {}); }
   convert(id: number): Observable<ApiResponse<QuotationDto>> { return this.http.post<ApiResponse<QuotationDto>>(`${this.base}/${id}/convert`, {}); }
+  generateProforma(id: number): Observable<ApiResponse<number>> { return this.http.post<ApiResponse<number>>(`${this.base}/${id}/generate-proforma`, {}); }
 }

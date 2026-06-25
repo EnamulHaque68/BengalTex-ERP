@@ -41,7 +41,8 @@ internal sealed class GetQuotationsQueryHandler
             .Take(request.Parameters.PageSize)
             .Select(q => new QuotationListItemDto(
                 q.Id, q.Code, q.Customer.Name, q.QuotationDate, q.ValidUntil,
-                q.Currency.Code, q.TotalAmount, q.Status.ToString(), q.Version, q.Lines.Count))
+                q.Currency.Code, q.TotalAmount, q.Status.ToString(), q.Version, q.Lines.Count,
+                q.ConvertedSalesOrderId, q.ConvertedProformaInvoiceId))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<QuotationListItemDto>>.Ok(
@@ -76,7 +77,7 @@ internal sealed class GetQuotationByIdQueryHandler
             q.Id, q.Code, q.CustomerId, q.Customer.Name, q.QuotationDate, q.ValidUntil,
             q.CurrencyId, q.Currency.Code, q.ExchangeRate, q.Status.ToString(), q.Version, q.RevisionOfId,
             q.TotalAmount, q.CustomerReference, q.Notes, q.SentAt, q.DecidedAt, q.DecidedBy,
-            q.ConvertedSalesOrderId, lines);
+            q.ConvertedSalesOrderId, q.ConvertedProformaInvoiceId, lines);
         return ApiResponse<QuotationDto>.Ok(dto);
     }
 }

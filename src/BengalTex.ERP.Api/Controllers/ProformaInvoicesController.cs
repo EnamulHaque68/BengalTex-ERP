@@ -1,4 +1,5 @@
 using BengalTex.ERP.Api.Authorization;
+using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Common.Models;
 using BengalTex.ERP.Application.ProformaInvoices.Commands;
 using BengalTex.ERP.Shared.Permissions;
@@ -14,7 +15,9 @@ namespace BengalTex.ERP.Api.Controllers;
 public class ProformaInvoicesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    public ProformaInvoicesController(IMediator mediator) => _mediator = mediator;
+    private readonly IFileStorage _files;
+    public ProformaInvoicesController(IMediator mediator, IFileStorage files)
+    { _mediator = mediator; _files = files; }
 
     [HttpGet]
     [HasPermission(Permissions.ProformaInvoices.View)]
@@ -71,6 +74,39 @@ public class ProformaInvoicesController : ControllerBase
     public async Task<IActionResult> Convert(long id, [FromBody] ConvertProformaBody body, CancellationToken ct)
         => Ok(await _mediator.Send(new ConvertProformaToCustomerInvoiceCommand(
             id, body.SalesOrderId, body.InvoiceDate, body.DueDate), ct));
+
+    /// <summary>Converts an accepted proforma (from a quotation) into a Sales Order, recording the customer confirmation.</summary>
+    [HttpPost("{id:long}/convert-to-sales-order")]
+    [HasPermission(Permissions.ProformaInvoices.Convert)]
+    public async Task<IActionResult> ConvertToSalesOrder(long id, [FromBody] ConvertProformaToSoBody body, CancellationToken ct)
+        => Ok(await _mediator.Send(new ConvertProformaToSalesOrderCommand(
+            id, body.CustomerConfirmationType, body.CustomerConfirmationReference,
+            body.CustomerConfirmationDate, body.CustomerConfirmationAttachment), ct));
+
+    /// <summary>Uploads a customer-confirmation document (PO/LC/signed PI/email). Returns the storage path to pass to convert.</summary>
+    [HttpPost("{id:long}/confirmation-attachment")]
+    [HasPermission(Permissions.ProformaInvoices.Convert)]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> UploadConfirmation(long id, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return BadRequest("No file provided.");
+        await using var stream = file.OpenReadStream();
+        var stored = await _files.SaveAsync(stream, file.FileName, file.ContentType, "ProformaConfirmation", ct);
+        return Ok(new { storagePath = stored.StoragePath });
+    }
+
+    /// <summary>Streams the customer-confirmation attachment for audit.</summary>
+    [HttpGet("{id:long}/confirmation-attachment")]
+    [HasPermission(Permissions.ProformaInvoices.View)]
+    public async Task<IActionResult> GetConfirmation(long id, CancellationToken ct)
+    {
+        var path = await _mediator.Send(new GetProformaConfirmationAttachmentPathQuery(id), ct);
+        if (string.IsNullOrEmpty(path) || !await _files.ExistsAsync(path, ct)) return NotFound();
+        var stream = await _files.OpenReadAsync(path, ct);
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var contentType = ext switch { ".pdf" => "application/pdf", ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", _ => "application/octet-stream" };
+        return File(stream, contentType);
+    }
 }
 
 public record UpdateProformaInvoiceBody(
@@ -78,3 +114,9 @@ public record UpdateProformaInvoiceBody(
     IReadOnlyList<ProformaInvoiceLineInput> Lines);
 
 public record ConvertProformaBody(long SalesOrderId, DateOnly InvoiceDate, DateOnly? DueDate);
+
+public record ConvertProformaToSoBody(
+    string CustomerConfirmationType,
+    string? CustomerConfirmationReference,
+    DateOnly? CustomerConfirmationDate,
+    string? CustomerConfirmationAttachment);
