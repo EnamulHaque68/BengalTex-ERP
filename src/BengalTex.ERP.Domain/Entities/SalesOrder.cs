@@ -38,9 +38,19 @@ public class SalesOrder : BaseTransactionalEntity
     public DateTimeOffset? ConfirmedAt { get; set; }
     public string? ConfirmedBy { get; set; }
 
+    /// <summary>Where this Sales Order originated — for traceability/reporting. Null = created directly.</summary>
+    public SalesOrderSource? Source { get; set; }
+
     public string? Notes { get; set; }
 
     public ICollection<SalesOrderLine> Lines { get; set; } = new List<SalesOrderLine>();
+}
+
+/// <summary>The document an SO was created from (Quotation direct-convert, or a customer-confirmed Proforma).</summary>
+public enum SalesOrderSource
+{
+    Quotation = 1,
+    ProformaInvoice = 2
 }
 
 /// <summary>

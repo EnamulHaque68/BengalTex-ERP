@@ -40,3 +40,5 @@
   &.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; } &.alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; } }
 .page-alert { position: relative; .alert-close { margin-left: auto; background: none; border: none; font-size: 1.1rem; color: inherit; cursor: pointer; opacity: 0.6; &:hover { opacity: 1; } } }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; }
+.proforma-note { display:inline-flex; align-items:center; gap:4px; font-size:.72rem; font-weight:700; color:#0891b2;
+  background:#ecfeff; padding:2px 8px; border-radius:999px; i{font-size:.7rem;} }

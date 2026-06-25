@@ -48,6 +48,7 @@ export interface QuotationDto {
   decidedAt: string | null;
   decidedBy: string | null;
   convertedSalesOrderId: number | null;
+  convertedProformaInvoiceId: number | null;
   lines: QuotationLineDto[];
 }
 
@@ -62,6 +63,8 @@ export interface QuotationListItemDto {
   status: string;
   version: number;
   lineCount: number;
+  convertedSalesOrderId?: number | null;
+  convertedProformaInvoiceId?: number | null;
 }
 
 export interface QuotationLineInput {

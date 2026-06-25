@@ -21,6 +21,11 @@ public class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrderEntity
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        // Nullable enum → string. Nullable so existing/direct SOs stay null (no backfill default issue).
+        builder.Property(s => s.Source)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.HasIndex(s => s.Code).IsUnique();
         builder.HasIndex(s => s.CustomerId);
         builder.HasIndex(s => s.Status);

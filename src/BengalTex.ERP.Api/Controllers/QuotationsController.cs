@@ -73,4 +73,10 @@ public class QuotationsController : ControllerBase
     [HasPermission(Permissions.Quotations.Convert)]
     public async Task<IActionResult> Convert(long id, CancellationToken ct)
         => Ok(await _mediator.Send(new ConvertQuotationToSalesOrderCommand(id), ct));
+
+    /// <summary>Generates a draft Proforma Invoice from an accepted quotation (pre-order flow for LC / advance).</summary>
+    [HttpPost("{id:long}/generate-proforma")]
+    [HasPermission(Permissions.Quotations.Convert)]
+    public async Task<IActionResult> GenerateProforma(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GenerateProformaFromQuotationCommand(id), ct));
 }

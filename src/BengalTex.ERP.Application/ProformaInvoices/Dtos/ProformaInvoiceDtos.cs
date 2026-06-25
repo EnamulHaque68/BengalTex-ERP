@@ -35,5 +35,13 @@ public sealed record ProformaInvoiceDto(
     DateTimeOffset? ExpiredAt,
     long? ConvertedCustomerInvoiceId,
     string? ConvertedCustomerInvoiceCode,
+    long? QuotationId,
+    string? QuotationCode,
+    long? ConvertedSalesOrderId,
+    string? ConvertedSalesOrderCode,
+    string? CustomerConfirmationType,
+    string? CustomerConfirmationReference,
+    DateOnly? CustomerConfirmationDate,
+    bool HasConfirmationAttachment,
     string? Notes,
     IReadOnlyList<ProformaInvoiceLineDto> Lines);

@@ -59,6 +59,10 @@ internal sealed class GetProformaInvoicesQueryHandler
                 x.SentAt, x.SentBy, x.AcceptedAt, x.ExpiredAt,
                 x.ConvertedCustomerInvoiceId,
                 x.ConvertedCustomerInvoice != null ? x.ConvertedCustomerInvoice.Code : null,
+                x.QuotationId, x.Quotation != null ? x.Quotation.Code : null,
+                x.ConvertedSalesOrderId, (string?)null,
+                x.CustomerConfirmationType, x.CustomerConfirmationReference,
+                x.CustomerConfirmationDate, x.CustomerConfirmationAttachment != null,
                 x.Notes,
                 new List<ProformaInvoiceLineDto>()))
             .ToListAsync(ct);
@@ -92,6 +96,10 @@ internal sealed class GetProformaInvoiceByIdQueryHandler
                 x.SentAt, x.SentBy, x.AcceptedAt, x.ExpiredAt,
                 x.ConvertedCustomerInvoiceId,
                 x.ConvertedCustomerInvoice != null ? x.ConvertedCustomerInvoice.Code : null,
+                x.QuotationId, x.Quotation != null ? x.Quotation.Code : null,
+                x.ConvertedSalesOrderId, (string?)null,
+                x.CustomerConfirmationType, x.CustomerConfirmationReference,
+                x.CustomerConfirmationDate, x.CustomerConfirmationAttachment != null,
                 x.Notes,
                 x.Lines.OrderBy(l => l.SortOrder).Select(l => new ProformaInvoiceLineDto(
                     l.Id, l.ProductId, l.Product.Code, l.Product.Name,
@@ -117,7 +125,8 @@ public sealed record CreateProformaInvoiceCommand(
     decimal ExchangeRate,
     decimal VatRate,
     string? Notes,
-    IReadOnlyList<ProformaInvoiceLineInput> Lines
+    IReadOnlyList<ProformaInvoiceLineInput> Lines,
+    long? QuotationId = null   // set when generated from a quotation (pre-order flow)
 ) : IRequest<ApiResponse<long>>;
 
 public sealed class CreateProformaInvoiceCommandValidator : AbstractValidator<CreateProformaInvoiceCommand>
@@ -187,6 +196,7 @@ internal sealed class CreateProformaInvoiceCommandHandler
             Code = code,
             CustomerId = cmd.CustomerId,
             SalesOrderId = cmd.SalesOrderId,
+            QuotationId = cmd.QuotationId,
             IssueDate = cmd.IssueDate,
             ValidUntil = cmd.ValidUntil,
             Status = ProformaInvoiceStatus.Draft,

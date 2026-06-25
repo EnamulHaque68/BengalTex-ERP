@@ -209,11 +209,18 @@ export class QuotationListComponent implements OnInit {
   reject(q: QuotationListItemDto): void { this.rowAction(q, this.svc.reject(q.id)); }
   revise(q: QuotationListItemDto): void { this.rowAction(q, this.svc.revise(q.id)); }
   convert(q: QuotationListItemDto): void { this.rowAction(q, this.svc.convert(q.id)); }
-  private rowAction(q: QuotationListItemDto, obs: any): void {
+  generateProforma(q: QuotationListItemDto): void {
+    this.rowAction(q, this.svc.generateProforma(q.id),
+      'Proforma generated. Find it under Sales → Proforma Invoices.');
+  }
+  /** Rule: once a proforma is generated for a quotation, the SO must come from that proforma. */
+  hasProforma(q: QuotationListItemDto): boolean { return !!q.convertedProformaInvoiceId; }
+
+  private rowAction(q: QuotationListItemDto, obs: any, successMsg = ''): void {
     if (this.rowActionId) return;
-    this.rowActionId = q.id; this.actionError = ''; this.cdr.detectChanges();
+    this.rowActionId = q.id; this.actionError = ''; this.actionMessage = ''; this.cdr.detectChanges();
     obs.subscribe({
-      next: (res: any) => this.zone.run(() => { this.rowActionId = null; if (res.success) this.load(); else this.actionError = res.message || 'Action failed.'; this.cdr.detectChanges(); }),
+      next: (res: any) => this.zone.run(() => { this.rowActionId = null; if (res.success) { if (successMsg) this.actionMessage = successMsg; this.load(); } else this.actionError = res.message || 'Action failed.'; this.cdr.detectChanges(); }),
       error: (e: any) => this.zone.run(() => { this.rowActionId = null; this.actionError = e?.error?.message || 'Action failed.'; this.cdr.detectChanges(); })
     });
   }

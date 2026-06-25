@@ -44,6 +44,9 @@ public class Quotation : BaseTransactionalEntity
     /// <summary>Set when converted — the resulting Sales Order id.</summary>
     public long? ConvertedSalesOrderId { get; set; }
 
+    /// <summary>Set when a Proforma Invoice is generated from this quotation (one active proforma per quotation).</summary>
+    public long? ConvertedProformaInvoiceId { get; set; }
+
     public ICollection<QuotationLine> Lines { get; set; } = new List<QuotationLine>();
 }
 

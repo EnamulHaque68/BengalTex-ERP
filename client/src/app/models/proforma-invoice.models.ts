@@ -45,8 +45,31 @@ export interface ProformaInvoiceDto {
   expiredAt: string | null;
   convertedCustomerInvoiceId: number | null;
   convertedCustomerInvoiceCode: string | null;
+  quotationId: number | null;
+  quotationCode: string | null;
+  convertedSalesOrderId: number | null;
+  convertedSalesOrderCode: string | null;
+  customerConfirmationType: string | null;
+  customerConfirmationReference: string | null;
+  customerConfirmationDate: string | null;
+  hasConfirmationAttachment: boolean;
   notes: string | null;
   lines: ProformaInvoiceLineDto[];
+}
+
+export const CONFIRMATION_TYPES: { label: string; value: string }[] = [
+  { label: 'Purchase Order (PO)', value: 'PurchaseOrder' },
+  { label: 'Letter of Credit (LC)', value: 'LetterOfCredit' },
+  { label: 'Advance Payment', value: 'AdvancePayment' },
+  { label: 'Signed Proforma', value: 'SignedProforma' },
+  { label: 'Email Approval', value: 'EmailApproval' }
+];
+
+export interface ConvertProformaToSoRequest {
+  customerConfirmationType: string;
+  customerConfirmationReference: string | null;
+  customerConfirmationDate: string | null;
+  customerConfirmationAttachment: string | null;
 }
 
 export interface ProformaInvoiceLineInput {

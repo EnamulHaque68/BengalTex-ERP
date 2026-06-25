@@ -22,6 +22,11 @@ public class ProformaInvoice : BaseTransactionalEntity
     public long? SalesOrderId { get; set; }
     public SalesOrder? SalesOrder { get; set; }
 
+    /// <summary>Optional source Quotation — set when this Proforma was generated from a quotation
+    /// (pre-order flow: Quotation → Proforma → Sales Order). One active proforma per quotation.</summary>
+    public long? QuotationId { get; set; }
+    public Quotation? Quotation { get; set; }
+
     public DateOnly IssueDate { get; set; }
 
     /// <summary>Quote validity. After this date the Proforma can be marked Expired.</summary>
@@ -46,6 +51,18 @@ public class ProformaInvoice : BaseTransactionalEntity
     /// <summary>FK populated when this Proforma is converted into a real CustomerInvoice.</summary>
     public long? ConvertedCustomerInvoiceId { get; set; }
     public CustomerInvoice? ConvertedCustomerInvoice { get; set; }
+
+    /// <summary>FK populated when a Sales Order is created from this Proforma (after customer confirmation).</summary>
+    public long? ConvertedSalesOrderId { get; set; }
+
+    // ── Customer confirmation (how the customer confirmed the order against this proforma) ──
+    /// <summary>PurchaseOrder | LetterOfCredit | AdvancePayment | SignedProforma | EmailApproval.</summary>
+    public string? CustomerConfirmationType { get; set; }
+    /// <summary>Reference no — PO number, LC number, payment ref, etc.</summary>
+    public string? CustomerConfirmationReference { get; set; }
+    public DateOnly? CustomerConfirmationDate { get; set; }
+    /// <summary>Storage path of the supporting document (PO PDF / LC copy / signed proforma / email screenshot).</summary>
+    public string? CustomerConfirmationAttachment { get; set; }
 
     public string? Notes { get; set; }
 
