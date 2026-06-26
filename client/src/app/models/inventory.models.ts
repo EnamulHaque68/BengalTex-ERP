@@ -37,6 +37,8 @@ export interface StockOnHandDto {
   quantity: number;
   minimumStockLevel: number;           // 0 for Product rows
   belowMinimum: boolean;               // false for Product rows
+  reservedQuantity?: number;           // Phase 2 — soft-reserved (earmarked)
+  availableQuantity?: number;          // Phase 2 — quantity − reserved
 }
 
 // ─── Stock Movement ───────────────────────────────────────────────────────

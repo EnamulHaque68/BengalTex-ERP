@@ -27,7 +27,12 @@ public record ProductionOrderDto(
     string? CompletedBy,
     string? Notes,
     IReadOnlyList<ProductionPlannedLineDto> PlannedLines,
-    IReadOnlyList<ProductionStageDto> Stages);
+    IReadOnlyList<ProductionStageDto> Stages,
+    // Phase 1 — source Sales Order link (null = standalone / manual run)
+    long? SalesOrderId = null,
+    string? SalesOrderCode = null,
+    long? SalesOrderLineId = null,
+    string? CustomerName = null);
 
 /// <summary>One routing stage of a production order with its WIP progress + line/operator.</summary>
 public record ProductionStageDto(
@@ -75,4 +80,6 @@ public record ProductionOrderListItemDto(
     DateOnly? ActualEndDate,
     int StageCount,                      // routing length (0 = single-step)
     int CompletedStageCount,            // stages Completed/Skipped
-    string? CurrentStageName);          // first non-finished stage, null when none/all done
+    string? CurrentStageName,           // first non-finished stage, null when none/all done
+    long? SalesOrderId,                 // Phase 1 — source SO (null = standalone)
+    string? SalesOrderCode);

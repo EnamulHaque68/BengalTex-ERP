@@ -1,0 +1,44 @@
+.page-shell { padding: 1.25rem 1.5rem; }
+
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;
+  .page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+  .page-subtitle { margin: 0.15rem 0 0; color: #64748b; font-size: 0.85rem; }
+  .header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+}
+
+.mrp-summary {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+  .chip {
+    background: #f1f5f9; color: #334155; border-radius: 999px; padding: 0.2rem 0.7rem;
+    font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;
+    strong { color: #0f172a; }
+    &.chip-warn { background: #fef3c7; color: #92400e; }
+    &.muted { background: transparent; color: #64748b; }
+  }
+  .link-btn {
+    background: none; border: none; color: #2563eb; cursor: pointer; font-size: 0.8rem; padding: 0; text-decoration: underline;
+  }
+}
+
+.page-alert { margin-bottom: 0.75rem; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.num-h { text-align: right; }
+.fw-600 { font-weight: 600; }
+.muted { color: #94a3b8; }
+.unit-cell { color: #64748b; font-size: 0.85rem; }
+.code-badge {
+  display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 4px;
+  padding: 0.05rem 0.4rem; font-size: 0.72rem; font-weight: 600; margin-right: 0.4rem;
+}
+.qty-neg { color: #dc2626; font-weight: 600; }
+.shortage-badge {
+  background: #fee2e2; color: #b91c1c; border-radius: 4px; padding: 0.1rem 0.45rem; font-weight: 700;
+}
+tr.row-short > td { background: #fff7ed; }
+
+.empty-row {
+  text-align: center; color: #94a3b8; padding: 2rem 1rem;
+  i { display: block; font-size: 1.5rem; margin-bottom: 0.4rem; }
+}

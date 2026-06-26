@@ -1,0 +1,87 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Material Requirement Planning</h2>
+      <p class="page-subtitle">Net raw-material requirement for the open production plan — shortages &amp; purchase suggestions</p>
+    </div>
+    <div class="header-actions">
+      <p-togglebutton
+        [(ngModel)]="shortageOnly"
+        onLabel="Shortages only" offLabel="All demand"
+        onIcon="pi pi-exclamation-triangle" offIcon="pi pi-list"
+        (onChange)="load()"
+      />
+      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [outlined]="true" (click)="load()" />
+      <p-button [label]="'Generate PR (' + selected.size + ')'" icon="pi pi-cart-plus"
+                [disabled]="selected.size === 0 || generating" [loading]="generating"
+                (click)="generatePr()" />
+    </div>
+  </div>
+
+  <div class="mrp-summary">
+    <span class="chip chip-warn"><i class="pi pi-exclamation-triangle"></i> {{ shortageCount }} shortage{{ shortageCount === 1 ? '' : 's' }}</span>
+    <span class="chip">Est. shortage cost: <strong>{{ totalShortageCost | number:'1.2-2' }} ৳</strong></span>
+    <span class="chip muted" *ngIf="selected.size > 0">{{ selected.size }} selected</span>
+    <button type="button" class="link-btn" *ngIf="shortageCount > 0" (click)="selectAllShortages()">Select all shortages</button>
+    <button type="button" class="link-btn" *ngIf="selected.size > 0" (click)="clearSelection()">Clear</button>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+  <div class="alert alert-success page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="items" [loading]="loading" [paginator]="true" [rows]="25" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:42px"></th>
+          <th>Raw Material</th>
+          <th>Unit</th>
+          <th class="num-h">Required</th>
+          <th class="num-h">On Hand</th>
+          <th class="num-h">Available</th>
+          <th class="num-h">Incoming</th>
+          <th class="num-h">Shortage</th>
+          <th class="num-h">Est. Price</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-i>
+        <tr [class.row-short]="hasShortage(i)">
+          <td>
+            <p-checkbox [binary]="true" [ngModel]="isSelected(i)" (onChange)="toggle(i)"
+                        [disabled]="!hasShortage(i)" *ngIf="hasShortage(i)" />
+          </td>
+          <td>
+            <span class="code-badge">{{ i.rawMaterialCode }}</span>
+            <span class="fw-600">{{ i.rawMaterialName }}</span>
+          </td>
+          <td class="unit-cell">{{ i.unitOfMeasureCode }}</td>
+          <td class="num fw-600">{{ i.requiredQuantity | number:'1.0-4' }}</td>
+          <td class="num">{{ i.onHandQuantity | number:'1.0-4' }}</td>
+          <td class="num" [class.qty-neg]="i.availableQuantity < 0">{{ i.availableQuantity | number:'1.0-4' }}</td>
+          <td class="num muted">{{ i.incomingQuantity | number:'1.0-4' }}</td>
+          <td class="num">
+            <span class="shortage-badge" *ngIf="hasShortage(i)">{{ i.shortageQuantity | number:'1.0-4' }}</span>
+            <span class="muted" *ngIf="!hasShortage(i)">—</span>
+          </td>
+          <td class="num muted">{{ i.estimatedUnitPrice | number:'1.2-2' }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-check-circle"></i>
+            <span>No material demand. MRP shows raw materials reserved by open production orders (Phase 2). Plan production to populate this.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

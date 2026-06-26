@@ -4,7 +4,7 @@ import { SalesOrderService } from '../../../services/sales-order.service';
 import { CustomerService } from '../../../services/customer.service';
 import { ProductService } from '../../../services/product.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { SO_STATUSES, SalesOrderListItemDto } from '../../../models/sales-order.models';
+import { SO_STATUSES, SalesOrderDto, SalesOrderLineDto, SalesOrderListItemDto } from '../../../models/sales-order.models';
 import { CustomerListItemDto, CustomerCreditStatusDto } from '../../../models/customer.models';
 import { ProductListItemDto } from '../../../models/product.models';
 import { CurrencyDto } from '../../../models/master-data.models';
@@ -42,6 +42,9 @@ export class SalesOrderListComponent implements OnInit {
   dialogError = '';
   editingId: number | null = null;
   form!: FormGroup;
+
+  // Phase 1 — loaded SO detail (used by the view-mode production-progress panel)
+  loadedDetail: SalesOrderDto | null = null;
 
   // Credit standing of the selected customer (shown on the create dialog)
   creditStatus: CustomerCreditStatusDto | null = null;
@@ -300,6 +303,7 @@ export class SalesOrderListComponent implements OnInit {
     this.editingId = null;
     this.dialogError = '';
     this.creditStatus = null;
+    this.loadedDetail = null;
     this.form.enable();
     this.lines.clear();
     this.form.reset({
@@ -332,6 +336,7 @@ export class SalesOrderListComponent implements OnInit {
         this.zone.run(() => {
           if (res.success && res.data) {
             const s = res.data;
+            this.loadedDetail = s;
             this.dialogMode = s.status === 'Draft' ? 'edit' : 'view';
             this.form.patchValue({
               customerId: s.customerId,
@@ -472,6 +477,31 @@ export class SalesOrderListComponent implements OnInit {
 
   canDelete(so: SalesOrderListItemDto): boolean {
     return so.status === 'Draft' || so.status === 'Cancelled';
+  }
+
+  // ─── Phase 1: production progress display ─────────────────────────────────
+
+  /** CSS modifier for the production-status badge. */
+  productionBadgeClass(status: string | undefined): string {
+    switch (status) {
+      case 'Produced':          return 'produced';
+      case 'PartiallyProduced': return 'partial';
+      case 'Planning':          return 'planning';
+      default:                  return 'notstarted';   // NotStarted
+    }
+  }
+
+  productionStatusLabel(status: string | undefined): string {
+    switch (status) {
+      case 'PartiallyProduced': return 'Partial';
+      case 'NotStarted':        return 'Not started';
+      default:                  return status || 'Not started';
+    }
+  }
+
+  /** Remaining still to produce for a line = ordered − produced. */
+  lineRemainingToProduce(line: SalesOrderLineDto): number {
+    return (line.quantity ?? 0) - (line.producedQuantity ?? 0);
   }
 
   // ─── Delete ──────────────────────────────────────────────────────────────

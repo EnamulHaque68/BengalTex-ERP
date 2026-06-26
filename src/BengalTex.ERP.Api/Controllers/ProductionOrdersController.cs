@@ -24,9 +24,10 @@ public class ProductionOrdersController : ControllerBase
         [FromQuery] PagedQueryParameters parameters,
         [FromQuery] int? productId = null,
         [FromQuery] string? status = null,
+        [FromQuery] long? salesOrderId = null,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetProductionOrdersQuery(parameters, productId, status), ct);
+        var result = await _mediator.Send(new GetProductionOrdersQuery(parameters, productId, status, salesOrderId), ct);
         return Ok(result);
     }
 
@@ -45,7 +46,8 @@ public class ProductionOrdersController : ControllerBase
         var result = await _mediator.Send(new CreateProductionOrderCommand(
             request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
-            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages
+            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages,
+            request.SalesOrderId, request.SalesOrderLineId
         ), ct);
         return Ok(result);
     }
@@ -57,7 +59,8 @@ public class ProductionOrdersController : ControllerBase
         var result = await _mediator.Send(new UpdateProductionOrderCommand(
             id, request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
-            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages
+            request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages,
+            request.SalesOrderId, request.SalesOrderLineId
         ), ct);
         return Ok(result);
     }
@@ -136,7 +139,9 @@ public record CreateProductionOrderRequest(
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
     string? Notes,
-    IReadOnlyList<ProductionStageInput>? Stages = null);
+    IReadOnlyList<ProductionStageInput>? Stages = null,
+    long? SalesOrderId = null,
+    long? SalesOrderLineId = null);
 
 public record UpdateProductionOrderRequest(
     int ProductId,
@@ -147,4 +152,6 @@ public record UpdateProductionOrderRequest(
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
     string? Notes,
-    IReadOnlyList<ProductionStageInput>? Stages = null);
+    IReadOnlyList<ProductionStageInput>? Stages = null,
+    long? SalesOrderId = null,
+    long? SalesOrderLineId = null);

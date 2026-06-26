@@ -25,4 +25,12 @@ public class StockOnHand : BaseEntity
 
     /// <summary>Current quantity in this warehouse, in the item's UoM.</summary>
     public decimal Quantity { get; set; }
+
+    /// <summary>
+    /// Soft-reserved quantity (Phase 2 — Inventory Reservation): the denormalized sum of all
+    /// <see cref="StockReservation"/>(Active) rows for this (item × warehouse). Does NOT move
+    /// physical stock — <see cref="Quantity"/> is untouched. Available = Quantity − ReservedQuantity.
+    /// Updated atomically alongside each reservation create/release.
+    /// </summary>
+    public decimal ReservedQuantity { get; set; }
 }

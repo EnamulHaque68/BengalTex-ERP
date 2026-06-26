@@ -75,6 +75,7 @@ export const NAV_MENU: NavItem[] = [
     icon: 'pi pi-cog',
     children: [
       { title: 'Production Orders', icon: 'pi pi-cog',       route: '/production-orders',  permission: 'Production.View' },
+      { title: 'MRP',               icon: 'pi pi-sitemap',   route: '/mrp',                permission: 'Production.View' },
       { title: 'Job Cards',         icon: 'pi pi-id-card',   route: '/job-cards',          permission: 'JobCards.View' },
       { title: 'QR Scanner',        icon: 'pi pi-qrcode',    route: '/job-cards/scan',     permission: 'JobCards.Scan' },
       { title: 'Machines',          icon: 'pi pi-server',    route: '/job-cards/machines', permission: 'Machines.View' },

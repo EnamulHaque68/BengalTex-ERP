@@ -1,5 +1,6 @@
 using BengalTex.ERP.Application.Production.Dtos;
 using BengalTex.ERP.Application.Production.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
@@ -18,15 +19,18 @@ internal sealed class CancelProductionOrderCommandHandler
 {
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
     private readonly IUnitOfWork _uow;
+    private readonly IStockReservationService _reservations;
     private readonly IMediator _mediator;
 
     public CancelProductionOrderCommandHandler(
         IRepository<Domain.Entities.ProductionOrder, long> repo,
         IUnitOfWork uow,
+        IStockReservationService reservations,
         IMediator mediator)
     {
         _repo = repo;
         _uow = uow;
+        _reservations = reservations;
         _mediator = mediator;
     }
 
@@ -45,6 +49,10 @@ internal sealed class CancelProductionOrderCommandHandler
 
         po.Status = Domain.Entities.ProductionOrderStatus.Cancelled;
         _repo.Update(po);
+
+        // Phase 2 — free any reserved raw materials back to available stock.
+        await _reservations.ReleaseForReferenceAsync("ProductionOrder", po.Id, cancellationToken);
+
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetProductionOrderByIdQuery(po.Id), cancellationToken);

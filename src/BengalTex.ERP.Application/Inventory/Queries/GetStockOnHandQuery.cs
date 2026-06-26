@@ -77,7 +77,9 @@ internal sealed class GetStockOnHandQueryHandler
                 s.Warehouse.Name,
                 s.Quantity,
                 s.RawMaterialId != null ? s.RawMaterial!.MinimumStockLevel : 0m,
-                s.RawMaterialId != null && s.Quantity < s.RawMaterial!.MinimumStockLevel))
+                s.RawMaterialId != null && s.Quantity < s.RawMaterial!.MinimumStockLevel,
+                s.ReservedQuantity,
+                s.Quantity - s.ReservedQuantity))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<StockOnHandDto>.Create(

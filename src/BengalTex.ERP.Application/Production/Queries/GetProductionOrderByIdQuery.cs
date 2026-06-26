@@ -33,6 +33,7 @@ internal sealed class GetProductionOrderByIdQueryHandler
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm!.UnitOfMeasure)
             .Include(p => p.Bom).ThenInclude(b => b.Lines).ThenInclude(l => l.ComponentProduct).ThenInclude(cp => cp!.UnitOfMeasure)
             .Include(p => p.Stages).ThenInclude(s => s.OperatorEmployee)
+            .Include(p => p.SalesOrder).ThenInclude(so => so!.Customer)
             .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
         if (po is null) return ApiResponse<ProductionOrderDto>.Fail("Production order not found.");
@@ -100,7 +101,11 @@ internal sealed class GetProductionOrderByIdQueryHandler
             po.ActualStartDate, po.ActualEndDate,
             po.Status.ToString(),
             po.CompletedAt, po.CompletedBy, po.Notes,
-            plannedLines, stages);
+            plannedLines, stages,
+            po.SalesOrderId,
+            po.SalesOrder != null ? po.SalesOrder.Code : null,
+            po.SalesOrderLineId,
+            po.SalesOrder != null ? po.SalesOrder.Customer.Name : null);
 
         return ApiResponse<ProductionOrderDto>.Ok(dto);
     }

@@ -1,5 +1,6 @@
 using BengalTex.ERP.Application.Production.Dtos;
 using BengalTex.ERP.Application.Production.Queries;
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using FluentValidation;
@@ -18,7 +19,9 @@ public sealed record UpdateProductionOrderCommand(
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
     string? Notes,
-    IReadOnlyList<ProductionStageInput>? Stages = null
+    IReadOnlyList<ProductionStageInput>? Stages = null,
+    long? SalesOrderId = null,
+    long? SalesOrderLineId = null
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class UpdateProductionOrderCommandValidator : AbstractValidator<UpdateProductionOrderCommand>
@@ -49,7 +52,9 @@ internal sealed class UpdateProductionOrderCommandHandler
     private readonly IRepository<Domain.Entities.Product> _productRepo;
     private readonly IRepository<Domain.Entities.Bom> _bomRepo;
     private readonly IRepository<Domain.Entities.Warehouse> _warehouseRepo;
+    private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IStockReservationService _reservations;
     private readonly IMediator _mediator;
 
     public UpdateProductionOrderCommandHandler(
@@ -57,14 +62,18 @@ internal sealed class UpdateProductionOrderCommandHandler
         IRepository<Domain.Entities.Product> productRepo,
         IRepository<Domain.Entities.Bom> bomRepo,
         IRepository<Domain.Entities.Warehouse> warehouseRepo,
+        IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IUnitOfWork uow,
+        IStockReservationService reservations,
         IMediator mediator)
     {
         _repo = repo;
         _productRepo = productRepo;
         _bomRepo = bomRepo;
         _warehouseRepo = warehouseRepo;
+        _soRepo = soRepo;
         _uow = uow;
+        _reservations = reservations;
         _mediator = mediator;
     }
 
@@ -92,6 +101,14 @@ internal sealed class UpdateProductionOrderCommandHandler
         var receiveWh = await _warehouseRepo.GetByIdAsync(cmd.ReceiveWarehouseId, cancellationToken);
         if (receiveWh is null) return ApiResponse<ProductionOrderDto>.Fail("Receive warehouse not found.");
 
+        // Phase 1 — optional Sales Order link + remaining-quantity guard (excludes this order from the allocated sum).
+        var linkError = await ProductionSalesLink.ValidateAsync(
+            _soRepo, _repo, cmd.SalesOrderId, cmd.SalesOrderLineId,
+            cmd.ProductId, cmd.Quantity, excludeProductionOrderId: po.Id, cancellationToken);
+        if (linkError is not null) return ApiResponse<ProductionOrderDto>.Fail(linkError);
+
+        po.SalesOrderId = cmd.SalesOrderId;
+        po.SalesOrderLineId = cmd.SalesOrderLineId;
         po.ProductId = cmd.ProductId;
         po.BomId = cmd.BomId;
         po.Quantity = cmd.Quantity;
@@ -124,6 +141,13 @@ internal sealed class UpdateProductionOrderCommandHandler
         }
 
         _repo.Update(po);
+
+        // Phase 2 — the BOM / quantity / warehouse may have changed: drop the old reservations and
+        // re-reserve fresh against the saved values (two commits keep the snapshot reads clean).
+        await _reservations.ReleaseForReferenceAsync("ProductionOrder", po.Id, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        await _reservations.ReserveForProductionOrderAsync(po.Id, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetProductionOrderByIdQuery(po.Id), cancellationToken);

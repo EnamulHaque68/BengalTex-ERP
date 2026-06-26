@@ -23,6 +23,8 @@ export interface SalesOrderLineDto {
   dispatchedQuantity?: number;            // populated once DNs start posting against this SO
   sortOrder: number;
   lineNotes: string | null;
+  producedQuantity?: number;              // Phase 1 — Σ qty of Completed production orders on this line
+  allocatedQuantity?: number;             // Phase 1 — Σ qty of all non-cancelled production orders on this line
 }
 
 export interface SalesOrderDto {
@@ -46,6 +48,11 @@ export interface SalesOrderDto {
   totalAmount: number;                     // document currency
   baseTotalAmount: number;                 // BDT
   lines: SalesOrderLineDto[];
+  // Phase 1 — production progress (computed from linked production orders)
+  orderedQuantity?: number;
+  producedQuantity?: number;
+  productionProgressPercent?: number;
+  productionStatus?: string;               // NotStarted | Planning | PartiallyProduced | Produced
 }
 
 export interface SalesOrderListItemDto {
@@ -61,6 +68,8 @@ export interface SalesOrderListItemDto {
   lineCount: number;
   totalAmount: number;                     // document currency
   baseTotalAmount: number;                 // BDT
+  productionProgressPercent?: number;      // Phase 1
+  productionStatus?: string;               // Phase 1
 }
 
 export interface SalesOrderLineInput {

@@ -21,6 +21,7 @@ public class CompleteProductionOrderGateTests
             new BengalTex.ERP.Infrastructure.Persistence.UnitOfWork(ctx),
             new Mock<IStockService>().Object,
             new Mock<IStockLotService>().Object,
+            new Mock<IStockReservationService>().Object,
             new Mock<IJournalPostingService>().Object,
             new StubCurrentUser(),
             new Mock<IMediator>().Object);
