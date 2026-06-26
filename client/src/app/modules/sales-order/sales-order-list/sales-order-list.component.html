@@ -64,6 +64,7 @@
           <th>Lines</th>
           <th>Total</th>
           <th>Status</th>
+          <th>Production</th>
           <th style="width:170px">Actions</th>
         </tr>
       </ng-template>
@@ -86,6 +87,15 @@
                   [class.cancelled]="s.status === 'Cancelled'">
               {{ s.status === 'PartiallyDispatched' ? 'Partial' : (s.status === 'PendingApproval' ? 'Pending Approval' : s.status) }}
             </span>
+          </td>
+          <td>
+            <ng-container *ngIf="s.productionStatus && s.productionStatus !== 'NotStarted'; else noProd">
+              <span class="status-badge prod" [class]="productionBadgeClass(s.productionStatus)">
+                {{ productionStatusLabel(s.productionStatus) }}
+              </span>
+              <span class="prod-pct">{{ (s.productionProgressPercent || 0) | number:'1.0-0' }}%</span>
+            </ng-container>
+            <ng-template #noProd><span class="muted">—</span></ng-template>
           </td>
           <td>
             <div class="row-actions">
@@ -115,7 +125,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-row">
+          <td colspan="9" class="empty-row">
             <i class="pi pi-shopping-bag"></i>
             <span>No sales orders. Click "Add SO" to create one.</span>
           </td>
@@ -278,6 +288,39 @@
       <p-button label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small"
                 *ngIf="dialogMode !== 'view'" (click)="addLine()" />
     </div>
+
+    <!-- Phase 1 — production progress (view mode, when this SO has driven production) -->
+    <ng-container *ngIf="dialogMode === 'view' && loadedDetail && loadedDetail.productionStatus && loadedDetail.productionStatus !== 'NotStarted'">
+      <p class="section-label">Production Progress</p>
+      <div class="prod-summary">
+        <span class="status-badge prod" [class]="productionBadgeClass(loadedDetail.productionStatus)">
+          {{ productionStatusLabel(loadedDetail.productionStatus) }}
+        </span>
+        <span>Ordered <strong>{{ loadedDetail.orderedQuantity | number:'1.0-4' }}</strong></span>
+        <span>Produced <strong>{{ loadedDetail.producedQuantity | number:'1.0-4' }}</strong></span>
+        <span class="prod-pct">{{ (loadedDetail.productionProgressPercent || 0) | number:'1.0-0' }}%</span>
+      </div>
+      <table class="line-grid">
+        <thead>
+          <tr>
+            <th class="rm-col">Product</th>
+            <th class="num-col">Ordered</th>
+            <th class="num-col">Planned</th>
+            <th class="num-col">Produced</th>
+            <th class="num-col">Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of loadedDetail.lines">
+            <td class="fw-600">{{ l.productName }}</td>
+            <td class="num">{{ l.quantity | number:'1.0-4' }}</td>
+            <td class="num">{{ (l.allocatedQuantity || 0) | number:'1.0-4' }}</td>
+            <td class="num">{{ (l.producedQuantity || 0) | number:'1.0-4' }}</td>
+            <td class="num fw-600">{{ lineRemainingToProduce(l) | number:'1.0-4' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
 
     <div class="dialog-footer">
       <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"

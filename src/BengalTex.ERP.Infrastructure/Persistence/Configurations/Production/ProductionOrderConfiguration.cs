@@ -24,6 +24,20 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
         builder.HasIndex(p => p.BomId);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.PlannedStartDate);
+        builder.HasIndex(p => p.SalesOrderId);
+
+        // Optional source Sales Order link (Phase 1 — Sales-driven production). Nullable FKs,
+        // NoAction on delete so a sales order/line with production history can't be hard-deleted
+        // and no multiple-cascade-path is introduced. Standalone runs leave both null.
+        builder.HasOne(p => p.SalesOrder)
+            .WithMany()
+            .HasForeignKey(p => p.SalesOrderId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(p => p.SalesOrderLine)
+            .WithMany()
+            .HasForeignKey(p => p.SalesOrderLineId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Product FK — Restrict so a product with production orders can't be deleted
         builder.HasOne(p => p.Product)

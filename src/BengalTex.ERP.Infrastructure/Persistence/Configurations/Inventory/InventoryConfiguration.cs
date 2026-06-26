@@ -13,6 +13,7 @@ public class StockOnHandConfiguration : IEntityTypeConfiguration<StockOnHand>
             "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)"));
 
         builder.Property(s => s.Quantity).HasPrecision(18, 4);
+        builder.Property(s => s.ReservedQuantity).HasPrecision(18, 4);
 
         // Two filtered unique indexes — exactly one snapshot row per (RM, Warehouse) and per (Product, Warehouse)
         builder.HasIndex(s => new { s.RawMaterialId, s.WarehouseId })
@@ -24,6 +25,47 @@ public class StockOnHandConfiguration : IEntityTypeConfiguration<StockOnHand>
             .IsUnique()
             .HasFilter("[ProductId] IS NOT NULL AND [IsDeleted] = 0")
             .HasDatabaseName("UX_StockOnHand_ProductWarehouse");
+
+        builder.HasOne(s => s.RawMaterial)
+            .WithMany()
+            .HasForeignKey(s => s.RawMaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.Product)
+            .WithMany()
+            .HasForeignKey(s => s.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.Warehouse)
+            .WithMany()
+            .HasForeignKey(s => s.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(s => s.RowVersion).IsRowVersion();
+    }
+}
+
+public class StockReservationConfiguration : IEntityTypeConfiguration<StockReservation>
+{
+    public void Configure(EntityTypeBuilder<StockReservation> builder)
+    {
+        builder.ToTable("StockReservations", t => t.HasCheckConstraint(
+            "CK_StockReservation_OneItemType",
+            "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)"));
+
+        builder.Property(s => s.Quantity).HasPrecision(18, 4);
+        builder.Property(s => s.ReferenceType).IsRequired().HasMaxLength(50);
+        builder.Property(s => s.ReferenceCode).HasMaxLength(50);
+        builder.Property(s => s.Notes).HasMaxLength(2000);
+
+        builder.Property(s => s.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.HasIndex(s => new { s.RawMaterialId, s.WarehouseId });
+        builder.HasIndex(s => new { s.ProductId, s.WarehouseId });
+        builder.HasIndex(s => s.Status);
+        builder.HasIndex(s => new { s.ReferenceType, s.ReferenceId });
 
         builder.HasOne(s => s.RawMaterial)
             .WithMany()

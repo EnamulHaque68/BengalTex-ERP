@@ -21,7 +21,8 @@ export class ProductionOrderService {
   getAll(
     parameters: PagedQueryParameters,
     productId?: number,
-    status?: string
+    status?: string,
+    salesOrderId?: number
   ): Observable<ApiResponse<PagedResult<ProductionOrderListItemDto>>> {
     let params = new HttpParams();
     if (parameters.page) params = params.set('Page', parameters.page.toString());
@@ -31,6 +32,7 @@ export class ProductionOrderService {
     if (parameters.sortDirection) params = params.set('SortDirection', parameters.sortDirection);
     if (productId) params = params.set('productId', productId.toString());
     if (status) params = params.set('status', status);
+    if (salesOrderId) params = params.set('salesOrderId', salesOrderId.toString());
     return this.http.get<ApiResponse<PagedResult<ProductionOrderListItemDto>>>(this.base, { params });
   }
 

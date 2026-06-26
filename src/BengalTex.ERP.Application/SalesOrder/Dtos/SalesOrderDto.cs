@@ -20,7 +20,12 @@ public record SalesOrderDto(
     string? Notes,
     decimal TotalAmount,                 // Σ line totals, in document currency
     decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
-    IReadOnlyList<SalesOrderLineDto> Lines);
+    IReadOnlyList<SalesOrderLineDto> Lines,
+    // ── Phase 1: production progress (computed from linked production orders) ──
+    decimal OrderedQuantity = 0m,        // Σ line quantities
+    decimal ProducedQuantity = 0m,       // Σ completed production qty across lines
+    decimal ProductionProgressPercent = 0m,
+    string ProductionStatus = "NotStarted");
 
 public record SalesOrderLineDto(
     long Id,
@@ -32,7 +37,10 @@ public record SalesOrderLineDto(
     decimal UnitPrice,
     decimal LineTotal,                   // Quantity * UnitPrice
     int SortOrder,
-    string? LineNotes);
+    string? LineNotes,
+    // ── Phase 1: production tracking per line ──
+    decimal ProducedQuantity = 0m,       // Σ qty of Completed production orders on this line
+    decimal AllocatedQuantity = 0m);     // Σ qty of all non-cancelled production orders on this line
 
 public record SalesOrderListItemDto(
     long Id,
@@ -46,4 +54,7 @@ public record SalesOrderListItemDto(
     decimal ExchangeRate,
     int LineCount,
     decimal TotalAmount,                 // in document currency
-    decimal BaseTotalAmount);            // TotalAmount × ExchangeRate (BDT)
+    decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
+    // ── Phase 1: production progress ──
+    decimal ProductionProgressPercent = 0m,
+    string ProductionStatus = "NotStarted");

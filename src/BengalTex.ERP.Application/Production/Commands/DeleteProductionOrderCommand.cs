@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Shared.Common;
 using MediatR;
@@ -11,13 +12,16 @@ internal sealed class DeleteProductionOrderCommandHandler
 {
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
     private readonly IUnitOfWork _uow;
+    private readonly IStockReservationService _reservations;
 
     public DeleteProductionOrderCommandHandler(
         IRepository<Domain.Entities.ProductionOrder, long> repo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IStockReservationService reservations)
     {
         _repo = repo;
         _uow = uow;
+        _reservations = reservations;
     }
 
     public async Task<ApiResponse> Handle(DeleteProductionOrderCommand cmd, CancellationToken cancellationToken)
@@ -31,6 +35,9 @@ internal sealed class DeleteProductionOrderCommandHandler
         {
             return ApiResponse.Fail("Only draft or cancelled production orders can be deleted. Cancel it first.");
         }
+
+        // Phase 2 — release any active reservations (a draft PO still holds them; idempotent otherwise).
+        await _reservations.ReleaseForReferenceAsync("ProductionOrder", po.Id, cancellationToken);
 
         _repo.Remove(po);
         await _uow.SaveChangesAsync(cancellationToken);

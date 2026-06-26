@@ -40,6 +40,7 @@ const routes: Routes = [
       { path: 'stock-adjustments', loadChildren: () => import('./modules/stock-adjustment/stock-adjustment.module').then(m => m.StockAdjustmentModule) },
       { path: 'opening-stock', loadChildren: () => import('./modules/opening-stock/opening-stock.module').then(m => m.OpeningStockModule) },
       { path: 'production-orders', loadChildren: () => import('./modules/production-order/production-order.module').then(m => m.ProductionOrderModule) },
+      { path: 'mrp', loadChildren: () => import('./modules/mrp/mrp.module').then(m => m.MrpModule) },
       { path: 'delivery-notes', loadChildren: () => import('./modules/delivery-note/delivery-note.module').then(m => m.DeliveryNoteModule) },
       { path: 'customer-invoices', loadChildren: () => import('./modules/customer-invoice/customer-invoice.module').then(m => m.CustomerInvoiceModule) },
       { path: 'receipts', loadChildren: () => import('./modules/receipt/receipt.module').then(m => m.ReceiptModule) },

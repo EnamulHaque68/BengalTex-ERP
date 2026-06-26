@@ -6,6 +6,8 @@ import { ProductService } from '../../../services/product.service';
 import { BomService } from '../../../services/bom.service';
 import { WarehouseService } from '../../../services/warehouse.service';
 import { EmployeeService } from '../../../services/employee.service';
+import { SalesOrderService } from '../../../services/sales-order.service';
+import { SalesOrderDto, SalesOrderLineDto, SalesOrderListItemDto } from '../../../models/sales-order.models';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   COMMON_STAGE_NAMES,
@@ -48,6 +50,11 @@ export class ProductionOrderListComponent implements OnInit {
   warehouses: WarehouseDto[] = [];
   employees: EmployeeListItemDto[] = [];
 
+  // Phase 1 — optional source Sales Order (drives the fulfilling line + remaining quantity)
+  produceableSos: SalesOrderListItemDto[] = [];
+  selectedSo: SalesOrderDto | null = null;
+  selectedSoLine: SalesOrderLineDto | null = null;
+
   // Stage-tracking dialog (shop-floor progress on an order's routing)
   stagesDialogVisible = false;
   trackingOrder: ProductionOrderDto | null = null;
@@ -81,6 +88,7 @@ export class ProductionOrderListComponent implements OnInit {
     private bomService: BomService,
     private warehouseService: WarehouseService,
     private employeeService: EmployeeService,
+    private soService: SalesOrderService,
     private router: Router,
     private fb: FormBuilder,
     private zone: NgZone,
@@ -99,6 +107,8 @@ export class ProductionOrderListComponent implements OnInit {
 
   private buildForm(): void {
     this.form = this.fb.group({
+      salesOrderId: [null as number | null],          // Phase 1 — optional source SO
+      salesOrderLineId: [null as number | null],
       productId: [null as number | null, Validators.required],
       bomId: [null as number | null, Validators.required],
       quantity: [1, [Validators.required, Validators.min(0.0001)]],
@@ -156,6 +166,58 @@ export class ProductionOrderListComponent implements OnInit {
         });
       }
     });
+    // Phase 1 — sales orders that can drive production (confirmed onward, not draft/cancelled)
+    this.soService.getAll({ page: 1, pageSize: 500, search: '' }).subscribe({
+      next: (res) => {
+        this.zone.run(() => {
+          if (res.success && res.data) {
+            this.produceableSos = res.data.items.filter(s =>
+              s.status !== 'Draft' && s.status !== 'Cancelled' && s.status !== 'PendingApproval');
+          }
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  // ─── Phase 1: source Sales Order → fulfilling line → remaining qty ─────────
+
+  onSourceSoChange(event: any): void {
+    const soId = event?.value;
+    this.selectedSo = null;
+    this.selectedSoLine = null;
+    this.form.get('salesOrderLineId')?.setValue(null);
+    if (!soId) return;
+    this.soService.getById(soId).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.selectedSo = res.data;
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  onSourceLineChange(event: any): void {
+    const lineId = event?.value;
+    const line = this.selectedSo?.lines.find(l => l.id === lineId) ?? null;
+    this.selectedSoLine = line;
+    if (line) {
+      this.form.get('productId')?.setValue(line.productId);
+      const remaining = this.lineRemaining(line);
+      this.form.get('quantity')?.setValue(remaining > 0 ? remaining : line.quantity);
+      this.loadBomsForProduct(line.productId);
+    }
+  }
+
+  lineRemaining(line: SalesOrderLineDto): number {
+    return (line.quantity ?? 0) - (line.allocatedQuantity ?? 0);
+  }
+
+  get sourceLineOptions(): { label: string; value: number }[] {
+    if (!this.selectedSo) return [];
+    return this.selectedSo.lines.map(l => ({
+      label: `${l.productName} — ordered ${l.quantity}, remaining ${this.lineRemaining(l)}`,
+      value: l.id
+    }));
   }
 
   private loadBomsForProduct(productId: number, preferredBomId: number | null = null): void {
@@ -234,6 +296,8 @@ export class ProductionOrderListComponent implements OnInit {
     this.dialogError = '';
     this.loadedDetail = null;
     this.bomsForSelectedProduct = [];
+    this.selectedSo = null;
+    this.selectedSoLine = null;
     this.form.enable();
     this.stages.clear();
     this.form.reset({
@@ -269,6 +333,8 @@ export class ProductionOrderListComponent implements OnInit {
             this.loadedDetail = p;
             this.dialogMode = p.status === 'Draft' ? 'edit' : 'view';
             this.form.patchValue({
+              salesOrderId: p.salesOrderId ?? null,
+              salesOrderLineId: p.salesOrderLineId ?? null,
               productId: p.productId,
               bomId: p.bomId,
               quantity: p.quantity,
@@ -278,6 +344,20 @@ export class ProductionOrderListComponent implements OnInit {
               plannedEndDate: p.plannedEndDate ?? null,
               notes: p.notes ?? ''
             });
+            // Load the linked SO so the line picker + remaining show in the dialog
+            this.selectedSo = null;
+            this.selectedSoLine = null;
+            if (p.salesOrderId) {
+              this.soService.getById(p.salesOrderId).subscribe({
+                next: (r) => this.zone.run(() => {
+                  if (r.success && r.data) {
+                    this.selectedSo = r.data;
+                    this.selectedSoLine = r.data.lines.find(l => l.id === p.salesOrderLineId) ?? null;
+                  }
+                  this.cdr.detectChanges();
+                })
+              });
+            }
             this.stages.clear();
             for (const s of p.stages) {
               this.stages.push(this.fb.group({
@@ -325,7 +405,9 @@ export class ProductionOrderListComponent implements OnInit {
       plannedStartDate: v.plannedStartDate || null,
       plannedEndDate: v.plannedEndDate || null,
       notes: (v.notes as string)?.trim() || null,
-      stages
+      stages,
+      salesOrderId: v.salesOrderId ?? null,            // Phase 1 — optional source SO
+      salesOrderLineId: v.salesOrderLineId ?? null
     };
 
     if (this.dialogMode === 'create') {

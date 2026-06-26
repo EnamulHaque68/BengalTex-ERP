@@ -59,6 +59,7 @@
         <tr>
           <th>Code</th>
           <th>Product</th>
+          <th>Sales Order</th>
           <th>BOM v.</th>
           <th>Quantity</th>
           <th>Planned Start</th>
@@ -72,6 +73,10 @@
         <tr>
           <td><span class="code-badge">{{ p.code }}</span></td>
           <td class="fw-600">{{ p.productName }}</td>
+          <td>
+            <span class="code-badge so-badge" *ngIf="p.salesOrderCode">{{ p.salesOrderCode }}</span>
+            <span class="muted" *ngIf="!p.salesOrderCode">—</span>
+          </td>
           <td class="num">v{{ p.bomVersion }}</td>
           <td class="num">{{ p.quantity | number:'1.0-4' }}</td>
           <td class="num">{{ formatDate(p.plannedStartDate) }}</td>
@@ -125,7 +130,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-row">
+          <td colspan="9" class="empty-row">
             <i class="pi pi-cog"></i>
             <span>No production orders. Click "Add Production" to plan a manufacturing run.</span>
           </td>
@@ -155,6 +160,37 @@
 
     <p class="section-label">Order</p>
     <div class="dialog-grid">
+      <!-- Phase 1 — optional Sales Order source (Sales-driven production) -->
+      <div class="field col-span-2">
+        <label>Source Sales Order <small>(optional — leave empty for a standalone run)</small></label>
+        <p-select formControlName="salesOrderId"
+                    [options]="produceableSos"
+                    optionLabel="code"
+                    optionValue="id"
+                    [filter]="true"
+                    filterBy="code,customerName"
+                    [showClear]="true"
+                    placeholder="Standalone (no sales order)"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onSourceSoChange($event)" />
+      </div>
+
+      <div class="field col-span-2" *ngIf="form.get('salesOrderId')?.value">
+        <label>Fulfilling Line *</label>
+        <p-select formControlName="salesOrderLineId"
+                    [options]="sourceLineOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select the order line to produce"
+                    appendTo="body" class="w-full" styleClass="w-full"
+                    (onChange)="onSourceLineChange($event)" />
+        <small class="hint" *ngIf="selectedSoLine">
+          Remaining to plan against this line:
+          <strong>{{ lineRemaining(selectedSoLine) | number:'1.0-4' }}</strong>
+          — quantity above this is blocked.
+        </small>
+      </div>
+
       <div class="field col-span-2">
         <label>Product *</label>
         <p-select formControlName="productId"

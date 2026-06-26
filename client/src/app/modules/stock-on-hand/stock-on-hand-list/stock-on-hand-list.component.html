@@ -72,7 +72,9 @@
           <th>Item Name</th>
           <th>Unit</th>
           <th>Warehouse</th>
-          <th>Quantity</th>
+          <th>On Hand</th>
+          <th>Reserved</th>
+          <th>Available</th>
           <th>Min Stock</th>
           <th>Status</th>
         </tr>
@@ -90,6 +92,8 @@
           <td class="unit-cell">{{ r.unitOfMeasureCode }}</td>
           <td><span class="wh-badge">{{ r.warehouseCode }}</span> {{ r.warehouseName }}</td>
           <td class="num qty" [class.qty-low]="r.belowMinimum" [class.qty-neg]="r.quantity < 0">{{ r.quantity | number:'1.0-4' }}</td>
+          <td class="num" [class.qty-reserved]="(r.reservedQuantity || 0) > 0">{{ (r.reservedQuantity || 0) | number:'1.0-4' }}</td>
+          <td class="num fw-600" [class.qty-neg]="(r.availableQuantity ?? r.quantity) < 0">{{ (r.availableQuantity ?? r.quantity) | number:'1.0-4' }}</td>
           <td class="num muted">{{ r.itemType === 'RawMaterial' ? (r.minimumStockLevel | number:'1.0-4') : '—' }}</td>
           <td>
             <span class="status-badge below-min" *ngIf="r.belowMinimum">
@@ -103,7 +107,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-row">
+          <td colspan="10" class="empty-row">
             <i class="pi pi-database"></i>
             <span>No stock on hand. Builds up via GRN postings, opening-stock adjustments, or production receipts.</span>
           </td>

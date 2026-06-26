@@ -85,6 +85,11 @@ export interface ProductionOrderDto {
   notes: string | null;
   plannedLines: ProductionPlannedLineDto[];
   stages: ProductionStageDto[];
+  // Phase 1 — source Sales Order link (null = standalone / manual run)
+  salesOrderId: number | null;
+  salesOrderCode: string | null;
+  salesOrderLineId: number | null;
+  customerName: string | null;
 }
 
 export interface ProductionOrderListItemDto {
@@ -100,6 +105,8 @@ export interface ProductionOrderListItemDto {
   stageCount: number;
   completedStageCount: number;
   currentStageName: string | null;
+  salesOrderId: number | null;       // Phase 1 — source SO (null = standalone)
+  salesOrderCode: string | null;
 }
 
 export interface CreateProductionOrderRequest {
@@ -112,6 +119,8 @@ export interface CreateProductionOrderRequest {
   plannedEndDate: string | null;
   notes: string | null;
   stages?: ProductionStageInput[];
+  salesOrderId?: number | null;      // Phase 1
+  salesOrderLineId?: number | null;
 }
 
 export interface UpdateProductionOrderRequest {
@@ -124,6 +133,8 @@ export interface UpdateProductionOrderRequest {
   plannedEndDate: string | null;
   notes: string | null;
   stages?: ProductionStageInput[];
+  salesOrderId?: number | null;      // Phase 1
+  salesOrderLineId?: number | null;
 }
 
 export interface CompleteProductionStageRequest {

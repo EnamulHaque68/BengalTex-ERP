@@ -73,7 +73,7 @@ public class MultiLevelBomCompletionTests
         return new CompleteProductionOrderCommandHandler(
             new Repository<ProductionOrder, long>(ctx),
             new UnitOfWork(ctx),
-            _stock.Object, _lots.Object, _journal.Object,
+            _stock.Object, _lots.Object, new Mock<IStockReservationService>().Object, _journal.Object,
             new StubCurrentUser(), mediator.Object);
     }
 

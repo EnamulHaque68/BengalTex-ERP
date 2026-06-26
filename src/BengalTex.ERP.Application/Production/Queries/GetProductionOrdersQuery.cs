@@ -10,7 +10,8 @@ namespace BengalTex.ERP.Application.Production.Queries;
 public sealed record GetProductionOrdersQuery(
     PagedQueryParameters Parameters,
     int? ProductId = null,
-    string? Status = null
+    string? Status = null,
+    long? SalesOrderId = null
 ) : IRequest<ApiResponse<PagedResult<ProductionOrderListItemDto>>>;
 
 internal sealed class GetProductionOrdersQueryHandler
@@ -27,6 +28,9 @@ internal sealed class GetProductionOrdersQueryHandler
 
         if (request.ProductId.HasValue)
             query = query.Where(p => p.ProductId == request.ProductId.Value);
+
+        if (request.SalesOrderId.HasValue)
+            query = query.Where(p => p.SalesOrderId == request.SalesOrderId.Value);
 
         if (!string.IsNullOrEmpty(request.Status)
             && Enum.TryParse<Domain.Entities.ProductionOrderStatus>(request.Status, out var status))
@@ -74,7 +78,9 @@ internal sealed class GetProductionOrdersQueryHandler
                              && s.Status != Domain.Entities.ProductionStageStatus.Skipped)
                     .OrderBy(s => s.Sequence)
                     .Select(s => s.StageName)
-                    .FirstOrDefault()))
+                    .FirstOrDefault(),
+                p.SalesOrderId,
+                p.SalesOrder != null ? p.SalesOrder.Code : null))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<ProductionOrderListItemDto>.Create(

@@ -17,6 +17,21 @@ public class ProductionOrder : BaseTransactionalEntity
 {
     public string Code { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional source Sales Order this run fulfils (Phase 1 — Sales-driven production).
+    /// Null = a standalone / manual production run (the existing behaviour, unchanged).
+    /// </summary>
+    public long? SalesOrderId { get; set; }
+    public SalesOrder? SalesOrder { get; set; }
+
+    /// <summary>
+    /// The specific Sales Order line being fulfilled (carries the ordered product + quantity).
+    /// Set together with <see cref="SalesOrderId"/>; lets one SO line be split across many
+    /// production orders (partial production) while the remaining quantity is tracked.
+    /// </summary>
+    public long? SalesOrderLineId { get; set; }
+    public SalesOrderLine? SalesOrderLine { get; set; }
+
     public int ProductId { get; set; }
     public Product Product { get; set; } = null!;
 

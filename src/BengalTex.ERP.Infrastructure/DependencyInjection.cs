@@ -90,6 +90,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<INumberingService, NumberingService>();
         services.AddScoped<IStockService, StockService>();
+        services.AddScoped<IStockReservationService, StockReservationService>();
         services.AddScoped<IStockLotService, StockLotService>();
         services.AddScoped<IJournalPostingService, JournalPostingService>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();

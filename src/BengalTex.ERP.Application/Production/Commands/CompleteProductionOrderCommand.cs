@@ -30,6 +30,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
     private readonly IStockLotService _lots;
+    private readonly IStockReservationService _reservations;
     private readonly IJournalPostingService _journal;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -39,6 +40,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         IUnitOfWork uow,
         IStockService stock,
         IStockLotService lots,
+        IStockReservationService reservations,
         IJournalPostingService journal,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -47,6 +49,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         _uow = uow;
         _stock = stock;
         _lots = lots;
+        _reservations = reservations;
         _journal = journal;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -111,6 +114,10 @@ internal sealed class CompleteProductionOrderCommandHandler
             return ApiResponse<ProductionOrderDto>.Fail(
                 "Insufficient stock in issue warehouse — " + string.Join("; ", shortages));
         }
+
+        // ── Release this run's soft reservations — the earmarked stock is now physically
+        // consumed below, so it must stop counting against StockOnHand.ReservedQuantity. ──
+        await _reservations.ReleaseForReferenceAsync("ProductionOrder", po.Id, cancellationToken);
 
         // ── Phase 2: post consumption movements per BOM line + accumulate consumed cost ──
         // rmCost is sourced from Raw Material Inventory; componentCost from Finished Goods

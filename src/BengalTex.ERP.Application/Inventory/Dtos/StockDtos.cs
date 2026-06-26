@@ -17,7 +17,9 @@ public record StockOnHandDto(
     string WarehouseName,
     decimal Quantity,
     decimal MinimumStockLevel,           // 0 for Product rows (no min-stock concept on Product)
-    bool BelowMinimum);                  // false for Product rows
+    bool BelowMinimum,                   // false for Product rows
+    decimal ReservedQuantity = 0m,       // Phase 2 — soft-reserved (earmarked) quantity
+    decimal AvailableQuantity = 0m);     // Phase 2 — Quantity − ReservedQuantity
 
 public record StockMovementDto(
     long Id,

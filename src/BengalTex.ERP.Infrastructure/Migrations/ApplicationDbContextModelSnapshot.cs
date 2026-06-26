@@ -6176,6 +6176,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<long?>("SalesOrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("SalesOrderLineId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -6195,6 +6201,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("ReceiveWarehouseId");
+
+                    b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("SalesOrderLineId");
 
                     b.HasIndex("Status");
 
@@ -8639,6 +8649,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int?>("RawMaterialId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("ReservedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -8665,6 +8679,99 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("StockOnHand", null, t =>
                         {
                             t.HasCheckConstraint("CK_StockOnHand_OneItemType", "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockReservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<long>("ReferenceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ReferenceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ReservedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("ProductId", "WarehouseId");
+
+                    b.HasIndex("RawMaterialId", "WarehouseId");
+
+                    b.HasIndex("ReferenceType", "ReferenceId");
+
+                    b.ToTable("StockReservations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockReservation_OneItemType", "([RawMaterialId] IS NOT NULL AND [ProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ProductId] IS NOT NULL)");
                         });
                 });
 
@@ -12134,6 +12241,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrder", "SalesOrder")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrderLine", "SalesOrderLine")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderLineId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Bom");
 
                     b.Navigation("IssueWarehouse");
@@ -12141,6 +12258,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("ReceiveWarehouse");
+
+                    b.Navigation("SalesOrder");
+
+                    b.Navigation("SalesOrderLine");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionStage", b =>
@@ -12664,6 +12785,31 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockOnHand", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("RawMaterial");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockReservation", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Product", "Product")
                         .WithMany()

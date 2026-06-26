@@ -26,7 +26,9 @@ public sealed record CreateProductionOrderCommand(
     DateOnly? PlannedStartDate,
     DateOnly? PlannedEndDate,
     string? Notes,
-    IReadOnlyList<ProductionStageInput>? Stages = null
+    IReadOnlyList<ProductionStageInput>? Stages = null,
+    long? SalesOrderId = null,
+    long? SalesOrderLineId = null
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class CreateProductionOrderCommandValidator : AbstractValidator<CreateProductionOrderCommand>
@@ -56,8 +58,10 @@ internal sealed class CreateProductionOrderCommandHandler
     private readonly IRepository<Domain.Entities.Product> _productRepo;
     private readonly IRepository<Domain.Entities.Bom> _bomRepo;
     private readonly IRepository<Domain.Entities.Warehouse> _warehouseRepo;
+    private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
+    private readonly IStockReservationService _reservations;
     private readonly IMediator _mediator;
 
     public CreateProductionOrderCommandHandler(
@@ -65,16 +69,20 @@ internal sealed class CreateProductionOrderCommandHandler
         IRepository<Domain.Entities.Product> productRepo,
         IRepository<Domain.Entities.Bom> bomRepo,
         IRepository<Domain.Entities.Warehouse> warehouseRepo,
+        IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IUnitOfWork uow,
         INumberingService numbering,
+        IStockReservationService reservations,
         IMediator mediator)
     {
         _repo = repo;
         _productRepo = productRepo;
         _bomRepo = bomRepo;
         _warehouseRepo = warehouseRepo;
+        _soRepo = soRepo;
         _uow = uow;
         _numbering = numbering;
+        _reservations = reservations;
         _mediator = mediator;
     }
 
@@ -95,11 +103,19 @@ internal sealed class CreateProductionOrderCommandHandler
         var receiveWh = await _warehouseRepo.GetByIdAsync(cmd.ReceiveWarehouseId, cancellationToken);
         if (receiveWh is null) return ApiResponse<ProductionOrderDto>.Fail("Receive warehouse not found.");
 
+        // Phase 1 — optional Sales Order link + remaining-quantity guard (standalone runs skip this).
+        var linkError = await ProductionSalesLink.ValidateAsync(
+            _soRepo, _repo, cmd.SalesOrderId, cmd.SalesOrderLineId,
+            cmd.ProductId, cmd.Quantity, excludeProductionOrderId: null, cancellationToken);
+        if (linkError is not null) return ApiResponse<ProductionOrderDto>.Fail(linkError);
+
         var code = await _numbering.NextAsync("PRD", null, cancellationToken);
 
         var entity = new Domain.Entities.ProductionOrder
         {
             Code = code,
+            SalesOrderId = cmd.SalesOrderId,
+            SalesOrderLineId = cmd.SalesOrderLineId,
             ProductId = cmd.ProductId,
             BomId = cmd.BomId,
             Quantity = cmd.Quantity,
@@ -132,6 +148,10 @@ internal sealed class CreateProductionOrderCommandHandler
         }
 
         await _repo.AddAsync(entity, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        // Phase 2 — soft-reserve this run's BOM raw materials in the issue warehouse.
+        await _reservations.ReserveForProductionOrderAsync(entity.Id, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetProductionOrderByIdQuery(entity.Id), cancellationToken);
