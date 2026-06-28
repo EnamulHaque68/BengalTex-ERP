@@ -76,6 +76,14 @@ public class DeliveryNoteLine : BaseTransactionalEntity
     /// </summary>
     public decimal ReturnedQuantity { get; set; }
 
+    /// <summary>
+    /// Running sum of this line's dispatched quantity that has already been billed onto a
+    /// <see cref="CustomerInvoice"/>. Incremented when an invoice is generated from this DN.
+    /// Remaining-to-invoice = DispatchedQuantity − InvoicedQuantity; partial invoicing is allowed
+    /// until it reaches DispatchedQuantity (fully invoiced — no further invoice can be raised).
+    /// </summary>
+    public decimal InvoicedQuantity { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }

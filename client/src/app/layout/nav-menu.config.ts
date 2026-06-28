@@ -75,7 +75,10 @@ export const NAV_MENU: NavItem[] = [
     icon: 'pi pi-cog',
     children: [
       { title: 'Production Orders', icon: 'pi pi-cog',       route: '/production-orders',  permission: 'Production.View' },
+      { title: 'Production Calendar', icon: 'pi pi-calendar', route: '/production-calendar', permission: 'Production.View' },
+      { title: 'Shop Floor',        icon: 'pi pi-mobile',    route: '/shop-floor',         permission: 'Production.ManageStages' },
       { title: 'MRP',               icon: 'pi pi-sitemap',   route: '/mrp',                permission: 'Production.View' },
+      { title: 'Work Centers',      icon: 'pi pi-building',  route: '/work-centers',       permission: 'Machines.View' },
       { title: 'Job Cards',         icon: 'pi pi-id-card',   route: '/job-cards',          permission: 'JobCards.View' },
       { title: 'QR Scanner',        icon: 'pi pi-qrcode',    route: '/job-cards/scan',     permission: 'JobCards.Scan' },
       { title: 'Machines',          icon: 'pi pi-server',    route: '/job-cards/machines', permission: 'Machines.View' },
@@ -184,6 +187,7 @@ export const NAV_MENU: NavItem[] = [
       { title: 'Margin',              icon: 'pi pi-chart-line', route: '/reports/margin',              permission: 'Reports.ViewFinance' },
       { title: 'WIP',                 icon: 'pi pi-cog',        route: '/reports/wip',                 permission: 'Reports.ViewProduction' },
       { title: 'Production Summary',  icon: 'pi pi-chart-bar',  route: '/reports/production-summary',  permission: 'Reports.ViewProduction' },
+      { title: 'Production Cost',     icon: 'pi pi-dollar',     route: '/reports/production-cost',     permission: 'Reports.ViewProduction' },
       { title: 'Wastage Variance',    icon: 'pi pi-percentage', route: '/reports/wastage-variance',    permission: 'Reports.ViewProduction' },
       { title: 'Productivity',        icon: 'pi pi-users',      route: '/reports/productivity',        permission: 'Reports.ViewProduction' },
       { title: 'Buyer Order Book',    icon: 'pi pi-book',       route: '/reports/buyer-order-book',    permission: 'Reports.ViewSales' },

@@ -4,10 +4,11 @@ namespace BengalTex.ERP.Domain.Entities;
 
 /// <summary>
 /// Receipt — money received from a customer against a single <see cref="CustomerInvoice"/>.
-/// Single-state, immutable from creation. Creating a Receipt atomically increments
-/// <see cref="CustomerInvoice.AmountPaid"/> and recomputes the invoice status
-/// (PartiallyPaid if &lt; Total, Paid if &gt;= Total). Deletion reverses the increment
-/// and recomputes status; update is not allowed (delete + recreate).
+/// Lifecycle: Draft → Posted → (Cancelled). Creating a Receipt records a <b>Draft</b> only and
+/// does NOT touch the invoice. <b>Posting</b> the receipt atomically increments
+/// <see cref="CustomerInvoice.AmountPaid"/>, recomputes the invoice status (PartiallyPaid if
+/// &lt; Total, Paid if &gt;= Total) and posts the cash/AR journal. <b>Cancelling</b> a posted
+/// receipt reverses that effect; cancelling a draft simply voids it.
 ///
 /// Multiple Receipts may exist for a single invoice (partial payments over time).
 /// Transactional (long key) — unbounded volume.
@@ -33,6 +34,15 @@ public class Receipt : BaseTransactionalEntity
 
     public PaymentMethod PaymentMethod { get; set; }
 
+    /// <summary>
+    /// Draft → Posted → Cancelled. Only a <see cref="ReceiptStatus.Posted"/> receipt has affected
+    /// the parent invoice's <c>AmountPaid</c>/status. New receipts start as Draft.
+    /// </summary>
+    public ReceiptStatus Status { get; set; } = ReceiptStatus.Draft;
+
+    public DateTimeOffset? PostedAt { get; set; }
+    public string? PostedBy { get; set; }
+
     /// <summary>Cheque #, transaction ID, bKash trxId, etc.</summary>
     public string? ReferenceNumber { get; set; }
 
@@ -46,4 +56,11 @@ public enum PaymentMethod
     Cheque = 3,
     MobileBanking = 4,    // bKash, Nagad, Rocket
     Other = 99
+}
+
+public enum ReceiptStatus
+{
+    Draft = 1,        // recorded, not yet applied to the invoice
+    Posted = 2,       // applied — reduced the invoice outstanding
+    Cancelled = 3     // voided (a posted receipt's effect was reversed)
 }

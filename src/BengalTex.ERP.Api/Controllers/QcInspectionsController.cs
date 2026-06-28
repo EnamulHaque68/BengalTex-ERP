@@ -47,7 +47,7 @@ public class QcInspectionsController : ControllerBase
         var res = await _mediator.Send(new CreateQcInspectionCommand(
             request.SourceType, request.GoodsReceiptNoteId, request.ProductionOrderId,
             request.InspectionDate, request.QuarantineWarehouseId,
-            request.InspectedBy, request.Notes, request.Lines
+            request.InspectedBy, request.Notes, request.Lines, request.RejectDisposition
         ), ct);
         return Ok(res);
     }
@@ -88,7 +88,8 @@ public record CreateQcInspectionRequest(
     int QuarantineWarehouseId,
     string? InspectedBy,
     string? Notes,
-    IReadOnlyList<QcInspectionLineInput> Lines);
+    IReadOnlyList<QcInspectionLineInput> Lines,
+    string? RejectDisposition = null);
 
 public record UpdateQcInspectionRequest(
     DateOnly InspectionDate,

@@ -1,10 +1,12 @@
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostBinding, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { Subscription, filter, interval } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { AvatarRefreshService } from '../services/avatar-refresh.service';
+import { NotificationService } from '../services/notification.service';
+import { SignalRService } from '../services/signalr.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -33,18 +35,51 @@ export class LayoutComponent implements OnInit, OnDestroy {
   userMenuOpen = false;
   private avatarObjectUrl: string | null = null;
 
+  /** Unread notifications since the user last opened the notifications page. */
+  unreadCount = 0;
+
   private readonly COLLAPSE_KEY = 'btx-sidebar-collapsed';
   private readonly THEME_KEY = 'btx-theme';
+  private readonly NOTIF_SEEN_KEY = 'btx-notif-last-seen';
+  private readonly NOTIF_POLL_MS = 60000;   // fallback poll; SignalR is the primary trigger
   private routerSub?: Subscription;
   private avatarSub?: Subscription;
+  private notifSub?: Subscription;
+  private notifPollSub?: Subscription;
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private http: HttpClient,
     private sanitizer: DomSanitizer,
-    private avatarRefresh: AvatarRefreshService
+    private avatarRefresh: AvatarRefreshService,
+    private notifications: NotificationService,
+    private signalr: SignalRService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
+
+  private get notifLastSeen(): string | null {
+    try { return localStorage.getItem(this.NOTIF_SEEN_KEY); } catch { return null; }
+  }
+
+  /** Re-read the authoritative unread count from the server (since last-seen). */
+  private refreshUnreadCount(): void {
+    this.notifications.getUnreadCount(this.notifLastSeen).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.unreadCount = res.success ? (res.data ?? 0) : 0;
+        this.cdr.detectChanges();
+      }),
+      error: () => { /* keep last known count; the next poll retries */ }
+    });
+  }
+
+  /** Mark all current notifications as seen (called when the user opens the notifications page). */
+  private markNotificationsSeen(): void {
+    try { localStorage.setItem(this.NOTIF_SEEN_KEY, new Date().toISOString()); } catch { /* ignore */ }
+    this.unreadCount = 0;
+    this.cdr.detectChanges();
+  }
 
   /** Initials fallback when there's no photo (e.g. "Operator One" → "OO"). */
   get initials(): string {
@@ -90,14 +125,38 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.avatarSub = this.avatarRefresh.changes$.subscribe(() => this.loadAvatar());
 
     // Close the mobile drawer + user menu after an actual navigation (not on group expand/collapse).
+    // Also reset the bell badge whenever the user lands on the notifications page.
     this.routerSub = this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => { this.closeMobile(); this.closeUserMenu(); });
+      .subscribe((e) => {
+        this.closeMobile();
+        this.closeUserMenu();
+        if ((e as NavigationEnd).urlAfterRedirects.startsWith('/notifications')) {
+          this.markNotificationsSeen();
+        }
+      });
+
+    // ── Notification bell badge ──
+    // If we're already on the notifications page at load, treat everything as seen.
+    if (this.router.url.startsWith('/notifications')) this.markNotificationsSeen();
+    else this.refreshUnreadCount();
+
+    // Primary trigger: SignalR push whenever any notification is created.
+    this.notifSub = this.signalr.notificationReceived$.subscribe(() => {
+      if (!this.router.url.startsWith('/notifications')) this.refreshUnreadCount();
+    });
+
+    // Fallback: poll periodically in case the socket is down.
+    this.notifPollSub = interval(this.NOTIF_POLL_MS).subscribe(() => {
+      if (!this.router.url.startsWith('/notifications')) this.refreshUnreadCount();
+    });
   }
 
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
     this.avatarSub?.unsubscribe();
+    this.notifSub?.unsubscribe();
+    this.notifPollSub?.unsubscribe();
     if (this.avatarObjectUrl) URL.revokeObjectURL(this.avatarObjectUrl);
   }
 

@@ -16,8 +16,13 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<ReceiptEntity>
         builder.Property(r => r.ExchangeRate).HasPrecision(18, 6);
         builder.Property(r => r.ReferenceNumber).HasMaxLength(100);
         builder.Property(r => r.Notes).HasMaxLength(2000);
+        builder.Property(r => r.PostedBy).HasMaxLength(100);
 
         builder.Property(r => r.PaymentMethod)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
+        builder.Property(r => r.Status)
             .HasConversion<string>()
             .HasMaxLength(20);
 
@@ -25,6 +30,7 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<ReceiptEntity>
         builder.HasIndex(r => r.CustomerInvoiceId);
         builder.HasIndex(r => r.ReceiptDate);
         builder.HasIndex(r => r.PaymentMethod);
+        builder.HasIndex(r => r.Status);
 
         // CustomerInvoice FK — Restrict so an invoice with receipts can't be deleted
         builder.HasOne(r => r.CustomerInvoice)

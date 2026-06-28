@@ -50,11 +50,20 @@ public class CustomerInvoicesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Generate a Draft invoice from a posted Delivery Note (delivery → invoice automation).</summary>
+    /// <summary>
+    /// Generate a Draft invoice from a posted Delivery Note (delivery → invoice automation).
+    /// Supports partial invoicing: an optional body specifies how much of each DN line to invoice
+    /// this time (≤ remaining). With no body it invoices all remaining quantity (legacy one-click).
+    /// </summary>
     [HttpPost("from-delivery-note/{deliveryNoteId:long}")]
     [HasPermission(Permissions.Invoices.Create)]
-    public async Task<IActionResult> CreateFromDeliveryNote(long deliveryNoteId, [FromQuery] decimal vatRate = 0m, CancellationToken ct = default)
-        => Ok(await _mediator.Send(new CreateInvoiceFromDeliveryNoteCommand(deliveryNoteId, vatRate), ct));
+    public async Task<IActionResult> CreateFromDeliveryNote(
+        long deliveryNoteId,
+        [FromBody] CreateInvoiceFromDeliveryNoteRequest? request = null,
+        [FromQuery] decimal vatRate = 0m,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new CreateInvoiceFromDeliveryNoteCommand(
+            deliveryNoteId, request?.VatRate ?? vatRate, request?.Lines), ct));
 
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.Invoices.Edit)]
@@ -161,6 +170,11 @@ public record CreateCustomerInvoiceRequest(
     DateOnly? DueDate,
     string? Notes,
     IReadOnlyList<CustomerInvoiceLineInput> Lines);
+
+/// <summary>Partial delivery → invoice request: how much of each DN line to invoice this time.</summary>
+public record CreateInvoiceFromDeliveryNoteRequest(
+    decimal VatRate,
+    IReadOnlyList<DeliveryInvoiceLineInput>? Lines);
 
 public record UpdateCustomerInvoiceRequest(
     decimal VatRate,

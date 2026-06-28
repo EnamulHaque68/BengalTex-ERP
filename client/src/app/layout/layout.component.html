@@ -31,8 +31,11 @@
         <button type="button" class="icon-btn" (click)="toggleTheme()" [pTooltip]="theme === 'dark' ? 'Light mode' : 'Dark mode'" tooltipPosition="bottom">
           <i class="pi" [ngClass]="theme === 'dark' ? 'pi-sun' : 'pi-moon'"></i>
         </button>
-        <a routerLink="/notifications" class="icon-btn" pTooltip="Notifications" tooltipPosition="bottom">
+        <a routerLink="/notifications" class="icon-btn notif-btn"
+           [pTooltip]="unreadCount > 0 ? (unreadCount + ' unread notification' + (unreadCount === 1 ? '' : 's')) : 'Notifications'"
+           tooltipPosition="bottom">
           <i class="pi pi-bell"></i>
+          <span class="notif-badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </a>
         <div class="topbar-user">
           <button type="button" class="user-trigger" (click)="toggleUserMenu()" [class.open]="userMenuOpen">

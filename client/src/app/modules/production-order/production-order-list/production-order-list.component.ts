@@ -8,13 +8,18 @@ import { WarehouseService } from '../../../services/warehouse.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { SalesOrderService } from '../../../services/sales-order.service';
 import { SalesOrderDto, SalesOrderLineDto, SalesOrderListItemDto } from '../../../models/sales-order.models';
+import { WorkCenterService } from '../../../services/work-center.service';
+import { WorkCenterDto } from '../../../models/work-center.models';
+import { MasterSetupService } from '../../../services/master-setup.service';
+import { ShiftDto } from '../../../models/master-setup.models';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   COMMON_STAGE_NAMES,
   PRODUCTION_ORDER_STATUSES,
   ProductionOrderDto,
   ProductionOrderListItemDto,
-  ProductionStageDto
+  ProductionStageDto,
+  ProductionTraceabilityDto
 } from '../../../models/production-order.models';
 import { ProductListItemDto } from '../../../models/product.models';
 import { BomListItemDto } from '../../../models/bom.models';
@@ -49,6 +54,8 @@ export class ProductionOrderListComponent implements OnInit {
   bomsForSelectedProduct: BomOption[] = [];
   warehouses: WarehouseDto[] = [];
   employees: EmployeeListItemDto[] = [];
+  workCenters: WorkCenterDto[] = [];      // Phase 4 — resource planning
+  shifts: ShiftDto[] = [];
 
   // Phase 1 — optional source Sales Order (drives the fulfilling line + remaining quantity)
   produceableSos: SalesOrderListItemDto[] = [];
@@ -82,6 +89,19 @@ export class ProductionOrderListComponent implements OnInit {
   // Row action (start / complete / cancel) in-flight id
   rowActionId: number | null = null;
 
+  // Phase 6 — cost-sheet dialog
+  costDialogVisible = false;
+  costPo: ProductionOrderListItemDto | null = null;
+  costDetail: ProductionOrderDto | null = null;
+  costSaving = false;
+  costError = '';
+  cost = { labourCost: 0, machineCost: 0, overheadCost: 0, subcontractCost: 0, wastageCost: 0, rejectCost: 0 };
+
+  // Phase 7 — traceability dialog
+  traceDialogVisible = false;
+  traceLoading = false;
+  traceData: ProductionTraceabilityDto | null = null;
+
   constructor(
     private poService: ProductionOrderService,
     private productService: ProductService,
@@ -89,6 +109,8 @@ export class ProductionOrderListComponent implements OnInit {
     private warehouseService: WarehouseService,
     private employeeService: EmployeeService,
     private soService: SalesOrderService,
+    private workCenterService: WorkCenterService,
+    private masterSetup: MasterSetupService,
     private router: Router,
     private fb: FormBuilder,
     private zone: NgZone,
@@ -116,6 +138,7 @@ export class ProductionOrderListComponent implements OnInit {
       receiveWarehouseId: [null as number | null, Validators.required],
       plannedStartDate: [this.todayIso() as string | null],
       plannedEndDate: [null as string | null],
+      requiresQc: [false],                            // Phase 5 — Quality Hold opt-in
       notes: ['', Validators.maxLength(2000)],
       stages: this.fb.array([])
     });
@@ -129,6 +152,8 @@ export class ProductionOrderListComponent implements OnInit {
     this.stages.push(this.fb.group({
       stageName: [stageName, [Validators.required, Validators.maxLength(100)]],
       plannedQuantity: [null as number | null],
+      workCenterId: [null as number | null],
+      shiftId: [null as number | null],
       productionLine: ['', Validators.maxLength(100)],
       operatorEmployeeId: [null as number | null],
       notes: ['', Validators.maxLength(1000)]
@@ -177,6 +202,19 @@ export class ProductionOrderListComponent implements OnInit {
           this.cdr.detectChanges();
         });
       }
+    });
+    // Phase 4 — work centers + shifts for stage resource planning
+    this.workCenterService.getAll(false).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.workCenters = res.data;
+        this.cdr.detectChanges();
+      })
+    });
+    this.masterSetup.getShifts(false).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.shifts = res.data;
+        this.cdr.detectChanges();
+      })
     });
   }
 
@@ -308,6 +346,7 @@ export class ProductionOrderListComponent implements OnInit {
       receiveWarehouseId: this.warehouses[0]?.id ?? null,
       plannedStartDate: this.todayIso(),
       plannedEndDate: null,
+      requiresQc: false,
       notes: ''
     });
     this.dialogVisible = true;
@@ -342,6 +381,7 @@ export class ProductionOrderListComponent implements OnInit {
               receiveWarehouseId: p.receiveWarehouseId,
               plannedStartDate: p.plannedStartDate ?? null,
               plannedEndDate: p.plannedEndDate ?? null,
+              requiresQc: p.requiresQc ?? false,
               notes: p.notes ?? ''
             });
             // Load the linked SO so the line picker + remaining show in the dialog
@@ -363,6 +403,8 @@ export class ProductionOrderListComponent implements OnInit {
               this.stages.push(this.fb.group({
                 stageName: [s.stageName, [Validators.required, Validators.maxLength(100)]],
                 plannedQuantity: [s.plannedQuantity as number | null],
+                workCenterId: [s.workCenterId ?? null],
+                shiftId: [s.shiftId ?? null],
                 productionLine: [s.productionLine ?? '', Validators.maxLength(100)],
                 operatorEmployeeId: [s.operatorEmployeeId as number | null],
                 notes: [s.notes ?? '', Validators.maxLength(1000)]
@@ -391,6 +433,8 @@ export class ProductionOrderListComponent implements OnInit {
         sequence: i + 1,
         stageName: (s.stageName as string).trim(),
         plannedQuantity: s.plannedQuantity != null && s.plannedQuantity !== '' ? Number(s.plannedQuantity) : null,
+        workCenterId: s.workCenterId ?? null,
+        shiftId: s.shiftId ?? null,
         productionLine: (s.productionLine as string)?.trim() || null,
         operatorEmployeeId: s.operatorEmployeeId ?? null,
         notes: (s.notes as string)?.trim() || null
@@ -407,7 +451,8 @@ export class ProductionOrderListComponent implements OnInit {
       notes: (v.notes as string)?.trim() || null,
       stages,
       salesOrderId: v.salesOrderId ?? null,            // Phase 1 — optional source SO
-      salesOrderLineId: v.salesOrderLineId ?? null
+      salesOrderLineId: v.salesOrderLineId ?? null,
+      requiresQc: !!v.requiresQc                       // Phase 5 — Quality Hold opt-in
     };
 
     if (this.dialogMode === 'create') {
@@ -456,6 +501,96 @@ export class ProductionOrderListComponent implements OnInit {
 
   cancel(po: ProductionOrderListItemDto): void {
     this.runRowAction(po, this.poService.cancel.bind(this.poService));
+  }
+
+  /** Phase 5 — release the QC hold so the held finished goods become usable. */
+  releaseQcHold(po: ProductionOrderListItemDto): void {
+    this.runRowAction(po, this.poService.releaseQcHold.bind(this.poService));
+  }
+
+  // ─── Phase 7: traceability ───────────────────────────────────────────────
+
+  openTrace(po: ProductionOrderListItemDto): void {
+    this.traceData = null;
+    this.traceLoading = true;
+    this.traceDialogVisible = true;
+    this.poService.getTraceability(po.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.traceLoading = false;
+        if (res.success && res.data) this.traceData = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.traceLoading = false; this.cdr.detectChanges(); })
+    });
+  }
+
+  // ─── Phase 6: cost sheet ─────────────────────────────────────────────────
+
+  canCosts(po: ProductionOrderListItemDto): boolean {
+    return po.status !== 'Cancelled';
+  }
+
+  openCosts(po: ProductionOrderListItemDto): void {
+    this.costPo = po;
+    this.costError = '';
+    this.costDetail = null;
+    this.cost = { labourCost: 0, machineCost: 0, overheadCost: 0, subcontractCost: 0, wastageCost: 0, rejectCost: 0 };
+    this.costDialogVisible = true;
+    this.poService.getById(po.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) {
+          this.costDetail = res.data;
+          this.cost = {
+            labourCost: res.data.labourCost ?? 0,
+            machineCost: res.data.machineCost ?? 0,
+            overheadCost: res.data.overheadCost ?? 0,
+            subcontractCost: res.data.subcontractCost ?? 0,
+            wastageCost: res.data.wastageCost ?? 0,
+            rejectCost: res.data.rejectCost ?? 0
+          };
+        }
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  get costTotal(): number {
+    const m = this.costDetail?.materialCost ?? 0;
+    return m + (Number(this.cost.labourCost) || 0) + (Number(this.cost.machineCost) || 0)
+      + (Number(this.cost.overheadCost) || 0) + (Number(this.cost.subcontractCost) || 0)
+      + (Number(this.cost.wastageCost) || 0) + (Number(this.cost.rejectCost) || 0);
+  }
+
+  get costPerUnitPreview(): number {
+    const q = this.costDetail?.quantity ?? 0;
+    return q > 0 ? this.costTotal / q : 0;
+  }
+
+  saveCosts(): void {
+    if (!this.costPo || this.costSaving) return;
+    this.costSaving = true;
+    this.costError = '';
+    this.cdr.detectChanges();
+    this.poService.updateCosts(this.costPo.id, {
+      labourCost: Number(this.cost.labourCost) || 0,
+      machineCost: Number(this.cost.machineCost) || 0,
+      overheadCost: Number(this.cost.overheadCost) || 0,
+      subcontractCost: Number(this.cost.subcontractCost) || 0,
+      wastageCost: Number(this.cost.wastageCost) || 0,
+      rejectCost: Number(this.cost.rejectCost) || 0
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.costSaving = false;
+        if (res.success) { this.costDialogVisible = false; this.load(); }
+        else this.costError = res.message || 'Save failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.costSaving = false;
+        this.costError = err?.error?.message || 'Save failed.';
+        this.cdr.detectChanges();
+      })
+    });
   }
 
   /** Raise a draft PR for this order's material shortfalls; jump to PRs on success. */

@@ -1,0 +1,93 @@
+.page-shell { padding: 1.25rem 1.5rem; }
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.page-title { font-size: 1.4rem; font-weight: 700; margin: 0; color: #111827; }
+.page-subtitle { margin: 0.15rem 0 0; color: #6b7280; font-size: 0.85rem; }
+
+.header-actions { display: flex; align-items: center; gap: 0.5rem; }
+.nav-btn {
+  width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e5e7eb;
+  background: #fff; cursor: pointer; color: #374151;
+  display: inline-flex; align-items: center; justify-content: center;
+  &:hover { background: #f3f4f6; }
+}
+.month-label { font-weight: 700; font-size: 1.05rem; min-width: 150px; text-align: center; color: #111827; }
+
+.alert { display: flex; align-items: center; gap: 0.5rem; border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.85rem; }
+.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.alert-close { margin-left: auto; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit; }
+.page-alert { margin-bottom: 1rem; }
+
+.legend {
+  display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+  margin-bottom: 0.75rem; font-size: 0.78rem; color: #4b5563;
+  .lg { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .total { margin-left: auto; font-weight: 600; color: #6b7280; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid #e5e7eb; }
+  .swatch.weekend { background: #f1f5f9; }
+  .swatch.holiday { background: #fef2f2; border-color: #fecaca; }
+}
+
+.cal-card { position: relative; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+.cal-loading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  gap: 0.5rem; background: rgba(255,255,255,0.6); z-index: 2; color: #6b7280; font-weight: 600;
+}
+.calendar.dim { opacity: 0.5; }
+
+.weekday-row, .week { display: grid; grid-template-columns: repeat(7, 1fr); }
+.weekday {
+  padding: 0.5rem; text-align: center; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;
+  background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+}
+
+.day {
+  min-height: 104px;
+  border-right: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.3rem 0.35rem;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  background: #fff;
+
+  &.out-month { background: #fcfcfd; .day-num { color: #cbd5e1; } }
+  &.is-weekend { background: #f8fafc; }
+  &.is-holiday { background: #fef2f2; }
+  &.is-today { box-shadow: inset 0 0 0 2px #6366f1; }
+}
+
+.day-head { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; }
+.day-num { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.holiday-tag {
+  font-size: 0.6rem; font-weight: 700; color: #991b1b; background: #fee2e2;
+  padding: 0.05rem 0.3rem; border-radius: 4px; max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.events { display: flex; flex-direction: column; gap: 0.18rem; overflow: hidden; }
+.event-chip {
+  border: none; cursor: pointer; text-align: left;
+  font-size: 0.66rem; font-weight: 700; color: #fff;
+  padding: 0.12rem 0.35rem; border-radius: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  &.st-draft    { background: #9ca3af; }
+  &.st-progress { background: #2563eb; }
+  &.st-done     { background: #059669; }
+  &.st-other    { background: #6b7280; }
+  &:hover { filter: brightness(1.08); }
+}
+
+// Legend dot colours reuse the chip palette
+.dot.st-draft { background: #9ca3af; }
+.dot.st-progress { background: #2563eb; }
+.dot.st-done { background: #059669; }
+
+@media (max-width: 720px) {
+  .day { min-height: 78px; }
+  .event-chip { font-size: 0.6rem; }
+  .holiday-tag { display: none; }
+}

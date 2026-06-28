@@ -18,7 +18,13 @@ function threeDigit(n: number): string {
   return hPart && rPart ? hPart + ' ' + rPart : (hPart || rPart);
 }
 
-export function numberToWords(amount: number): string {
+/**
+ * Spell out a money amount in BD/IN grouping. The fractional-unit word defaults to "Paisa"
+ * (BDT) but can be overridden per currency (e.g. "Cents" for USD) so receipts/invoices in a
+ * foreign currency read correctly. The major-unit word ("Taka" / "US Dollars" / …) is appended
+ * by the caller.
+ */
+export function numberToWords(amount: number, minorUnit: string = 'Paisa'): string {
   if (amount == null || isNaN(amount)) return '';
   const negative = amount < 0;
   amount = Math.abs(amount);
@@ -40,6 +46,6 @@ export function numberToWords(amount: number): string {
   if (hundreds) parts.push(threeDigit(hundreds));
 
   let text = parts.join(' ');
-  if (paisa) text += ' and ' + twoDigit(paisa) + ' Paisa';
+  if (paisa) text += ' and ' + twoDigit(paisa) + ' ' + minorUnit;
   return (negative ? 'Negative ' : '') + text;
 }

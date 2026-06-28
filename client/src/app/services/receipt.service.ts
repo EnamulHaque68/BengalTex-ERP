@@ -42,6 +42,16 @@ export class ReceiptService {
     return this.http.post<ApiResponse<ReceiptDto>>(this.base, data);
   }
 
+  /** Post a draft receipt — applies it to the invoice (reduces outstanding). */
+  post(id: number): Observable<ApiResponse<ReceiptDto>> {
+    return this.http.post<ApiResponse<ReceiptDto>>(`${this.base}/${id}/post`, {});
+  }
+
+  /** Cancel a receipt — voids a draft, or reverses a posted receipt. */
+  cancel(id: number): Observable<ApiResponse<ReceiptDto>> {
+    return this.http.post<ApiResponse<ReceiptDto>>(`${this.base}/${id}/cancel`, {});
+  }
+
   delete(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`);
   }

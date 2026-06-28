@@ -30,6 +30,18 @@ public class NotificationsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Unread-count for the notification bell badge. <paramref name="since"/> is the timestamp the
+    /// user last opened the notifications page (client-tracked); omit it to count everything.
+    /// Only [Authorize] — it returns a number, not content, so every logged-in user's bell works.
+    /// </summary>
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> UnreadCount([FromQuery] DateTimeOffset? since = null, CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetNotificationUnreadCountQuery(since), ct);
+        return Ok(result);
+    }
+
     [HttpPost("test")]
     [HasPermission(Permissions.Notifications.Send)]
     public async Task<IActionResult> SendTest([FromBody] SendTestNotificationCommand command, CancellationToken ct)

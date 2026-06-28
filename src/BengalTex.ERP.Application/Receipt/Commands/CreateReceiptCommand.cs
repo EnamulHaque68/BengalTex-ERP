@@ -1,4 +1,3 @@
-using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Receipt.Dtos;
 using BengalTex.ERP.Application.Receipt.Queries;
 using BengalTex.ERP.Application.Services;
@@ -11,13 +10,12 @@ using MediatR;
 namespace BengalTex.ERP.Application.Receipt.Commands;
 
 /// <summary>
-/// Creates a Receipt against an existing <see cref="CustomerInvoice"/>. Atomic in one
-/// SaveChanges:
+/// Creates a <b>Draft</b> Receipt against an existing <see cref="CustomerInvoice"/>. A draft does
+/// NOT affect the invoice — it neither changes <c>AmountPaid</c>/status nor posts any journal.
+/// Those happen only when the receipt is later <b>Posted</b> (see <c>PostReceiptCommand</c>).
 ///   1. Validate invoice is Issued or PartiallyPaid.
-///   2. Validate the new payment would not overpay (Σ AmountPaid + Amount ≤ TotalAmount).
-///   3. Insert Receipt with auto-generated code from "RCT" series.
-///   4. Increment <see cref="CustomerInvoice.AmountPaid"/> and recompute status
-///      (PartiallyPaid if &lt; Total, Paid if &gt;= Total).
+///   2. Soft over-payment guard against already-posted receipts (the authoritative check is at Post).
+///   3. Insert a Draft Receipt with an auto-generated code from the "RCT" series.
 /// </summary>
 public sealed record CreateReceiptCommand(
     long CustomerInvoiceId,
@@ -52,7 +50,6 @@ internal sealed class CreateReceiptCommandHandler
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
-    private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
 
     public CreateReceiptCommandHandler(
@@ -60,14 +57,12 @@ internal sealed class CreateReceiptCommandHandler
         IRepository<Domain.Entities.CustomerInvoice, long> invRepo,
         IUnitOfWork uow,
         INumberingService numbering,
-        IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _invRepo = invRepo;
         _uow = uow;
         _numbering = numbering;
-        _journal = journal;
         _mediator = mediator;
     }
 
@@ -81,11 +76,12 @@ internal sealed class CreateReceiptCommandHandler
             inv.Status != Domain.Entities.CustomerInvoiceStatus.PartiallyPaid)
         {
             return ApiResponse<ReceiptDto>.Fail(
-                "Receipts can only be posted against Issued or partially-paid invoices.");
+                "Receipts can only be recorded against Issued or partially-paid invoices.");
         }
 
-        var newAmountPaid = inv.AmountPaid + cmd.Amount;
-        if (newAmountPaid > inv.TotalAmount)
+        // Soft guard — AmountPaid reflects only POSTED receipts. The hard, authoritative
+        // over-payment check happens when the draft is posted.
+        if (inv.AmountPaid + cmd.Amount > inv.TotalAmount)
         {
             var outstanding = inv.TotalAmount - inv.AmountPaid;
             return ApiResponse<ReceiptDto>.Fail(
@@ -106,38 +102,11 @@ internal sealed class CreateReceiptCommandHandler
             Amount = cmd.Amount,
             ExchangeRate = receiptRate,
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
+            Status = Domain.Entities.ReceiptStatus.Draft,   // draft — invoice untouched until Post
             ReferenceNumber = string.IsNullOrWhiteSpace(cmd.ReferenceNumber) ? null : cmd.ReferenceNumber.Trim(),
             Notes = cmd.Notes
         };
         await _repo.AddAsync(entity, cancellationToken);
-
-        inv.AmountPaid = newAmountPaid;
-        inv.Status = newAmountPaid >= inv.TotalAmount
-            ? Domain.Entities.CustomerInvoiceStatus.Paid
-            : Domain.Entities.CustomerInvoiceStatus.PartiallyPaid;
-        _invRepo.Update(inv);
-
-        await _uow.SaveChangesAsync(cancellationToken);   // persist receipt (gets its Id) + invoice
-
-        // Auto-journal: Dr Cash/Bank at the RECEIPT rate (actual BDT in), Cr Accounts Receivable
-        // at the INVOICE rate (the booked receivable being cleared). Any difference is a realized
-        // FX gain (received more BDT than booked) or loss (received less).
-        var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
-        var cashBdt = cmd.Amount * receiptRate;
-        var arBdt = cmd.Amount * inv.ExchangeRate;
-        var fxDiff = cashBdt - arBdt;
-
-        var lines = new List<JournalPostingLine>
-        {
-            new(cashAccount, cashBdt, 0m),
-            new(LedgerAccounts.AccountsReceivable, 0m, arBdt),
-        };
-        if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, 0m, fxDiff));
-        else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, -fxDiff, 0m));
-
-        await _journal.PostAsync(
-            entity.ReceiptDate, $"Receipt {entity.Code} against {inv.Code}", "Receipt", entity.Id, entity.Code,
-            lines, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return await _mediator.Send(new GetReceiptByIdQuery(entity.Id), cancellationToken);

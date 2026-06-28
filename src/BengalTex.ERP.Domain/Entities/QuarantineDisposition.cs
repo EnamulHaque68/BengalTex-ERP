@@ -67,8 +67,10 @@ public class QuarantineDispositionLine : BaseTransactionalEntity
 
 public enum DispositionType
 {
-    Release = 1,            // back to a usable warehouse
-    Scrap = 2               // write-off
+    Release = 1,            // back to a usable warehouse (re-inspected, acceptable as-is)
+    Scrap = 2,              // write-off
+    Rework = 3              // back to a warehouse for reprocessing (Phase 5) — same stock move as Release,
+                            // recorded distinctly so reports can tell rework from a clean release
 }
 
 public enum QuarantineDispositionStatus

@@ -1,8 +1,9 @@
 // ─── Quarantine Disposition ───────────────────────────────────────────────
 
 export const DISPOSITION_TYPES: { label: string; value: string }[] = [
-  { label: 'Release (back to usable)', value: 'Release' },
-  { label: 'Scrap (write-off)',        value: 'Scrap' }
+  { label: 'Release (back to usable)',     value: 'Release' },
+  { label: 'Rework (back for reprocess)',  value: 'Rework' },
+  { label: 'Scrap (write-off)',            value: 'Scrap' }
 ];
 
 export const DISPOSITION_STATUSES: { label: string; value: string }[] = [

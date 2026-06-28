@@ -33,6 +33,7 @@ internal sealed class CompleteProductionOrderCommandHandler
     private readonly IStockReservationService _reservations;
     private readonly IJournalPostingService _journal;
     private readonly ICurrentUserService _currentUser;
+    private readonly INotificationService _notifications;
     private readonly IMediator _mediator;
 
     public CompleteProductionOrderCommandHandler(
@@ -43,6 +44,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         IStockReservationService reservations,
         IJournalPostingService journal,
         ICurrentUserService currentUser,
+        INotificationService notifications,
         IMediator mediator)
     {
         _repo = repo;
@@ -52,6 +54,7 @@ internal sealed class CompleteProductionOrderCommandHandler
         _reservations = reservations;
         _journal = journal;
         _currentUser = currentUser;
+        _notifications = notifications;
         _mediator = mediator;
     }
 
@@ -191,8 +194,18 @@ internal sealed class CompleteProductionOrderCommandHandler
             notes: null,
             ct: cancellationToken);
 
+        // Phase 5 — Quality Hold (opt-in): keep the produced finished goods QC-held (soft-reserved in
+        // the receive warehouse, so they can't be dispatched) until an explicit QC release.
+        if (po.RequiresQc && po.Quantity > 0m)
+        {
+            await _reservations.ReserveProductAsync(
+                po.ProductId, po.ReceiveWarehouseId, po.Quantity,
+                "QcHold", po.Id, po.Code, cancellationToken);
+        }
+
         // ── Phase 4: mark order completed ────────────────────────────────────────
         po.Status = ProductionOrderStatus.Completed;
+        po.MaterialCost = totalRmCost;            // Phase 6 — persist consumed RM cost on the cost sheet
         po.ActualEndDate = movementDate;
         po.CompletedAt = DateTimeOffset.UtcNow;
         po.CompletedBy = _currentUser.UserName;
@@ -230,6 +243,20 @@ internal sealed class CompleteProductionOrderCommandHandler
                     new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, totalRmCost),
                 }, cancellationToken);
         }
+
+        // Phase 7 — smart notification: completed run is either QC-pending or finished-goods-ready.
+        if (po.RequiresQc)
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp, NotificationRecipients.QcTeam,
+                $"Production {po.Code} completed — QC pending",
+                $"{po.Quantity:0.####} × {po.Product.Name} produced and QC-held. Inspect to release.",
+                "ProductionOrder", po.Id, cancellationToken);
+        else
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp, NotificationRecipients.SalesTeam,
+                $"Production {po.Code} completed — finished goods ready",
+                $"{po.Quantity:0.####} × {po.Product.Name} received into finished-goods stock.",
+                "ProductionOrder", po.Id, cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
 

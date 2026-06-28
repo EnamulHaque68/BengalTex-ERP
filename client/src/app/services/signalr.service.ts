@@ -15,6 +15,12 @@ export interface SessionSupersededPayload {
   occurredAt: string;
 }
 
+export interface NotificationReceivedPayload {
+  channel: string;
+  subject: string;
+  occurredAt: string;
+}
+
 /**
  * Manages a single SignalR connection to /hubs/session. Starts on login, stops on
  * logout. Exposes a stream of session-lifecycle events that AuthService consumes
@@ -24,9 +30,13 @@ export interface SessionSupersededPayload {
 export class SignalRService implements OnDestroy {
   private hubConnection?: HubConnection;
   private readonly sessionSupersededSubject = new Subject<SessionSupersededPayload>();
+  private readonly notificationReceivedSubject = new Subject<NotificationReceivedPayload>();
 
   /** Fires when this client's session has been replaced by a newer login from another device. */
   readonly sessionSuperseded$ = this.sessionSupersededSubject.asObservable();
+
+  /** Fires when a new notification is created anywhere — the bell refreshes its unread count. */
+  readonly notificationReceived$ = this.notificationReceivedSubject.asObservable();
 
   constructor(private tokenStorage: TokenStorageService) {}
 
@@ -53,6 +63,10 @@ export class SignalRService implements OnDestroy {
 
     this.hubConnection.on('SessionSuperseded', (payload: SessionSupersededPayload) => {
       this.sessionSupersededSubject.next(payload);
+    });
+
+    this.hubConnection.on('NotificationReceived', (payload: NotificationReceivedPayload) => {
+      this.notificationReceivedSubject.next(payload);
     });
 
     try {

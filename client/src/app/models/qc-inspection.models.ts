@@ -16,6 +16,14 @@ export const QC_RESULTS: { label: string; value: string }[] = [
   { label: 'Failed',          value: 'Failed' }
 ];
 
+// Where the rejected quantity goes on Post (Phase 5 upgrade)
+export const QC_REJECT_DISPOSITIONS: { label: string; value: string }[] = [
+  { label: 'Quarantine (segregate)',     value: 'Quarantine' },
+  { label: 'Reject Warehouse',           value: 'Reject' },
+  { label: 'Rework (reprocess)',         value: 'Rework' },
+  { label: 'Scrap (write-off)',          value: 'Scrap' }
+];
+
 export interface QcInspectionLineDto {
   id: number;
   itemType: string;                   // "RawMaterial" | "Product"
@@ -51,6 +59,7 @@ export interface QcInspectionDto {
   inspectedBy: string | null;
   notes: string | null;
   lines: QcInspectionLineDto[];
+  rejectDisposition?: string | null;  // Quarantine | Reject | Rework | Scrap
 }
 
 export interface QcInspectionListItemDto {
@@ -83,6 +92,7 @@ export interface CreateQcInspectionRequest {
   inspectedBy: string | null;
   notes: string | null;
   lines: QcInspectionLineInput[];
+  rejectDisposition?: string | null;  // Phase 5 — Quarantine | Reject | Rework | Scrap
 }
 
 export interface UpdateQcInspectionRequest {

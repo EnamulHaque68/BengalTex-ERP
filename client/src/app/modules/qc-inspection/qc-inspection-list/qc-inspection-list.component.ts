@@ -8,10 +8,10 @@ import { PagedQueryParameters } from '../../../models/user.models';
 import {
   QC_SOURCE_TYPES,
   QC_STATUSES,
+  QC_REJECT_DISPOSITIONS,
   QcInspectionListItemDto
 } from '../../../models/qc-inspection.models';
 import { GoodsReceiptListItemDto } from '../../../models/goods-receipt.models';
-import { ProductionOrderListItemDto } from '../../../models/production-order.models';
 import { WarehouseDto } from '../../../models/master-data.models';
 
 interface SourceOption {
@@ -40,7 +40,12 @@ export class QcInspectionListComponent implements OnInit {
 
   readonly sourceTypes = QC_SOURCE_TYPES;
   readonly statuses = QC_STATUSES;
+  readonly rejectDispositions = QC_REJECT_DISPOSITIONS;
   warehouses: WarehouseDto[] = [];
+
+  // Phase 5b — for a QC-held production, the most that can still be inspected (remaining held qty).
+  // null = no cap (incoming material, or a production with no QC hold).
+  maxInspectableQty: number | null = null;
   postedGrns: SourceOption[] = [];
   completedProductions: SourceOption[] = [];
 
@@ -83,6 +88,7 @@ export class QcInspectionListComponent implements OnInit {
       sourceType: ['IncomingMaterial', Validators.required],
       sourceId: [null as number | null, Validators.required],
       quarantineWarehouseId: [null as number | null, Validators.required],
+      rejectDisposition: ['Quarantine'],          // Phase 5 — reject destination
       inspectionDate: [this.todayIso(), Validators.required],
       inspectedBy: ['', Validators.maxLength(100)],
       notes: ['', Validators.maxLength(2000)],
@@ -126,16 +132,15 @@ export class QcInspectionListComponent implements OnInit {
         });
       }
     });
-    this.prodService.getAll({ page: 1, pageSize: 500, search: '' }, undefined, 'Completed').subscribe({
+    // Phase 5b — only completed productions still QC-held (remaining hold > 0).
+    this.prodService.getAwaitingQc().subscribe({
       next: (res) => {
         this.zone.run(() => {
           if (res.success && res.data) {
-            this.completedProductions = res.data.items
-              .filter((p: ProductionOrderListItemDto) => p.status === 'Completed')
-              .map((p: ProductionOrderListItemDto) => ({
-                id: p.id, code: p.code,
-                displayLabel: `${p.code} — ${p.productName} (${p.quantity})`
-              }));
+            this.completedProductions = res.data.map(p => ({
+              id: p.id, code: p.code,
+              displayLabel: `${p.code} — ${p.productName} · Remaining QC: ${p.remainingQcQuantity} / ${p.totalQuantity}`
+            }));
           }
           this.cdr.detectChanges();
         });
@@ -205,6 +210,7 @@ export class QcInspectionListComponent implements OnInit {
   onSourceTypeChange(): void {
     this.form.patchValue({ sourceId: null });
     this.lines.clear();
+    this.maxInspectableQty = null;
   }
 
   onSourceChange(event: any): void {
@@ -237,11 +243,16 @@ export class QcInspectionListComponent implements OnInit {
           this.zone.run(() => {
             if (res.success && res.data) {
               const p = res.data;
+              // Phase 5b — for a QC-held production, prefill + cap at the REMAINING held qty
+              // (not the full production qty), so multiple/partial inspections work cleanly.
+              const held = !!p.requiresQc && (p.qcHeldQuantity ?? 0) > 0;
+              const remaining = held ? (p.qcHeldQuantity ?? 0) : p.quantity;
+              this.maxInspectableQty = held ? remaining : null;   // cap only for held productions
               this.lines.push(this.newLine(
                 null, p.productId,
                 `${p.productCode} — ${p.productName}`,
                 p.productUnitOfMeasureCode ?? '',
-                p.quantity, p.quantity, ''
+                remaining, remaining, ''
               ));
             }
             this.cdr.detectChanges();
@@ -251,16 +262,37 @@ export class QcInspectionListComponent implements OnInit {
     }
   }
 
+  // ─── Phase 5b: live QC-quantity validation against the remaining held qty ───
+
+  totalInspected(): number {
+    return this.lines.controls.reduce((sum, l) => sum + (Number(l.get('inspectedQuantity')?.value) || 0), 0);
+  }
+
+  /** Non-empty when the form's QC quantities are invalid (disables Save). Live, pre-backend. */
+  get inspectionError(): string {
+    for (const l of this.lines.controls) {
+      const insp = Number(l.get('inspectedQuantity')?.value) || 0;
+      const passed = Number(l.get('passedQuantity')?.value) || 0;
+      if (passed > insp + 0.0001) return 'Passed quantity cannot exceed inspected quantity.';
+    }
+    if (this.maxInspectableQty != null && this.totalInspected() > this.maxInspectableQty + 0.0001) {
+      return `Maximum QC quantity is ${this.maxInspectableQty}.`;
+    }
+    return '';
+  }
+
   openCreate(): void {
     this.dialogMode = 'create';
     this.editingId = null;
     this.dialogError = '';
+    this.maxInspectableQty = null;
     this.form.enable();
     this.lines.clear();
     this.form.reset({
       sourceType: 'IncomingMaterial',
       sourceId: null,
       quarantineWarehouseId: null,
+      rejectDisposition: 'Quarantine',
       inspectionDate: this.todayIso(),
       inspectedBy: '',
       notes: ''
@@ -272,6 +304,7 @@ export class QcInspectionListComponent implements OnInit {
     this.editingId = i.id;
     this.dialogError = '';
     this.dialogMode = 'edit';
+    this.maxInspectableQty = null;
     this.form.enable();
     this.lines.clear();
     this.dialogVisible = true;
@@ -282,10 +315,18 @@ export class QcInspectionListComponent implements OnInit {
           if (res.success && res.data) {
             const q = res.data;
             this.dialogMode = q.status === 'Draft' ? 'edit' : 'view';
+            // Ensure the (disabled) source select can display this inspection's source even if the
+            // production is no longer in the awaiting-QC list (e.g. already fully cleared).
+            const srcId = q.goodsReceiptNoteId ?? q.productionOrderId;
+            const list = q.sourceType === 'IncomingMaterial' ? this.postedGrns : this.completedProductions;
+            if (srcId != null && !list.some(o => o.id === srcId)) {
+              list.push({ id: srcId, code: q.sourceLabel, displayLabel: q.sourceLabel });
+            }
             this.form.patchValue({
               sourceType: q.sourceType,
               sourceId: q.goodsReceiptNoteId ?? q.productionOrderId,
               quarantineWarehouseId: q.quarantineWarehouseId,
+              rejectDisposition: q.rejectDisposition ?? 'Quarantine',
               inspectionDate: q.inspectionDate,
               inspectedBy: q.inspectedBy ?? '',
               notes: q.notes ?? ''
@@ -302,6 +343,18 @@ export class QcInspectionListComponent implements OnInit {
             this.form.get('sourceId')?.disable();
             if (this.dialogMode === 'view') this.form.disable();
             this.cdr.detectChanges();
+
+            // Phase 5b — editing a held-production draft: cap inspected at the production's remaining held qty.
+            if (this.dialogMode === 'edit' && q.sourceType === 'FinishedGoods' && q.productionOrderId) {
+              this.prodService.getById(q.productionOrderId).subscribe({
+                next: (pr) => this.zone.run(() => {
+                  if (pr.success && pr.data && pr.data.requiresQc && (pr.data.qcHeldQuantity ?? 0) > 0) {
+                    this.maxInspectableQty = pr.data.qcHeldQuantity ?? null;
+                  }
+                  this.cdr.detectChanges();
+                })
+              });
+            }
           }
         });
       }
@@ -310,6 +363,7 @@ export class QcInspectionListComponent implements OnInit {
 
   save(): void {
     if (this.form.invalid || this.dialogSaving || this.dialogMode === 'view') return;
+    if (this.inspectionError) { this.dialogError = this.inspectionError; this.cdr.detectChanges(); return; }
 
     this.dialogSaving = true;
     this.dialogError = '';
@@ -331,6 +385,7 @@ export class QcInspectionListComponent implements OnInit {
         productionOrderId: v.sourceType === 'FinishedGoods' ? v.sourceId : null,
         inspectionDate: v.inspectionDate,
         quarantineWarehouseId: v.quarantineWarehouseId,
+        rejectDisposition: v.rejectDisposition || 'Quarantine',
         inspectedBy: (v.inspectedBy as string)?.trim() || null,
         notes: (v.notes as string)?.trim() || null,
         lines

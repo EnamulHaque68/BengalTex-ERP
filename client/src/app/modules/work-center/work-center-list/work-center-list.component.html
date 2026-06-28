@@ -1,0 +1,130 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Work Centers</h2>
+      <p class="page-subtitle">Production lines / work centers — capacity &amp; current planned load</p>
+    </div>
+    <div class="header-actions">
+      <p-togglebutton [(ngModel)]="includeInactive" onLabel="Incl. inactive" offLabel="Active only"
+                      onIcon="pi pi-eye" offIcon="pi pi-eye-slash" (onChange)="load()" />
+      <p-button *ngIf="canCreate" label="New Work Center" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="workCenters" [loading]="loading" [paginator]="true" [rows]="25" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Location</th>
+          <th class="num-h">Capacity/Day</th>
+          <th class="num-h">Planned Load</th>
+          <th>Load</th>
+          <th>Status</th>
+          <th style="width:110px"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-w>
+        <tr>
+          <td><span class="code-badge">{{ w.code }}</span></td>
+          <td class="fw-600">{{ w.name }}</td>
+          <td>{{ w.type || '—' }}</td>
+          <td class="muted">{{ w.location || '—' }}</td>
+          <td class="num">{{ w.capacityPerDay != null ? (w.capacityPerDay | number:'1.0-4') : '—' }}</td>
+          <td class="num">
+            {{ w.plannedLoad | number:'1.0-4' }}
+            <span class="muted small" *ngIf="w.openStageCount > 0">({{ w.openStageCount }} stage{{ w.openStageCount === 1 ? '' : 's' }})</span>
+          </td>
+          <td>
+            <div class="load-cell" *ngIf="w.loadPercent != null; else noCap">
+              <div class="load-bar"><span [style.width.%]="w.loadPercent > 100 ? 100 : w.loadPercent" [class]="loadClass(w)"></span></div>
+              <span class="load-pct" [class]="loadClass(w)">{{ w.loadPercent | number:'1.0-0' }}%</span>
+            </div>
+            <ng-template #noCap><span class="muted">—</span></ng-template>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="w.isActive" [class.inactive]="!w.isActive">
+              {{ w.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button *ngIf="canEdit" icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(w)" pTooltip="Edit" />
+              <p-button *ngIf="canDelete" icon="pi pi-trash" severity="danger" [text]="true" size="small" (click)="confirmDelete(w)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="empty-row">
+            <i class="pi pi-sitemap"></i>
+            <span>No work centers. Add Cutting / Sewing / Finishing lines to plan capacity.</span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="dialogMode === 'create' ? 'New Work Center' : 'Edit Work Center'"
+          [modal]="true" [style]="{ width: '560px' }" [draggable]="false">
+  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
+    <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+
+    <div class="dialog-grid">
+      <div class="field">
+        <label>Code *</label>
+        <input pInputText formControlName="code" placeholder="e.g. CUT-01" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Name *</label>
+        <input pInputText formControlName="name" placeholder="e.g. Cutting Line 1" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <input pInputText formControlName="type" placeholder="Cutting / Sewing / Finishing..." class="w-full" />
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input pInputText formControlName="location" placeholder="Floor 2 / Line 3" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Capacity / Day <small>(units)</small></label>
+        <p-inputNumber formControlName="capacityPerDay" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="4" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Cost / Hour <small>(BDT)</small></label>
+        <p-inputNumber formControlName="costPerHour" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Notes</label>
+        <input pInputText formControlName="notes" class="w-full" />
+      </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'edit'">
+        <label class="cb-label"><p-checkbox formControlName="isActive" [binary]="true" /> Active</label>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
+      <p-button type="submit" [label]="dialogSaving ? 'Saving...' : 'Save'" icon="pi pi-save" [loading]="dialogSaving" [disabled]="form.invalid || dialogSaving" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="deleteDialogVisible" header="Delete Work Center" [modal]="true" [style]="{ width: '420px' }">
+  <div *ngIf="deleting">
+    <p>Delete <strong>{{ deleting.code }}</strong> ({{ deleting.name }})?</p>
+    <div class="alert alert-error" *ngIf="deleteError"><i class="pi pi-exclamation-circle"></i>{{ deleteError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="deleteDialogVisible = false" [disabled]="deleteBusy" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleteBusy" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>

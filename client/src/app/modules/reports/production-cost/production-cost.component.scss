@@ -1,0 +1,43 @@
+.page-shell { padding: 1.25rem 1.5rem; }
+
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+  .page-title { margin: 0; font-size: 1.4rem; font-weight: 700; }
+  .page-subtitle { margin: 0.15rem 0 0; color: #64748b; font-size: 0.85rem; }
+  .header-actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
+}
+
+.date-field {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  label { font-size: 0.72rem; font-weight: 600; color: #64748b; }
+  input { padding: 0.35rem 0.5rem; }
+}
+
+.alert { margin-bottom: 0.75rem; }
+
+.summary-strip {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+  .summary-card {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.9rem;
+    display: flex; flex-direction: column; min-width: 130px;
+    .lbl { font-size: 0.72rem; color: #64748b; }
+    .val { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    &.profit .val { color: #15803d; }
+    &.loss .val { color: #b91c1c; }
+  }
+}
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.num-h { text-align: right; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.muted { color: #94a3b8; }
+.profit { color: #15803d; font-weight: 600; }
+.loss { color: #b91c1c; font-weight: 600; }
+.code-badge { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 4px; padding: 0.05rem 0.4rem; font-size: 0.72rem; font-weight: 600; }
+.so-chip { color: #6366f1; font-size: 0.78rem; font-weight: 500; }
+
+.empty-row {
+  text-align: center; color: #94a3b8; padding: 2rem 1rem;
+  i { display: block; font-size: 1.5rem; margin-bottom: 0.4rem; }
+}

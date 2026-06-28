@@ -48,6 +48,7 @@ internal sealed class ScanJobCardCommandHandler : IRequestHandler<ScanJobCardCom
 {
     private readonly IRepository<JobCard, long> _repo;
     private readonly IRepository<JobCardScan, long> _scanRepo;
+    private readonly IRepository<Domain.Entities.MachineMaintenance, long> _maintRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
@@ -55,11 +56,12 @@ internal sealed class ScanJobCardCommandHandler : IRequestHandler<ScanJobCardCom
     public ScanJobCardCommandHandler(
         IRepository<JobCard, long> repo,
         IRepository<JobCardScan, long> scanRepo,
+        IRepository<Domain.Entities.MachineMaintenance, long> maintRepo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IDateTimeProvider clock)
     {
-        _repo = repo; _scanRepo = scanRepo; _uow = uow;
+        _repo = repo; _scanRepo = scanRepo; _maintRepo = maintRepo; _uow = uow;
         _currentUser = currentUser; _clock = clock;
     }
 
@@ -79,6 +81,10 @@ internal sealed class ScanJobCardCommandHandler : IRequestHandler<ScanJobCardCom
             case JobCardScanType.Start:
                 if (jc.Status != JobCardStatus.Open)
                     return ApiResponse<long>.Fail($"Cannot Start a job card that is {jc.Status}.");
+                // Phase 5 — machine availability gate: cannot start work on a machine under maintenance.
+                if (jc.MachineId is int smid && await _maintRepo.Query()
+                        .AnyAsync(m => m.MachineId == smid && m.Status == MaintenanceStatus.InProgress, ct))
+                    return ApiResponse<long>.Fail("Cannot start — the assigned machine is under maintenance (in progress).");
                 jc.Status = JobCardStatus.InProgress;
                 jc.StartedAt = now;
                 jc.LastResumedAt = now;

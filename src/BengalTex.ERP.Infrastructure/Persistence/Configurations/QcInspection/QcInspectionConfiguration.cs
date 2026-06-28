@@ -19,6 +19,7 @@ public class QcInspectionConfiguration : IEntityTypeConfiguration<Domain.Entitie
         builder.Property(q => q.SourceType).HasConversion<string>().HasMaxLength(20);
         builder.Property(q => q.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(q => q.OverallResult).HasConversion<string>().HasMaxLength(20);
+        builder.Property(q => q.RejectDisposition).HasConversion<string>().HasMaxLength(20);   // nullable
 
         builder.HasIndex(q => q.Code).IsUnique();
         builder.HasIndex(q => q.GoodsReceiptNoteId);

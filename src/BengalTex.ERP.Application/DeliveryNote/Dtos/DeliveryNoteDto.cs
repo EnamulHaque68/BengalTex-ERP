@@ -32,6 +32,8 @@ public record DeliveryNoteLineDto(
     decimal OrderedQuantity,             // from SO line, for context
     decimal DispatchedQuantity,          // this DN line's quantity
     decimal ReturnedQuantity,            // already-returned via posted CRNs (Phase 13)
+    decimal InvoicedQuantity,            // already billed onto customer invoices
+    decimal RemainingToInvoice,          // DispatchedQuantity − InvoicedQuantity
     int SortOrder,
     string? LineNotes);
 
@@ -44,4 +46,8 @@ public record DeliveryNoteListItemDto(
     DateOnly DispatchDate,
     string DispatchWarehouseCode,
     string Status,
-    int LineCount);
+    int LineCount,
+    decimal DeliveredQuantity,           // Σ dispatched across lines
+    decimal InvoicedQuantity,            // Σ already invoiced across lines
+    decimal RemainingToInvoice,          // Delivered − Invoiced
+    string InvoiceState);                // NotInvoiced | PartiallyInvoiced | FullyInvoiced

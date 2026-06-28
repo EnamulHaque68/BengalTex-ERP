@@ -37,9 +37,18 @@ public class QcInspection : BaseTransactionalEntity
     public int InspectedFromWarehouseId { get; set; }
     public Warehouse InspectedFromWarehouse { get; set; } = null!;
 
-    /// <summary>Warehouse rejected stock is routed to (held out of usable inventory).</summary>
+    /// <summary>Warehouse rejected stock is routed to (held out of usable inventory). For a Scrap
+    /// <see cref="RejectDisposition"/> the rejected stock is written off instead of moved here.</summary>
     public int QuarantineWarehouseId { get; set; }
     public Warehouse QuarantineWarehouse { get; set; } = null!;
+
+    /// <summary>
+    /// Phase 5 (QC-hold upgrade) — what happens to the rejected quantity on Post. Null = Quarantine
+    /// (legacy behaviour). Quarantine / Reject / Rework move the rejects to <see cref="QuarantineWarehouseId"/>;
+    /// Scrap writes them off. When the inspected production is QC-held, the inspected quantity (passed +
+    /// rejected) is released from the QC hold so the passed goods become usable.
+    /// </summary>
+    public QcRejectDisposition? RejectDisposition { get; set; }
 
     public QcInspectionStatus Status { get; set; } = QcInspectionStatus.Draft;
 
@@ -97,4 +106,13 @@ public enum QcResult
     Passed = 1,             // nothing rejected
     PartiallyPassed = 2,    // some passed, some rejected
     Failed = 3              // everything rejected
+}
+
+/// <summary>Where the rejected quantity goes when a QC inspection is posted (Phase 5 upgrade).</summary>
+public enum QcRejectDisposition
+{
+    Quarantine = 1,         // move to the quarantine warehouse (default / legacy)
+    Reject = 2,             // move to a reject warehouse (segregated, same mechanic as Quarantine)
+    Rework = 3,             // move to a rework warehouse for reprocessing
+    Scrap = 4               // write off entirely (no destination)
 }

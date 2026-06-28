@@ -31,6 +31,7 @@ internal sealed class ConfirmSalesOrderCommandHandler
     private readonly IMediator _mediator;
     private readonly CreditControlSettings _credit;
     private readonly IApprovalService _approval;
+    private readonly INotificationService _notifications;
 
     public ConfirmSalesOrderCommandHandler(
         IRepository<Domain.Entities.SalesOrder, long> repo,
@@ -39,7 +40,8 @@ internal sealed class ConfirmSalesOrderCommandHandler
         ICurrentUserService currentUser,
         IMediator mediator,
         IOptions<CreditControlSettings> credit,
-        IApprovalService approval)
+        IApprovalService approval,
+        INotificationService notifications)
     {
         _repo = repo;
         _invRepo = invRepo;
@@ -48,6 +50,7 @@ internal sealed class ConfirmSalesOrderCommandHandler
         _mediator = mediator;
         _credit = credit.Value;
         _approval = approval;
+        _notifications = notifications;
     }
 
     public async Task<ApiResponse<SalesOrderDto>> Handle(
@@ -95,6 +98,13 @@ internal sealed class ConfirmSalesOrderCommandHandler
             so.Status = Domain.Entities.SalesOrderStatus.Confirmed;
             so.ConfirmedAt = DateTimeOffset.UtcNow;
             so.ConfirmedBy = _currentUser.UserName;
+
+            // Phase 7 — smart notification: confirmed SO is ready for production planning.
+            await _notifications.NotifyAsync(
+                NotificationChannels.InApp, NotificationRecipients.ProductionTeam,
+                $"Sales order {so.Code} confirmed",
+                $"{so.Customer.Name} — ready for production planning.",
+                "SalesOrder", so.Id, cancellationToken);
         }
         else
         {

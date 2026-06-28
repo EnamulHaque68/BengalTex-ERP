@@ -33,6 +33,10 @@
                   placeholder="All methods"
                   styleClass="filter-select-sm"
                   (onChange)="load()" />
+      <label class="base-toggle" pTooltip="Show the base-currency (BDT) equivalent" tooltipPosition="bottom">
+        <p-checkbox [(ngModel)]="showBase" [binary]="true" />
+        <span>Show base (BDT)</span>
+      </label>
       <p-button label="Add Receipt" icon="pi pi-plus" (click)="openCreate()" />
     </div>
   </div>
@@ -62,9 +66,11 @@
           <th>Customer</th>
           <th>Date</th>
           <th>Amount</th>
+          <th *ngIf="showBase" class="num">Base (BDT)</th>
+          <th>Status</th>
           <th>Method</th>
           <th>Reference</th>
-          <th style="width:100px">Actions</th>
+          <th style="width:140px">Actions</th>
         </tr>
       </ng-template>
 
@@ -74,17 +80,33 @@
           <td><span class="code-badge alt">{{ r.customerInvoiceCode }}</span></td>
           <td class="fw-600">{{ r.customerName }}</td>
           <td class="num">{{ r.receiptDate }}</td>
-          <td class="num amount">{{ formatCurrency(r.amount) }}</td>
+          <td class="num amount">
+            {{ formatMoney(r.amount, r.currencyCode) }}
+            <span class="fx-chip" *ngIf="r.currencyCode && r.currencyCode !== 'BDT'">@ {{ r.exchangeRate | number:'1.2-6' }}</span>
+          </td>
+          <td *ngIf="showBase" class="num base-amt">{{ formatCurrency(r.baseAmount) }}</td>
+          <td><span class="status-badge" [ngClass]="statusClass(r.status)">{{ r.status }}</span></td>
           <td><span class="method-badge">{{ paymentMethodLabel(r.paymentMethod) }}</span></td>
           <td>{{ r.referenceNumber || '—' }}</td>
           <td>
             <div class="row-actions">
               <p-button icon="pi pi-eye" severity="secondary" [text]="true" size="small"
                         (click)="openView(r)" pTooltip="View" />
+              <!-- Draft → Post (applies to invoice) -->
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="r.status === 'Draft'"
+                        [loading]="rowActionId === r.id"
+                        (click)="post(r)" pTooltip="Post (apply to invoice)" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         [routerLink]="['/receipts', r.id, 'print']" pTooltip="Print money receipt" />
+              <!-- Posted → Cancel (reverses invoice) -->
+              <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
+                        *ngIf="r.status === 'Posted'"
+                        (click)="confirmCancel(r)" pTooltip="Cancel (reverse invoice)" />
+              <!-- Draft / Cancelled → hard delete -->
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
-                        (click)="confirmDelete(r)" pTooltip="Delete (reverses invoice)" />
+                        *ngIf="r.status !== 'Posted'"
+                        (click)="confirmDelete(r)" pTooltip="Delete" />
             </div>
           </td>
         </tr>
@@ -92,7 +114,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-row">
+          <td [attr.colspan]="showBase ? 10 : 9" class="empty-row">
             <i class="pi pi-money-bill"></i>
             <span>No receipts yet. Click "Add Receipt" to record a customer payment.</span>
           </td>
@@ -181,11 +203,17 @@
       </div>
     </div>
 
+    <p class="draft-hint">
+      <i class="pi pi-info-circle"></i>
+      This saves a <strong>Draft</strong> receipt — the invoice stays <strong>Unpaid</strong> until
+      you <strong>Post</strong> it from the list.
+    </p>
+
     <div class="dialog-footer">
       <p-button label="Cancel" severity="secondary" [text]="true"
                 (click)="dialogVisible = false" [disabled]="dialogSaving" />
       <p-button type="submit"
-                [label]="dialogSaving ? 'Saving...' : 'Post Receipt'"
+                [label]="dialogSaving ? 'Saving...' : 'Save Draft'"
                 icon="pi pi-save" [loading]="dialogSaving"
                 [disabled]="form.invalid || dialogSaving" />
     </div>
@@ -204,7 +232,16 @@
     <div><span class="vlabel">Invoice</span><span class="vval"><span class="code-badge alt">{{ viewingReceipt.customerInvoiceCode }}</span></span></div>
     <div><span class="vlabel">Customer</span><span class="vval fw-600">{{ viewingReceipt.customerName }}</span></div>
     <div><span class="vlabel">Date</span><span class="vval">{{ viewingReceipt.receiptDate }}</span></div>
-    <div><span class="vlabel">Amount</span><span class="vval amount">{{ formatCurrency(viewingReceipt.amount) }}</span></div>
+    <div><span class="vlabel">Status</span><span class="vval"><span class="status-badge" [ngClass]="statusClass(viewingReceipt.status)">{{ viewingReceipt.status }}</span></span></div>
+    <div><span class="vlabel">Amount</span><span class="vval amount">{{ formatMoney(viewingReceipt.amount, viewingReceipt.currencyCode) }}</span></div>
+    <div *ngIf="viewingReceipt.currencyCode && viewingReceipt.currencyCode !== 'BDT'">
+      <span class="vlabel">Exchange Rate</span>
+      <span class="vval">1 {{ viewingReceipt.currencyCode }} = {{ viewingReceipt.exchangeRate | number:'1.2-6' }} BDT</span>
+    </div>
+    <div *ngIf="showBase || (viewingReceipt.currencyCode && viewingReceipt.currencyCode !== 'BDT')">
+      <span class="vlabel">Base (BDT)</span>
+      <span class="vval base-amt">{{ formatCurrency(viewingReceipt.baseAmount) }}</span>
+    </div>
     <div><span class="vlabel">Method</span><span class="vval"><span class="method-badge">{{ paymentMethodLabel(viewingReceipt.paymentMethod) }}</span></span></div>
     <div><span class="vlabel">Reference</span><span class="vval">{{ viewingReceipt.referenceNumber || '—' }}</span></div>
     <div><span class="vlabel">Notes</span><span class="vval">{{ viewingReceipt.notes || '—' }}</span></div>
@@ -225,8 +262,8 @@
   [style]="{ width: '440px' }"
 >
   <div *ngIf="deletingRct">
-    <p>Delete <strong>{{ deletingRct.code }}</strong> ({{ formatCurrency(deletingRct.amount) }} via {{ paymentMethodLabel(deletingRct.paymentMethod) }})?</p>
-    <p class="warn-note"><i class="pi pi-exclamation-triangle"></i> The invoice <strong>{{ deletingRct.customerInvoiceCode }}</strong> will be debited by this amount and its status recomputed.</p>
+    <p>Delete <strong>{{ deletingRct.code }}</strong> ({{ formatMoney(deletingRct.amount, deletingRct.currencyCode) }} via {{ paymentMethodLabel(deletingRct.paymentMethod) }})?</p>
+    <p class="warn-note"><i class="pi pi-info-circle"></i> This {{ deletingRct.status | lowercase }} receipt has no effect on the invoice, so deleting it just removes the record.</p>
 
     <div class="alert alert-error" *ngIf="deleteError">
       <i class="pi pi-exclamation-circle"></i>{{ deleteError }}
@@ -235,8 +272,32 @@
     <div class="dialog-footer">
       <p-button label="Cancel" severity="secondary" [text]="true"
                 (click)="deleteDialogVisible = false" [disabled]="deleting" />
-      <p-button label="Delete + Reverse" icon="pi pi-trash" severity="danger"
+      <p-button label="Delete" icon="pi pi-trash" severity="danger"
                 [loading]="deleting" (click)="doDelete()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Cancel (reverse posted receipt) -->
+<p-dialog
+  [(visible)]="cancelDialogVisible"
+  header="Cancel Receipt"
+  [modal]="true"
+  [style]="{ width: '460px' }"
+>
+  <div *ngIf="cancellingRct">
+    <p>Cancel <strong>{{ cancellingRct.code }}</strong> ({{ formatMoney(cancellingRct.amount, cancellingRct.currencyCode) }} via {{ paymentMethodLabel(cancellingRct.paymentMethod) }})?</p>
+    <p class="warn-note"><i class="pi pi-exclamation-triangle"></i> Invoice <strong>{{ cancellingRct.customerInvoiceCode }}</strong> will be debited by this amount, its paid status recomputed, and a reversing journal posted.</p>
+
+    <div class="alert alert-error" *ngIf="cancelError">
+      <i class="pi pi-exclamation-circle"></i>{{ cancelError }}
+    </div>
+
+    <div class="dialog-footer">
+      <p-button label="Keep It" severity="secondary" [text]="true"
+                (click)="cancelDialogVisible = false" [disabled]="cancelling" />
+      <p-button label="Cancel + Reverse" icon="pi pi-ban" severity="warn"
+                [loading]="cancelling" (click)="doCancel()" />
     </div>
   </div>
 </p-dialog>

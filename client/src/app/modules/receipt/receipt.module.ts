@@ -12,6 +12,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { ReceiptListComponent } from './receipt-list/receipt-list.component';
 import { ReceiptPrintComponent } from './receipt-print/receipt-print.component';
@@ -29,7 +30,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule, SharedModule
+    TooltipModule, CheckboxModule, SharedModule
   ]
 })
 export class ReceiptModule {}

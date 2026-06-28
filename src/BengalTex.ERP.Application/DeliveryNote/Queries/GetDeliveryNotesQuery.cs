@@ -57,18 +57,40 @@ internal sealed class GetDeliveryNotesQueryHandler
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+
+        // Project the raw aggregates first; derive the invoice-state label in memory so the
+        // CASE-string logic doesn't have to round-trip through SQL.
+        var raw = await query
             .Skip((request.Parameters.Page - 1) * request.Parameters.PageSize)
             .Take(request.Parameters.PageSize)
-            .Select(d => new DeliveryNoteListItemDto(
+            .Select(d => new
+            {
                 d.Id, d.Code,
-                d.SalesOrderId, d.SalesOrder.Code,
-                d.SalesOrder.Customer.Name,
+                d.SalesOrderId,
+                SalesOrderCode = d.SalesOrder.Code,
+                CustomerName = d.SalesOrder.Customer.Name,
                 d.DispatchDate,
-                d.DispatchWarehouse.Code,
-                d.Status.ToString(),
-                d.Lines.Count))
+                WarehouseCode = d.DispatchWarehouse.Code,
+                d.Status,
+                LineCount = d.Lines.Count,
+                Delivered = d.Lines.Sum(l => l.DispatchedQuantity),
+                Invoiced = d.Lines.Sum(l => l.InvoicedQuantity)
+            })
             .ToListAsync(cancellationToken);
+
+        var items = raw.Select(r => new DeliveryNoteListItemDto(
+                r.Id, r.Code,
+                r.SalesOrderId, r.SalesOrderCode,
+                r.CustomerName,
+                r.DispatchDate,
+                r.WarehouseCode,
+                r.Status.ToString(),
+                r.LineCount,
+                r.Delivered, r.Invoiced, r.Delivered - r.Invoiced,
+                r.Invoiced <= 0m ? "NotInvoiced"
+                    : r.Invoiced < r.Delivered ? "PartiallyInvoiced"
+                    : "FullyInvoiced"))
+            .ToList();
 
         var result = PagedResult<DeliveryNoteListItemDto>.Create(
             items, request.Parameters.Page, request.Parameters.PageSize, totalCount);

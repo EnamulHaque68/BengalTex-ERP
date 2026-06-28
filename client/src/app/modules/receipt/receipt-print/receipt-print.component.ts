@@ -42,10 +42,39 @@ export class ReceiptPrintComponent implements OnInit {
   back(): void { this.router.navigate(['/receipts']); }
   print(): void { window.print(); }
 
+  /** Major / minor unit words per currency, for the "amount in words" line. */
+  private static readonly UNITS: Record<string, { major: string; minor: string }> = {
+    BDT: { major: 'Taka', minor: 'Paisa' },
+    USD: { major: 'US Dollars', minor: 'Cents' },
+    EUR: { major: 'Euros', minor: 'Cents' },
+    GBP: { major: 'Pounds', minor: 'Pence' },
+    INR: { major: 'Rupees', minor: 'Paisa' }
+  };
+
+  /** True when the receipt is in a foreign (non-base) currency — drives the FX info block. */
+  get isForeign(): boolean {
+    return !!this.receipt && !!this.receipt.currencyCode && this.receipt.currencyCode !== 'BDT';
+  }
+
+  /** Format in the receipt's own currency (the primary amount indicator). */
+  formatMoney(amount: number, code: string | null | undefined): string {
+    const c = code || 'BDT';
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: c, maximumFractionDigits: 2 }).format(amount || 0);
+    } catch {
+      return `${(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${c}`;
+    }
+  }
+
+  /** Base-currency (BDT) formatting — used only for the FX "base amount" info line. */
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 2 }).format(amount || 0);
   }
-  amountInWords(amount: number): string { return numberToWords(amount) + ' Taka Only'; }
+
+  amountInWords(amount: number, code: string | null | undefined): string {
+    const unit = ReceiptPrintComponent.UNITS[(code || 'BDT').toUpperCase()] ?? { major: (code || 'BDT'), minor: 'Cents' };
+    return `${numberToWords(amount, unit.minor)} ${unit.major} Only`;
+  }
   methodLabel(m: string): string {
     switch (m) {
       case 'Cash': return 'Cash';

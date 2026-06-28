@@ -15,7 +15,9 @@ public sealed record ProductionStageInput(
     decimal? PlannedQuantity,            // null → defaults to the order quantity
     string? ProductionLine,
     int? OperatorEmployeeId,
-    string? Notes);
+    string? Notes,
+    int? WorkCenterId = null,            // Phase 4 — capacity planning
+    int? ShiftId = null);               // Phase 4 — multi-shift
 
 public sealed record CreateProductionOrderCommand(
     int ProductId,
@@ -28,7 +30,8 @@ public sealed record CreateProductionOrderCommand(
     string? Notes,
     IReadOnlyList<ProductionStageInput>? Stages = null,
     long? SalesOrderId = null,
-    long? SalesOrderLineId = null
+    long? SalesOrderLineId = null,
+    bool RequiresQc = false
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class CreateProductionOrderCommandValidator : AbstractValidator<CreateProductionOrderCommand>
@@ -124,6 +127,7 @@ internal sealed class CreateProductionOrderCommandHandler
             PlannedStartDate = cmd.PlannedStartDate,
             PlannedEndDate = cmd.PlannedEndDate,
             Status = Domain.Entities.ProductionOrderStatus.Draft,
+            RequiresQc = cmd.RequiresQc,
             Notes = cmd.Notes
         };
 
@@ -141,6 +145,8 @@ internal sealed class CreateProductionOrderCommandHandler
                     CompletedQuantity = 0m,
                     RejectedQuantity = 0m,
                     ProductionLine = string.IsNullOrWhiteSpace(s.ProductionLine) ? null : s.ProductionLine.Trim(),
+                    WorkCenterId = s.WorkCenterId,
+                    ShiftId = s.ShiftId,
                     OperatorEmployeeId = s.OperatorEmployeeId,
                     Notes = string.IsNullOrWhiteSpace(s.Notes) ? null : s.Notes.Trim()
                 });

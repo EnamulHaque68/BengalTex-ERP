@@ -21,7 +21,8 @@ public sealed record UpdateProductionOrderCommand(
     string? Notes,
     IReadOnlyList<ProductionStageInput>? Stages = null,
     long? SalesOrderId = null,
-    long? SalesOrderLineId = null
+    long? SalesOrderLineId = null,
+    bool RequiresQc = false
 ) : IRequest<ApiResponse<ProductionOrderDto>>;
 
 public sealed class UpdateProductionOrderCommandValidator : AbstractValidator<UpdateProductionOrderCommand>
@@ -116,6 +117,7 @@ internal sealed class UpdateProductionOrderCommandHandler
         po.ReceiveWarehouseId = cmd.ReceiveWarehouseId;
         po.PlannedStartDate = cmd.PlannedStartDate;
         po.PlannedEndDate = cmd.PlannedEndDate;
+        po.RequiresQc = cmd.RequiresQc;
         po.Notes = cmd.Notes;
 
         // Replace the routing (order is Draft, so no stage has been worked yet).
@@ -134,6 +136,8 @@ internal sealed class UpdateProductionOrderCommandHandler
                     CompletedQuantity = 0m,
                     RejectedQuantity = 0m,
                     ProductionLine = string.IsNullOrWhiteSpace(s.ProductionLine) ? null : s.ProductionLine.Trim(),
+                    WorkCenterId = s.WorkCenterId,
+                    ShiftId = s.ShiftId,
                     OperatorEmployeeId = s.OperatorEmployeeId,
                     Notes = string.IsNullOrWhiteSpace(s.Notes) ? null : s.Notes.Trim()
                 });

@@ -7,8 +7,12 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   CompleteProductionStageRequest,
   CreateProductionOrderRequest,
+  ProductionAwaitingQcDto,
+  ProductionCalendarDto,
   ProductionOrderDto,
   ProductionOrderListItemDto,
+  ProductionTraceabilityDto,
+  UpdateProductionCostsRequest,
   UpdateProductionOrderRequest
 } from '../models/production-order.models';
 
@@ -40,6 +44,27 @@ export class ProductionOrderService {
     return this.http.get<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}`);
   }
 
+  /** Phase 8 — Manufacturing Calendar: orders + holidays + weekend days for a date range. */
+  getCalendar(from: string, to: string): Observable<ApiResponse<ProductionCalendarDto>> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<ApiResponse<ProductionCalendarDto>>(`${this.base}/calendar`, { params });
+  }
+
+  /** Phase 5b — completed productions still QC-held (remaining hold > 0) for the QC inspection picker. */
+  getAwaitingQc(): Observable<ApiResponse<ProductionAwaitingQcDto[]>> {
+    return this.http.get<ApiResponse<ProductionAwaitingQcDto[]>>(`${this.base}/awaiting-qc`);
+  }
+
+  /** Phase 6 — record the manual cost-sheet components. */
+  updateCosts(id: number, data: UpdateProductionCostsRequest): Observable<ApiResponse<ProductionOrderDto>> {
+    return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}/costs`, data);
+  }
+
+  /** Phase 7 — end-to-end traceability chain for a production run. */
+  getTraceability(id: number): Observable<ApiResponse<ProductionTraceabilityDto>> {
+    return this.http.get<ApiResponse<ProductionTraceabilityDto>>(`${this.base}/${id}/traceability`);
+  }
+
   create(data: CreateProductionOrderRequest): Observable<ApiResponse<ProductionOrderDto>> {
     return this.http.post<ApiResponse<ProductionOrderDto>>(this.base, data);
   }
@@ -62,6 +87,11 @@ export class ProductionOrderService {
 
   cancel(id: number): Observable<ApiResponse<ProductionOrderDto>> {
     return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}/cancel`, {});
+  }
+
+  /** Phase 5 — release the QC hold on a completed run (makes the held finished goods usable). */
+  releaseQcHold(id: number): Observable<ApiResponse<ProductionOrderDto>> {
+    return this.http.post<ApiResponse<ProductionOrderDto>>(`${this.base}/${id}/release-qc-hold`, {});
   }
 
   /** Raise a draft Purchase Requisition for this order's raw-material shortfalls (returns the PR id). */

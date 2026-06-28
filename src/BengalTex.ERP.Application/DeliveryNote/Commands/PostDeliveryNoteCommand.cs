@@ -35,6 +35,7 @@ internal sealed class PostDeliveryNoteCommandHandler
     private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
+    private readonly IStockReservationService _reservations;
     private readonly IJournalPostingService _journal;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -44,6 +45,7 @@ internal sealed class PostDeliveryNoteCommandHandler
         IRepository<Domain.Entities.SalesOrder, long> soRepo,
         IUnitOfWork uow,
         IStockService stock,
+        IStockReservationService reservations,
         IJournalPostingService journal,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -52,6 +54,7 @@ internal sealed class PostDeliveryNoteCommandHandler
         _soRepo = soRepo;
         _uow = uow;
         _stock = stock;
+        _reservations = reservations;
         _journal = journal;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -96,12 +99,17 @@ internal sealed class PostDeliveryNoteCommandHandler
                     $"{soLine.Product.Name}: would exceed ordered qty " +
                     $"({remaining:0.####} remaining).");
 
-            var available = await _stock.GetProductOnHandAsync(
+            // Available = on hand − reserved (Phase 2/5): excludes QC-held / earmarked finished goods.
+            var onHand = await _stock.GetProductOnHandAsync(
                 soLine.ProductId, dn.DispatchWarehouseId, cancellationToken);
+            var reserved = await _reservations.GetReservedProductAsync(
+                soLine.ProductId, dn.DispatchWarehouseId, cancellationToken);
+            var available = onHand - reserved;
             if (dnLine.DispatchedQuantity > available)
                 return ApiResponse<DeliveryNoteDto>.Fail(
-                    $"{soLine.Product.Name}: insufficient stock in dispatch warehouse " +
-                    $"(need {dnLine.DispatchedQuantity:0.####}, have {available:0.####}).");
+                    $"{soLine.Product.Name}: insufficient available stock in dispatch warehouse " +
+                    $"(need {dnLine.DispatchedQuantity:0.####}, available {available:0.####}" +
+                    (reserved > 0m ? $", of which {reserved:0.####} is reserved/QC-held" : "") + ").");
         }
 
         // Pass 2 — apply: increment SO lines + post movements; accumulate COGS at WAC

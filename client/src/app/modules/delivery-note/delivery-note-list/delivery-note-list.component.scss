@@ -85,6 +85,24 @@
   &.posted { background: #d1fae5; color: #065f46; }
 }
 
+.inv-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  i { font-size: 0.72rem; }
+
+  &.inv-none    { background: #f3f4f6; color: #6b7280; }
+  &.inv-partial { background: #fef3c7; color: #92400e; }
+  &.inv-full    { background: #d1fae5; color: #065f46; }
+}
+
+.remaining-warn { color: #b45309; font-weight: 700; }
+
 .row-actions { display: flex; gap: 0.05rem; }
 
 .empty-row {
@@ -181,6 +199,36 @@
 
 :host ::ng-deep .line-grid .grid-num { width: 100%; text-align: right; }
 :host ::ng-deep .line-grid .p-inputnumber { width: 100%; }
+
+// ─── DN → Invoice dialog ─────────────────────────────────────────────────────
+.dialog-hint { font-size: 0.8rem; color: #6b7280; margin: 0 0 0.75rem; }
+.loading-view { padding: 2rem; text-align: center; color: #9ca3af; }
+
+.invoice-grid .remaining { color: #b45309; }
+
+.invoice-vat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.25rem;
+  label { font-size: 0.8125rem; font-weight: 600; color: #374151; }
+  .vat-hint { font-size: 0.75rem; color: #9ca3af; }
+}
+
+.alert-warn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+:host ::ng-deep .input-error .p-inputnumber-input { border-color: #dc2626; }
 
 .line-notes-input { width: 100%; font-size: 0.8rem; }
 

@@ -51,6 +51,24 @@ public class ReceiptsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Post a draft receipt — applies it to the invoice (reduces outstanding) + journals it.</summary>
+    [HttpPost("{id:long}/post")]
+    [HasPermission(Permissions.Payments.Edit)]
+    public async Task<IActionResult> Post(long id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new PostReceiptCommand(id), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Cancel a receipt — voids a draft, or reverses a posted receipt's invoice/ledger effect.</summary>
+    [HttpPost("{id:long}/cancel")]
+    [HasPermission(Permissions.Payments.Edit)]
+    public async Task<IActionResult> Cancel(long id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new CancelReceiptCommand(id), ct);
+        return Ok(result);
+    }
+
     [HttpDelete("{id:long}")]
     [HasPermission(Permissions.Payments.Edit)]
     public async Task<IActionResult> Delete(long id, CancellationToken ct)

@@ -55,6 +55,23 @@ export class DeliveryNoteListComponent implements OnInit {
 
   rowActionId: number | null = null;
 
+  // ── DN → Invoice partial-invoice dialog ──
+  invoiceDialogVisible = false;
+  invoiceDn: DeliveryNoteListItemDto | null = null;
+  invoiceLoading = false;
+  invoiceSaving = false;
+  invoiceError = '';
+  invoiceVatRate = 0;
+  invoiceLines: {
+    deliveryNoteLineId: number;
+    productDisplay: string;
+    uomCode: string;
+    delivered: number;
+    alreadyInvoiced: number;
+    remaining: number;
+    invoiceThisTime: number;
+  }[] = [];
+
   constructor(
     private dnService: DeliveryNoteService,
     private soService: SalesOrderService,
@@ -383,23 +400,100 @@ export class DeliveryNoteListComponent implements OnInit {
     });
   }
 
-  /** Generate a draft invoice from a posted DN and jump to it. */
-  createInvoice(dn: DeliveryNoteListItemDto): void {
+  // ─── DN → Invoice (partial-invoice dialog) ──────────────────────────────
+
+  /** Open the partial-invoice dialog for a posted DN: load its per-line remaining-to-invoice. */
+  openCreateInvoice(dn: DeliveryNoteListItemDto): void {
     if (this.rowActionId) return;
-    this.rowActionId = dn.id;
-    this.actionError = '';
+    this.invoiceDn = dn;
+    this.invoiceError = '';
+    this.invoiceVatRate = 0;
+    this.invoiceLines = [];
+    this.invoiceLoading = true;
+    this.invoiceDialogVisible = true;
     this.cdr.detectChanges();
-    this.dnService.createInvoice(dn.id).subscribe({
+
+    this.dnService.getById(dn.id).subscribe({
       next: (res) => this.zone.run(() => {
-        this.rowActionId = null;
-        if (res.success && res.data?.id) {
-          this.router.navigate(['/customer-invoices'], { queryParams: { open: res.data.id } });
+        this.invoiceLoading = false;
+        if (res.success && res.data) {
+          // Only lines with something left to invoice; auto-fill "invoice this time" = remaining.
+          this.invoiceLines = res.data.lines
+            .filter(l => l.remainingToInvoice > 0)
+            .map(l => ({
+              deliveryNoteLineId: l.id,
+              productDisplay: `${l.productCode} — ${l.productName}`,
+              uomCode: l.unitOfMeasureCode,
+              delivered: l.dispatchedQuantity,
+              alreadyInvoiced: l.invoicedQuantity,
+              remaining: l.remainingToInvoice,
+              invoiceThisTime: l.remainingToInvoice
+            }));
+          if (this.invoiceLines.length === 0) {
+            this.invoiceError = 'This delivery note is already fully invoiced.';
+          }
         } else {
-          this.actionError = res.message || 'Could not create invoice.';
+          this.invoiceError = res.message || 'Could not load delivery note.';
         }
         this.cdr.detectChanges();
       }),
-      error: (err) => this.handleRowActionError(err)
+      error: (err) => this.zone.run(() => {
+        this.invoiceLoading = false;
+        this.invoiceError = err?.error?.message || 'Could not load delivery note.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  /** Per-line live validation: over-remaining or negative → message (also disables Save). */
+  get invoiceValidationError(): string | null {
+    if (this.invoiceLines.length === 0) return null;
+    for (const l of this.invoiceLines) {
+      const q = Number(l.invoiceThisTime);
+      if (q < 0) return 'Invoice quantity cannot be negative.';
+      if (q > l.remaining) return `"${l.productDisplay}": cannot invoice more than the remaining ${l.remaining}.`;
+    }
+    if (this.invoiceTotalQty <= 0) return 'Enter at least one quantity to invoice (> 0).';
+    return null;
+  }
+
+  get invoiceTotalQty(): number {
+    return this.invoiceLines.reduce((sum, l) => sum + (Number(l.invoiceThisTime) || 0), 0);
+  }
+
+  /** Submit the selected per-line quantities → draft invoice → jump to it. */
+  saveInvoice(): void {
+    if (this.invoiceSaving || !this.invoiceDn) return;
+    const validation = this.invoiceValidationError;
+    if (validation) { this.invoiceError = validation; this.cdr.detectChanges(); return; }
+
+    const lines = this.invoiceLines
+      .filter(l => Number(l.invoiceThisTime) > 0)
+      .map(l => ({ deliveryNoteLineId: l.deliveryNoteLineId, quantity: Number(l.invoiceThisTime) }));
+
+    this.invoiceSaving = true;
+    this.invoiceError = '';
+    this.cdr.detectChanges();
+
+    // UI collects VAT as a percentage (0–100); backend wants a 0–1 fraction.
+    const vatFraction = (Number(this.invoiceVatRate) || 0) / 100;
+    this.dnService.createInvoice(this.invoiceDn.id, lines, vatFraction).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.invoiceSaving = false;
+        if (res.success && res.data?.id) {
+          this.invoiceDialogVisible = false;
+          this.load();   // refresh invoiced/remaining columns
+          this.router.navigate(['/customer-invoices'], { queryParams: { open: res.data.id } });
+        } else {
+          this.invoiceError = res.message || 'Could not create invoice.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.invoiceSaving = false;
+        this.invoiceError = err?.error?.message || 'Could not create invoice.';
+        this.cdr.detectChanges();
+      })
     });
   }
 

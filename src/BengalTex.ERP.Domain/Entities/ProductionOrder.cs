@@ -57,8 +57,29 @@ public class ProductionOrder : BaseTransactionalEntity
 
     public ProductionOrderStatus Status { get; set; } = ProductionOrderStatus.Draft;
 
+    /// <summary>
+    /// Phase 5 — Quality Hold (opt-in). When true, completing this run does NOT make the finished
+    /// goods usable: the produced quantity is QC-held (soft-reserved in the receive warehouse, so it
+    /// cannot be dispatched) until a QC release. Default false = the finished goods are immediately
+    /// usable (existing behaviour, unchanged).
+    /// </summary>
+    public bool RequiresQc { get; set; }
+
+    /// <summary>When the QC hold was released (FG made usable). Null while still held / when QC not required.</summary>
+    public DateTimeOffset? QcReleasedAt { get; set; }
+
     public DateTimeOffset? CompletedAt { get; set; }
     public string? CompletedBy { get; set; }
+
+    // ── Phase 6 — actual production cost sheet (all in base BDT) ──
+    /// <summary>Raw-material cost consumed — auto-captured at Complete (backflushed RM/component cost).</summary>
+    public decimal MaterialCost { get; set; }
+    public decimal LabourCost { get; set; }
+    public decimal MachineCost { get; set; }
+    public decimal OverheadCost { get; set; }
+    public decimal SubcontractCost { get; set; }
+    public decimal WastageCost { get; set; }
+    public decimal RejectCost { get; set; }
 
     public string? Notes { get; set; }
 
@@ -97,8 +118,17 @@ public class ProductionStage : BaseTransactionalEntity
     /// <summary>Units rejected / scrapped at this stage.</summary>
     public decimal RejectedQuantity { get; set; }
 
-    /// <summary>Production line / workstation, free text.</summary>
+    /// <summary>Production line / workstation, free text (legacy — superseded by <see cref="WorkCenterId"/>).</summary>
     public string? ProductionLine { get; set; }
+
+    /// <summary>Work center this stage runs on (Phase 4 — capacity planning). Optional; the free-text
+    /// <see cref="ProductionLine"/> remains as a fallback for orders that don't use work centers.</summary>
+    public int? WorkCenterId { get; set; }
+    public WorkCenter? WorkCenter { get; set; }
+
+    /// <summary>Shift this stage is planned for (Phase 4 — multi-shift). Reuses the Shift master.</summary>
+    public int? ShiftId { get; set; }
+    public Shift? Shift { get; set; }
 
     /// <summary>Operator assigned to this stage (reuses the Employee master).</summary>
     public int? OperatorEmployeeId { get; set; }

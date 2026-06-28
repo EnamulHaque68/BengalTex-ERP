@@ -5,6 +5,7 @@ using BengalTex.ERP.Infrastructure.Persistence;
 using BengalTex.ERP.Infrastructure.Persistence.CrossCutting;
 using BengalTex.ERP.Shared.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BengalTex.ERP.Infrastructure.Services;
 
@@ -12,6 +13,8 @@ namespace BengalTex.ERP.Infrastructure.Services;
 /// Implements <see cref="INotificationService"/> over the Notifications table + the
 /// Email/SMS gateways. Records every attempt with its outcome (Sent/Failed). NotifyAsync
 /// does NOT save — the calling command's SaveChanges commits the notification atomically.
+/// After recording, it fires a best-effort SignalR signal so connected clients refresh the
+/// notification-bell badge in real time (the bell also polls as a fallback).
 /// </summary>
 public sealed class NotificationService : INotificationService
 {
@@ -19,13 +22,19 @@ public sealed class NotificationService : INotificationService
     private readonly IEmailSender _email;
     private readonly ISmsSender _sms;
     private readonly IDateTimeProvider _clock;
+    private readonly INotificationBroadcaster _broadcaster;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(ApplicationDbContext db, IEmailSender email, ISmsSender sms, IDateTimeProvider clock)
+    public NotificationService(
+        ApplicationDbContext db, IEmailSender email, ISmsSender sms, IDateTimeProvider clock,
+        INotificationBroadcaster broadcaster, ILogger<NotificationService> logger)
     {
         _db = db;
         _email = email;
         _sms = sms;
         _clock = clock;
+        _broadcaster = broadcaster;
+        _logger = logger;
     }
 
     public async Task NotifyAsync(
@@ -61,6 +70,24 @@ public sealed class NotificationService : INotificationService
         }
 
         _db.Notifications.Add(n);   // caller owns SaveChanges
+
+        // Real-time bell nudge — best effort; the client re-reads its own count, and a periodic
+        // poll reconciles anyway, so a broadcast failure (or a caller rollback) is harmless.
+        try
+        {
+            await _broadcaster.BroadcastNotificationAsync(channel, subject, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Notification broadcast failed (non-fatal).");
+        }
+    }
+
+    public Task<int> CountSinceAsync(DateTimeOffset? since, CancellationToken ct = default)
+    {
+        var query = _db.Notifications.AsNoTracking();
+        if (since.HasValue) query = query.Where(n => n.CreatedAt > since.Value);
+        return query.CountAsync(ct);
     }
 
     public async Task<PagedResult<NotificationDto>> QueryAsync(

@@ -28,6 +28,11 @@ export interface ProductionSectionDto {
   openJobCards: number;
   inProgressJobCards: number;
   thisMonthWastageCost: number;
+  // Phase 7
+  completedThisMonth?: number;
+  delayedProductions?: number;
+  qcHeldProductions?: number;
+  machinesUnderMaintenance?: number;
 }
 
 export interface HrSectionDto {
