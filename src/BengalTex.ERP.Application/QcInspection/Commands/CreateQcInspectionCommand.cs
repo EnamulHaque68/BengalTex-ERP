@@ -30,7 +30,8 @@ public sealed record CreateQcInspectionCommand(
     int QuarantineWarehouseId,
     string? InspectedBy,
     string? Notes,
-    IReadOnlyList<QcInspectionLineInput> Lines
+    IReadOnlyList<QcInspectionLineInput> Lines,
+    string? RejectDisposition = null    // "Quarantine" | "Reject" | "Rework" | "Scrap" (null = Quarantine)
 ) : IRequest<ApiResponse<QcInspectionDto>>;
 
 public sealed class CreateQcInspectionCommandValidator : AbstractValidator<CreateQcInspectionCommand>
@@ -41,6 +42,10 @@ public sealed class CreateQcInspectionCommandValidator : AbstractValidator<Creat
             .Must(s => s is "IncomingMaterial" or "FinishedGoods")
             .WithMessage("SourceType must be IncomingMaterial or FinishedGoods.");
         RuleFor(x => x.QuarantineWarehouseId).GreaterThan(0);
+        RuleFor(x => x.RejectDisposition)
+            .Must(d => d is "Quarantine" or "Reject" or "Rework" or "Scrap")
+            .When(x => !string.IsNullOrWhiteSpace(x.RejectDisposition))
+            .WithMessage("RejectDisposition must be Quarantine, Reject, Rework or Scrap.");
         RuleFor(x => x.InspectionDate).NotEmpty();
         RuleFor(x => x.InspectedBy).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
@@ -74,6 +79,7 @@ internal sealed class CreateQcInspectionCommandHandler
     private readonly IRepository<Domain.Entities.GoodsReceiptNote, long> _grnRepo;
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _prodRepo;
     private readonly IRepository<Domain.Entities.Warehouse> _warehouseRepo;
+    private readonly IStockReservationService _reservations;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -83,6 +89,7 @@ internal sealed class CreateQcInspectionCommandHandler
         IRepository<Domain.Entities.GoodsReceiptNote, long> grnRepo,
         IRepository<Domain.Entities.ProductionOrder, long> prodRepo,
         IRepository<Domain.Entities.Warehouse> warehouseRepo,
+        IStockReservationService reservations,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
@@ -91,6 +98,7 @@ internal sealed class CreateQcInspectionCommandHandler
         _grnRepo = grnRepo;
         _prodRepo = prodRepo;
         _warehouseRepo = warehouseRepo;
+        _reservations = reservations;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -135,6 +143,17 @@ internal sealed class CreateQcInspectionCommandHandler
             if (prod.Status != Domain.Entities.ProductionOrderStatus.Completed)
                 return ApiResponse<QcInspectionDto>.Fail("QC can only inspect a Completed production order.");
 
+            // Phase 5b guard — a QC-held production must still have a remaining hold to inspect.
+            // (Fully-inspected held productions are blocked; non-held productions are unaffected.)
+            if (prod.RequiresQc)
+            {
+                var remainingQc = await _reservations.GetReservedForReferenceAsync(
+                    "QcHold", prod.Id, cancellationToken);
+                if (remainingQc <= 0m)
+                    return ApiResponse<QcInspectionDto>.Fail(
+                        $"Production order {prod.Code} is fully QC-cleared — no quantity remaining to inspect.");
+            }
+
             foreach (var line in cmd.Lines)
             {
                 if (!line.ProductId.HasValue)
@@ -147,8 +166,15 @@ internal sealed class CreateQcInspectionCommandHandler
             inspectedFromWarehouseId = prod.ReceiveWarehouseId;
         }
 
-        if (inspectedFromWarehouseId == cmd.QuarantineWarehouseId)
-            return ApiResponse<QcInspectionDto>.Fail("Quarantine warehouse must differ from the inspected (source) warehouse.");
+        var rejectDisposition = string.IsNullOrWhiteSpace(cmd.RejectDisposition)
+            ? Domain.Entities.QcRejectDisposition.Quarantine
+            : Enum.Parse<Domain.Entities.QcRejectDisposition>(cmd.RejectDisposition);
+
+        // A move disposition (Quarantine/Reject/Rework) needs a destination distinct from the source;
+        // Scrap is a write-off so the destination warehouse is irrelevant.
+        if (rejectDisposition != Domain.Entities.QcRejectDisposition.Scrap
+            && inspectedFromWarehouseId == cmd.QuarantineWarehouseId)
+            return ApiResponse<QcInspectionDto>.Fail("Reject destination warehouse must differ from the inspected (source) warehouse.");
 
         var code = await _numbering.NextAsync("QC", null, cancellationToken);
 
@@ -161,6 +187,7 @@ internal sealed class CreateQcInspectionCommandHandler
             InspectionDate = cmd.InspectionDate,
             InspectedFromWarehouseId = inspectedFromWarehouseId,
             QuarantineWarehouseId = cmd.QuarantineWarehouseId,
+            RejectDisposition = rejectDisposition,
             Status = Domain.Entities.QcInspectionStatus.Draft,
             OverallResult = Domain.Entities.QcResult.Passed,
             InspectedBy = cmd.InspectedBy,

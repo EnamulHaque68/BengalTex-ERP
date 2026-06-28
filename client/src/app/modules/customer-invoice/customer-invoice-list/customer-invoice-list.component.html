@@ -87,7 +87,7 @@
                   [class.partial]="c.status === 'PartiallyPaid'"
                   [class.paid]="c.status === 'Paid'"
                   [class.cancelled]="c.status === 'Cancelled'">
-              {{ c.status === 'PartiallyPaid' ? 'Partial' : c.status }}
+              {{ c.status === 'Issued' ? 'Unpaid' : (c.status === 'PartiallyPaid' ? 'Partially Paid' : c.status) }}
             </span>
           </td>
           <td>

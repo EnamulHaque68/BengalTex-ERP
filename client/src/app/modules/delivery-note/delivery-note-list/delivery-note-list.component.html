@@ -62,8 +62,11 @@
           <th>Customer</th>
           <th>Dispatch Date</th>
           <th>Warehouse</th>
-          <th>Lines</th>
           <th>Status</th>
+          <th class="num">Delivered</th>
+          <th class="num">Invoiced</th>
+          <th class="num">Remaining</th>
+          <th>Invoice Status</th>
           <th style="width:150px">Actions</th>
         </tr>
       </ng-template>
@@ -75,13 +78,31 @@
           <td class="fw-600">{{ d.customerName }}</td>
           <td class="num">{{ formatDate(d.dispatchDate) }}</td>
           <td><span class="wh-badge">{{ d.dispatchWarehouseCode }}</span></td>
-          <td class="num">{{ d.lineCount }}</td>
           <td>
             <span class="status-badge"
                   [class.draft]="d.status === 'Draft'"
                   [class.posted]="d.status === 'Posted'">
               {{ d.status }}
             </span>
+          </td>
+          <td class="num">{{ d.deliveredQuantity | number:'1.0-4' }}</td>
+          <td class="num">{{ d.invoicedQuantity | number:'1.0-4' }}</td>
+          <td class="num" [class.remaining-warn]="d.status === 'Posted' && d.remainingToInvoice > 0">
+            {{ d.remainingToInvoice | number:'1.0-4' }}
+          </td>
+          <td>
+            <span *ngIf="d.status === 'Posted'" class="inv-state-badge"
+                  [class.inv-none]="d.invoiceState === 'NotInvoiced'"
+                  [class.inv-partial]="d.invoiceState === 'PartiallyInvoiced'"
+                  [class.inv-full]="d.invoiceState === 'FullyInvoiced'">
+              <i class="pi" [class.pi-circle]="d.invoiceState === 'NotInvoiced'"
+                            [class.pi-clock]="d.invoiceState === 'PartiallyInvoiced'"
+                            [class.pi-check-circle]="d.invoiceState === 'FullyInvoiced'"></i>
+              {{ d.invoiceState === 'NotInvoiced' ? 'Not Invoiced'
+                : d.invoiceState === 'PartiallyInvoiced' ? 'Partially Invoiced'
+                : 'Already Invoiced' }}
+            </span>
+            <span *ngIf="d.status !== 'Posted'" class="muted">—</span>
           </td>
           <td>
             <div class="row-actions">
@@ -93,10 +114,10 @@
                         *ngIf="d.status === 'Draft'"
                         [loading]="rowActionId === d.id"
                         (click)="post(d)" pTooltip="Post (commit dispatch)" />
+              <!-- Create-invoice button only while something remains to invoice -->
               <p-button icon="pi pi-file-export" severity="help" [text]="true" size="small"
-                        *ngIf="d.status === 'Posted'"
-                        [loading]="rowActionId === d.id"
-                        (click)="createInvoice(d)" pTooltip="Create draft invoice from this delivery" />
+                        *ngIf="d.status === 'Posted' && d.invoiceState !== 'FullyInvoiced'"
+                        (click)="openCreateInvoice(d)" pTooltip="Create invoice from this delivery" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         *ngIf="d.status !== 'Draft'"
                         [routerLink]="['/delivery-notes', d.id, 'print']" pTooltip="Print delivery note" />
@@ -110,7 +131,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-row">
+          <td colspan="11" class="empty-row">
             <i class="pi pi-send"></i>
             <span>No delivery notes. Click "Add DN" to record a dispatch.</span>
           </td>
@@ -298,5 +319,78 @@
       <p-button label="Delete" icon="pi pi-trash" severity="danger"
                 [loading]="deleting" (click)="doDelete()" />
     </div>
+  </div>
+</p-dialog>
+
+<!-- DN → Invoice (partial invoicing) -->
+<p-dialog
+  [(visible)]="invoiceDialogVisible"
+  [header]="'Create Invoice — ' + (invoiceDn?.code || '')"
+  [modal]="true"
+  [style]="{ width: '860px' }"
+  [draggable]="false"
+>
+  <div class="alert alert-error" *ngIf="invoiceError">
+    <i class="pi pi-exclamation-circle"></i>{{ invoiceError }}
+  </div>
+
+  <div class="loading-view" *ngIf="invoiceLoading">Loading delivery lines…</div>
+
+  <ng-container *ngIf="!invoiceLoading && invoiceLines.length > 0">
+    <p class="section-label">Invoice Quantities</p>
+    <p class="dialog-hint">
+      Auto-filled with the remaining quantity per line. You may invoice less for a partial
+      invoice, but never more than <strong>Remaining</strong>.
+    </p>
+
+    <table class="line-grid invoice-grid">
+      <thead>
+        <tr>
+          <th class="rm-col">Product</th>
+          <th class="unit-col">Unit</th>
+          <th class="num-col">Delivered</th>
+          <th class="num-col">Already Invoiced</th>
+          <th class="num-col">Remaining</th>
+          <th class="num-col receive-col">Invoice This Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of invoiceLines">
+          <td class="rm-cell">{{ l.productDisplay }}</td>
+          <td class="unit-cell">{{ l.uomCode }}</td>
+          <td class="num muted">{{ l.delivered | number:'1.0-4' }}</td>
+          <td class="num muted">{{ l.alreadyInvoiced | number:'1.0-4' }}</td>
+          <td class="num remaining">{{ l.remaining | number:'1.0-4' }}</td>
+          <td>
+            <p-inputNumber [(ngModel)]="l.invoiceThisTime" [min]="0" [max]="l.remaining"
+                           [minFractionDigits]="0" [maxFractionDigits]="4"
+                           inputStyleClass="grid-num"
+                           [class.input-error]="l.invoiceThisTime > l.remaining || l.invoiceThisTime < 0" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="invoice-vat-row">
+      <label>VAT Rate (%)</label>
+      <p-inputNumber [(ngModel)]="invoiceVatRate" [min]="0" [max]="100"
+                     [minFractionDigits]="0" [maxFractionDigits]="2" suffix=" %"
+                     inputStyleClass="grid-num" />
+      <span class="vat-hint">Leave 0 for a VAT-exempt / export invoice.</span>
+    </div>
+
+    <div class="alert alert-warn" *ngIf="invoiceValidationError">
+      <i class="pi pi-exclamation-triangle"></i>{{ invoiceValidationError }}
+    </div>
+  </ng-container>
+
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true"
+              (click)="invoiceDialogVisible = false" [disabled]="invoiceSaving" />
+    <p-button type="button"
+              [label]="invoiceSaving ? 'Creating…' : 'Create Draft Invoice'"
+              icon="pi pi-file-export" [loading]="invoiceSaving"
+              (click)="saveInvoice()"
+              [disabled]="invoiceSaving || invoiceLoading || invoiceLines.length === 0 || !!invoiceValidationError" />
   </div>
 </p-dialog>

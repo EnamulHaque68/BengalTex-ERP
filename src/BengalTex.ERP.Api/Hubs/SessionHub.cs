@@ -44,9 +44,17 @@ public class SessionHub : Hub
 public static class SessionHubEvents
 {
     public const string SessionSuperseded = "SessionSuperseded";
+
+    /// <summary>A new notification was created — clients refresh the bell's unread-count badge.</summary>
+    public const string NotificationReceived = "NotificationReceived";
 }
 
 public record SessionSupersededPayload(
     string Reason,
     string NewSessionId,
+    DateTimeOffset OccurredAt);
+
+public record NotificationReceivedPayload(
+    string Channel,
+    string Subject,
     DateTimeOffset OccurredAt);

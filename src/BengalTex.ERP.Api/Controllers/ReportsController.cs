@@ -140,6 +140,16 @@ public class ReportsController : ControllerBase
         CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetProductionSummaryReportQuery(fromDate, toDate, productId), ct));
 
+    /// <summary>Production cost — actual cost sheet (material+labour+machine+overhead+…) per completed order, with margin when sales-linked.</summary>
+    [HttpGet("production-cost")]
+    [HasPermission(Permissions.Reports.ViewProduction)]
+    public async Task<IActionResult> GetProductionCost(
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] int? productId = null,
+        CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetProductionCostReportQuery(fromDate, toDate, productId), ct));
+
     /// <summary>Wastage variance — BOM standard wastage allowance vs actual wastage per completed production order.</summary>
     [HttpGet("wastage-variance")]
     [HasPermission(Permissions.Reports.ViewProduction)]

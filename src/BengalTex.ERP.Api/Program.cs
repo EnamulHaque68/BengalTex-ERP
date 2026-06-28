@@ -67,6 +67,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();   // Application.Auth.IJwtService → Api.Authentication.JwtService
 builder.Services.AddScoped<ISessionBroadcaster, SessionBroadcaster>(); // SignalR-backed
+builder.Services.AddScoped<INotificationBroadcaster, NotificationBroadcaster>(); // SignalR-backed bell badge
 builder.Services.AddMemoryCache();
 
 // ============================================

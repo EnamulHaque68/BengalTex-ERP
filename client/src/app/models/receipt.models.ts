@@ -18,6 +18,9 @@ export interface ReceiptDto {
   receiptDate: string;                  // DateOnly
   amount: number;
   exchangeRate: number;                 // BDT per 1 unit of invoice currency at receipt time
+  currencyCode: string;                 // invoice currency = receipt's primary currency
+  baseAmount: number;                   // amount × exchangeRate, in base currency (BDT)
+  status: string;                       // Draft | Posted | Cancelled
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
@@ -32,6 +35,10 @@ export interface ReceiptListItemDto {
   customerName: string;
   receiptDate: string;
   amount: number;
+  currencyCode: string;                 // invoice currency = receipt's primary currency
+  exchangeRate: number;                 // BDT per 1 unit of currencyCode
+  baseAmount: number;                   // amount × exchangeRate, in base currency (BDT)
+  status: string;                       // Draft | Posted | Cancelled
   paymentMethod: string;
   referenceNumber: string | null;
 }

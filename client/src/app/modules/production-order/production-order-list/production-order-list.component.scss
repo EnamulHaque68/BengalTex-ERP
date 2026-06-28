@@ -272,3 +272,52 @@
 
 /* Phase 1 — source sales order badge */
 .so-badge { background: #eef2ff; color: #3730a3; }
+
+/* Phase 4 — routing/resource empty-state hint + custom-stage chip */
+.stages-empty-hint {
+  display: flex; align-items: center; gap: 0.5rem; margin: 0.4rem 0 0.75rem;
+  padding: 0.55rem 0.75rem; background: #eff6ff; border: 1px dashed #bfdbfe;
+  border-radius: 6px; color: #1e40af; font-size: 0.82rem;
+  i { color: #2563eb; }
+  strong { color: #1e3a8a; }
+}
+.quick-chip.add-custom { border-style: dashed; }
+
+/* Phase 5 — QC hold */
+.qc-held-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.25rem;
+  background: #fef3c7; color: #92400e; border-radius: 4px; padding: 0.1rem 0.45rem;
+  font-size: 0.72rem; font-weight: 600;
+}
+.qc-field .cb-label { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+
+/* Phase 6 — cost sheet */
+.cost-grid {
+  width: 100%; margin-top: 0.5rem;
+  .cost-label { font-weight: 600; color: #334155; small { font-weight: 400; color: #94a3b8; } }
+  td { padding: 0.35rem 0.5rem; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tfoot td { border-top: 1px solid #e2e8f0; }
+  .cost-total-row td { background: #f8fafc; }
+}
+.ta-right { text-align: right; }
+.fw-700 { font-weight: 700; }
+
+/* Phase 7 — traceability */
+.trace-loading { padding: 1.5rem; text-align: center; color: #94a3b8; }
+.trace-chain {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem;
+  .chain-node {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.82rem; font-weight: 600; color: #334155;
+    small { font-weight: 400; color: #94a3b8; }
+    &.fg { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    &.customer { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+  }
+  .sep { color: #cbd5e1; font-size: 0.7rem; }
+}
+.trace-meta {
+  display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; color: #64748b; margin-bottom: 0.5rem;
+  strong { color: #1e293b; }
+}
+.rm-code { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 4px; padding: 0.02rem 0.35rem; font-size: 0.7rem; margin-right: 0.35rem; }

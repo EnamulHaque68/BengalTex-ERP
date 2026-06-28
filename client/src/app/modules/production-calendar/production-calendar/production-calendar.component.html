@@ -1,0 +1,66 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Production Calendar</h2>
+      <p class="page-subtitle">Scheduled production orders across the month &mdash; holidays &amp; weekly off-days shaded</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="nav-btn" (click)="prevMonth()" pTooltip="Previous month"><i class="pi pi-chevron-left"></i></button>
+      <span class="month-label">{{ monthLabel }}</span>
+      <button type="button" class="nav-btn" (click)="nextMonth()" pTooltip="Next month"><i class="pi pi-chevron-right"></i></button>
+      <p-button label="Today" icon="pi pi-calendar" severity="secondary" [outlined]="true" size="small" (click)="goToday()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+    <button type="button" class="alert-close" (click)="error = ''">&times;</button>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="lg"><i class="dot st-draft"></i> Draft</span>
+    <span class="lg"><i class="dot st-progress"></i> In Progress</span>
+    <span class="lg"><i class="dot st-done"></i> Completed</span>
+    <span class="lg"><i class="swatch weekend"></i> Weekend</span>
+    <span class="lg"><i class="swatch holiday"></i> Holiday</span>
+    <span class="lg total" *ngIf="!loading">{{ totalOrders }} order(s) this month</span>
+  </div>
+
+  <div class="cal-card">
+    <div class="cal-loading" *ngIf="loading"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+
+    <div class="calendar" [class.dim]="loading">
+      <!-- Weekday header -->
+      <div class="weekday-row">
+        <div class="weekday" *ngFor="let w of weekdayLabels">{{ w }}</div>
+      </div>
+
+      <!-- Weeks -->
+      <div class="week" *ngFor="let week of weeks">
+        <div class="day"
+             *ngFor="let cell of week"
+             [class.out-month]="!cell.inMonth"
+             [class.is-today]="cell.isToday"
+             [class.is-weekend]="cell.isWeekend"
+             [class.is-holiday]="cell.holidayName">
+          <div class="day-head">
+            <span class="day-num">{{ cell.day }}</span>
+            <span class="holiday-tag" *ngIf="cell.holidayName" [pTooltip]="cell.holidayName">{{ cell.holidayName }}</span>
+          </div>
+
+          <div class="events">
+            <button type="button" class="event-chip" [ngClass]="statusClass(ev.status)"
+                    *ngFor="let ev of cell.events"
+                    (click)="openOrder(ev)"
+                    [pTooltip]="ev.code + ' · ' + ev.productName + ' · ' + ev.quantity + ' · ' + ev.status + (ev.salesOrderCode ? ' · SO ' + ev.salesOrderCode : '')"
+                    tooltipPosition="top">
+              {{ ev.code }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

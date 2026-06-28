@@ -32,7 +32,22 @@ public record ProductionOrderDto(
     long? SalesOrderId = null,
     string? SalesOrderCode = null,
     long? SalesOrderLineId = null,
-    string? CustomerName = null);
+    string? CustomerName = null,
+    // Phase 5 — Quality Hold
+    bool RequiresQc = false,
+    DateTimeOffset? QcReleasedAt = null,
+    bool QcHeld = false,                 // QcHeldQuantity > 0
+    decimal QcHeldQuantity = 0m,         // remaining QC-held finished-goods qty (Active "QcHold" reservation)
+    // Phase 6 — cost sheet (base BDT)
+    decimal MaterialCost = 0m,           // auto at Complete
+    decimal LabourCost = 0m,
+    decimal MachineCost = 0m,
+    decimal OverheadCost = 0m,
+    decimal SubcontractCost = 0m,
+    decimal WastageCost = 0m,
+    decimal RejectCost = 0m,
+    decimal TotalProductionCost = 0m,    // Σ all components
+    decimal CostPerUnit = 0m);           // Total ÷ Quantity
 
 /// <summary>One routing stage of a production order with its WIP progress + line/operator.</summary>
 public record ProductionStageDto(
@@ -48,7 +63,12 @@ public record ProductionStageDto(
     string? OperatorEmployeeName,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
-    string? Notes);
+    string? Notes,
+    // Phase 4 — resource assignment
+    int? WorkCenterId = null,
+    string? WorkCenterName = null,
+    int? ShiftId = null,
+    string? ShiftName = null);
 
 /// <summary>
 /// Computed material-consumption preview per BOM line — scaled to the production's output qty.
@@ -82,4 +102,7 @@ public record ProductionOrderListItemDto(
     int CompletedStageCount,            // stages Completed/Skipped
     string? CurrentStageName,           // first non-finished stage, null when none/all done
     long? SalesOrderId,                 // Phase 1 — source SO (null = standalone)
-    string? SalesOrderCode);
+    string? SalesOrderCode,
+    bool RequiresQc,                    // Phase 5 — Quality Hold opt-in
+    bool QcHeld,                        // QcHeldQuantity > 0
+    decimal QcHeldQuantity);            // remaining QC-held finished-goods qty

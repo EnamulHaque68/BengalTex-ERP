@@ -59,6 +59,13 @@ public sealed class StockReservationService : IStockReservationService
             await ReserveInternalAsync(null, cpId, po.IssueWarehouseId, qty, "ProductionOrder", po.Id, po.Code, ct);
     }
 
+    public Task ReserveProductAsync(int productId, int warehouseId, decimal quantity,
+        string referenceType, long referenceId, string? referenceCode, CancellationToken ct = default)
+    {
+        if (quantity <= 0m) return Task.CompletedTask;
+        return ReserveInternalAsync(null, productId, warehouseId, quantity, referenceType, referenceId, referenceCode, ct);
+    }
+
     public async Task ReleaseForReferenceAsync(string referenceType, long referenceId, CancellationToken ct = default)
     {
         var active = await _reservationRepo.Query()
@@ -86,6 +93,60 @@ public sealed class StockReservationService : IStockReservationService
                 _onHandRepo.Update(onHand);
             }
         }
+    }
+
+    public async Task<decimal> ReleaseQuantityAsync(
+        string referenceType, long referenceId, decimal quantity, CancellationToken ct = default)
+    {
+        if (quantity <= 0m) return 0m;
+
+        var active = await _reservationRepo.Query()
+            .Where(r => r.ReferenceType == referenceType
+                && r.ReferenceId == referenceId
+                && r.Status == ReservationStatus.Active)
+            .OrderBy(r => r.Id)
+            .ToListAsync(ct);
+
+        var toRelease = quantity;
+        var released = 0m;
+        foreach (var res in active)
+        {
+            if (toRelease <= 0m) break;
+            var take = Math.Min(res.Quantity, toRelease);
+            if (take <= 0m) continue;
+
+            res.Quantity -= take;
+            if (res.Quantity <= 0m)
+            {
+                res.Status = ReservationStatus.Released;
+                res.ReleasedAt = DateTimeOffset.UtcNow;
+            }
+            _reservationRepo.Update(res);
+
+            var onHand = res.RawMaterialId.HasValue
+                ? await _onHandRepo.Query().FirstOrDefaultAsync(s => s.RawMaterialId == res.RawMaterialId && s.WarehouseId == res.WarehouseId, ct)
+                : await _onHandRepo.Query().FirstOrDefaultAsync(s => s.ProductId == res.ProductId && s.WarehouseId == res.WarehouseId, ct);
+            if (onHand is not null)
+            {
+                onHand.ReservedQuantity -= take;
+                if (onHand.ReservedQuantity < 0m) onHand.ReservedQuantity = 0m;
+                _onHandRepo.Update(onHand);
+            }
+
+            toRelease -= take;
+            released += take;
+        }
+        return released;
+    }
+
+    public async Task<decimal> GetReservedForReferenceAsync(
+        string referenceType, long referenceId, CancellationToken ct = default)
+    {
+        return await _reservationRepo.Query()
+            .Where(r => r.ReferenceType == referenceType
+                && r.ReferenceId == referenceId
+                && r.Status == ReservationStatus.Active)
+            .SumAsync(r => (decimal?)r.Quantity, ct) ?? 0m;
     }
 
     public async Task<decimal> GetReservedRawMaterialAsync(int rawMaterialId, int warehouseId, CancellationToken ct = default)

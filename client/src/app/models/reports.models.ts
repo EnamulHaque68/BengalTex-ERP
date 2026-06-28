@@ -360,6 +360,39 @@ export interface ProductionSummaryReportDto {
   rows: ProductionSummaryRowDto[];
 }
 
+// ─── Production Cost Report (Phase 6) ─────────────────────────────────────
+export interface ProductionCostRowDto {
+  productionOrderId: number;
+  code: string;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  completedDate: string | null;
+  salesOrderCode: string | null;
+  materialCost: number;
+  labourCost: number;
+  machineCost: number;
+  overheadCost: number;
+  subcontractCost: number;
+  wastageCost: number;
+  rejectCost: number;
+  totalCost: number;
+  costPerUnit: number;
+  revenue: number | null;
+  grossProfit: number | null;
+  grossMarginPercent: number | null;
+}
+
+export interface ProductionCostReportDto {
+  fromDate: string;
+  toDate: string;
+  totalOrders: number;
+  grandTotalCost: number;
+  grandTotalRevenue: number;
+  grandGrossProfit: number;
+  rows: ProductionCostRowDto[];
+}
+
 // ─── Operator / Machine Productivity Reports ──────────────────────────────
 
 export interface OperatorProductivityRowDto {

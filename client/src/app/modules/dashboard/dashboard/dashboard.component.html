@@ -104,8 +104,11 @@
         <ng-template pTemplate="title"><span><i class="pi pi-cog"></i> Production</span></ng-template>
         <div class="kpi-row">
           <div class="kpi"><span class="kpi-num">{{ data.production.activeProductionOrders }}</span><span class="kpi-label">Active Orders</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.production.openJobCards }}</span><span class="kpi-label">Open Job Cards</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.production.inProgressJobCards }}</span><span class="kpi-label">In Progress</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.production.completedThisMonth ?? 0 }}</span><span class="kpi-label">Completed (month)</span></div>
+          <div class="kpi"><span class="kpi-num">{{ data.production.inProgressJobCards }}</span><span class="kpi-label">In-Progress Cards</span></div>
+          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.delayedProductions ?? 0) > 0">{{ data.production.delayedProductions ?? 0 }}</span><span class="kpi-label">Delayed</span></div>
+          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.qcHeldProductions ?? 0) > 0">{{ data.production.qcHeldProductions ?? 0 }}</span><span class="kpi-label">QC Held</span></div>
+          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.machinesUnderMaintenance ?? 0) > 0">{{ data.production.machinesUnderMaintenance ?? 0 }}</span><span class="kpi-label">Machines Down</span></div>
           <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.production.thisMonthWastageCost) }}</span><span class="kpi-label">Wastage (month)</span></div>
         </div>
       </p-card>

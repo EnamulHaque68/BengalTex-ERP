@@ -53,8 +53,13 @@
           </div>
           <div class="amount-block">
             <div class="lbl">Amount Received</div>
-            <div class="amount">{{ formatCurrency(receipt.amount) }}</div>
-            <div class="words">{{ amountInWords(receipt.amount) }}</div>
+            <div class="amount">{{ formatMoney(receipt.amount, receipt.currencyCode) }}</div>
+            <div class="words">{{ amountInWords(receipt.amount, receipt.currencyCode) }}</div>
+            <!-- Base-currency equivalent — shown only for foreign-currency receipts -->
+            <div class="fx-info" *ngIf="isForeign">
+              <span>Exchange Rate: <strong>1 {{ receipt.currencyCode }} = {{ receipt.exchangeRate | number:'1.2-6' }} BDT</strong></span>
+              <span>Base Amount: <strong>{{ formatCurrency(receipt.baseAmount) }}</strong></span>
+            </div>
           </div>
         </div>
 

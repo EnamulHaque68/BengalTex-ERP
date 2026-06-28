@@ -24,6 +24,7 @@ public class CompleteProductionOrderGateTests
             new Mock<IStockReservationService>().Object,
             new Mock<IJournalPostingService>().Object,
             new StubCurrentUser(),
+            new Mock<INotificationService>().Object,
             new Mock<IMediator>().Object);
 
     private static ProductionOrder InProgressOrder() => new()

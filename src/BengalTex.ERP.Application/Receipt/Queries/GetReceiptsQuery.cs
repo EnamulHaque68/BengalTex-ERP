@@ -67,6 +67,8 @@ internal sealed class GetReceiptsQueryHandler
                 r.CustomerInvoiceId, r.CustomerInvoice.Code,
                 r.CustomerInvoice.CustomerId, r.CustomerInvoice.Customer.Name,
                 r.ReceiptDate, r.Amount,
+                r.CustomerInvoice.Currency.Code, r.ExchangeRate, r.Amount * r.ExchangeRate,
+                r.Status.ToString(),
                 r.PaymentMethod.ToString(),
                 r.ReferenceNumber))
             .ToListAsync(cancellationToken);

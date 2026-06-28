@@ -33,6 +33,7 @@ internal sealed class GetDashboardSnapshotQueryHandler
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _prodRepo;
     private readonly IRepository<JobCard, long> _jcRepo;
     private readonly IRepository<WastageEntry, long> _wasteRepo;
+    private readonly IRepository<Domain.Entities.MachineMaintenance, long> _maintRepo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IRepository<AttendanceRecord, long> _attRepo;
     private readonly IRepository<LeaveApplication, long> _leaveRepo;
@@ -59,6 +60,7 @@ internal sealed class GetDashboardSnapshotQueryHandler
         IRepository<Domain.Entities.ProductionOrder, long> prodRepo,
         IRepository<JobCard, long> jcRepo,
         IRepository<WastageEntry, long> wasteRepo,
+        IRepository<Domain.Entities.MachineMaintenance, long> maintRepo,
         IRepository<Domain.Entities.Employee> empRepo,
         IRepository<AttendanceRecord, long> attRepo,
         IRepository<LeaveApplication, long> leaveRepo,
@@ -75,7 +77,7 @@ internal sealed class GetDashboardSnapshotQueryHandler
         _arRepo = arRepo; _apRepo = apRepo;
         _quotRepo = quotRepo; _soRepo = soRepo; _poRepo = poRepo;
         _grnRepo = grnRepo; _payRepo = payRepo;
-        _prodRepo = prodRepo; _jcRepo = jcRepo; _wasteRepo = wasteRepo;
+        _prodRepo = prodRepo; _jcRepo = jcRepo; _wasteRepo = wasteRepo; _maintRepo = maintRepo;
         _empRepo = empRepo; _attRepo = attRepo; _leaveRepo = leaveRepo; _loanRepo = loanRepo;
         _stmtRepo = stmtRepo; _jRepo = jRepo;
         _certRepo = certRepo; _auditRepo = auditRepo; _findingRepo = findingRepo;
@@ -191,7 +193,18 @@ internal sealed class GetDashboardSnapshotQueryHandler
             var monthlyWaste = await _wasteRepo.Query()
                 .Where(w => w.WastageDate >= monthStart && w.WastageDate <= monthEnd)
                 .SumAsync(w => (decimal?)w.TotalCost, ct) ?? 0m;
-            production = new ProductionSectionDto(activeProd, openJc, inProgJc, monthlyWaste);
+            var completedThisMonth = await _prodRepo.Query()
+                .CountAsync(p => p.Status == ProductionOrderStatus.Completed
+                              && p.ActualEndDate != null && p.ActualEndDate >= monthStart && p.ActualEndDate <= monthEnd, ct);
+            var delayedProd = await _prodRepo.Query()
+                .CountAsync(p => p.Status == ProductionOrderStatus.InProgress
+                              && p.PlannedEndDate != null && p.PlannedEndDate < today, ct);
+            var qcHeldProd = await _prodRepo.Query()
+                .CountAsync(p => p.RequiresQc && p.Status == ProductionOrderStatus.Completed && p.QcReleasedAt == null, ct);
+            var machinesUnderMaint = await _maintRepo.Query()
+                .CountAsync(m => m.Status == MaintenanceStatus.InProgress, ct);
+            production = new ProductionSectionDto(activeProd, openJc, inProgJc, monthlyWaste,
+                completedThisMonth, delayedProd, qcHeldProd, machinesUnderMaint);
         }
 
         HrSectionDto? hr = null;
@@ -308,6 +321,35 @@ internal sealed class GetDashboardSnapshotQueryHandler
                 needs.Add(new NeedsAttentionItemDto(
                     "UnreconciledStmt", $"Statement {s.Code} unreconciled",
                     s.BankName, s.Code, s.StatementDate, "Warning"));
+        }
+
+        if (production is not null)
+        {
+            if (production.DelayedProductions > 0)
+            {
+                var delayed = await _prodRepo.Query()
+                    .Where(p => p.Status == ProductionOrderStatus.InProgress
+                             && p.PlannedEndDate != null && p.PlannedEndDate < today)
+                    .OrderBy(p => p.PlannedEndDate).Take(5)
+                    .Select(p => new { p.Code, ProductName = p.Product.Name, p.PlannedEndDate })
+                    .ToListAsync(ct);
+                foreach (var d in delayed)
+                    needs.Add(new NeedsAttentionItemDto(
+                        "DelayedProduction", $"Production {d.Code} overdue", d.ProductName,
+                        d.Code, d.PlannedEndDate, "Warning"));
+            }
+            if (production.MachinesUnderMaintenance > 0)
+            {
+                var machines = await _maintRepo.Query()
+                    .Where(m => m.Status == MaintenanceStatus.InProgress)
+                    .OrderBy(m => m.ScheduledDate).Take(3)
+                    .Select(m => new { m.Code, MachineName = m.Machine.Name })
+                    .ToListAsync(ct);
+                foreach (var m in machines)
+                    needs.Add(new NeedsAttentionItemDto(
+                        "MachineMaintenance", "Machine under maintenance", m.MachineName,
+                        m.Code, null, "Warning"));
+            }
         }
 
         return ApiResponse<DashboardSnapshotDto>.Ok(new DashboardSnapshotDto(

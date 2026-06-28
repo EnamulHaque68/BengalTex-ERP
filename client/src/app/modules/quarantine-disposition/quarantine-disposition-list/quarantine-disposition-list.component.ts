@@ -91,6 +91,11 @@ export class QuarantineDispositionListComponent implements OnInit {
     return this.dispositionType === 'Release';
   }
 
+  /** Release and Rework both move stock to a destination warehouse; Scrap does not. */
+  get needsDestination(): boolean {
+    return this.dispositionType === 'Release' || this.dispositionType === 'Rework';
+  }
+
   private loadWarehouses(): void {
     this.warehouseService.getAll(undefined, false).subscribe({
       next: (res) => {
@@ -247,8 +252,8 @@ export class QuarantineDispositionListComponent implements OnInit {
 
   save(): void {
     if (this.form.invalid || this.dialogSaving || this.dialogMode === 'view') return;
-    if (this.isRelease && !this.form.get('destinationWarehouseId')?.value) {
-      this.dialogError = 'Pick a destination warehouse for a Release disposition.';
+    if (this.needsDestination && !this.form.get('destinationWarehouseId')?.value) {
+      this.dialogError = `Pick a destination warehouse for a ${this.dispositionType} disposition.`;
       this.cdr.detectChanges();
       return;
     }
@@ -279,7 +284,7 @@ export class QuarantineDispositionListComponent implements OnInit {
         dispositionType: v.dispositionType,
         dispositionDate: v.dispositionDate,
         quarantineWarehouseId: v.quarantineWarehouseId,
-        destinationWarehouseId: v.dispositionType === 'Release' ? v.destinationWarehouseId : null,
+        destinationWarehouseId: (v.dispositionType === 'Release' || v.dispositionType === 'Rework') ? v.destinationWarehouseId : null,
         reason: (v.reason as string)?.trim() || null,
         notes: (v.notes as string)?.trim() || null,
         lines
@@ -290,7 +295,7 @@ export class QuarantineDispositionListComponent implements OnInit {
     } else if (this.editingId) {
       this.dispService.update(this.editingId, {
         dispositionDate: v.dispositionDate,
-        destinationWarehouseId: v.dispositionType === 'Release' ? v.destinationWarehouseId : null,
+        destinationWarehouseId: (v.dispositionType === 'Release' || v.dispositionType === 'Rework') ? v.destinationWarehouseId : null,
         reason: (v.reason as string)?.trim() || null,
         notes: (v.notes as string)?.trim() || null,
         lines

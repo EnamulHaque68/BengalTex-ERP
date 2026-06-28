@@ -6,6 +6,7 @@ import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   CreateDeliveryNoteRequest,
+  DeliveryInvoiceLineInput,
   DeliveryNoteDto,
   DeliveryNoteListItemDto,
   UpdateDeliveryNoteRequest
@@ -53,9 +54,17 @@ export class DeliveryNoteService {
     return this.http.post<ApiResponse<DeliveryNoteDto>>(`${this.base}/${id}/post`, {});
   }
 
-  /** Generate a Draft customer invoice from this posted DN (returns { data: { id } }). */
-  createInvoice(id: number, vatRate = 0): Observable<ApiResponse<{ id: number }>> {
-    const url = `${environment.apiBaseUrl}/api/customer-invoices/from-delivery-note/${id}?vatRate=${vatRate}`;
-    return this.http.post<ApiResponse<{ id: number }>>(url, {});
+  /**
+   * Generate a Draft customer invoice from this posted DN (returns { data: { id } }).
+   * Pass `lines` to invoice only specific quantities (partial invoicing); omit to invoice
+   * all remaining quantity.
+   */
+  createInvoice(
+    id: number,
+    lines?: DeliveryInvoiceLineInput[],
+    vatRate = 0
+  ): Observable<ApiResponse<{ id: number }>> {
+    const url = `${environment.apiBaseUrl}/api/customer-invoices/from-delivery-note/${id}`;
+    return this.http.post<ApiResponse<{ id: number }>>(url, { vatRate, lines: lines ?? null });
   }
 }

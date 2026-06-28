@@ -16,6 +16,7 @@ import {
   VatSummaryReportDto,
   WipReportDto,
   ProductionSummaryReportDto,
+  ProductionCostReportDto,
   OperatorProductivityReportDto,
   MachineProductivityReportDto,
   BuyerOrderBookReportDto,
@@ -116,6 +117,14 @@ export class ReportsService {
     if (toDate) params = params.set('toDate', toDate);
     if (productId) params = params.set('productId', productId.toString());
     return this.http.get<ApiResponse<ProductionSummaryReportDto>>(`${this.base}/production-summary`, { params });
+  }
+
+  getProductionCost(fromDate?: string, toDate?: string, productId?: number): Observable<ApiResponse<ProductionCostReportDto>> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    if (productId) params = params.set('productId', productId.toString());
+    return this.http.get<ApiResponse<ProductionCostReportDto>>(`${this.base}/production-cost`, { params });
   }
 
   getOperatorProductivity(fromDate?: string, toDate?: string): Observable<ApiResponse<OperatorProductivityReportDto>> {

@@ -36,17 +36,18 @@ public sealed class CreateQuarantineDispositionCommandValidator : AbstractValida
     public CreateQuarantineDispositionCommandValidator()
     {
         RuleFor(x => x.DispositionType).NotEmpty()
-            .Must(t => t is "Release" or "Scrap")
-            .WithMessage("DispositionType must be Release or Scrap.");
+            .Must(t => t is "Release" or "Scrap" or "Rework")
+            .WithMessage("DispositionType must be Release, Scrap or Rework.");
         RuleFor(x => x.QuarantineWarehouseId).GreaterThan(0);
         RuleFor(x => x.DispositionDate).NotEmpty();
         RuleFor(x => x.Reason).MaximumLength(500);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        // Release AND Rework move stock to a destination warehouse; Scrap does not.
         RuleFor(x => x.DestinationWarehouseId).GreaterThan(0)
-            .When(x => x.DispositionType == "Release")
-            .WithMessage("A destination warehouse is required for a Release disposition.");
+            .When(x => x.DispositionType is "Release" or "Rework")
+            .WithMessage("A destination warehouse is required for a Release or Rework disposition.");
         RuleFor(x => x.DestinationWarehouseId).NotEqual(x => x.QuarantineWarehouseId)
-            .When(x => x.DispositionType == "Release")
+            .When(x => x.DispositionType is "Release" or "Rework")
             .WithMessage("Destination warehouse must differ from the quarantine warehouse.");
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A disposition must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
@@ -99,7 +100,7 @@ internal sealed class CreateQuarantineDispositionCommandHandler
         if (quarantine is null) return ApiResponse<QuarantineDispositionDto>.Fail("Quarantine warehouse not found.");
 
         int? destinationId = null;
-        if (type == Domain.Entities.DispositionType.Release)
+        if (type is Domain.Entities.DispositionType.Release or Domain.Entities.DispositionType.Rework)
         {
             var dest = await _warehouseRepo.GetByIdAsync(cmd.DestinationWarehouseId!.Value, cancellationToken);
             if (dest is null) return ApiResponse<QuarantineDispositionDto>.Fail("Destination warehouse not found.");

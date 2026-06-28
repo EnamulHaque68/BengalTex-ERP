@@ -15,6 +15,15 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
         builder.Property(p => p.CompletedBy).HasMaxLength(100);
         builder.Property(p => p.Notes).HasMaxLength(2000);
 
+        // Phase 6 — cost sheet (base BDT)
+        builder.Property(p => p.MaterialCost).HasPrecision(18, 2);
+        builder.Property(p => p.LabourCost).HasPrecision(18, 2);
+        builder.Property(p => p.MachineCost).HasPrecision(18, 2);
+        builder.Property(p => p.OverheadCost).HasPrecision(18, 2);
+        builder.Property(p => p.SubcontractCost).HasPrecision(18, 2);
+        builder.Property(p => p.WastageCost).HasPrecision(18, 2);
+        builder.Property(p => p.RejectCost).HasPrecision(18, 2);
+
         builder.Property(p => p.Status)
             .HasConversion<string>()
             .HasMaxLength(20);
@@ -93,11 +102,24 @@ public class ProductionStageConfiguration : IEntityTypeConfiguration<ProductionS
 
         builder.HasIndex(s => s.ProductionOrderId);
         builder.HasIndex(s => s.Status);
+        builder.HasIndex(s => s.WorkCenterId);
 
         // Operator → Employee (optional) — Restrict so an employee with stage history isn't deleted
         builder.HasOne(s => s.OperatorEmployee)
             .WithMany()
             .HasForeignKey(s => s.OperatorEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Work center (optional, Phase 4 capacity) — Restrict so a referenced work center can't be deleted
+        builder.HasOne(s => s.WorkCenter)
+            .WithMany()
+            .HasForeignKey(s => s.WorkCenterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Shift (optional, Phase 4 multi-shift) — Restrict
+        builder.HasOne(s => s.Shift)
+            .WithMany()
+            .HasForeignKey(s => s.ShiftId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.RowVersion).IsRowVersion();

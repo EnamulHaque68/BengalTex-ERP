@@ -15,6 +15,8 @@ export interface DeliveryNoteLineDto {
   orderedQuantity: number;
   dispatchedQuantity: number;
   returnedQuantity: number;            // already-returned via posted CRNs
+  invoicedQuantity: number;            // already billed onto customer invoices
+  remainingToInvoice: number;          // dispatchedQuantity − invoicedQuantity
   sortOrder: number;
   lineNotes: string | null;
 }
@@ -52,12 +54,28 @@ export interface DeliveryNoteListItemDto {
   dispatchWarehouseCode: string;
   status: string;
   lineCount: number;
+  deliveredQuantity: number;           // Σ dispatched across lines
+  invoicedQuantity: number;            // Σ already invoiced across lines
+  remainingToInvoice: number;          // delivered − invoiced
+  invoiceState: string;                // NotInvoiced | PartiallyInvoiced | FullyInvoiced
 }
 
 export interface DeliveryNoteLineInput {
   salesOrderLineId: number;
   dispatchedQuantity: number;
   lineNotes: string | null;
+}
+
+/** One DN line + how much of its remaining qty to invoice this time. */
+export interface DeliveryInvoiceLineInput {
+  deliveryNoteLineId: number;
+  quantity: number;
+}
+
+/** Partial delivery → invoice request body. */
+export interface CreateInvoiceFromDeliveryNoteRequest {
+  vatRate: number;
+  lines: DeliveryInvoiceLineInput[];
 }
 
 export interface CreateDeliveryNoteRequest {

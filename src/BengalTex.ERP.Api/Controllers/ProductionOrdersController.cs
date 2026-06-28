@@ -39,6 +39,25 @@ public class ProductionOrdersController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Manufacturing Calendar — production orders + holidays + weekend days for a date range.</summary>
+    [HttpGet("calendar")]
+    [HasPermission(Permissions.Production.View)]
+    public async Task<IActionResult> Calendar(
+        [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetProductionCalendarQuery(from, to), ct));
+
+    /// <summary>Completed productions still QC-held (remaining hold &gt; 0) — for the QC inspection picker.</summary>
+    [HttpGet("awaiting-qc")]
+    [HasPermission(Permissions.Production.View)]
+    public async Task<IActionResult> AwaitingQc(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetProductionsAwaitingQcQuery(), ct));
+
+    /// <summary>End-to-end traceability for a production run (FG → JobCards → SO → Quotation → Customer → BOM → RM + lots).</summary>
+    [HttpGet("{id:long}/traceability")]
+    [HasPermission(Permissions.Production.View)]
+    public async Task<IActionResult> Traceability(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetProductionTraceabilityQuery(id), ct));
+
     [HttpPost]
     [HasPermission(Permissions.Production.Create)]
     public async Task<IActionResult> Create([FromBody] CreateProductionOrderRequest request, CancellationToken ct)
@@ -47,7 +66,7 @@ public class ProductionOrdersController : ControllerBase
             request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
             request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages,
-            request.SalesOrderId, request.SalesOrderLineId
+            request.SalesOrderId, request.SalesOrderLineId, request.RequiresQc
         ), ct);
         return Ok(result);
     }
@@ -60,7 +79,7 @@ public class ProductionOrdersController : ControllerBase
             id, request.ProductId, request.BomId, request.Quantity,
             request.IssueWarehouseId, request.ReceiveWarehouseId,
             request.PlannedStartDate, request.PlannedEndDate, request.Notes, request.Stages,
-            request.SalesOrderId, request.SalesOrderLineId
+            request.SalesOrderId, request.SalesOrderLineId, request.RequiresQc
         ), ct);
         return Ok(result);
     }
@@ -97,6 +116,26 @@ public class ProductionOrdersController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Release the QC hold on a completed run — makes the held finished goods usable (Phase 5).</summary>
+    [HttpPost("{id:long}/release-qc-hold")]
+    [HasPermission(Permissions.Production.ReceiveFinishedGoods)]
+    public async Task<IActionResult> ReleaseQcHold(long id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ReleaseProductionQcHoldCommand(id), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Record the manual cost-sheet components (labour/machine/overhead/…) — Phase 6.</summary>
+    [HttpPost("{id:long}/costs")]
+    [HasPermission(Permissions.Production.Edit)]
+    public async Task<IActionResult> UpdateCosts(long id, [FromBody] UpdateProductionCostsRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdateProductionCostsCommand(
+            id, request.LabourCost, request.MachineCost, request.OverheadCost,
+            request.SubcontractCost, request.WastageCost, request.RejectCost), ct);
+        return Ok(result);
+    }
+
     // ── Routing stage workflow ────────────────────────────────────────────────
 
     [HttpPost("stages/{stageId:long}/start")]
@@ -130,6 +169,14 @@ public record CompleteProductionStageRequest(
     decimal RejectedQuantity,
     string? Notes);
 
+public record UpdateProductionCostsRequest(
+    decimal LabourCost,
+    decimal MachineCost,
+    decimal OverheadCost,
+    decimal SubcontractCost,
+    decimal WastageCost,
+    decimal RejectCost);
+
 public record CreateProductionOrderRequest(
     int ProductId,
     int BomId,
@@ -141,7 +188,8 @@ public record CreateProductionOrderRequest(
     string? Notes,
     IReadOnlyList<ProductionStageInput>? Stages = null,
     long? SalesOrderId = null,
-    long? SalesOrderLineId = null);
+    long? SalesOrderLineId = null,
+    bool RequiresQc = false);
 
 public record UpdateProductionOrderRequest(
     int ProductId,
@@ -154,4 +202,5 @@ public record UpdateProductionOrderRequest(
     string? Notes,
     IReadOnlyList<ProductionStageInput>? Stages = null,
     long? SalesOrderId = null,
-    long? SalesOrderLineId = null);
+    long? SalesOrderLineId = null,
+    bool RequiresQc = false);

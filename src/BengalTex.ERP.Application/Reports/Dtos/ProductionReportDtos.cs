@@ -42,3 +42,34 @@ public record ProductionSummaryReportDto(
     int TotalOrdersCompleted,
     decimal TotalQuantityProduced,
     IReadOnlyList<ProductionSummaryRowDto> Rows);
+
+// ─── Production Cost Report (actual cost sheet per completed order, Phase 6) ─
+public record ProductionCostRowDto(
+    long ProductionOrderId,
+    string Code,
+    string ProductCode,
+    string ProductName,
+    decimal Quantity,
+    DateOnly? CompletedDate,
+    string? SalesOrderCode,
+    decimal MaterialCost,
+    decimal LabourCost,
+    decimal MachineCost,
+    decimal OverheadCost,
+    decimal SubcontractCost,
+    decimal WastageCost,
+    decimal RejectCost,
+    decimal TotalCost,
+    decimal CostPerUnit,
+    decimal? Revenue,                 // SO line price × qty (BDT) when sales-linked
+    decimal? GrossProfit,             // Revenue − TotalCost
+    decimal? GrossMarginPercent);     // GrossProfit / Revenue × 100
+
+public record ProductionCostReportDto(
+    DateOnly FromDate,
+    DateOnly ToDate,
+    int TotalOrders,
+    decimal GrandTotalCost,
+    decimal GrandTotalRevenue,
+    decimal GrandGrossProfit,
+    IReadOnlyList<ProductionCostRowDto> Rows);

@@ -81,7 +81,8 @@ internal sealed class GetQcInspectionByIdQueryHandler
             q.Status.ToString(),
             q.OverallResult.ToString(),
             q.InspectedBy, q.Notes,
-            lines);
+            lines,
+            q.RejectDisposition?.ToString());
 
         return ApiResponse<QcInspectionDto>.Ok(dto);
     }

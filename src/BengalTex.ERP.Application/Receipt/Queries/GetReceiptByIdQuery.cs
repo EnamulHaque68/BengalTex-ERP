@@ -21,6 +21,7 @@ internal sealed class GetReceiptByIdQueryHandler
         var rct = await _repo.Query()
             .AsNoTracking()
             .Include(r => r.CustomerInvoice).ThenInclude(c => c.Customer)
+            .Include(r => r.CustomerInvoice).ThenInclude(c => c.Currency)
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (rct is null) return ApiResponse<ReceiptDto>.Fail("Receipt not found.");
@@ -30,6 +31,8 @@ internal sealed class GetReceiptByIdQueryHandler
             rct.CustomerInvoiceId, rct.CustomerInvoice.Code,
             rct.CustomerInvoice.CustomerId, rct.CustomerInvoice.Customer.Name,
             rct.ReceiptDate, rct.Amount, rct.ExchangeRate,
+            rct.CustomerInvoice.Currency.Code, rct.Amount * rct.ExchangeRate,
+            rct.Status.ToString(),
             rct.PaymentMethod.ToString(),
             rct.ReferenceNumber, rct.Notes);
 

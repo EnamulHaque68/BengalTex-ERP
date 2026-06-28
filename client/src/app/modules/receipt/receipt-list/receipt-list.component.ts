@@ -50,6 +50,9 @@ export class ReceiptListComponent implements OnInit {
   payableInvoices: PayableInvoiceOption[] = [];
   selectedInvoice: PayableInvoiceOption | null = null;
 
+  /** Show the base-currency (BDT) equivalent column/fields. Off by default. */
+  showBase = false;
+
   // Create dialog
   dialogVisible = false;
   dialogSaving = false;
@@ -65,6 +68,15 @@ export class ReceiptListComponent implements OnInit {
   deletingRct: ReceiptListItemDto | null = null;
   deleting = false;
   deleteError = '';
+
+  // Cancel dialog
+  cancelDialogVisible = false;
+  cancellingRct: ReceiptListItemDto | null = null;
+  cancelling = false;
+  cancelError = '';
+
+  /** Row-level busy id (post action spinner). */
+  rowActionId: number | null = null;
 
   constructor(
     private rctService: ReceiptService,
@@ -306,6 +318,69 @@ export class ReceiptListComponent implements OnInit {
         });
       }
     });
+  }
+
+  // ─── Post / Cancel lifecycle ─────────────────────────────────────────────
+
+  /** Post a draft receipt — applies it to the invoice (Unpaid → Partially Paid / Paid). */
+  post(rct: ReceiptListItemDto): void {
+    if (this.rowActionId) return;
+    this.rowActionId = rct.id;
+    this.actionError = '';
+    this.cdr.detectChanges();
+    this.rctService.post(rct.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.rowActionId = null;
+        if (res.success) { this.actionMessage = `Receipt ${rct.code} posted.`; this.load(); }
+        else this.actionError = res.message || 'Could not post receipt.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.rowActionId = null;
+        this.actionError = err?.error?.message || 'Could not post receipt.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  confirmCancel(rct: ReceiptListItemDto): void {
+    this.cancellingRct = rct;
+    this.cancelError = '';
+    this.cancelDialogVisible = true;
+  }
+
+  doCancel(): void {
+    if (!this.cancellingRct || this.cancelling) return;
+    this.cancelling = true;
+    this.cancelError = '';
+    this.cdr.detectChanges();
+    this.rctService.cancel(this.cancellingRct.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.cancelling = false;
+        if (res.success) {
+          this.cancelDialogVisible = false;
+          this.cancellingRct = null;
+          this.load();
+        } else {
+          this.cancelError = res.message || 'Cancel failed.';
+        }
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.cancelling = false;
+        this.cancelError = err?.error?.message || 'Cancel failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'Draft': return 'st-draft';
+      case 'Posted': return 'st-posted';
+      case 'Cancelled': return 'st-cancelled';
+      default: return '';
+    }
   }
 
   paymentMethodLabel(value: string): string {

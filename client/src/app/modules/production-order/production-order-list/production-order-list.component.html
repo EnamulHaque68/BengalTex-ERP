@@ -94,6 +94,9 @@
               {{ p.completedStageCount }}/{{ p.stageCount }}
               <span class="cur-stage" *ngIf="p.currentStageName">· {{ p.currentStageName }}</span>
             </div>
+            <div class="qc-held-badge" *ngIf="p.qcHeld" pTooltip="Finished goods awaiting QC — not dispatchable. Post a QC inspection to release the passed quantity.">
+              <i class="pi pi-lock"></i> QC Held ({{ p.qcHeldQuantity | number:'1.0-4' }})
+            </div>
           </td>
           <td>
             <div class="row-actions">
@@ -116,6 +119,15 @@
                         *ngIf="p.status === 'Draft' || p.status === 'InProgress'"
                         [loading]="rowActionId === p.id"
                         (click)="generatePr(p)" pTooltip="Generate PR for material shortages" />
+              <p-button icon="pi pi-unlock" severity="success" [text]="true" size="small"
+                        *ngIf="p.qcHeld"
+                        [loading]="rowActionId === p.id"
+                        (click)="releaseQcHold(p)" pTooltip="Release QC hold (make finished goods usable)" />
+              <p-button icon="pi pi-calculator" severity="contrast" [text]="true" size="small"
+                        *ngIf="canCosts(p)"
+                        (click)="openCosts(p)" pTooltip="Cost sheet" />
+              <p-button icon="pi pi-share-alt" severity="info" [text]="true" size="small"
+                        (click)="openTrace(p)" pTooltip="Traceability" />
               <p-button icon="pi pi-ban" severity="warn" [text]="true" size="small"
                         *ngIf="canCancel(p)"
                         [loading]="rowActionId === p.id"
@@ -145,7 +157,7 @@
   [(visible)]="dialogVisible"
   [header]="dialogMode === 'create' ? 'Add Production Order' : (dialogMode === 'edit' ? 'Edit Production Order' : 'View Production Order')"
   [modal]="true"
-  [style]="{ width: '960px' }"
+  [style]="{ width: '1120px', maxWidth: '96vw' }"
   [draggable]="false"
 >
   <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off">
@@ -258,6 +270,15 @@
         <input pInputText type="date" formControlName="plannedEndDate" class="w-full" />
       </div>
 
+      <!-- Phase 5 — Quality Hold opt-in -->
+      <div class="field col-span-2 qc-field">
+        <label class="cb-label">
+          <p-checkbox formControlName="requiresQc" [binary]="true" />
+          Require QC before finished goods are usable (Quality Hold)
+        </label>
+        <small class="hint">When on, completing this run keeps the finished goods QC-held (reserved, not dispatchable) until you release the hold after QC passes.</small>
+      </div>
+
       <div class="field col-span-2">
         <label>Notes</label>
         <textarea pInputTextarea rows="2" formControlName="notes"
@@ -265,14 +286,20 @@
       </div>
     </div>
 
-    <!-- Routing stages (optional multi-stage production) -->
+    <!-- Routing stages + resource planning (optional multi-stage production) -->
     <ng-container *ngIf="dialogMode !== 'view'">
       <p class="section-label">
-        Routing Stages <small>(optional — Cutting → Sewing → … ; leave empty for a single-step run)</small>
+        Routing Stages &amp; Resource Planning
+        <small>— each stage = which Work Center, which Shift &amp; which Operator. Optional; leave empty for a single-step run.</small>
       </p>
       <div class="quick-stages">
-        <span class="quick-label">Quick add:</span>
+        <span class="quick-label">Add stage:</span>
         <button type="button" class="quick-chip" *ngFor="let n of commonStageNames" (click)="addStage(n.value)">+ {{ n.label }}</button>
+        <button type="button" class="quick-chip add-custom" (click)="addStage()">+ Custom</button>
+      </div>
+      <div class="stages-empty-hint" *ngIf="stages.length === 0">
+        <i class="pi pi-arrow-up"></i>
+        Click a stage above to add it — then pick its <strong>Work Center</strong>, <strong>Shift</strong> and <strong>Operator</strong> in the row that appears.
       </div>
       <table class="line-grid" *ngIf="stages.length > 0">
         <thead>
@@ -280,7 +307,8 @@
             <th style="width:32px">#</th>
             <th>Stage</th>
             <th class="num-col">Planned Qty</th>
-            <th>Line</th>
+            <th>Work Center</th>
+            <th>Shift</th>
             <th>Operator</th>
             <th>Notes</th>
             <th style="width:40px"></th>
@@ -294,7 +322,16 @@
               <p-inputNumber formControlName="plannedQuantity" [min]="0" [minFractionDigits]="0"
                              [maxFractionDigits]="4" placeholder="= order qty" inputStyleClass="grid-num" />
             </td>
-            <td><input pInputText formControlName="productionLine" placeholder="(optional)" class="stage-input" /></td>
+            <td>
+              <p-select formControlName="workCenterId" [options]="workCenters"
+                        optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name"
+                        [showClear]="true" placeholder="(optional)" appendTo="body" styleClass="w-full" />
+            </td>
+            <td>
+              <p-select formControlName="shiftId" [options]="shifts"
+                        optionLabel="name" optionValue="id"
+                        [showClear]="true" placeholder="(optional)" appendTo="body" styleClass="w-full" />
+            </td>
             <td>
               <p-select formControlName="operatorEmployeeId" [options]="employees"
                         optionLabel="fullName" optionValue="id" [filter]="true" filterBy="code,fullName"
@@ -311,12 +348,13 @@
 
     <!-- Read-only routing in view mode -->
     <ng-container *ngIf="dialogMode === 'view' && loadedDetail && loadedDetail.stages.length > 0">
-      <p class="section-label">Routing Stages</p>
+      <p class="section-label">Routing Stages &amp; Resources <small>— which work center, shift &amp; operator runs each stage</small></p>
       <table class="line-grid">
         <thead>
           <tr>
             <th style="width:32px">#</th><th>Stage</th><th class="num-col">Planned</th>
-            <th class="num-col">Completed</th><th class="num-col">Rejected</th><th>Line</th><th>Operator</th><th>Status</th>
+            <th class="num-col">Completed</th><th class="num-col">Rejected</th>
+            <th>Work Center</th><th>Shift</th><th>Operator</th><th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -326,7 +364,8 @@
             <td class="num">{{ s.plannedQuantity | number:'1.0-4' }}</td>
             <td class="num">{{ s.completedQuantity | number:'1.0-4' }}</td>
             <td class="num">{{ s.rejectedQuantity | number:'1.0-4' }}</td>
-            <td>{{ s.productionLine || '—' }}</td>
+            <td>{{ s.workCenterName || s.productionLine || '—' }}</td>
+            <td>{{ s.shiftName || '—' }}</td>
             <td>{{ s.operatorEmployeeName || '—' }}</td>
             <td><span class="stage-badge" [class]="stageBadgeClass(s.status)">{{ s.status }}</span></td>
           </tr>
@@ -439,7 +478,7 @@
         <tr>
           <th style="width:32px">#</th>
           <th>Stage</th>
-          <th>Line / Operator</th>
+          <th>Work Center / Shift / Operator</th>
           <th class="num-col">Done</th>
           <th class="num-col">Rej.</th>
           <th>Status</th>
@@ -452,7 +491,7 @@
             <td class="num muted">{{ s.sequence }}</td>
             <td class="fw-600">{{ s.stageName }}</td>
             <td class="muted small">
-              {{ s.productionLine || '—' }}<span *ngIf="s.operatorEmployeeName"> · {{ s.operatorEmployeeName }}</span>
+              {{ s.workCenterName || s.productionLine || '—' }}<span *ngIf="s.shiftName"> · {{ s.shiftName }}</span><span *ngIf="s.operatorEmployeeName"> · {{ s.operatorEmployeeName }}</span>
             </td>
             <td class="num">{{ s.completedQuantity | number:'1.0-4' }}</td>
             <td class="num">{{ s.rejectedQuantity | number:'1.0-4' }}</td>
@@ -498,5 +537,146 @@
 
   <div class="dialog-footer">
     <p-button label="Close" severity="secondary" [text]="true" (click)="stagesDialogVisible = false" />
+  </div>
+</p-dialog>
+
+<!-- Phase 6 — Cost Sheet -->
+<p-dialog [(visible)]="costDialogVisible"
+          [header]="costPo ? ('Cost Sheet — ' + costPo.code) : 'Cost Sheet'"
+          [modal]="true" [style]="{ width: '560px' }" [draggable]="false">
+  <div *ngIf="costPo">
+    <div class="alert alert-error" *ngIf="costError"><i class="pi pi-exclamation-circle"></i>{{ costError }}</div>
+    <p class="track-sub" *ngIf="costDetail">
+      <strong>{{ costDetail.productName }}</strong> · Qty {{ costDetail.quantity | number:'1.0-4' }}
+      <span class="muted">({{ costDetail.status }})</span>
+    </p>
+
+    <table class="line-grid cost-grid">
+      <tbody>
+        <tr>
+          <td class="cost-label">Material <small>(auto, from consumption)</small></td>
+          <td class="num fw-600">{{ (costDetail?.materialCost ?? 0) | number:'1.2-2' }}</td>
+        </tr>
+        <tr>
+          <td class="cost-label">Labour</td>
+          <td><p-inputNumber [(ngModel)]="cost.labourCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+        <tr>
+          <td class="cost-label">Machine</td>
+          <td><p-inputNumber [(ngModel)]="cost.machineCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+        <tr>
+          <td class="cost-label">Overhead</td>
+          <td><p-inputNumber [(ngModel)]="cost.overheadCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+        <tr>
+          <td class="cost-label">Subcontract</td>
+          <td><p-inputNumber [(ngModel)]="cost.subcontractCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+        <tr>
+          <td class="cost-label">Wastage</td>
+          <td><p-inputNumber [(ngModel)]="cost.wastageCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+        <tr>
+          <td class="cost-label">Reject</td>
+          <td><p-inputNumber [(ngModel)]="cost.rejectCost" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="grid-num" /></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="cost-total-row">
+          <td class="ta-right fw-700">Total Production Cost</td>
+          <td class="num fw-700">{{ costTotal | number:'1.2-2' }} ৳</td>
+        </tr>
+        <tr>
+          <td class="ta-right">Cost / Unit</td>
+          <td class="num fw-600">{{ costPerUnitPreview | number:'1.2-4' }} ৳</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="costDialogVisible = false" [disabled]="costSaving" />
+      <p-button [label]="costSaving ? 'Saving...' : 'Save Costs'" icon="pi pi-save" [loading]="costSaving" (click)="saveCosts()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Phase 7 — Traceability -->
+<p-dialog [(visible)]="traceDialogVisible"
+          [header]="traceData ? ('Traceability — ' + traceData.code) : 'Traceability'"
+          [modal]="true" [style]="{ width: '780px', maxWidth: '95vw' }" [draggable]="false">
+  <div *ngIf="traceLoading" class="trace-loading">Loading trace…</div>
+  <div *ngIf="!traceLoading && traceData as t" class="trace-body">
+
+    <!-- chain header -->
+    <div class="trace-chain">
+      <span class="chain-node fg"><i class="pi pi-box"></i> {{ t.productName }} <small>· {{ t.quantity | number:'1.0-4' }}</small></span>
+      <i class="pi pi-arrow-right sep"></i>
+      <span class="chain-node">{{ t.code }} <small>· {{ t.status }}</small></span>
+      <i class="pi pi-arrow-right sep" *ngIf="t.salesOrderCode"></i>
+      <span class="chain-node" *ngIf="t.salesOrderCode">{{ t.salesOrderCode }}</span>
+      <i class="pi pi-arrow-right sep" *ngIf="t.quotationCode"></i>
+      <span class="chain-node" *ngIf="t.quotationCode">{{ t.quotationCode }}</span>
+      <i class="pi pi-arrow-right sep" *ngIf="t.customerName"></i>
+      <span class="chain-node customer" *ngIf="t.customerName"><i class="pi pi-user"></i> {{ t.customerName }}</span>
+    </div>
+
+    <div class="trace-meta">
+      <span>BOM <strong>{{ t.bomCode }} v{{ t.bomVersion }}</strong></span>
+      <span *ngIf="t.actualStartDate">Started <strong>{{ t.actualStartDate }}</strong></span>
+      <span *ngIf="t.actualEndDate">Completed <strong>{{ t.actualEndDate }}</strong></span>
+    </div>
+
+    <!-- consumed raw materials -->
+    <p class="section-label">Consumed Materials</p>
+    <table class="line-grid">
+      <thead><tr><th>Item</th><th>Type</th><th class="num-col">Qty</th><th>Unit</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let c of t.consumedItems">
+          <td><span class="rm-code">{{ c.itemCode }}</span> <span class="fw-600">{{ c.itemName }}</span></td>
+          <td>{{ c.itemType }}</td>
+          <td class="num">{{ c.quantity | number:'1.0-4' }}</td>
+          <td>{{ c.unitOfMeasureCode }}</td>
+        </tr>
+        <tr *ngIf="t.consumedItems.length === 0"><td colspan="4" class="empty-lines">No consumption recorded (not completed yet).</td></tr>
+      </tbody>
+    </table>
+
+    <!-- job cards -->
+    <p class="section-label">Job Cards</p>
+    <table class="line-grid">
+      <thead><tr><th>Code</th><th>Status</th><th>Batch</th><th>Operator</th><th>Machine</th><th class="num-col">Done/Qty</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let j of t.jobCards">
+          <td><span class="code-badge">{{ j.code }}</span></td>
+          <td>{{ j.status }}</td>
+          <td>{{ j.batchNumber || '—' }}</td>
+          <td>{{ j.operatorName || '—' }}</td>
+          <td>{{ j.machineName || '—' }}</td>
+          <td class="num">{{ j.completedQuantity | number:'1.0-4' }} / {{ j.quantity | number:'1.0-4' }}</td>
+        </tr>
+        <tr *ngIf="t.jobCards.length === 0"><td colspan="6" class="empty-lines">No job cards on this run.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- lots -->
+    <ng-container *ngIf="t.lots.length > 0">
+      <p class="section-label">Produced Lots / Batches</p>
+      <table class="line-grid">
+        <thead><tr><th>Lot No.</th><th>Code</th><th>Shade</th><th class="num-col">Current Qty</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let l of t.lots">
+            <td class="fw-600">{{ l.lotNumber }}</td>
+            <td><span class="code-badge">{{ l.code }}</span></td>
+            <td>{{ l.shade || '—' }}</td>
+            <td class="num">{{ l.currentQuantity | number:'1.0-4' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+  </div>
+
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="traceDialogVisible = false" />
   </div>
 </p-dialog>

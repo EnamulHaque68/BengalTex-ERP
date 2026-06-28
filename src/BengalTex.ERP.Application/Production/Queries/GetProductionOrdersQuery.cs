@@ -18,8 +18,15 @@ internal sealed class GetProductionOrdersQueryHandler
     : IRequestHandler<GetProductionOrdersQuery, ApiResponse<PagedResult<ProductionOrderListItemDto>>>
 {
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
+    private readonly IRepository<Domain.Entities.StockReservation, long> _reservationRepo;
 
-    public GetProductionOrdersQueryHandler(IRepository<Domain.Entities.ProductionOrder, long> repo) => _repo = repo;
+    public GetProductionOrdersQueryHandler(
+        IRepository<Domain.Entities.ProductionOrder, long> repo,
+        IRepository<Domain.Entities.StockReservation, long> reservationRepo)
+    {
+        _repo = repo;
+        _reservationRepo = reservationRepo;
+    }
 
     public async Task<ApiResponse<PagedResult<ProductionOrderListItemDto>>> Handle(
         GetProductionOrdersQuery request, CancellationToken cancellationToken)
@@ -80,8 +87,32 @@ internal sealed class GetProductionOrdersQueryHandler
                     .Select(s => s.StageName)
                     .FirstOrDefault(),
                 p.SalesOrderId,
-                p.SalesOrder != null ? p.SalesOrder.Code : null))
+                p.SalesOrder != null ? p.SalesOrder.Code : null,
+                p.RequiresQc,
+                false,   // QcHeld — patched below from the live QcHold reservation
+                0m))     // QcHeldQuantity
             .ToListAsync(cancellationToken);
+
+        // Phase 5 (QC-hold upgrade): remaining held qty = Active "QcHold" reservation per production.
+        var qcCandidateIds = items.Where(i => i.RequiresQc).Select(i => i.Id).ToList();
+        if (qcCandidateIds.Count > 0)
+        {
+            var heldRows = await _reservationRepo.Query()
+                .Where(r => r.ReferenceType == "QcHold"
+                    && r.Status == Domain.Entities.ReservationStatus.Active
+                    && qcCandidateIds.Contains(r.ReferenceId))
+                .Select(r => new { r.ReferenceId, r.Quantity })
+                .ToListAsync(cancellationToken);
+
+            var heldByPo = heldRows.GroupBy(x => x.ReferenceId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+
+            for (var i = 0; i < items.Count; i++)
+            {
+                if (heldByPo.TryGetValue(items[i].Id, out var qty) && qty > 0m)
+                    items[i] = items[i] with { QcHeld = true, QcHeldQuantity = qty };
+            }
+        }
 
         var result = PagedResult<ProductionOrderListItemDto>.Create(
             items, request.Parameters.Page, request.Parameters.PageSize, totalCount);

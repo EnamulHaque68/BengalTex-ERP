@@ -35,6 +35,7 @@ internal sealed class CreateJobCardCommandHandler : IRequestHandler<CreateJobCar
     private readonly IRepository<ProductionOrder, long> _poRepo;
     private readonly IRepository<ProductionStage, long> _stageRepo;
     private readonly IRepository<Machine> _machineRepo;
+    private readonly IRepository<Domain.Entities.MachineMaintenance, long> _maintRepo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
@@ -44,12 +45,13 @@ internal sealed class CreateJobCardCommandHandler : IRequestHandler<CreateJobCar
         IRepository<ProductionOrder, long> poRepo,
         IRepository<ProductionStage, long> stageRepo,
         IRepository<Machine> machineRepo,
+        IRepository<Domain.Entities.MachineMaintenance, long> maintRepo,
         IRepository<Domain.Entities.Employee> empRepo,
         IUnitOfWork uow,
         INumberingService numbering)
     {
         _repo = repo; _poRepo = poRepo; _stageRepo = stageRepo;
-        _machineRepo = machineRepo; _empRepo = empRepo;
+        _machineRepo = machineRepo; _maintRepo = maintRepo; _empRepo = empRepo;
         _uow = uow; _numbering = numbering;
     }
 
@@ -68,6 +70,11 @@ internal sealed class CreateJobCardCommandHandler : IRequestHandler<CreateJobCar
         }
         if (cmd.MachineId is int mid && !await _machineRepo.Query().AnyAsync(m => m.Id == mid && m.IsActive, ct))
             return ApiResponse<long>.Fail("Machine not found or inactive.");
+
+        // Phase 5 — machine availability gate: block assigning a machine currently under maintenance.
+        if (cmd.MachineId is int gmid && await _maintRepo.Query()
+                .AnyAsync(m => m.MachineId == gmid && m.Status == MaintenanceStatus.InProgress, ct))
+            return ApiResponse<long>.Fail("This machine is under maintenance (in progress). Assign a different machine or wait for the maintenance to complete.");
         if (cmd.OperatorEmployeeId is int eid && !await _empRepo.Query().AnyAsync(e => e.Id == eid && e.IsActive, ct))
             return ApiResponse<long>.Fail("Operator not found or inactive.");
 

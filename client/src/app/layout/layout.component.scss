@@ -117,6 +117,26 @@
   i { font-size: 1.05rem; }
 }
 
+// Notification bell + unread-count badge
+.notif-btn { position: relative; }
+.notif-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--top-bg, #fff);
+  pointer-events: none;
+}
+
 .mobile-btn { display: none; }
 
 .topbar-user {

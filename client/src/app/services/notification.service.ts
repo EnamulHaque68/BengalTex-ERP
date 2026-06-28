@@ -29,4 +29,11 @@ export class NotificationService {
   sendTest(request: SendTestNotificationRequest): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(`${this.base}/test`, request);
   }
+
+  /** Unread-count for the bell badge. `since` = ISO timestamp the user last opened notifications. */
+  getUnreadCount(since?: string | null): Observable<ApiResponse<number>> {
+    let params = new HttpParams();
+    if (since) params = params.set('since', since);
+    return this.http.get<ApiResponse<number>>(`${this.base}/unread-count`, { params });
+  }
 }

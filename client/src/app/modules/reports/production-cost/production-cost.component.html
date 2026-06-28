@@ -1,0 +1,74 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Production Cost</h2>
+      <p class="page-subtitle">Actual cost sheet per completed production — material + labour + machine + overhead + … with margin when sales-linked</p>
+    </div>
+    <div class="header-actions">
+      <span class="date-field"><label>From</label><input pInputText type="date" [(ngModel)]="fromDate" (change)="load()" /></span>
+      <span class="date-field"><label>To</label><input pInputText type="date" [(ngModel)]="toDate" (change)="load()" /></span>
+      <p-select [(ngModel)]="filterProductId" [options]="products" optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="code,name" [showClear]="true" placeholder="All products"
+                styleClass="filter-select" (onChange)="load()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="summary-strip" *ngIf="report">
+    <div class="summary-card"><span class="lbl">Orders</span><span class="val">{{ report.totalOrders }}</span></div>
+    <div class="summary-card"><span class="lbl">Total Cost</span><span class="val">{{ money(report.grandTotalCost) }} ৳</span></div>
+    <div class="summary-card"><span class="lbl">Revenue (sales-linked)</span><span class="val">{{ money(report.grandTotalRevenue) }} ৳</span></div>
+    <div class="summary-card" [class.profit]="report.grandGrossProfit >= 0" [class.loss]="report.grandGrossProfit < 0">
+      <span class="lbl">Gross Profit</span><span class="val">{{ money(report.grandGrossProfit) }} ৳</span>
+    </div>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="report?.rows || []" [loading]="loading" [paginator]="true" [rows]="25" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th>
+          <th>Product</th>
+          <th class="num-h">Qty</th>
+          <th class="num-h">Material</th>
+          <th class="num-h">Labour</th>
+          <th class="num-h">Machine</th>
+          <th class="num-h">Overhead</th>
+          <th class="num-h">Subcon.</th>
+          <th class="num-h">Wastage</th>
+          <th class="num-h">Reject</th>
+          <th class="num-h">Total</th>
+          <th class="num-h">Cost/Unit</th>
+          <th class="num-h">Revenue</th>
+          <th class="num-h">Gross Profit</th>
+          <th class="num-h">Margin %</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-600">{{ r.productName }}<span class="so-chip" *ngIf="r.salesOrderCode"> · {{ r.salesOrderCode }}</span></td>
+          <td class="num">{{ num(r.quantity) }}</td>
+          <td class="num">{{ money(r.materialCost) }}</td>
+          <td class="num">{{ money(r.labourCost) }}</td>
+          <td class="num">{{ money(r.machineCost) }}</td>
+          <td class="num">{{ money(r.overheadCost) }}</td>
+          <td class="num">{{ money(r.subcontractCost) }}</td>
+          <td class="num">{{ money(r.wastageCost) }}</td>
+          <td class="num">{{ money(r.rejectCost) }}</td>
+          <td class="num fw-700">{{ money(r.totalCost) }}</td>
+          <td class="num fw-600">{{ num(r.costPerUnit) }}</td>
+          <td class="num muted">{{ r.revenue != null ? money(r.revenue) : '—' }}</td>
+          <td class="num" [class.profit]="(r.grossProfit ?? 0) >= 0" [class.loss]="(r.grossProfit ?? 0) < 0">
+            {{ r.grossProfit != null ? money(r.grossProfit) : '—' }}
+          </td>
+          <td class="num">{{ r.grossMarginPercent != null ? (r.grossMarginPercent | number:'1.0-1') + '%' : '—' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="15" class="empty-row"><i class="pi pi-dollar"></i><span>No completed productions in this window.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

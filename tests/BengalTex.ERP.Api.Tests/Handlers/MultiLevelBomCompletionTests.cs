@@ -74,7 +74,7 @@ public class MultiLevelBomCompletionTests
             new Repository<ProductionOrder, long>(ctx),
             new UnitOfWork(ctx),
             _stock.Object, _lots.Object, new Mock<IStockReservationService>().Object, _journal.Object,
-            new StubCurrentUser(), mediator.Object);
+            new StubCurrentUser(), new Mock<INotificationService>().Object, mediator.Object);
     }
 
     private static (string Account, decimal Debit, decimal Credit) Leg(

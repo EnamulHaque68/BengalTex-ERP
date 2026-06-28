@@ -62,9 +62,13 @@ internal sealed class PostQuarantineDispositionCommandHandler
         if (disp.Lines.Count == 0)
             return ApiResponse<QuarantineDispositionDto>.Fail("Cannot post a disposition with no lines.");
 
-        var isRelease = disp.DispositionType == Domain.Entities.DispositionType.Release;
+        // Release AND Rework both move quarantined stock back to a usable destination warehouse
+        // (Rework = the goods will be reprocessed). Only Scrap is a write-off.
+        var isRelease = disp.DispositionType == Domain.Entities.DispositionType.Release
+                     || disp.DispositionType == Domain.Entities.DispositionType.Rework;
         if (isRelease && !disp.DestinationWarehouseId.HasValue)
-            return ApiResponse<QuarantineDispositionDto>.Fail("Release disposition has no destination warehouse.");
+            return ApiResponse<QuarantineDispositionDto>.Fail(
+                $"{disp.DispositionType} disposition has no destination warehouse.");
 
         // ─── Pass 1: validate quarantine stock availability ─────────────────
         var violations = new List<string>();

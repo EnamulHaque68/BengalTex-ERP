@@ -53,6 +53,28 @@
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: #9ca3af; }
 .amount { font-weight: 700; color: #065f46; }
+.base-amt { font-weight: 600; color: #475569; }
+
+.fx-chip {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+
+.base-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
 
 .code-badge {
   background: #ede9fe;
@@ -73,6 +95,30 @@
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  &.st-draft     { background: #fef3c7; color: #92400e; }
+  &.st-posted    { background: #d1fae5; color: #065f46; }
+  &.st-cancelled { background: #fee2e2; color: #991b1b; }
+}
+
+.draft-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: #475569;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  i { color: #2563eb; }
 }
 
 .row-actions { display: flex; gap: 0.05rem; }

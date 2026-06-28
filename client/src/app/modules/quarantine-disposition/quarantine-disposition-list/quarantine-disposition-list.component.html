@@ -147,7 +147,7 @@
                     (onChange)="onQuarantineChange()" />
       </div>
 
-      <div class="field" *ngIf="isRelease">
+      <div class="field" *ngIf="needsDestination">
         <label>Destination Warehouse *</label>
         <p-select formControlName="destinationWarehouseId"
                     [options]="warehouses"
@@ -155,7 +155,7 @@
                     optionValue="id"
                     [filter]="true"
                     filterBy="code,name"
-                    placeholder="Release back to..."
+                    placeholder="Move stock to..."
                     appendTo="body" class="w-full" styleClass="w-full" />
       </div>
 
@@ -164,7 +164,7 @@
         <input pInputText type="date" formControlName="dispositionDate" class="w-full" />
       </div>
 
-      <div class="field" [class.col-span-2]="!isRelease">
+      <div class="field" [class.col-span-2]="!needsDestination">
         <label>Reason</label>
         <input pInputText formControlName="reason" placeholder="Rework done, scrap, salvage..." class="w-full" />
       </div>

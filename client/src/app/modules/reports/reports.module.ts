@@ -21,6 +21,7 @@ import { VatSummaryComponent } from './vat-summary/vat-summary.component';
 import { MarginReportComponent } from './margin-report/margin-report.component';
 import { WipReportComponent } from './wip-report/wip-report.component';
 import { ProductionSummaryComponent } from './production-summary/production-summary.component';
+import { ProductionCostComponent } from './production-cost/production-cost.component';
 import { WastageVarianceComponent } from './wastage-variance/wastage-variance.component';
 import { ProductivityReportComponent } from './productivity-report/productivity-report.component';
 import { BuyerOrderBookComponent } from './buyer-order-book/buyer-order-book.component';
@@ -40,6 +41,7 @@ const routes: Routes = [
   { path: 'margin', component: MarginReportComponent },
   { path: 'wip', component: WipReportComponent },
   { path: 'production-summary', component: ProductionSummaryComponent },
+  { path: 'production-cost', component: ProductionCostComponent },
   { path: 'wastage-variance', component: WastageVarianceComponent },
   { path: 'productivity', component: ProductivityReportComponent },
   { path: 'buyer-order-book', component: BuyerOrderBookComponent },
@@ -60,6 +62,7 @@ const routes: Routes = [
     MarginReportComponent,
     WipReportComponent,
     ProductionSummaryComponent,
+    ProductionCostComponent,
     WastageVarianceComponent,
     ProductivityReportComponent,
     BuyerOrderBookComponent,

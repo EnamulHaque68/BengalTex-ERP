@@ -18,7 +18,8 @@ public record QcInspectionDto(
     string OverallResult,
     string? InspectedBy,
     string? Notes,
-    IReadOnlyList<QcInspectionLineDto> Lines);
+    IReadOnlyList<QcInspectionLineDto> Lines,
+    string? RejectDisposition = null);   // Quarantine | Reject | Rework | Scrap
 
 public record QcInspectionLineDto(
     long Id,

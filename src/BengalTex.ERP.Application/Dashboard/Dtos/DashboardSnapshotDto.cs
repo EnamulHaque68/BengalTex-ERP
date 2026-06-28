@@ -26,7 +26,12 @@ public record ProductionSectionDto(
     int ActiveProductionOrders,
     int OpenJobCards,
     int InProgressJobCards,
-    decimal ThisMonthWastageCost);
+    decimal ThisMonthWastageCost,
+    // Phase 7 — manufacturing KPIs
+    int CompletedThisMonth = 0,
+    int DelayedProductions = 0,        // InProgress past planned end date
+    int QcHeldProductions = 0,         // completed + QC-held, not yet released
+    int MachinesUnderMaintenance = 0);
 
 public record HrSectionDto(
     int ActiveEmployees,

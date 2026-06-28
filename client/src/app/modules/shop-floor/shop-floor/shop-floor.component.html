@@ -1,0 +1,119 @@
+<div class="sf-shell">
+
+  <div class="sf-header">
+    <div>
+      <h2 class="sf-title"><i class="pi pi-mobile"></i> Shop Floor</h2>
+      <p class="sf-sub">Update production stages from the floor</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    <i class="pi pi-exclamation-circle"></i>{{ error }}
+    <button type="button" class="alert-close" (click)="error = ''">&times;</button>
+  </div>
+
+  <!-- ORDER PICKER -->
+  <ng-container *ngIf="!order">
+    <div class="search-wrap">
+      <i class="pi pi-search"></i>
+      <input type="text" inputmode="search" placeholder="Scan or type order / product…"
+             [value]="search" (input)="onSearch($any($event.target).value)" />
+    </div>
+
+    <div class="hint" *ngIf="loadingList"><i class="pi pi-spin pi-spinner"></i> Loading orders…</div>
+    <div class="empty" *ngIf="!loadingList && filtered.length === 0">
+      <i class="pi pi-inbox"></i>
+      <span>No in-progress production orders.</span>
+    </div>
+
+    <div class="order-list">
+      <button type="button" class="order-card" *ngFor="let o of filtered" (click)="selectOrder(o)">
+        <div class="oc-main">
+          <span class="oc-code">{{ o.code }}</span>
+          <span class="oc-product">{{ o.productName }}</span>
+        </div>
+        <div class="oc-meta">
+          <span class="oc-qty">{{ o.quantity }} pcs</span>
+          <span class="oc-stage" *ngIf="o.stageCount > 0">{{ o.completedStageCount }}/{{ o.stageCount }} stages</span>
+          <span class="oc-stage muted" *ngIf="o.stageCount === 0">no routing</span>
+          <i class="pi pi-chevron-right"></i>
+        </div>
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ORDER DETAIL + STAGES -->
+  <ng-container *ngIf="order">
+    <button type="button" class="back-btn" (click)="backToList()"><i class="pi pi-arrow-left"></i> All orders</button>
+
+    <div class="order-head">
+      <div class="oh-code">{{ order.code }}</div>
+      <div class="oh-product">{{ order.productName }}</div>
+      <div class="oh-meta">
+        <span><i class="pi pi-box"></i> {{ order.quantity }} {{ order.productUnitOfMeasureCode }}</span>
+        <span class="badge st-progress">{{ order.status }}</span>
+        <span *ngIf="order.salesOrderCode"><i class="pi pi-shopping-cart"></i> {{ order.salesOrderCode }}</span>
+      </div>
+    </div>
+
+    <div class="hint" *ngIf="loadingOrder"><i class="pi pi-spin pi-spinner"></i> Loading…</div>
+
+    <div class="no-stages" *ngIf="!loadingOrder && sortedStages.length === 0">
+      <i class="pi pi-info-circle"></i>
+      This order has no routing stages — it completes in a single step from the Production Orders screen.
+    </div>
+
+    <div class="stage-list">
+      <div class="stage-card" *ngFor="let s of sortedStages" [ngClass]="stageClass(s.status)">
+        <div class="sc-top">
+          <span class="sc-seq">{{ s.sequence }}</span>
+          <div class="sc-name">
+            <span class="sc-stage">{{ s.stageName }}</span>
+            <span class="sc-wc" *ngIf="s.workCenterName"><i class="pi pi-building"></i> {{ s.workCenterName }}</span>
+          </div>
+          <span class="sc-status" [ngClass]="stageClass(s.status)">{{ s.status }}</span>
+        </div>
+
+        <div class="sc-qty">
+          <span>Planned <strong>{{ s.plannedQuantity }}</strong></span>
+          <span>Done <strong>{{ s.completedQuantity }}</strong></span>
+          <span *ngIf="s.rejectedQuantity > 0" class="rej">Rejected <strong>{{ s.rejectedQuantity }}</strong></span>
+        </div>
+
+        <!-- Inline complete panel -->
+        <div class="complete-panel" *ngIf="completingStageId === s.id">
+          <div class="cp-row">
+            <label>Completed Qty</label>
+            <input type="number" inputmode="decimal" [(ngModel)]="completeQty" min="0" />
+          </div>
+          <div class="cp-row">
+            <label>Rejected Qty</label>
+            <input type="number" inputmode="decimal" [(ngModel)]="rejectQty" min="0" />
+          </div>
+          <div class="cp-actions">
+            <button type="button" class="btn ghost" (click)="cancelComplete()" [disabled]="actionStageId === s.id">Cancel</button>
+            <button type="button" class="btn done" (click)="confirmComplete(s)" [disabled]="actionStageId === s.id">
+              <i class="pi" [ngClass]="actionStageId === s.id ? 'pi-spin pi-spinner' : 'pi-check'"></i> Confirm
+            </button>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="sc-actions" *ngIf="completingStageId !== s.id">
+          <button type="button" class="btn start" *ngIf="s.status === 'Pending'"
+                  (click)="startStage(s)" [disabled]="actionStageId === s.id">
+            <i class="pi" [ngClass]="actionStageId === s.id ? 'pi-spin pi-spinner' : 'pi-play'"></i> Start
+          </button>
+          <button type="button" class="btn done" *ngIf="s.status === 'InProgress'"
+                  (click)="openComplete(s)" [disabled]="actionStageId === s.id">
+            <i class="pi pi-check"></i> Complete
+          </button>
+          <button type="button" class="btn skip" *ngIf="s.status === 'Pending' || s.status === 'InProgress'"
+                  (click)="skipStage(s)" [disabled]="actionStageId === s.id">
+            <i class="pi pi-forward"></i> Skip
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

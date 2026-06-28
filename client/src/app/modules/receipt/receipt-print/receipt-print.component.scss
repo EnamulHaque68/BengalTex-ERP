@@ -37,6 +37,12 @@
     .lbl { font-size: 0.75rem; color: #065f46; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .amount { font-size: 2.5rem; font-weight: 800; color: #065f46; font-variant-numeric: tabular-nums; margin: 0.25rem 0; }
     .words { font-style: italic; font-size: 0.95rem; color: #4b5563; font-weight: 600; }
+    .fx-info {
+      display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;
+      margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dotted #a7f3d0;
+      font-size: 0.8rem; color: #4b5563;
+      strong { color: #111827; }
+    }
   }
 }
 
