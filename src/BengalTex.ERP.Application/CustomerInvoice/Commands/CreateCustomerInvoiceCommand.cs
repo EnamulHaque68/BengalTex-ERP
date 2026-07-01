@@ -14,7 +14,8 @@ public sealed record CustomerInvoiceLineInput(
     int ProductId,
     decimal Quantity,
     decimal UnitPrice,
-    string? LineNotes);
+    string? LineNotes,
+    long? SalesOrderLineId = null);   // links the line to its originating SO line (drives invoice coverage)
 
 /// <summary>
 /// Creates a Draft Customer Invoice derived from an existing Sales Order. The
@@ -49,9 +50,16 @@ public sealed class CreateCustomerInvoiceCommandValidator : AbstractValidator<Cr
             line.RuleFor(l => l.UnitPrice).GreaterThanOrEqualTo(0);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
+        // A given SO line may be billed by at most one line on a single invoice (the same product
+        // may still appear twice if it comes from two different SO lines, or as an ad-hoc line).
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.ProductId).Distinct().Count() == lines.Count)
-            .WithMessage("The same product appears more than once in the invoice lines.")
+            .Must(lines =>
+            {
+                var soLineIds = lines.Where(l => l.SalesOrderLineId.HasValue)
+                                     .Select(l => l.SalesOrderLineId!.Value).ToList();
+                return soLineIds.Distinct().Count() == soLineIds.Count;
+            })
+            .WithMessage("The same sales-order line appears more than once in the invoice lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
 }
@@ -61,6 +69,7 @@ internal sealed class CreateCustomerInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
+    private readonly IRepository<Domain.Entities.SalesOrderLine, long> _soLineRepo;
     private readonly IRepository<Domain.Entities.Customer> _customerRepo;
     private readonly IRepository<Domain.Entities.Product> _productRepo;
     private readonly IUnitOfWork _uow;
@@ -70,6 +79,7 @@ internal sealed class CreateCustomerInvoiceCommandHandler
     public CreateCustomerInvoiceCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
         IRepository<Domain.Entities.SalesOrder, long> soRepo,
+        IRepository<Domain.Entities.SalesOrderLine, long> soLineRepo,
         IRepository<Domain.Entities.Customer> customerRepo,
         IRepository<Domain.Entities.Product> productRepo,
         IUnitOfWork uow,
@@ -78,6 +88,7 @@ internal sealed class CreateCustomerInvoiceCommandHandler
     {
         _repo = repo;
         _soRepo = soRepo;
+        _soLineRepo = soLineRepo;
         _customerRepo = customerRepo;
         _productRepo = productRepo;
         _uow = uow;
@@ -109,6 +120,29 @@ internal sealed class CreateCustomerInvoiceCommandHandler
         if (existingCount != productIds.Count)
             return ApiResponse<CustomerInvoiceDto>.Fail("One or more products not found.");
 
+        // ── Invoice-coverage guard (full/partial tracking) ──
+        // Each line that links to an SO line may only bill its remaining (Quantity − InvoicedQuantity).
+        // Load + validate, then consume; all SO-line writes commit atomically with the invoice below.
+        var linkedLines = cmd.Lines.Where(l => l.SalesOrderLineId.HasValue).ToList();
+        var soLineMap = new Dictionary<long, Domain.Entities.SalesOrderLine>();
+        foreach (var soLineId in linkedLines.Select(l => l.SalesOrderLineId!.Value).Distinct())
+        {
+            var soLine = await _soLineRepo.GetByIdAsync(soLineId, cancellationToken);
+            if (soLine is null || soLine.SalesOrderId != cmd.SalesOrderId)
+                return ApiResponse<CustomerInvoiceDto>.Fail(
+                    $"Sales-order line {soLineId} does not belong to this sales order.");
+            soLineMap[soLineId] = soLine;
+        }
+        foreach (var grp in linkedLines.GroupBy(l => l.SalesOrderLineId!.Value))
+        {
+            var soLine = soLineMap[grp.Key];
+            var requested = grp.Sum(x => x.Quantity);
+            var remaining = soLine.Quantity - soLine.InvoicedQuantity;
+            if (requested > remaining)
+                return ApiResponse<CustomerInvoiceDto>.Fail(
+                    $"Cannot invoice {requested:0.####} — only {remaining:0.####} remaining to invoice on this order line.");
+        }
+
         var code = await _numbering.NextAsync("INV", null, cancellationToken);
 
         var dueDate = cmd.DueDate ?? cmd.InvoiceDate.AddDays(customer.CreditPeriodDays);
@@ -135,12 +169,21 @@ internal sealed class CreateCustomerInvoiceCommandHandler
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.CustomerInvoiceLine
             {
                 ProductId = l.ProductId,
+                SalesOrderLineId = l.SalesOrderLineId,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 SortOrder = i,
                 LineNotes = l.LineNotes
             }).ToList()
         };
+
+        // Consume the SO-line coverage (tracked SO lines persist with the SaveChanges below).
+        foreach (var grp in linkedLines.GroupBy(l => l.SalesOrderLineId!.Value))
+        {
+            var soLine = soLineMap[grp.Key];
+            soLine.InvoicedQuantity += grp.Sum(x => x.Quantity);
+            _soLineRepo.Update(soLine);
+        }
 
         await _repo.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

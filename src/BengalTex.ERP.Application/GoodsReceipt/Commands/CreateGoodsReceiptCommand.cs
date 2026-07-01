@@ -26,7 +26,8 @@ public sealed record CreateGoodsReceiptCommand(
     int ReceivingWarehouseId,
     string? SupplierDeliveryRef,
     string? Notes,
-    IReadOnlyList<GoodsReceiptLineInput> Lines
+    IReadOnlyList<GoodsReceiptLineInput> Lines,
+    long? LetterOfCreditId = null      // optional; auto-linked from the PO's LC when null
 ) : IRequest<ApiResponse<GoodsReceiptDto>>;
 
 public sealed class CreateGoodsReceiptCommandValidator : AbstractValidator<CreateGoodsReceiptCommand>
@@ -60,6 +61,7 @@ internal sealed class CreateGoodsReceiptCommandHandler
     private readonly IRepository<Domain.Entities.GoodsReceiptNote, long> _repo;
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IRepository<Domain.Entities.Warehouse> _warehouseRepo;
+    private readonly IRepository<Domain.Entities.LetterOfCredit, long> _lcRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -68,6 +70,7 @@ internal sealed class CreateGoodsReceiptCommandHandler
         IRepository<Domain.Entities.GoodsReceiptNote, long> repo,
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IRepository<Domain.Entities.Warehouse> warehouseRepo,
+        IRepository<Domain.Entities.LetterOfCredit, long> lcRepo,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
@@ -75,6 +78,7 @@ internal sealed class CreateGoodsReceiptCommandHandler
         _repo = repo;
         _poRepo = poRepo;
         _warehouseRepo = warehouseRepo;
+        _lcRepo = lcRepo;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -115,12 +119,53 @@ internal sealed class CreateGoodsReceiptCommandHandler
                     $"PO line {poLine.Id}: would exceed ordered qty ({remaining:0.####} remaining).");
         }
 
+        // ── Letter-of-Credit link (import purchases only) ──
+        // Use the caller's LC, else auto-link the PO's own LC. Validation applies ONLY when an LC is
+        // resolved — local / non-LC purchases are completely unaffected.
+        var lcId = cmd.LetterOfCreditId
+            ?? await _lcRepo.Query().AsNoTracking()
+                .Where(l => l.PurchaseOrderId == cmd.PurchaseOrderId
+                            && l.Status != Domain.Entities.LcStatus.Cancelled)
+                .OrderByDescending(l => l.Id)
+                .Select(l => (long?)l.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        if (lcId.HasValue)
+        {
+            var lc = await _lcRepo.GetByIdAsync(lcId.Value, cancellationToken);
+            if (lc is null) return ApiResponse<GoodsReceiptDto>.Fail("Linked letter of credit not found.");
+            if (lc.Status is Domain.Entities.LcStatus.Cancelled or Domain.Entities.LcStatus.Settled)
+                return ApiResponse<GoodsReceiptDto>.Fail(
+                    $"Cannot receive goods against a {lc.Status} letter of credit ({lc.Code}).");
+
+            // Over-amount guard — total received value (existing linked GRNs + this one) must not
+            // exceed the LC amount. Compared in base currency so PO/LC currency differences are safe.
+            var existingValueBase = await _repo.Query().AsNoTracking()
+                .Where(g => g.LetterOfCreditId == lcId)
+                .SelectMany(g => g.Lines)
+                .Select(l => l.ReceivedQuantity * l.PurchaseOrderLine.UnitPrice
+                             * l.PurchaseOrderLine.PurchaseOrder.ExchangeRate)
+                .SumAsync(v => (decimal?)v, cancellationToken) ?? 0m;
+
+            var thisValueBase = cmd.Lines.Sum(l =>
+                l.ReceivedQuantity * po.Lines.First(pl => pl.Id == l.PurchaseOrderLineId).UnitPrice)
+                * po.ExchangeRate;
+
+            var lcAmountBase = lc.Amount * lc.ExchangeRate;
+            if (existingValueBase + thisValueBase > lcAmountBase + 0.01m)
+                return ApiResponse<GoodsReceiptDto>.Fail(
+                    $"This goods receipt would exceed the linked LC {lc.Code} amount " +
+                    $"(LC ≈ {lcAmountBase:0.##} BDT, already received ≈ {existingValueBase:0.##} BDT, " +
+                    $"this ≈ {thisValueBase:0.##} BDT).");
+        }
+
         var code = await _numbering.NextAsync("GRN", null, cancellationToken);
 
         var entity = new Domain.Entities.GoodsReceiptNote
         {
             Code = code,
             PurchaseOrderId = cmd.PurchaseOrderId,
+            LetterOfCreditId = lcId,
             ReceiveDate = cmd.ReceiveDate,
             ReceivingWarehouseId = cmd.ReceivingWarehouseId,
             Status = Domain.Entities.GoodsReceiptStatus.Draft,

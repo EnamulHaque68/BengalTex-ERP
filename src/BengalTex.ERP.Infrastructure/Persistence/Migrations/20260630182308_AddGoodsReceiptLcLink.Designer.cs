@@ -4,16 +4,19 @@ using BengalTex.ERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace BengalTex.ERP.Infrastructure.Migrations
+namespace BengalTex.ERP.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630182308_AddGoodsReceiptLcLink")]
+    partial class AddGoodsReceiptLcLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -6629,9 +6632,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<DateOnly>("OrderDate")
                         .HasColumnType("date");
 
-                    b.Property<long?>("PurchaseRequisitionId")
-                        .HasColumnType("bigint");
-
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -6646,9 +6646,6 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
 
-                    b.Property<long?>("SupplierQuotationId")
-                        .HasColumnType("bigint");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -6660,15 +6657,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("OrderDate");
 
-                    b.HasIndex("PurchaseRequisitionId")
-                        .IsUnique()
-                        .HasFilter("[PurchaseRequisitionId] IS NOT NULL");
-
                     b.HasIndex("Status");
 
                     b.HasIndex("SupplierId");
-
-                    b.HasIndex("SupplierQuotationId");
 
                     b.ToTable("PurchaseOrders", (string)null);
                 });
@@ -12550,31 +12541,17 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("DeliveryWarehouseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseRequisition", "PurchaseRequisition")
-                        .WithMany()
-                        .HasForeignKey("PurchaseRequisitionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("BengalTex.ERP.Domain.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BengalTex.ERP.Domain.Entities.SupplierQuotation", "SupplierQuotation")
-                        .WithMany()
-                        .HasForeignKey("SupplierQuotationId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("Currency");
 
                     b.Navigation("DeliveryWarehouse");
 
-                    b.Navigation("PurchaseRequisition");
-
                     b.Navigation("Supplier");
-
-                    b.Navigation("SupplierQuotation");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrderLine", b =>

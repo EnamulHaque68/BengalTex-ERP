@@ -80,7 +80,8 @@ internal sealed class GetSalesOrdersQueryHandler
                 s.ExchangeRate,
                 LineCount = s.Lines.Count,
                 TotalAmount = s.Lines.Sum(l => (decimal?)(l.Quantity * l.UnitPrice)) ?? 0m,
-                OrderedQuantity = s.Lines.Sum(l => (decimal?)l.Quantity) ?? 0m
+                OrderedQuantity = s.Lines.Sum(l => (decimal?)l.Quantity) ?? 0m,
+                InvoicedQuantity = s.Lines.Sum(l => (decimal?)l.InvoicedQuantity) ?? 0m
             })
             .ToListAsync(cancellationToken);
 
@@ -104,13 +105,17 @@ internal sealed class GetSalesOrdersQueryHandler
         {
             var produced = bySo.TryGetValue(r.Id, out var p) ? p : 0m;
             var hasAny = bySo.ContainsKey(r.Id);
+            var invoiceStatus = r.InvoicedQuantity <= 0m ? "NotInvoiced"
+                : r.InvoicedQuantity < r.OrderedQuantity ? "PartiallyInvoiced"
+                : "FullyInvoiced";
             return new SalesOrderListItemDto(
                 r.Id, r.Code, r.CustomerId, r.CustomerName,
                 r.OrderDate, r.RequiredDeliveryDate, r.Status,
                 r.CurrencyCode, r.ExchangeRate, r.LineCount,
                 r.TotalAmount, r.TotalAmount * r.ExchangeRate,
                 ProductionProgressCalc.Percent(r.OrderedQuantity, produced),
-                ProductionProgressCalc.DeriveStatus(r.OrderedQuantity, produced, hasAny));
+                ProductionProgressCalc.DeriveStatus(r.OrderedQuantity, produced, hasAny),
+                r.OrderedQuantity, r.InvoicedQuantity, invoiceStatus);
         }).ToList();
 
         var result = PagedResult<SalesOrderListItemDto>.Create(

@@ -46,6 +46,11 @@ export interface PurchaseOrderDto {
   totalAmount: number;                // document currency
   baseTotalAmount: number;            // BDT
   lines: PurchaseOrderLineDto[];
+  // Source traceability (Area C)
+  purchaseRequisitionId: number | null;
+  purchaseRequisitionCode: string | null;
+  supplierQuotationId: number | null;
+  supplierQuotationCode: string | null;
 }
 
 export interface PurchaseOrderListItemDto {

@@ -129,6 +129,18 @@
   .hint { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
 }
 
+.lc-box {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.82rem;
+  &.linked { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  &.none   { background: #f9fafb; border: 1px dashed #e5e7eb; color: #6b7280; }
+  .lc-code { font-weight: 800; color: #1d4ed8; }
+  .lc-num  { color: #475569; }
+  .lc-status-badge { background: #dbeafe; color: #1e40af; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+  .lc-amt  { color: #334155; font-weight: 600; }
+  .lc-hint { margin-left: auto; font-size: 0.72rem; color: #64748b; font-style: italic; }
+}
+
 // ─── Line grid ─────────────────────────────────────────────────────────────
 
 .lines-wrap { padding-top: 0.25rem; overflow-x: auto; }

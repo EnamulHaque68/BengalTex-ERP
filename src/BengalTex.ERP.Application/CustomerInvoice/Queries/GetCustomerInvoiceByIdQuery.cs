@@ -50,7 +50,7 @@ internal sealed class GetCustomerInvoiceByIdQueryHandler
                 l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
                 l.SortOrder, l.LineNotes,
                 l.CartonNumberFrom, l.CartonNumberTo, l.UnitsPerCarton,
-                l.NetWeightKgPerLine, l.GrossWeightKgPerLine))
+                l.NetWeightKgPerLine, l.GrossWeightKgPerLine, l.SalesOrderLineId))
             .ToList();
 
         var dto = new CustomerInvoiceDto(

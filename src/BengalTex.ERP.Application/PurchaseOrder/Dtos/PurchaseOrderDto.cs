@@ -20,7 +20,12 @@ public record PurchaseOrderDto(
     string? Notes,
     decimal TotalAmount,                 // Σ line totals, in document currency
     decimal BaseTotalAmount,             // TotalAmount × ExchangeRate (BDT)
-    IReadOnlyList<PurchaseOrderLineDto> Lines);
+    IReadOnlyList<PurchaseOrderLineDto> Lines,
+    // ── Source traceability (Area C) ──
+    long? PurchaseRequisitionId = null,
+    string? PurchaseRequisitionCode = null,
+    long? SupplierQuotationId = null,
+    string? SupplierQuotationCode = null);
 
 public record PurchaseOrderLineDto(
     long Id,

@@ -415,15 +415,17 @@ internal sealed class ConvertPurchaseRequisitionToPoCommandHandler
     : IRequestHandler<ConvertPurchaseRequisitionToPoCommand, ApiResponse<long>>
 {
     private readonly IRepository<PurchaseRequisition, long> _repo;
+    private readonly IRepository<SupplierQuotation, long> _sqRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public ConvertPurchaseRequisitionToPoCommandHandler(
         IRepository<PurchaseRequisition, long> repo,
+        IRepository<SupplierQuotation, long> sqRepo,
         IUnitOfWork uow,
         IMediator mediator)
     {
-        _repo = repo; _uow = uow; _mediator = mediator;
+        _repo = repo; _sqRepo = sqRepo; _uow = uow; _mediator = mediator;
     }
 
     public async Task<ApiResponse<long>> Handle(ConvertPurchaseRequisitionToPoCommand cmd, CancellationToken ct)
@@ -436,6 +438,16 @@ internal sealed class ConvertPurchaseRequisitionToPoCommandHandler
             return ApiResponse<long>.Fail($"Only Approved requisitions can be converted (current: {pr.Status}).");
         if (pr.ConvertedPurchaseOrderId.HasValue)
             return ApiResponse<long>.Fail("This requisition has already been converted.");
+
+        // Workflow lock — once an RFQ is started (a non-rejected supplier quotation exists for this
+        // requisition), the direct-conversion path is closed; the PO must come from the winning quote.
+        var rfqStarted = await _sqRepo.Query()
+            .AnyAsync(s => s.PurchaseRequisitionId == cmd.PurchaseRequisitionId
+                        && s.Status != SupplierQuotationStatus.Rejected, ct);
+        if (rfqStarted)
+            return ApiResponse<long>.Fail(
+                "An RFQ has been started for this requisition — convert it by selecting the winning " +
+                "supplier quotation, not a direct conversion.");
 
         var priceByLineId = cmd.LinePrices.ToDictionary(x => x.PurchaseRequisitionLineId, x => x.UnitPrice);
         var poLines = pr.Lines.OrderBy(l => l.SortOrder)
@@ -450,7 +462,7 @@ internal sealed class ConvertPurchaseRequisitionToPoCommandHandler
             cmd.SupplierId, cmd.OrderDate, cmd.ExpectedDeliveryDate, cmd.DeliveryWarehouseId,
             string.IsNullOrWhiteSpace(cmd.Notes) ? $"Converted from PR {pr.Code}" : cmd.Notes,
             cmd.CurrencyId, cmd.ExchangeRate,
-            poLines), ct);
+            poLines, PurchaseRequisitionId: pr.Id), ct);
 
         if (!poResult.Success || poResult.Data is null)
             return ApiResponse<long>.Fail(poResult.Message ?? "Failed to create purchase order from requisition.");

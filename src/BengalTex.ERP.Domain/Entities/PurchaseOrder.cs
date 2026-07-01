@@ -34,6 +34,19 @@ public class PurchaseOrder : BaseTransactionalEntity
     public DateTimeOffset? ApprovedAt { get; set; }
     public string? ApprovedBy { get; set; }
 
+    /// <summary>
+    /// Source documents this PO was raised from — for end-to-end procurement traceability. A PO is
+    /// raised by exactly one path: a direct <see cref="PurchaseRequisition"/> conversion sets
+    /// <see cref="PurchaseRequisitionId"/>; an RFQ winner sets <see cref="SupplierQuotationId"/>
+    /// (and, when that quotation was raised against a requisition, also <see cref="PurchaseRequisitionId"/>).
+    /// Both null for an ad-hoc PO created directly.
+    /// </summary>
+    public long? PurchaseRequisitionId { get; set; }
+    public PurchaseRequisition? PurchaseRequisition { get; set; }
+
+    public long? SupplierQuotationId { get; set; }
+    public SupplierQuotation? SupplierQuotation { get; set; }
+
     public string? Notes { get; set; }
 
     public ICollection<PurchaseOrderLine> Lines { get; set; } = new List<PurchaseOrderLine>();

@@ -180,6 +180,26 @@
         <textarea pInputTextarea rows="2" formControlName="notes"
                   placeholder="QC remarks, packaging condition..." class="w-full"></textarea>
       </div>
+
+      <!-- Area B: linked Letter of Credit (import purchases) -->
+      <div class="field col-span-2" *ngIf="form.get('purchaseOrderId')?.value">
+        <label>Letter of Credit</label>
+        <div class="lc-box linked" *ngIf="lcSuggestion || lcLinked">
+          <i class="pi pi-file-import"></i>
+          <span class="lc-code">{{ lcSuggestion?.code || lcLinked?.code }}</span>
+          <span class="lc-num" *ngIf="lcSuggestion?.lcNumber || lcLinked?.number">
+            ({{ lcSuggestion?.lcNumber || lcLinked?.number }})
+          </span>
+          <span class="lc-status-badge">{{ lcSuggestion?.status || lcLinked?.status }}</span>
+          <span class="lc-amt" *ngIf="lcSuggestion">
+            LC {{ lcSuggestion.amount | number:'1.2-2' }} {{ lcSuggestion.currencyCode }}
+          </span>
+          <span class="lc-hint" *ngIf="dialogMode !== 'view'">auto-linked from the PO</span>
+        </div>
+        <div class="lc-box none" *ngIf="!lcSuggestion && !lcLinked">
+          <i class="pi pi-info-circle"></i> Local / non-LC purchase — no letter of credit.
+        </div>
+      </div>
     </div>
 
     <p class="section-label">Receipt Lines</p>

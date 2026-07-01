@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerInvoiceService } from '../../../services/customer-invoice.service';
 import { SalesOrderService } from '../../../services/sales-order.service';
@@ -19,6 +20,7 @@ interface InvoiceableSoOption {
   code: string;
   customerName: string;
   status: string;
+  invoiceStatus: string;
   displayLabel: string;
 }
 
@@ -326,13 +328,25 @@ export class CustomerInvoiceListComponent implements OnInit {
     private masterSetup: MasterSetupService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
     this.loadDropdowns();
     this.load();
+
+    // Traceability deep-link: /customer-invoices?open=<id> opens that invoice's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as CustomerInvoiceListItemDto);
+  }
+
+  /** Jump to the source Sales Order's details (invoice → SO traceability). */
+  goToSalesOrder(salesOrderId: number): void {
+    this.dialogVisible = false;
+    this.router.navigate(['/sales-orders'], { queryParams: { open: salesOrderId } });
   }
 
   private todayIso(): string {
@@ -386,14 +400,19 @@ export class CustomerInvoiceListComponent implements OnInit {
           if (res.success && res.data) {
             this.invoiceableSos = res.data.items
               .filter(s =>
-                s.status === 'Confirmed' || s.status === 'PartiallyDispatched' ||
-                s.status === 'Dispatched' || s.status === 'Delivered')
+                (s.status === 'Confirmed' || s.status === 'PartiallyDispatched' ||
+                 s.status === 'Dispatched' || s.status === 'Delivered') &&
+                // Hide fully-invoiced sales orders — nothing left to bill.
+                s.invoiceStatus !== 'FullyInvoiced')
               .map(s => ({
                 id: s.id,
                 code: s.code,
                 customerName: s.customerName,
                 status: s.status,
-                displayLabel: `${s.code} — ${s.customerName}`
+                invoiceStatus: s.invoiceStatus ?? 'NotInvoiced',
+                displayLabel: s.invoiceStatus === 'PartiallyInvoiced'
+                  ? `${s.code} — ${s.customerName} (partially invoiced)`
+                  : `${s.code} — ${s.customerName}`
               }));
           }
           this.cdr.detectChanges();
@@ -442,11 +461,16 @@ export class CustomerInvoiceListComponent implements OnInit {
   }
 
   private newLine(productId: number | null, productDisplay: string, uomCode: string,
-                  quantity: number, unitPrice: number, lineNotes = ''): FormGroup {
+                  quantity: number, unitPrice: number, lineNotes = '',
+                  salesOrderLineId: number | null = null,
+                  orderedQty: number | null = null, remainingQty: number | null = null): FormGroup {
     return this.fb.group({
       productId: [productId, Validators.required],
       productDisplay: [productDisplay],
       uomCode: [uomCode],
+      salesOrderLineId: [salesOrderLineId],
+      orderedQty: [orderedQty],
+      remainingQty: [remainingQty],
       quantity: [quantity, [Validators.required, Validators.min(0.0001)]],
       unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
       lineNotes: [lineNotes, Validators.maxLength(1000)]
@@ -456,13 +480,19 @@ export class CustomerInvoiceListComponent implements OnInit {
   private buildLinesFromSo(so: SalesOrderDto): void {
     this.lines.clear();
     for (const soLine of so.lines) {
+      // Only the remaining-to-invoice qty can be billed; skip fully-invoiced lines.
+      const remaining = soLine.quantity - (soLine.invoicedQuantity ?? 0);
+      if (remaining <= 0) continue;
       this.lines.push(this.newLine(
         soLine.productId,
         `${soLine.productCode} — ${soLine.productName}`,
         soLine.unitOfMeasureCode,
-        soLine.quantity,
+        remaining,            // default invoice qty = remaining
         soLine.unitPrice,
-        ''
+        '',
+        soLine.id,
+        soLine.quantity,
+        remaining
       ));
     }
   }
@@ -533,7 +563,8 @@ export class CustomerInvoiceListComponent implements OnInit {
                 l.unitOfMeasureCode,
                 l.quantity,
                 l.unitPrice,
-                l.lineNotes ?? ''
+                l.lineNotes ?? '',
+                l.salesOrderLineId ?? null
               ));
             }
             this.form.get('salesOrderId')?.disable();
@@ -557,7 +588,8 @@ export class CustomerInvoiceListComponent implements OnInit {
       productId: l.productId,
       quantity: Number(l.quantity) || 0,
       unitPrice: Number(l.unitPrice) || 0,
-      lineNotes: (l.lineNotes as string)?.trim() || null
+      lineNotes: (l.lineNotes as string)?.trim() || null,
+      salesOrderLineId: l.salesOrderLineId ?? null
     }));
 
     if (this.dialogMode === 'create') {
@@ -699,6 +731,18 @@ export class CustomerInvoiceListComponent implements OnInit {
 
   meta(line: AbstractControl) {
     return line.getRawValue();
+  }
+
+  /** True when this line bills more than its SO-line remaining-to-invoice (live cap check). */
+  isLineOver(line: AbstractControl): boolean {
+    const remaining = line.get('remainingQty')?.value;
+    if (remaining == null) return false;   // ad-hoc line (no SO-line cap)
+    return (Number(line.get('quantity')?.value) || 0) > Number(remaining) + 1e-9;
+  }
+
+  /** Any line over its remaining → blocks Save (mirrors the backend cap). */
+  get hasOverInvoicedLine(): boolean {
+    return this.lines.controls.some(l => this.isLineOver(l));
   }
 
   formatCurrency(amount: number): string {

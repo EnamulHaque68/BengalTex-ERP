@@ -44,7 +44,7 @@ public class GoodsReceiptsController : ControllerBase
     {
         var result = await _mediator.Send(new CreateGoodsReceiptCommand(
             request.PurchaseOrderId, request.ReceiveDate, request.ReceivingWarehouseId,
-            request.SupplierDeliveryRef, request.Notes, request.Lines
+            request.SupplierDeliveryRef, request.Notes, request.Lines, request.LetterOfCreditId
         ), ct);
         return Ok(result);
     }
@@ -83,7 +83,8 @@ public record CreateGoodsReceiptRequest(
     int ReceivingWarehouseId,
     string? SupplierDeliveryRef,
     string? Notes,
-    IReadOnlyList<GoodsReceiptLineInput> Lines);
+    IReadOnlyList<GoodsReceiptLineInput> Lines,
+    long? LetterOfCreditId = null);
 
 public record UpdateGoodsReceiptRequest(
     DateOnly ReceiveDate,

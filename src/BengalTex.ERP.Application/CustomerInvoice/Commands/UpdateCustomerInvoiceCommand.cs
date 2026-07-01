@@ -36,8 +36,13 @@ public sealed class UpdateCustomerInvoiceCommandValidator : AbstractValidator<Up
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.ProductId).Distinct().Count() == lines.Count)
-            .WithMessage("The same product appears more than once in the invoice lines.")
+            .Must(lines =>
+            {
+                var soLineIds = lines.Where(l => l.SalesOrderLineId.HasValue)
+                                     .Select(l => l.SalesOrderLineId!.Value).ToList();
+                return soLineIds.Distinct().Count() == soLineIds.Count;
+            })
+            .WithMessage("The same sales-order line appears more than once in the invoice lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
 }
@@ -47,17 +52,20 @@ internal sealed class UpdateCustomerInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.Product> _productRepo;
+    private readonly IRepository<Domain.Entities.SalesOrderLine, long> _soLineRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public UpdateCustomerInvoiceCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
         IRepository<Domain.Entities.Product> productRepo,
+        IRepository<Domain.Entities.SalesOrderLine, long> soLineRepo,
         IUnitOfWork uow,
         IMediator mediator)
     {
         _repo = repo;
         _productRepo = productRepo;
+        _soLineRepo = soLineRepo;
         _uow = uow;
         _mediator = mediator;
     }
@@ -79,6 +87,31 @@ internal sealed class UpdateCustomerInvoiceCommandHandler
         if (existingCount != productIds.Count)
             return ApiResponse<CustomerInvoiceDto>.Fail("One or more products not found.");
 
+        // Release this draft's existing SO-line coverage first, then re-validate the new lines
+        // against the freed-up remaining and re-consume.
+        await SalesOrderInvoiceCoverage.ReleaseAsync(
+            _soLineRepo, inv.Lines.Select(l => (l.SalesOrderLineId, l.Quantity)), cancellationToken);
+
+        var linkedLines = cmd.Lines.Where(l => l.SalesOrderLineId.HasValue).ToList();
+        var soLineMap = new Dictionary<long, Domain.Entities.SalesOrderLine>();
+        foreach (var soLineId in linkedLines.Select(l => l.SalesOrderLineId!.Value).Distinct())
+        {
+            var soLine = await _soLineRepo.GetByIdAsync(soLineId, cancellationToken);
+            if (soLine is null || soLine.SalesOrderId != inv.SalesOrderId)
+                return ApiResponse<CustomerInvoiceDto>.Fail(
+                    $"Sales-order line {soLineId} does not belong to this invoice's sales order.");
+            soLineMap[soLineId] = soLine;
+        }
+        foreach (var grp in linkedLines.GroupBy(l => l.SalesOrderLineId!.Value))
+        {
+            var soLine = soLineMap[grp.Key];
+            var requested = grp.Sum(x => x.Quantity);
+            var remaining = soLine.Quantity - soLine.InvoicedQuantity;
+            if (requested > remaining)
+                return ApiResponse<CustomerInvoiceDto>.Fail(
+                    $"Cannot invoice {requested:0.####} — only {remaining:0.####} remaining to invoice on this order line.");
+        }
+
         inv.InvoiceDate = cmd.InvoiceDate;
         inv.DueDate = cmd.DueDate;
         inv.Notes = cmd.Notes;
@@ -92,11 +125,20 @@ internal sealed class UpdateCustomerInvoiceCommandHandler
             inv.Lines.Add(new Domain.Entities.CustomerInvoiceLine
             {
                 ProductId = line.ProductId,
+                SalesOrderLineId = line.SalesOrderLineId,
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
                 SortOrder = sortOrder++,
                 LineNotes = line.LineNotes
             });
+        }
+
+        // Re-consume the SO-line coverage for the new line set.
+        foreach (var grp in linkedLines.GroupBy(l => l.SalesOrderLineId!.Value))
+        {
+            var soLine = soLineMap[grp.Key];
+            soLine.InvoicedQuantity += grp.Sum(x => x.Quantity);
+            _soLineRepo.Update(soLine);
         }
 
         inv.SubtotalAmount = cmd.Lines.Sum(l => l.Quantity * l.UnitPrice);

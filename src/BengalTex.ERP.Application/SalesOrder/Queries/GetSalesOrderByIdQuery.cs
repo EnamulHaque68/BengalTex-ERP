@@ -13,13 +13,16 @@ internal sealed class GetSalesOrderByIdQueryHandler
 {
     private readonly IRepository<Domain.Entities.SalesOrder, long> _repo;
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _poRepo;
+    private readonly IRepository<Domain.Entities.CustomerInvoice, long> _invRepo;
 
     public GetSalesOrderByIdQueryHandler(
         IRepository<Domain.Entities.SalesOrder, long> repo,
-        IRepository<Domain.Entities.ProductionOrder, long> poRepo)
+        IRepository<Domain.Entities.ProductionOrder, long> poRepo,
+        IRepository<Domain.Entities.CustomerInvoice, long> invRepo)
     {
         _repo = repo;
         _poRepo = poRepo;
+        _invRepo = invRepo;
     }
 
     public async Task<ApiResponse<SalesOrderDto>> Handle(
@@ -62,7 +65,7 @@ internal sealed class GetSalesOrderByIdQueryHandler
                     l.Product.UnitOfMeasure.Code,
                     l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
                     l.SortOrder, l.LineNotes,
-                    agg.Produced, agg.Allocated);
+                    agg.Produced, agg.Allocated, l.InvoicedQuantity);
             })
             .ToList();
 
@@ -73,6 +76,21 @@ internal sealed class GetSalesOrderByIdQueryHandler
         var productionStatus = ProductionProgressCalc.DeriveStatus(orderedQty, producedQty, linkedPos.Count > 0);
         var productionPercent = ProductionProgressCalc.Percent(orderedQty, producedQty);
 
+        // ── Invoice coverage summary (Sales A3) ──
+        var invoicedQty = so.Lines.Sum(l => l.InvoicedQuantity);
+        var invoicedAmount = so.Lines.Sum(l => l.InvoicedQuantity * l.UnitPrice);
+        var invoiceStatus = invoicedQty <= 0m ? "NotInvoiced"
+            : invoicedQty < orderedQty ? "PartiallyInvoiced"
+            : "FullyInvoiced";
+
+        // Related customer invoices for traceability (newest first).
+        var relatedInvoices = await _invRepo.Query().AsNoTracking()
+            .Where(c => c.SalesOrderId == so.Id)
+            .OrderByDescending(c => c.Id)
+            .Select(c => new SalesOrderInvoiceRefDto(
+                c.Id, c.Code, c.Status.ToString(), c.InvoiceDate, c.TotalAmount, c.AmountPaid))
+            .ToListAsync(cancellationToken);
+
         var dto = new SalesOrderDto(
             so.Id, so.Code, so.CustomerId, so.Customer.Code, so.Customer.Name,
             so.OrderDate, so.RequiredDeliveryDate,
@@ -81,7 +99,8 @@ internal sealed class GetSalesOrderByIdQueryHandler
             so.CurrencyId, so.Currency.Code, so.Currency.Symbol, so.ExchangeRate,
             so.ConfirmedAt, so.ConfirmedBy, so.Notes,
             totalAmount, totalAmount * so.ExchangeRate, lines,
-            orderedQty, producedQty, productionPercent, productionStatus);
+            orderedQty, producedQty, productionPercent, productionStatus,
+            invoicedQty, invoicedAmount, invoiceStatus, relatedInvoices);
 
         return ApiResponse<SalesOrderDto>.Ok(dto);
     }

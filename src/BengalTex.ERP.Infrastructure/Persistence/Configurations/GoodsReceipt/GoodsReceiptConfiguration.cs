@@ -21,6 +21,7 @@ public class GoodsReceiptNoteConfiguration : IEntityTypeConfiguration<GoodsRecei
 
         builder.HasIndex(g => g.Code).IsUnique();
         builder.HasIndex(g => g.PurchaseOrderId);
+        builder.HasIndex(g => g.LetterOfCreditId);
         builder.HasIndex(g => g.Status);
         builder.HasIndex(g => g.ReceiveDate);
 
@@ -28,6 +29,12 @@ public class GoodsReceiptNoteConfiguration : IEntityTypeConfiguration<GoodsRecei
         builder.HasOne(g => g.PurchaseOrder)
             .WithMany()
             .HasForeignKey(g => g.PurchaseOrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Optional LC link (import purchases) — Restrict so an LC with GRNs can't be deleted.
+        builder.HasOne(g => g.LetterOfCredit)
+            .WithMany()
+            .HasForeignKey(g => g.LetterOfCreditId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Receiving warehouse FK — Restrict (required field)

@@ -24,6 +24,7 @@ internal sealed class CancelCustomerInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.VatChallan, long> _challanRepo;
+    private readonly IRepository<Domain.Entities.SalesOrderLine, long> _soLineRepo;
     private readonly IUnitOfWork _uow;
     private readonly IJournalPostingService _journal;
     private readonly IMediator _mediator;
@@ -31,12 +32,14 @@ internal sealed class CancelCustomerInvoiceCommandHandler
     public CancelCustomerInvoiceCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
         IRepository<Domain.Entities.VatChallan, long> challanRepo,
+        IRepository<Domain.Entities.SalesOrderLine, long> soLineRepo,
         IUnitOfWork uow,
         IJournalPostingService journal,
         IMediator mediator)
     {
         _repo = repo;
         _challanRepo = challanRepo;
+        _soLineRepo = soLineRepo;
         _uow = uow;
         _journal = journal;
         _mediator = mediator;
@@ -47,6 +50,7 @@ internal sealed class CancelCustomerInvoiceCommandHandler
     {
         var inv = await _repo.Query()
             .Include(c => c.VatChallan)
+            .Include(c => c.Lines)
             .FirstOrDefaultAsync(c => c.Id == cmd.Id, cancellationToken);
         if (inv is null) return ApiResponse<CustomerInvoiceDto>.Fail("Customer invoice not found.");
 
@@ -69,6 +73,11 @@ internal sealed class CancelCustomerInvoiceCommandHandler
         }
 
         var wasIssued = inv.Status == Domain.Entities.CustomerInvoiceStatus.Issued;
+
+        // Release the invoice's SO-line coverage — the cancelled quantity becomes available to
+        // invoice again (Req: cancelled invoice qty/amount returns to remaining).
+        await SalesOrderInvoiceCoverage.ReleaseAsync(
+            _soLineRepo, inv.Lines.Select(l => (l.SalesOrderLineId, l.Quantity)), cancellationToken);
 
         inv.Status = Domain.Entities.CustomerInvoiceStatus.Cancelled;
         _repo.Update(inv);

@@ -1,11 +1,12 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { SupplierService } from '../../../services/supplier.service';
 import { WarehouseService } from '../../../services/warehouse.service';
 import { RawMaterialService } from '../../../services/raw-material.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { PO_STATUSES, PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
+import { PO_STATUSES, PurchaseOrderDto, PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
 import { WarehouseDto, CurrencyDto } from '../../../models/master-data.models';
 import { RawMaterialListItemDto } from '../../../models/raw-material.models';
@@ -76,13 +77,31 @@ export class PurchaseOrderListComponent implements OnInit {
     private currencyService: CurrencyService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
+
+  /** Loaded PO detail (for source-document traceability shown in the dialog). */
+  loadedPo: PurchaseOrderDto | null = null;
 
   ngOnInit(): void {
     this.buildForm();
     this.loadDropdowns();
     this.load();
+
+    // Traceability deep-link: /purchase-orders?open=<id> opens that PO's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as PurchaseOrderListItemDto);
+  }
+
+  goToRequisition(id: number): void {
+    this.dialogVisible = false;
+    this.router.navigate(['/purchase-requisitions'], { queryParams: { open: id } });
+  }
+  goToQuotation(id: number): void {
+    this.dialogVisible = false;
+    this.router.navigate(['/supplier-quotations'], { queryParams: { open: id } });
   }
 
   // ─── Form ────────────────────────────────────────────────────────────────
@@ -281,6 +300,7 @@ export class PurchaseOrderListComponent implements OnInit {
     this.dialogMode = 'create';
     this.editingId = null;
     this.dialogError = '';
+    this.loadedPo = null;
     this.form.enable();
     this.lines.clear();
     this.form.reset({
@@ -300,6 +320,7 @@ export class PurchaseOrderListComponent implements OnInit {
     this.editingId = po.id;
     this.dialogError = '';
     this.dialogMode = 'edit';
+    this.loadedPo = null;
     this.form.enable();
     this.lines.clear();
     this.dialogVisible = true;
@@ -309,6 +330,7 @@ export class PurchaseOrderListComponent implements OnInit {
         this.zone.run(() => {
           if (res.success && res.data) {
             const p = res.data;
+            this.loadedPo = p;
             this.dialogMode = p.status === 'Draft' ? 'edit' : 'view';
             this.form.patchValue({
               supplierId: p.supplierId,

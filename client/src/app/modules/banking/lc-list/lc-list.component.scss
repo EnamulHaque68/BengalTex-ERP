@@ -50,6 +50,33 @@
   margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;
 }
 
+// ── Area B: LC utilisation summary ──
+.section-label {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #7c3aed; margin: 1.25rem 0 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px dashed #e5e7eb;
+}
+.lc-util { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.6rem; }
+.util-bar { flex: 1; height: 10px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.util-fill { height: 100%; background: linear-gradient(90deg, #34d399, #059669); border-radius: 999px; }
+.util-pct { font-size: 0.8rem; font-weight: 700; color: #065f46; white-space: nowrap; }
+.util-grid {
+  display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+  margin-bottom: 0.75rem; font-size: 0.83rem; color: #475569;
+  strong { color: #111827; }
+}
+.muted { color: #9ca3af; font-size: 0.85rem; }
+.trace-link {
+  color: #4f46e5; font-weight: 600; cursor: pointer; font-size: 0.78rem;
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  &:hover { text-decoration: underline; }
+}
+.line-grid {
+  width: 100%; border-collapse: collapse; margin: 0.25rem 0 0.5rem; font-size: 0.83rem;
+  th { text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #6b7280; padding: 0.4rem 0.5rem; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #f3f4f6; }
+  .num-col, .num { text-align: right; font-variant-numeric: tabular-nums; }
+}
+
 .b2b-badge {
   display: inline-block;
   margin-left: 0.4rem;

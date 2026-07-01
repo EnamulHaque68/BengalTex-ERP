@@ -78,7 +78,8 @@ public record CustomerInvoiceLineDto(
     int? CartonNumberTo,
     int? UnitsPerCarton,
     decimal? NetWeightKgPerLine,
-    decimal? GrossWeightKgPerLine);
+    decimal? GrossWeightKgPerLine,
+    long? SalesOrderLineId = null);      // originating SO line (for traceability + edit coverage)
 
 public record CustomerInvoiceListItemDto(
     long Id,

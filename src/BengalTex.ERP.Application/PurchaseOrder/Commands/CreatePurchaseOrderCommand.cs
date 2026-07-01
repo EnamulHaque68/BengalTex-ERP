@@ -24,7 +24,9 @@ public sealed record CreatePurchaseOrderCommand(
     string? Notes,
     int CurrencyId,
     decimal ExchangeRate,
-    IReadOnlyList<PurchaseOrderLineInput> Lines
+    IReadOnlyList<PurchaseOrderLineInput> Lines,
+    long? PurchaseRequisitionId = null,   // source PR (direct convert) — traceability
+    long? SupplierQuotationId = null      // source SQ (RFQ winner) — traceability
 ) : IRequest<ApiResponse<PurchaseOrderDto>>;
 
 public sealed class CreatePurchaseOrderCommandValidator : AbstractValidator<CreatePurchaseOrderCommand>
@@ -117,6 +119,8 @@ internal sealed class CreatePurchaseOrderCommandHandler
             Status = Domain.Entities.PurchaseOrderStatus.Draft,
             CurrencyId = cmd.CurrencyId,
             ExchangeRate = cmd.ExchangeRate,
+            PurchaseRequisitionId = cmd.PurchaseRequisitionId,
+            SupplierQuotationId = cmd.SupplierQuotationId,
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.PurchaseOrderLine
             {

@@ -20,6 +20,7 @@ export interface CustomerInvoiceLineDto {
   lineTotal: number;
   sortOrder: number;
   lineNotes: string | null;
+  salesOrderLineId: number | null;       // originating SO line (traceability + edit coverage)
   // Per-line export packing
   cartonNumberFrom: number | null;
   cartonNumberTo: number | null;
@@ -148,6 +149,7 @@ export interface CustomerInvoiceLineInput {
   quantity: number;
   unitPrice: number;
   lineNotes: string | null;
+  salesOrderLineId: number | null;       // links the line to its SO line (drives invoice coverage)
 }
 
 export interface CreateCustomerInvoiceRequest {

@@ -101,11 +101,19 @@ public class CustomerInvoiceLineConfiguration : IEntityTypeConfiguration<Custome
 
         builder.HasIndex(l => l.CustomerInvoiceId);
         builder.HasIndex(l => l.ProductId);
+        builder.HasIndex(l => l.SalesOrderLineId);
 
         // Product FK — Restrict so a product referenced by an invoice line can't be deleted
         builder.HasOne(l => l.Product)
             .WithMany()
             .HasForeignKey(l => l.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Originating SO line (nullable) — Restrict so an invoiced SO line can't be deleted from under it.
+        // No navigation property: the scalar FK is enough for tracking + traceability queries.
+        builder.HasOne<BengalTex.ERP.Domain.Entities.SalesOrderLine>()
+            .WithMany()
+            .HasForeignKey(l => l.SalesOrderLineId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();

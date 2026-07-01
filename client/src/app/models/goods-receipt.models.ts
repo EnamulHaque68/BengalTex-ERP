@@ -39,6 +39,11 @@ export interface GoodsReceiptDto {
   postedBy: string | null;
   notes: string | null;
   lines: GoodsReceiptLineDto[];
+  // Optional linked import LC (Area B)
+  letterOfCreditId: number | null;
+  letterOfCreditCode: string | null;
+  letterOfCreditNumber: string | null;
+  letterOfCreditStatus: string | null;
 }
 
 export interface GoodsReceiptListItemDto {
@@ -70,6 +75,7 @@ export interface CreateGoodsReceiptRequest {
   supplierDeliveryRef: string | null;
   notes: string | null;
   lines: GoodsReceiptLineInput[];
+  letterOfCreditId?: number | null;   // optional; backend auto-links the PO's LC when omitted
 }
 
 export interface UpdateGoodsReceiptRequest {
