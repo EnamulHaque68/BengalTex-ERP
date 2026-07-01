@@ -1,11 +1,12 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LetterOfCreditService } from '../../../services/letter-of-credit.service';
 import { SupplierService } from '../../../services/supplier.service';
 import { CurrencyService } from '../../../services/currency.service';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { LetterOfCreditListItemDto, LC_STATUSES, LC_TYPES } from '../../../models/letter-of-credit.models';
+import { LetterOfCreditDto, LetterOfCreditListItemDto, LC_STATUSES, LC_TYPES } from '../../../models/letter-of-credit.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
 import { CurrencyDto } from '../../../models/master-data.models';
 import { PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
@@ -48,6 +49,9 @@ export class LcListComponent implements OnInit {
   deleting = false;
   deleteError = '';
 
+  /** Full LC detail (with utilisation summary + related GRNs) shown while editing. */
+  loadedLc: LetterOfCreditDto | null = null;
+
   constructor(
     private service: LetterOfCreditService,
     private supplierService: SupplierService,
@@ -55,8 +59,15 @@ export class LcListComponent implements OnInit {
     private poService: PurchaseOrderService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
+
+  /** Jump to a related goods receipt's details (LC → GRN traceability). */
+  goToGoodsReceipt(grnId: number): void {
+    this.dialogVisible = false;
+    this.router.navigate(['/goods-receipts'], { queryParams: { open: grnId } });
+  }
 
   ngOnInit(): void {
     this.buildForm();
@@ -140,6 +151,7 @@ export class LcListComponent implements OnInit {
     this.dialogMode = 'create';
     this.editingId = null;
     this.dialogError = '';
+    this.loadedLc = null;
     this.form.reset({
       code: '', type: 'Import', masterLcReference: '', masterLcBuyer: '',
       lcNumber: '', issuingBank: '', supplierId: null, purchaseOrderId: null,
@@ -153,11 +165,13 @@ export class LcListComponent implements OnInit {
     this.dialogMode = 'edit';
     this.editingId = lc.id;
     this.dialogError = '';
+    this.loadedLc = null;
     this.dialogVisible = true;
     this.service.getById(lc.id).subscribe({
       next: (res) => this.zone.run(() => {
         if (res.success && res.data) {
           const l = res.data;
+          this.loadedLc = l;
           this.form.patchValue({
             code: l.code, type: l.type ?? 'Import',
             masterLcReference: l.masterLcReference ?? '', masterLcBuyer: l.masterLcBuyer ?? '',

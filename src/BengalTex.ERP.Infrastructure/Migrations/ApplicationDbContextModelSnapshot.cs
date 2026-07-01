@@ -2020,6 +2020,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<long?>("SalesOrderLineId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
@@ -2039,6 +2042,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("CustomerInvoiceId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("SalesOrderLineId");
 
                     b.ToTable("CustomerInvoiceLines", (string)null);
                 });
@@ -4180,6 +4185,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<long?>("LetterOfCreditId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -4225,6 +4233,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("LetterOfCreditId");
 
                     b.HasIndex("PurchaseOrderId");
 
@@ -6619,6 +6629,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<DateOnly>("OrderDate")
                         .HasColumnType("date");
 
+                    b.Property<long?>("PurchaseRequisitionId")
+                        .HasColumnType("bigint");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -6633,6 +6646,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
 
+                    b.Property<long?>("SupplierQuotationId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -6644,9 +6660,15 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("OrderDate");
 
+                    b.HasIndex("PurchaseRequisitionId")
+                        .IsUnique()
+                        .HasFilter("[PurchaseRequisitionId] IS NOT NULL");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("SupplierQuotationId");
 
                     b.ToTable("PurchaseOrders", (string)null);
                 });
@@ -7829,6 +7851,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("DispatchedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("InvoicedQuantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
@@ -11703,6 +11729,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrderLine", null)
+                        .WithMany()
+                        .HasForeignKey("SalesOrderLineId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("CustomerInvoice");
 
                     b.Navigation("Product");
@@ -12059,6 +12090,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.GoodsReceiptNote", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.LetterOfCredit", "LetterOfCredit")
+                        .WithMany()
+                        .HasForeignKey("LetterOfCreditId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseOrder", "PurchaseOrder")
                         .WithMany()
                         .HasForeignKey("PurchaseOrderId")
@@ -12070,6 +12106,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("ReceivingWarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("LetterOfCredit");
 
                     b.Navigation("PurchaseOrder");
 
@@ -12512,17 +12550,31 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("DeliveryWarehouseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.PurchaseRequisition", "PurchaseRequisition")
+                        .WithMany()
+                        .HasForeignKey("PurchaseRequisitionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SupplierQuotation", "SupplierQuotation")
+                        .WithMany()
+                        .HasForeignKey("SupplierQuotationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Currency");
 
                     b.Navigation("DeliveryWarehouse");
 
+                    b.Navigation("PurchaseRequisition");
+
                     b.Navigation("Supplier");
+
+                    b.Navigation("SupplierQuotation");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.PurchaseOrderLine", b =>

@@ -32,6 +32,11 @@ export class LetterOfCreditService {
     return this.http.get<ApiResponse<LetterOfCreditDto>>(`${this.base}/${id}`);
   }
 
+  /** The LC linked to a PO (for goods-receipt auto-suggest); data is null if the PO has none. */
+  getForPurchaseOrder(purchaseOrderId: number): Observable<ApiResponse<LetterOfCreditListItemDto | null>> {
+    return this.http.get<ApiResponse<LetterOfCreditListItemDto | null>>(`${this.base}/for-po/${purchaseOrderId}`);
+  }
+
   create(data: CreateLetterOfCreditRequest): Observable<ApiResponse<LetterOfCreditDto>> {
     return this.http.post<ApiResponse<LetterOfCreditDto>>(this.base, data);
   }

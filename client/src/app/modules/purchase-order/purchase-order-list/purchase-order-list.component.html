@@ -154,6 +154,20 @@
       <i class="pi pi-lock"></i>Read-only — only draft purchase orders can be edited.
     </div>
 
+    <!-- Area C: source-document traceability -->
+    <div class="source-bar" *ngIf="loadedPo && (loadedPo.purchaseRequisitionId || loadedPo.supplierQuotationId)">
+      <i class="pi pi-sitemap"></i>
+      <span class="src-label">Sourced from:</span>
+      <a class="src-chip" *ngIf="loadedPo.purchaseRequisitionId"
+         (click)="goToRequisition(loadedPo.purchaseRequisitionId)">
+        <i class="pi pi-file-edit"></i> Requisition {{ loadedPo.purchaseRequisitionCode }}
+      </a>
+      <a class="src-chip" *ngIf="loadedPo.supplierQuotationId"
+         (click)="goToQuotation(loadedPo.supplierQuotationId)">
+        <i class="pi pi-tags"></i> Quotation {{ loadedPo.supplierQuotationCode }}
+      </a>
+    </div>
+
     <p class="section-label">Header</p>
     <div class="dialog-grid">
       <div class="field col-span-2">

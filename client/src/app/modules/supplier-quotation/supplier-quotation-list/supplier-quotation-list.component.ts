@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SupplierQuotationService } from '../../../services/supplier-quotation.service';
 import { SupplierService } from '../../../services/supplier.service';
@@ -65,13 +66,18 @@ export class SupplierQuotationListComponent implements OnInit {
     private prService: PurchaseRequisitionService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
     this.loadDropdowns();
     this.load();
+
+    // Traceability deep-link: /supplier-quotations?open=<id> opens that quotation's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as SupplierQuotationListItemDto);
   }
 
   private todayIso(): string { return new Date().toISOString().slice(0, 10); }

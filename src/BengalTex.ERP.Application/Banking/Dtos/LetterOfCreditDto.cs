@@ -24,7 +24,23 @@ public sealed record LetterOfCreditDto(
     string? MasterLcBuyer,
     DateOnly? ShipmentDate,
     DateOnly? SettlementDate,
-    string? Notes);
+    string? Notes,
+    // ── Goods-receipt utilisation summary (Area B); LC-currency values assume PO currency = LC currency ──
+    decimal ReceivedAmount = 0m,         // Σ posted-GRN received value
+    decimal RemainingAmount = 0m,        // Amount − ReceivedAmount
+    decimal ReceivedQuantity = 0m,       // Σ posted-GRN received qty
+    decimal OrderedQuantity = 0m,        // linked PO ordered qty (Remaining = Ordered − Received)
+    decimal UtilizationPercent = 0m,     // ReceivedAmount ÷ Amount × 100
+    IReadOnlyList<LcGoodsReceiptRefDto>? RelatedGoodsReceipts = null);
+
+/// <summary>A goods receipt drawn against a letter of credit — for the LC details traceability list.</summary>
+public sealed record LcGoodsReceiptRefDto(
+    long Id,
+    string Code,
+    string Status,
+    DateOnly ReceiveDate,
+    decimal ReceivedQuantity,
+    decimal ReceivedAmount);
 
 public sealed record LetterOfCreditListItemDto(
     long Id,

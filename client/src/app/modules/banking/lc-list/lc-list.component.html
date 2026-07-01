@@ -175,6 +175,44 @@
       </div>
     </div>
 
+    <!-- Area B: LC utilisation summary + linked goods receipts (edit mode) -->
+    <ng-container *ngIf="dialogMode === 'edit' && loadedLc">
+      <p class="section-label">LC Utilisation</p>
+      <div class="lc-util">
+        <div class="util-bar">
+          <div class="util-fill" [style.width.%]="loadedLc.utilizationPercent || 0"></div>
+        </div>
+        <span class="util-pct">{{ (loadedLc.utilizationPercent || 0) | number:'1.0-1' }}% utilised</span>
+      </div>
+      <div class="util-grid">
+        <span>LC Amount <strong>{{ formatMoney(loadedLc.amount, loadedLc.currencyCode) }}</strong></span>
+        <span>Received <strong>{{ formatMoney(loadedLc.receivedAmount || 0, loadedLc.currencyCode) }}</strong></span>
+        <span>Remaining <strong>{{ formatMoney(loadedLc.remainingAmount || 0, loadedLc.currencyCode) }}</strong></span>
+        <span>Received Qty <strong>{{ (loadedLc.receivedQuantity || 0) | number:'1.0-4' }}</strong></span>
+        <span>Ordered Qty <strong>{{ (loadedLc.orderedQuantity || 0) | number:'1.0-4' }}</strong></span>
+        <span>Remaining Qty <strong>{{ ((loadedLc.orderedQuantity || 0) - (loadedLc.receivedQuantity || 0)) | number:'1.0-4' }}</strong></span>
+      </div>
+
+      <table class="line-grid" *ngIf="loadedLc.relatedGoodsReceipts && loadedLc.relatedGoodsReceipts.length > 0">
+        <thead>
+          <tr><th>Goods Receipt</th><th>Date</th><th>Status</th><th class="num-col">Qty</th><th class="num-col">Value</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let g of loadedLc.relatedGoodsReceipts">
+            <td><span class="code-badge">{{ g.code }}</span></td>
+            <td>{{ g.receiveDate }}</td>
+            <td>{{ g.status }}</td>
+            <td class="num">{{ g.receivedQuantity | number:'1.0-4' }}</td>
+            <td class="num">{{ formatMoney(g.receivedAmount, loadedLc.currencyCode) }}</td>
+            <td><a class="trace-link" (click)="goToGoodsReceipt(g.id)"><i class="pi pi-external-link"></i> Open</a></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" *ngIf="!loadedLc.relatedGoodsReceipts || loadedLc.relatedGoodsReceipts.length === 0">
+        No goods receipts drawn against this LC yet.
+      </p>
+    </ng-container>
+
     <div class="dialog-footer">
       <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="dialogSaving" />
       <p-button type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"

@@ -87,15 +87,16 @@ internal sealed class CreateInvoiceFromDeliveryNoteCommandHandler
             return ApiResponse<CustomerInvoiceDto>.Fail(
                 "Nothing left to invoice — this delivery note is already fully invoiced.");
 
-        // One invoice line per product (a DN may dispatch the same product across several SO lines).
-        // Quantity-weighted price keeps the value exact even if SO-line prices differ.
+        // One invoice line per SALES-ORDER line — preserves the link so the invoice draws down the
+        // right SalesOrderLine.InvoicedQuantity (and stays traceable). A DN may dispatch the same
+        // SO line over several rows; sum them (price is constant within one SO line).
         var lines = toInvoice
-            .GroupBy(t => t.Line.SalesOrderLine.ProductId)
+            .GroupBy(t => t.Line.SalesOrderLineId)
             .Select(g =>
             {
+                var first = g.First().Line.SalesOrderLine;
                 var qty = g.Sum(x => x.Qty);
-                var price = qty > 0m ? g.Sum(x => x.Qty * x.Line.SalesOrderLine.UnitPrice) / qty : 0m;
-                return new CustomerInvoiceLineInput(g.Key, qty, price, null);
+                return new CustomerInvoiceLineInput(first.ProductId, qty, first.UnitPrice, null, g.Key);
             })
             .ToList();
 

@@ -322,6 +322,47 @@
       </table>
     </ng-container>
 
+    <!-- Sales A3 — invoice coverage summary + traceability (view mode) -->
+    <ng-container *ngIf="dialogMode === 'view' && loadedDetail">
+      <p class="section-label">Invoice Summary</p>
+      <div class="inv-summary">
+        <span class="status-badge" [ngClass]="invoiceBadgeClass(loadedDetail.invoiceStatus)">
+          {{ invoiceStatusLabel(loadedDetail.invoiceStatus) }}
+        </span>
+        <span>Ordered Qty <strong>{{ (loadedDetail.orderedQuantity || 0) | number:'1.0-4' }}</strong></span>
+        <span>Invoiced <strong>{{ (loadedDetail.invoicedQuantity || 0) | number:'1.0-4' }}</strong></span>
+        <span>Remaining <strong>{{ ((loadedDetail.orderedQuantity || 0) - (loadedDetail.invoicedQuantity || 0)) | number:'1.0-4' }}</strong></span>
+      </div>
+      <div class="inv-summary amounts">
+        <span>Ordered Amount <strong>{{ formatMoney(loadedDetail.totalAmount, loadedDetail.currencyCode) }}</strong></span>
+        <span>Invoiced <strong>{{ formatMoney(loadedDetail.invoicedAmount || 0, loadedDetail.currencyCode) }}</strong></span>
+        <span>Remaining <strong>{{ formatMoney(loadedDetail.totalAmount - (loadedDetail.invoicedAmount || 0), loadedDetail.currencyCode) }}</strong></span>
+        <span>Invoices <strong>{{ loadedDetail.relatedInvoices?.length || 0 }}</strong></span>
+      </div>
+
+      <table class="line-grid" *ngIf="loadedDetail.relatedInvoices && loadedDetail.relatedInvoices.length > 0">
+        <thead>
+          <tr>
+            <th>Invoice</th><th>Date</th><th>Status</th>
+            <th class="num-col">Total</th><th class="num-col">Paid</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inv of loadedDetail.relatedInvoices">
+            <td><span class="code-badge">{{ inv.code }}</span></td>
+            <td>{{ inv.invoiceDate }}</td>
+            <td>{{ inv.status }}</td>
+            <td class="num">{{ formatMoney(inv.totalAmount, loadedDetail.currencyCode) }}</td>
+            <td class="num">{{ formatMoney(inv.amountPaid, loadedDetail.currencyCode) }}</td>
+            <td><a class="trace-link" (click)="goToInvoice(inv.id)"><i class="pi pi-external-link"></i> Open</a></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" *ngIf="!loadedDetail.relatedInvoices || loadedDetail.relatedInvoices.length === 0">
+        No customer invoices raised against this sales order yet.
+      </p>
+    </ng-container>
+
     <div class="dialog-footer">
       <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
                 (click)="dialogVisible = false" [disabled]="dialogSaving" />

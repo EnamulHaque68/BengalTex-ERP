@@ -78,19 +78,33 @@ internal sealed class CreateSupplierQuotationCommandHandler : IRequestHandler<Cr
     private readonly IRepository<Domain.Entities.Supplier> _supplierRepo;
     private readonly IRepository<Domain.Entities.Currency> _currencyRepo;
     private readonly IRepository<Domain.Entities.RawMaterial> _rmRepo;
+    private readonly IRepository<PurchaseRequisition, long> _prRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
 
     public CreateSupplierQuotationCommandHandler(
         IRepository<SupplierQuotation, long> repo, IRepository<Domain.Entities.Supplier> supplierRepo,
         IRepository<Domain.Entities.Currency> currencyRepo, IRepository<Domain.Entities.RawMaterial> rmRepo,
+        IRepository<PurchaseRequisition, long> prRepo,
         IUnitOfWork uow, INumberingService numbering)
-    { _repo = repo; _supplierRepo = supplierRepo; _currencyRepo = currencyRepo; _rmRepo = rmRepo; _uow = uow; _numbering = numbering; }
+    { _repo = repo; _supplierRepo = supplierRepo; _currencyRepo = currencyRepo; _rmRepo = rmRepo; _prRepo = prRepo; _uow = uow; _numbering = numbering; }
 
     public async Task<ApiResponse<long>> Handle(CreateSupplierQuotationCommand cmd, CancellationToken ct)
     {
         var err = await SupplierQuotationRules.ValidateRefs(_supplierRepo, _currencyRepo, _rmRepo, cmd.SupplierId, cmd.CurrencyId, cmd.Lines, ct);
         if (err is not null) return ApiResponse<long>.Fail(err);
+
+        // Workflow lock — can't start an RFQ on a requisition that was already converted directly to a PO.
+        if (cmd.PurchaseRequisitionId.HasValue)
+        {
+            var pr = await _prRepo.GetByIdAsync(cmd.PurchaseRequisitionId.Value, ct);
+            if (pr is null) return ApiResponse<long>.Fail("Purchase requisition not found.");
+            if (pr.Status == PurchaseRequisitionStatus.Converted)
+                return ApiResponse<long>.Fail(
+                    "This requisition was already converted directly to a PO — the RFQ workflow is not available for it.");
+            if (pr.Status is PurchaseRequisitionStatus.Cancelled or PurchaseRequisitionStatus.Rejected)
+                return ApiResponse<long>.Fail($"Cannot quote against a {pr.Status} requisition.");
+        }
 
         var e = new SupplierQuotation
         {
@@ -258,13 +272,25 @@ internal sealed class SelectSupplierQuotationCommandHandler : IRequestHandler<Se
         if (e.Status != SupplierQuotationStatus.Submitted) return ApiResponse<long>.Fail("Only submitted quotations can be selected.");
         if (e.Lines.Count == 0) return ApiResponse<long>.Fail("Cannot select a quotation with no lines.");
 
+        // Duplicate-PO guard — only one winning quotation per requisition (one RFQ → one PO).
+        if (e.PurchaseRequisitionId.HasValue)
+        {
+            var alreadySelected = await _repo.Query().AnyAsync(
+                s => s.Id != e.Id && s.PurchaseRequisitionId == e.PurchaseRequisitionId
+                  && s.Status == SupplierQuotationStatus.Selected, ct);
+            if (alreadySelected)
+                return ApiResponse<long>.Fail(
+                    "A supplier quotation for this requisition has already been selected — a purchase order already exists.");
+        }
+
         // Create the PO from the winning quote (delegates to the PO create handler, which commits it).
         var poResult = await _mediator.Send(new CreatePurchaseOrderCommand(
             e.SupplierId, DateOnly.FromDateTime(DateTime.UtcNow), null, null,
             $"From supplier quotation {e.Code}", e.CurrencyId, e.ExchangeRate,
             e.Lines.OrderBy(l => l.SortOrder)
                 .Select(l => new PurchaseOrderLineInput(l.RawMaterialId, l.Quantity, l.UnitPrice, l.LineNotes))
-                .ToList()), ct);
+                .ToList(),
+            PurchaseRequisitionId: e.PurchaseRequisitionId, SupplierQuotationId: e.Id), ct);
         if (!poResult.Success || poResult.Data is null)
             return ApiResponse<long>.Fail(poResult.Message ?? "Failed to create the purchase order.");
 

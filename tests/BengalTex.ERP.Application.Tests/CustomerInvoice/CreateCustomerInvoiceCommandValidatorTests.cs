@@ -61,13 +61,26 @@ public class CreateCustomerInvoiceCommandValidatorTests
     }
 
     [Fact]
-    public void Duplicate_product_fails()
+    public void Duplicate_sales_order_line_fails()
     {
+        // The same SO line may be billed at most once per invoice.
         var result = _validator.Validate(Valid(lines: new[]
         {
-            new CustomerInvoiceLineInput(1, 10m, 5m, null),
-            new CustomerInvoiceLineInput(1, 1m, 2m, null)
+            new CustomerInvoiceLineInput(1, 10m, 5m, null, SalesOrderLineId: 7),
+            new CustomerInvoiceLineInput(1, 1m, 2m, null, SalesOrderLineId: 7)
         }));
         result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Same_product_from_two_different_so_lines_passes()
+    {
+        // A product may legitimately appear twice if it comes from two different SO lines.
+        var result = _validator.Validate(Valid(lines: new[]
+        {
+            new CustomerInvoiceLineInput(1, 10m, 5m, null, SalesOrderLineId: 7),
+            new CustomerInvoiceLineInput(1, 1m, 2m, null, SalesOrderLineId: 8)
+        }));
+        result.IsValid.Should().BeTrue();
     }
 }

@@ -23,12 +23,26 @@ public class PurchaseOrderConfiguration : IEntityTypeConfiguration<PurchaseOrder
         builder.HasIndex(p => p.SupplierId);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.OrderDate);
+        builder.HasIndex(p => p.PurchaseRequisitionId);
+        builder.HasIndex(p => p.SupplierQuotationId);
 
         // Supplier FK — Restrict so a supplier with POs can't be deleted out from under them
         builder.HasOne(p => p.Supplier)
             .WithMany()
             .HasForeignKey(p => p.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Source traceability links (Area C) — independent of the PR→PO ConvertedPurchaseOrder FK.
+        // NoAction (no inverse nav) so the two PO↔PR FKs don't form a cascade cycle.
+        builder.HasOne(p => p.PurchaseRequisition)
+            .WithMany()
+            .HasForeignKey(p => p.PurchaseRequisitionId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(p => p.SupplierQuotation)
+            .WithMany()
+            .HasForeignKey(p => p.SupplierQuotationId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Optional delivery warehouse — SetNull so deleting a warehouse just clears the link
         builder.HasOne(p => p.DeliveryWarehouse)

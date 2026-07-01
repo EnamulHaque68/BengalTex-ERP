@@ -38,6 +38,22 @@ export interface LetterOfCreditDto {
   shipmentDate: string | null;
   settlementDate: string | null;
   notes: string | null;
+  // ── Goods-receipt utilisation summary (Area B) ──
+  receivedAmount?: number;            // Σ posted-GRN received value
+  remainingAmount?: number;          // amount − receivedAmount
+  receivedQuantity?: number;
+  orderedQuantity?: number;          // linked PO ordered qty
+  utilizationPercent?: number;
+  relatedGoodsReceipts?: LcGoodsReceiptRefDto[];
+}
+
+export interface LcGoodsReceiptRefDto {
+  id: number;
+  code: string;
+  status: string;
+  receiveDate: string;
+  receivedQuantity: number;
+  receivedAmount: number;
 }
 
 export interface LetterOfCreditListItemDto {

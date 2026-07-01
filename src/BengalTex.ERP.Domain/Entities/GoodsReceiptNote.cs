@@ -19,6 +19,14 @@ public class GoodsReceiptNote : BaseTransactionalEntity
     public long PurchaseOrderId { get; set; }
     public PurchaseOrder PurchaseOrder { get; set; } = null!;
 
+    /// <summary>
+    /// Optional link to the import <see cref="LetterOfCredit"/> this receipt draws against. Null for
+    /// local / non-LC purchases (no LC validation applies). When the PO has an LC, the GRN auto-links
+    /// it; one LC can back several GRNs (partial receipts). Enables LC utilisation tracking.
+    /// </summary>
+    public long? LetterOfCreditId { get; set; }
+    public LetterOfCredit? LetterOfCredit { get; set; }
+
     public DateOnly ReceiveDate { get; set; }
 
     /// <summary>Warehouse where the goods physically arrived.</summary>

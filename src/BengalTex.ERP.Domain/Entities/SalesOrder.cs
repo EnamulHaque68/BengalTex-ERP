@@ -70,6 +70,15 @@ public class SalesOrderLine : BaseTransactionalEntity
     /// <summary>Quantity dispatched so far — updated by Delivery Note postings. Starts at 0.</summary>
     public decimal DispatchedQuantity { get; set; }
 
+    /// <summary>
+    /// Quantity already billed onto <see cref="CustomerInvoice"/>s — the single source of truth for
+    /// invoice coverage. Incremented when an invoice line links to this SO line (whether raised
+    /// directly from the order or via a Delivery Note); released when that invoice is cancelled or a
+    /// draft is deleted. Remaining-to-invoice = Quantity − InvoicedQuantity; partial invoicing is
+    /// allowed until it reaches Quantity (fully invoiced — no further invoice can be raised).
+    /// </summary>
+    public decimal InvoicedQuantity { get; set; }
+
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }

@@ -21,6 +21,7 @@ export interface SalesOrderLineDto {
   unitPrice: number;
   lineTotal: number;
   dispatchedQuantity?: number;            // populated once DNs start posting against this SO
+  invoicedQuantity?: number;             // qty already billed (remaining-to-invoice = quantity − this)
   sortOrder: number;
   lineNotes: string | null;
   producedQuantity?: number;              // Phase 1 — Σ qty of Completed production orders on this line
@@ -53,6 +54,20 @@ export interface SalesOrderDto {
   producedQuantity?: number;
   productionProgressPercent?: number;
   productionStatus?: string;               // NotStarted | Planning | PartiallyProduced | Produced
+  // Sales A3 — invoice coverage summary + traceability
+  invoicedQuantity?: number;
+  invoicedAmount?: number;                 // document currency
+  invoiceStatus?: string;                  // NotInvoiced | PartiallyInvoiced | FullyInvoiced
+  relatedInvoices?: SalesOrderInvoiceRefDto[];
+}
+
+export interface SalesOrderInvoiceRefDto {
+  id: number;
+  code: string;
+  status: string;
+  invoiceDate: string;
+  totalAmount: number;
+  amountPaid: number;
 }
 
 export interface SalesOrderListItemDto {
@@ -70,6 +85,9 @@ export interface SalesOrderListItemDto {
   baseTotalAmount: number;                 // BDT
   productionProgressPercent?: number;      // Phase 1
   productionStatus?: string;               // Phase 1
+  orderedQuantity?: number;                // Sales A2 — invoice coverage
+  invoicedQuantity?: number;
+  invoiceStatus?: string;                  // NotInvoiced | PartiallyInvoiced | FullyInvoiced
 }
 
 export interface SalesOrderLineInput {

@@ -102,6 +102,19 @@
 }
 .section-label:first-of-type { margin-top: 0; }
 
+.source-bar {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px;
+  padding: 0.55rem 0.8rem; margin-bottom: 0.75rem; font-size: 0.82rem; color: #5b21b6;
+  .src-label { font-weight: 600; }
+  .src-chip {
+    display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer;
+    background: #ede9fe; color: #6d28d9; font-weight: 700;
+    padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.78rem;
+    &:hover { background: #ddd6fe; text-decoration: none; }
+  }
+}
+
 .dialog-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -173,7 +173,12 @@
     <p class="section-label">Header</p>
     <div class="dialog-grid">
       <div class="field col-span-2">
-        <label>Sales Order *</label>
+        <label>Sales Order *
+          <a *ngIf="editingId && form.get('salesOrderId')?.value" class="trace-link"
+             (click)="goToSalesOrder(form.get('salesOrderId')?.value)">
+            <i class="pi pi-external-link"></i> Open Sales Order
+          </a>
+        </label>
         <p-select formControlName="salesOrderId"
                     [options]="invoiceableSos"
                     optionLabel="displayLabel"
@@ -221,6 +226,8 @@
           <tr>
             <th class="prod-col">Product</th>
             <th class="unit-col">Unit</th>
+            <th class="num-col">Ordered</th>
+            <th class="num-col">Remaining</th>
             <th class="num-col">Quantity</th>
             <th class="num-col">Unit Price</th>
             <th class="num-col">Line Total</th>
@@ -231,9 +238,13 @@
           <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
             <td class="prod-cell">{{ meta(lineCtrl).productDisplay }}</td>
             <td class="unit-cell">{{ meta(lineCtrl).uomCode }}</td>
+            <td class="num muted">{{ meta(lineCtrl).orderedQty != null ? (meta(lineCtrl).orderedQty | number:'1.0-4') : '—' }}</td>
+            <td class="num remaining">{{ meta(lineCtrl).remainingQty != null ? (meta(lineCtrl).remainingQty | number:'1.0-4') : '—' }}</td>
             <td>
               <p-inputNumber formControlName="quantity" [min]="0"
-                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num" />
+                             [minFractionDigits]="0" [maxFractionDigits]="4" inputStyleClass="grid-num"
+                             [class.input-error]="isLineOver(lineCtrl)" />
+              <small class="line-over" *ngIf="isLineOver(lineCtrl)">max {{ meta(lineCtrl).remainingQty | number:'1.0-4' }}</small>
             </td>
             <td>
               <p-inputNumber formControlName="unitPrice" [min]="0"
@@ -245,11 +256,14 @@
             </td>
           </tr>
           <tr *ngIf="lines.length === 0">
-            <td colspan="6" class="empty-lines">
+            <td colspan="8" class="empty-lines">
               <ng-container *ngIf="!form.get('salesOrderId')?.value">
                 Select a Sales Order to load its lines.
               </ng-container>
-              <ng-container *ngIf="form.get('salesOrderId')?.value">
+              <ng-container *ngIf="form.get('salesOrderId')?.value && dialogMode === 'create'">
+                This sales order has already been fully invoiced — nothing left to invoice.
+              </ng-container>
+              <ng-container *ngIf="form.get('salesOrderId')?.value && dialogMode !== 'create'">
                 SO has no lines.
               </ng-container>
             </td>
@@ -257,17 +271,17 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" class="total-label">Subtotal</td>
+            <td colspan="6" class="total-label">Subtotal</td>
             <td class="num subtotal-val">{{ formatCurrency(subtotalAmount()) }}</td>
             <td></td>
           </tr>
           <tr>
-            <td colspan="4" class="total-label">VAT ({{ form.get('vatRatePercent')?.value || 0 }}%)</td>
+            <td colspan="6" class="total-label">VAT ({{ form.get('vatRatePercent')?.value || 0 }}%)</td>
             <td class="num vat-val">{{ formatCurrency(vatAmount()) }}</td>
             <td></td>
           </tr>
           <tr>
-            <td colspan="4" class="total-label grand-label">Total (incl. VAT)</td>
+            <td colspan="6" class="total-label grand-label">Total (incl. VAT)</td>
             <td class="num total-val">{{ formatCurrency(grandTotalAmount()) }}</td>
             <td></td>
           </tr>
@@ -276,13 +290,16 @@
     </div>
 
     <div class="dialog-footer">
+      <span class="over-warn" *ngIf="hasOverInvoicedLine">
+        <i class="pi pi-exclamation-triangle"></i> One or more lines exceed the remaining-to-invoice quantity.
+      </span>
       <p-button [label]="dialogMode === 'view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true"
                 (click)="dialogVisible = false" [disabled]="dialogSaving" />
       <p-button type="submit"
                 *ngIf="dialogMode !== 'view'"
                 [label]="dialogSaving ? 'Saving...' : (dialogMode === 'create' ? 'Create Draft' : 'Save')"
                 icon="pi pi-save" [loading]="dialogSaving"
-                [disabled]="form.invalid || dialogSaving" />
+                [disabled]="form.invalid || dialogSaving || hasOverInvoicedLine" />
     </div>
   </form>
 </p-dialog>

@@ -15,7 +15,12 @@ public record GoodsReceiptDto(
     DateTimeOffset? PostedAt,
     string? PostedBy,
     string? Notes,
-    IReadOnlyList<GoodsReceiptLineDto> Lines);
+    IReadOnlyList<GoodsReceiptLineDto> Lines,
+    // ── Optional linked import LC (Area B) ──
+    long? LetterOfCreditId = null,
+    string? LetterOfCreditCode = null,
+    string? LetterOfCreditNumber = null,
+    string? LetterOfCreditStatus = null);
 
 public record GoodsReceiptLineDto(
     long Id,

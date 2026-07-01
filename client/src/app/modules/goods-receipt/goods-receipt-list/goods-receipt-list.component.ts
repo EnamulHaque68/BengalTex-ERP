@@ -1,10 +1,13 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { GoodsReceiptService } from '../../../services/goods-receipt.service';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { WarehouseService } from '../../../services/warehouse.service';
+import { LetterOfCreditService } from '../../../services/letter-of-credit.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { GRN_STATUSES, GoodsReceiptDto, GoodsReceiptListItemDto } from '../../../models/goods-receipt.models';
+import { LetterOfCreditListItemDto } from '../../../models/letter-of-credit.models';
 import { PurchaseOrderDto, PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
 import { WarehouseDto } from '../../../models/master-data.models';
 
@@ -58,19 +61,29 @@ export class GoodsReceiptListComponent implements OnInit {
   // Row action (post) in-flight id
   rowActionId: number | null = null;
 
+  // ── Area B: linked Letter of Credit ──
+  lcSuggestion: LetterOfCreditListItemDto | null = null;             // auto-suggested LC for the PO (create/edit)
+  lcLinked: { code: string; number: string | null; status: string } | null = null;  // linked LC shown in view mode
+
   constructor(
     private grnService: GoodsReceiptService,
     private poService: PurchaseOrderService,
     private warehouseService: WarehouseService,
+    private lcService: LetterOfCreditService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
     this.loadDropdowns();
     this.load();
+
+    // Traceability deep-link: /goods-receipts?open=<id> opens that GRN's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as GoodsReceiptListItemDto);
   }
 
   // ─── Form ────────────────────────────────────────────────────────────────
@@ -82,6 +95,7 @@ export class GoodsReceiptListComponent implements OnInit {
   private buildForm(): void {
     this.form = this.fb.group({
       purchaseOrderId: [null as number | null, Validators.required],
+      letterOfCreditId: [null as number | null],
       receiveDate: [this.todayIso(), Validators.required],
       receivingWarehouseId: [null as number | null, Validators.required],
       supplierDeliveryRef: ['', Validators.maxLength(100)],
@@ -195,12 +209,15 @@ export class GoodsReceiptListComponent implements OnInit {
 
   onPoChange(event: any): void {
     const poId = event?.value;
+    this.lcSuggestion = null;
+    this.form.patchValue({ letterOfCreditId: null });
     if (!poId) {
       this.lines.clear();
       this.selectedPo = null;
       return;
     }
     this.fetchPoAndBuildLines(poId, undefined);
+    this.loadLcForPo(poId);
   }
 
   private fetchPoAndBuildLines(poId: number, existingGrn?: GoodsReceiptDto): void {
@@ -217,6 +234,18 @@ export class GoodsReceiptListComponent implements OnInit {
     });
   }
 
+  /** Auto-suggest the PO's letter of credit (import purchases). Null for local / non-LC POs. */
+  private loadLcForPo(poId: number): void {
+    this.lcService.getForPurchaseOrder(poId).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.lcSuggestion = res.success ? (res.data ?? null) : null;
+        this.form.patchValue({ letterOfCreditId: this.lcSuggestion?.id ?? null });
+        this.cdr.detectChanges();
+      }),
+      error: () => this.zone.run(() => { this.lcSuggestion = null; this.cdr.detectChanges(); })
+    });
+  }
+
   // ─── Create / Edit / View dialog ─────────────────────────────────────────
 
   openCreate(): void {
@@ -224,19 +253,23 @@ export class GoodsReceiptListComponent implements OnInit {
     this.editingId = null;
     this.dialogError = '';
     this.selectedPo = null;
+    this.lcSuggestion = null;
+    this.lcLinked = null;
     this.form.enable();
     this.lines.clear();
     this.form.reset({
       purchaseOrderId: this.filterPoId ?? null,
+      letterOfCreditId: null,
       receiveDate: this.todayIso(),
       receivingWarehouseId: this.warehouses[0]?.id ?? null,
       supplierDeliveryRef: '',
       notes: ''
     });
     this.dialogVisible = true;
-    // If filter pre-fills a PO, load its lines
+    // If filter pre-fills a PO, load its lines + LC suggestion
     if (this.form.get('purchaseOrderId')?.value) {
       this.fetchPoAndBuildLines(this.form.get('purchaseOrderId')!.value, undefined);
+      this.loadLcForPo(this.form.get('purchaseOrderId')!.value);
     }
   }
 
@@ -247,6 +280,8 @@ export class GoodsReceiptListComponent implements OnInit {
     this.form.enable();
     this.lines.clear();
     this.selectedPo = null;
+    this.lcSuggestion = null;
+    this.lcLinked = null;
     this.dialogVisible = true;
 
     this.grnService.getById(grn.id).subscribe({
@@ -255,8 +290,12 @@ export class GoodsReceiptListComponent implements OnInit {
           if (res.success && res.data) {
             const g = res.data;
             this.dialogMode = g.status === 'Draft' ? 'edit' : 'view';
+            this.lcLinked = g.letterOfCreditId
+              ? { code: g.letterOfCreditCode!, number: g.letterOfCreditNumber, status: g.letterOfCreditStatus! }
+              : null;
             this.form.patchValue({
               purchaseOrderId: g.purchaseOrderId,
+              letterOfCreditId: g.letterOfCreditId,
               receiveDate: g.receiveDate,
               receivingWarehouseId: g.receivingWarehouseId,
               supplierDeliveryRef: g.supplierDeliveryRef ?? '',
@@ -336,7 +375,11 @@ export class GoodsReceiptListComponent implements OnInit {
     };
 
     if (this.dialogMode === 'create') {
-      this.grnService.create({ purchaseOrderId: v.purchaseOrderId, ...baseFields }).subscribe({
+      this.grnService.create({
+        purchaseOrderId: v.purchaseOrderId,
+        letterOfCreditId: v.letterOfCreditId ?? null,
+        ...baseFields
+      }).subscribe({
         next: (res) => this.handleSave(res),
         error: (err) => this.handleError(err)
       });

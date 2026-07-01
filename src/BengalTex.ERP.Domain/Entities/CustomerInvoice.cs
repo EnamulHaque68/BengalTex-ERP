@@ -129,6 +129,14 @@ public class CustomerInvoiceLine : BaseTransactionalEntity
     public int ProductId { get; set; }
     public Product Product { get; set; } = null!;
 
+    /// <summary>
+    /// The originating <see cref="SalesOrderLine"/> this invoice line bills. Null for ad-hoc /
+    /// miscellaneous-charge lines that don't draw down an order line. When set, creating this
+    /// invoice line consumes <see cref="SalesOrderLine.InvoicedQuantity"/> (and cancelling /
+    /// deleting releases it) — the basis for full/partial invoice tracking + traceability.
+    /// </summary>
+    public long? SalesOrderLineId { get; set; }
+
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
 

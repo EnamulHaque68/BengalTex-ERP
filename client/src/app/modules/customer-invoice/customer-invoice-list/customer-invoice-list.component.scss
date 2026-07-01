@@ -209,11 +209,21 @@
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.5rem;
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid #f3f4f6;
 }
+
+.remaining { font-weight: 700; color: #b45309; }
+.trace-link {
+  margin-left: 0.5rem; color: #4f46e5; font-weight: 600; cursor: pointer; font-size: 0.72rem;
+  &:hover { text-decoration: underline; }
+}
+.line-over { display: block; color: #dc2626; font-size: 0.68rem; font-weight: 600; margin-top: 0.1rem; }
+.over-warn { margin-right: auto; color: #b91c1c; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+:host ::ng-deep .input-error .p-inputnumber-input { border-color: #dc2626; }
 
 .alert {
   display: flex;

@@ -23,6 +23,7 @@ internal sealed class GetGoodsReceiptByIdQueryHandler
             .AsNoTracking()
             .Include(g => g.PurchaseOrder).ThenInclude(p => p.Supplier)
             .Include(g => g.ReceivingWarehouse)
+            .Include(g => g.LetterOfCredit)
             .Include(g => g.Lines)
                 .ThenInclude(l => l.PurchaseOrderLine)
                 .ThenInclude(pl => pl.RawMaterial)
@@ -55,7 +56,11 @@ internal sealed class GetGoodsReceiptByIdQueryHandler
             grn.Status.ToString(),
             grn.SupplierDeliveryRef,
             grn.PostedAt, grn.PostedBy, grn.Notes,
-            lines);
+            lines,
+            grn.LetterOfCreditId,
+            grn.LetterOfCredit != null ? grn.LetterOfCredit.Code : null,
+            grn.LetterOfCredit != null ? grn.LetterOfCredit.LcNumber : null,
+            grn.LetterOfCredit != null ? grn.LetterOfCredit.Status.ToString() : null);
 
         return ApiResponse<GoodsReceiptDto>.Ok(dto);
     }

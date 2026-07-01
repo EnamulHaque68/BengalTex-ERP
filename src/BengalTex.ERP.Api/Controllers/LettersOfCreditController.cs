@@ -39,6 +39,15 @@ public class LettersOfCreditController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>The non-cancelled LC linked to a PO (for the goods-receipt auto-suggest); null if none.</summary>
+    [HttpGet("for-po/{purchaseOrderId:long}")]
+    [HasPermission(Permissions.Banking.View)]
+    public async Task<IActionResult> ForPurchaseOrder(long purchaseOrderId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetLcForPurchaseOrderQuery(purchaseOrderId), ct);
+        return Ok(result);
+    }
+
     [HttpPost]
     [HasPermission(Permissions.Banking.Create)]
     public async Task<IActionResult> Create([FromBody] CreateLetterOfCreditRequest request, CancellationToken ct)
@@ -47,7 +56,7 @@ public class LettersOfCreditController : ControllerBase
             request.Code, request.LcNumber, request.IssuingBank, request.SupplierId, request.PurchaseOrderId,
             request.CurrencyId, request.ExchangeRate, request.Amount,
             request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes,
-            request.Type, request.MasterLcReference, request.MasterLcBuyer), ct);
+            ParseType(request.Type), request.MasterLcReference, request.MasterLcBuyer), ct);
         return Ok(result);
     }
 
@@ -59,9 +68,16 @@ public class LettersOfCreditController : ControllerBase
             id, request.LcNumber, request.IssuingBank, request.SupplierId, request.PurchaseOrderId,
             request.CurrencyId, request.ExchangeRate, request.Amount,
             request.IssueDate, request.ExpiryDate, request.TenorDays, request.Notes,
-            request.Type, request.MasterLcReference, request.MasterLcBuyer), ct);
+            ParseType(request.Type), request.MasterLcReference, request.MasterLcBuyer), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Parse the LC type sent as a string by the client (no global JsonStringEnumConverter is
+    /// registered, so an enum-typed body field would fail to bind). Defaults to Import.
+    /// </summary>
+    private static LcType ParseType(string? type) =>
+        Enum.TryParse<LcType>(type, ignoreCase: true, out var parsed) ? parsed : LcType.Import;
 
     [HttpDelete("{id:long}")]
     [HasPermission(Permissions.Banking.Delete)]
@@ -107,7 +123,7 @@ public record CreateLetterOfCreditRequest(
     DateOnly ExpiryDate,
     int TenorDays,
     string? Notes,
-    LcType Type = LcType.Import,
+    string? Type = "Import",          // "Import" | "BackToBack" — parsed in the controller
     string? MasterLcReference = null,
     string? MasterLcBuyer = null);
 
@@ -123,7 +139,7 @@ public record UpdateLetterOfCreditRequest(
     DateOnly ExpiryDate,
     int TenorDays,
     string? Notes,
-    LcType Type = LcType.Import,
+    string? Type = "Import",          // "Import" | "BackToBack" — parsed in the controller
     string? MasterLcReference = null,
     string? MasterLcBuyer = null);
 

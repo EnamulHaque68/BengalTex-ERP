@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SalesOrderService } from '../../../services/sales-order.service';
 import { CustomerService } from '../../../services/customer.service';
@@ -67,13 +68,45 @@ export class SalesOrderListComponent implements OnInit {
     private pricingService: CustomerPricingService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.buildForm();
     this.loadDropdowns();
     this.load();
+
+    // Traceability deep-link: /sales-orders?open=<id> opens that SO's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as SalesOrderListItemDto);
+  }
+
+  /** Jump to a related customer invoice's details (SO → invoice traceability). */
+  goToInvoice(invoiceId: number): void {
+    this.dialogVisible = false;
+    this.router.navigate(['/customer-invoices'], { queryParams: { open: invoiceId } });
+  }
+
+  /** Remaining-to-invoice on a line (Ordered − Invoiced). */
+  lineRemainingToInvoice(l: SalesOrderLineDto): number {
+    return Math.max(0, (l.quantity || 0) - (l.invoicedQuantity || 0));
+  }
+
+  invoiceBadgeClass(status: string | undefined): string {
+    switch (status) {
+      case 'FullyInvoiced': return 'inv-full';
+      case 'PartiallyInvoiced': return 'inv-partial';
+      default: return 'inv-none';
+    }
+  }
+  invoiceStatusLabel(status: string | undefined): string {
+    switch (status) {
+      case 'FullyInvoiced': return 'Fully Invoiced';
+      case 'PartiallyInvoiced': return 'Partially Invoiced';
+      default: return 'Not Invoiced';
+    }
   }
 
   // ─── Form ────────────────────────────────────────────────────────────────

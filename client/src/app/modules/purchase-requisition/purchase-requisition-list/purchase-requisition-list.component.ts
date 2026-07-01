@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PurchaseRequisitionService } from '../../../services/purchase-requisition.service';
 import { RawMaterialService } from '../../../services/raw-material.service';
@@ -81,7 +82,8 @@ export class PurchaseRequisitionListComponent implements OnInit {
     private masterSvc: MasterSetupService,
     private fb: FormBuilder,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -109,6 +111,10 @@ export class PurchaseRequisitionListComponent implements OnInit {
 
     this.loadMasters();
     this.load();
+
+    // Traceability deep-link: /purchase-requisitions?open=<id> opens that requisition's details.
+    const open = Number(this.route.snapshot.queryParamMap.get('open'));
+    if (open > 0) this.openEdit({ id: open } as PurchaseRequisitionDto);
   }
 
   private todayIso(): string { return new Date().toISOString().substring(0, 10); }
