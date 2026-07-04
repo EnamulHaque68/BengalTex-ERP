@@ -2,6 +2,8 @@ using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Domain.Common;
 using BengalTex.ERP.Domain.Entities;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Infrastructure.Services;
@@ -10,6 +12,11 @@ namespace BengalTex.ERP.Infrastructure.Services;
 /// Builds an auto-generated POSTED <see cref="JournalEntry"/> from source-document lines.
 /// Resolves accounts by Code; rounds amounts to 2 dp; drops nil lines; refuses to post an
 /// unbalanced set (guards against a wiring bug). Does NOT SaveChanges (caller commits).
+///
+/// Phase A1: enforces the fiscal-period guard (a locked period rejects the posting with a 400
+/// validation error), classifies the entry's <see cref="VoucherType"/> from its source type
+/// (Receipt→RV, Payment/Expense→PV, OpeningBalance→OB, YearEndClose→CL, else JV — each with
+/// its own numbering series) and stamps the covering <c>AccountingPeriodId</c>.
 /// </summary>
 public sealed class JournalPostingService : IJournalPostingService
 {
@@ -18,20 +25,45 @@ public sealed class JournalPostingService : IJournalPostingService
     private readonly INumberingService _numbering;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
+    private readonly IPeriodGuard _periodGuard;
 
     public JournalPostingService(
         IRepository<JournalEntry, long> journalRepo,
         IRepository<Account> accountRepo,
         INumberingService numbering,
         ICurrentUserService currentUser,
-        IDateTimeProvider clock)
+        IDateTimeProvider clock,
+        IPeriodGuard periodGuard)
     {
         _journalRepo = journalRepo;
         _accountRepo = accountRepo;
         _numbering = numbering;
         _currentUser = currentUser;
         _clock = clock;
+        _periodGuard = periodGuard;
     }
+
+    /// <summary>Voucher classification by originating document type (Phase A1 taxonomy).</summary>
+    internal static VoucherType ClassifyVoucher(string sourceType) => sourceType switch
+    {
+        "Receipt" => VoucherType.Receipt,
+        "Payment" => VoucherType.Payment,
+        "Expense" => VoucherType.Payment,
+        "OpeningBalance" => VoucherType.Opening,
+        "YearEndClose" => VoucherType.Closing,
+        _ => VoucherType.Journal
+    };
+
+    /// <summary>Numbering series per voucher type (JV/RV/PV/CV/OB/CL).</summary>
+    internal static string SeriesFor(VoucherType type) => type switch
+    {
+        VoucherType.Receipt => "RV",
+        VoucherType.Payment => "PV",
+        VoucherType.Contra => "CV",
+        VoucherType.Opening => "OB",
+        VoucherType.Closing => "CL",
+        _ => "JV"
+    };
 
     public async Task PostAsync(
         DateOnly date, string narration, string sourceType, long sourceId, string sourceCode,
@@ -42,6 +74,16 @@ public sealed class JournalPostingService : IJournalPostingService
             .Where(l => l.Debit != 0m || l.Credit != 0m)
             .ToList();
         if (effective.Count == 0) return;   // nothing to post (e.g. zero-value document)
+
+        // ── Phase A1: fiscal-period guard (auto-journal path). Year-end close is exempt —
+        //    it must post into its own (already locked) year by design.
+        var voucherType = ClassifyVoucher(sourceType);
+        if (voucherType != VoucherType.Closing)
+        {
+            var refusal = await _periodGuard.CheckAsync(date, isManualVoucher: false, ct);
+            if (refusal is not null)
+                throw new ValidationException(new[] { new ValidationFailure("EntryDate", refusal) });
+        }
 
         var totalDebit = effective.Sum(l => l.Debit);
         var totalCredit = effective.Sum(l => l.Credit);
@@ -62,10 +104,12 @@ public sealed class JournalPostingService : IJournalPostingService
         var now = _clock.UtcNow;
         var entry = new JournalEntry
         {
-            Code = await _numbering.NextAsync("JV", null, ct),
+            Code = await _numbering.NextAsync(SeriesFor(voucherType), null, ct),
             EntryDate = date,
             Narration = narration,
             Status = JournalEntryStatus.Posted,
+            VoucherType = voucherType,
+            AccountingPeriodId = await _periodGuard.GetPeriodIdAsync(date, ct),
             SourceType = sourceType,
             SourceId = sourceId,
             SourceCode = sourceCode,

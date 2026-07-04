@@ -79,7 +79,7 @@ export class AccountingService {
   }
 
   // ── Journal Vouchers ──
-  getJournals(parameters: PagedQueryParameters, status?: string, fromDate?: string, toDate?: string)
+  getJournals(parameters: PagedQueryParameters, status?: string, fromDate?: string, toDate?: string, voucherType?: string)
     : Observable<ApiResponse<PagedResult<JournalEntryListItemDto>>> {
     let params = new HttpParams();
     if (parameters.page) params = params.set('Page', parameters.page.toString());
@@ -88,6 +88,7 @@ export class AccountingService {
     if (status) params = params.set('status', status);
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
+    if (voucherType) params = params.set('voucherType', voucherType);
     return this.http.get<ApiResponse<PagedResult<JournalEntryListItemDto>>>(this.journals, { params });
   }
   getJournal(id: number): Observable<ApiResponse<JournalEntryDto>> {
@@ -105,4 +106,60 @@ export class AccountingService {
   postJournal(id: number): Observable<ApiResponse<JournalEntryDto>> {
     return this.http.post<ApiResponse<JournalEntryDto>>(`${this.journals}/${id}/post`, {});
   }
+
+  // ── Phase A1 — contra voucher + reversal ──
+  createContra(data: { entryDate: string; fromAccountId: number; toAccountId: number; amount: number; reference: string | null; notes: string | null; })
+    : Observable<ApiResponse<JournalEntryDto>> {
+    return this.http.post<ApiResponse<JournalEntryDto>>(`${this.journals}/contra`, data);
+  }
+  reverseJournal(id: number, reason: string, reversalDate?: string | null): Observable<ApiResponse<JournalEntryDto>> {
+    return this.http.post<ApiResponse<JournalEntryDto>>(`${this.journals}/${id}/reverse`, { reason, reversalDate: reversalDate ?? null });
+  }
+
+  // ── Phase A1 — fiscal years, periods & opening balances ──
+  private readonly fiscal = `${environment.apiBaseUrl}/api/financial-years`;
+
+  getFinancialYears(): Observable<ApiResponse<FinancialYearDto[]>> {
+    return this.http.get<ApiResponse<FinancialYearDto[]>>(this.fiscal);
+  }
+  createFinancialYear(data: { code: string; startDate: string; notes: string | null; }): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(this.fiscal, data);
+  }
+  changePeriodStatus(periodId: number, action: 'soft-close' | 'lock' | 'reopen'): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.fiscal}/periods/${periodId}/${action}`, {});
+  }
+  yearClosePreview(id: number): Observable<ApiResponse<YearClosePreviewDto>> {
+    return this.http.get<ApiResponse<YearClosePreviewDto>>(`${this.fiscal}/${id}/close-preview`);
+  }
+  closeYear(id: number): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.fiscal}/${id}/close`, {});
+  }
+  reopenYear(id: number, reason: string): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.fiscal}/${id}/reopen`, { reason });
+  }
+  openingBalanceTemplate(): Observable<ApiResponse<OpeningBalanceAccountDto[]>> {
+    return this.http.get<ApiResponse<OpeningBalanceAccountDto[]>>(`${this.fiscal}/opening-balances/template`);
+  }
+  importOpeningBalances(asOfDate: string, lines: { accountId: number; debit: number; credit: number; }[])
+    : Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.fiscal}/opening-balances/import`, { asOfDate, lines });
+  }
+}
+
+// ── Phase A1 DTOs (kept here with the service for cohesion) ──
+export interface AccountingPeriodDto {
+  id: number; periodNumber: number; name: string; startDate: string; endDate: string;
+  status: string; statusChangedAt: string | null; statusChangedBy: string | null;
+}
+export interface FinancialYearDto {
+  id: number; code: string; startDate: string; endDate: string; status: string;
+  closedAt: string | null; closedBy: string | null; notes: string | null;
+  periods: AccountingPeriodDto[];
+}
+export interface YearClosePreviewDto {
+  totalIncome: number; totalExpense: number; netIncome: number; accountCount: number;
+}
+export interface OpeningBalanceAccountDto {
+  accountId: number; code: string; name: string; accountType: string;
+  currentDebit: number; currentCredit: number;
 }

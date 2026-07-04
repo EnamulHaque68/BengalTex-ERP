@@ -88,6 +88,7 @@ export interface CreateSupplierInvoiceRequest {
   dueDate: string | null;
   notes: string | null;
   lines: SupplierInvoiceLineInput[];
+  isOpening?: boolean;   // Phase A1 — go-live opening bill (no GL on approve)
 }
 
 export interface UpdateSupplierInvoiceRequest {

@@ -65,15 +65,20 @@ internal sealed class ApproveSupplierInvoiceCommandHandler
 
         // Auto-journal (base BDT = doc amount × exchange rate):
         //   Dr Raw Material Inventory (net) / Dr VAT Receivable (input VAT) / Cr Accounts Payable (gross)
-        var rate = inv.ExchangeRate;
-        await _journal.PostAsync(
-            inv.InvoiceDate, $"Supplier bill {inv.Code}", "SupplierInvoice", inv.Id, inv.Code,
-            new[]
-            {
-                new JournalPostingLine(LedgerAccounts.RawMaterialInventory, inv.SubtotalAmount * rate, 0m),
-                new JournalPostingLine(LedgerAccounts.VatReceivable, inv.VatAmount * rate, 0m),
-                new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, inv.TotalAmount * rate),
-            }, cancellationToken);
+        // Phase A1: SUPPRESSED for opening bills — their GL value lives on the opening-balance
+        // voucher; posting here would double-count AP. Payments/ageing still work.
+        if (!inv.IsOpening)
+        {
+            var rate = inv.ExchangeRate;
+            await _journal.PostAsync(
+                inv.InvoiceDate, $"Supplier bill {inv.Code}", "SupplierInvoice", inv.Id, inv.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, inv.SubtotalAmount * rate, 0m),
+                    new JournalPostingLine(LedgerAccounts.VatReceivable, inv.VatAmount * rate, 0m),
+                    new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, inv.TotalAmount * rate),
+                }, cancellationToken);
+        }
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(cancellationToken);

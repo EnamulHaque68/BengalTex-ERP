@@ -83,6 +83,7 @@ export class SupplierInvoiceListComponent implements OnInit {
       invoiceDate: [this.todayIso(), Validators.required],
       dueDate: [null as string | null],
       notes: ['', Validators.maxLength(2000)],
+      isOpening: [false],   // Phase A1
       lines: this.fb.array([])
     });
   }
@@ -237,7 +238,8 @@ export class SupplierInvoiceListComponent implements OnInit {
       vatRatePercent: 15,
       invoiceDate: this.todayIso(),
       dueDate: null,
-      notes: ''
+      notes: '',
+      isOpening: false
     });
     this.dialogVisible = true;
   }
@@ -307,7 +309,8 @@ export class SupplierInvoiceListComponent implements OnInit {
         invoiceDate: v.invoiceDate,
         dueDate: v.dueDate || null,
         notes: (v.notes as string)?.trim() || null,
-        lines
+        lines,
+        isOpening: !!v.isOpening   // Phase A1
       }).subscribe({
         next: (res) => this.handleSave(res),
         error: (err) => this.handleError(err)

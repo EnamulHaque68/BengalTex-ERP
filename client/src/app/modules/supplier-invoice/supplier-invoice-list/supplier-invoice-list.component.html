@@ -194,6 +194,13 @@
         <textarea pInputTextarea rows="2" formControlName="notes"
                   placeholder="Payment instructions, vendor reference..." class="w-full"></textarea>
       </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'create'">
+        <label class="opening-check">
+          <p-checkbox formControlName="isOpening" [binary]="true" inputId="si-opening" />
+          <span>Opening bill (go-live) &mdash; no journal is posted on approve; the GL balance comes from the
+            Opening Balances voucher. Payments &amp; ageing work normally.</span>
+        </label>
+      </div>
     </div>
 
     <p class="section-label">Invoice Lines</p>

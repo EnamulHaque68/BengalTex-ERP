@@ -12,6 +12,9 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
+import { TextareaModule } from 'primeng/textarea';
+
+import { SharedModule } from '../../shared/shared.module';
 
 import { ChartOfAccountsComponent } from './chart-of-accounts/chart-of-accounts.component';
 import { JournalEntryListComponent } from './journal-entry-list/journal-entry-list.component';
@@ -23,6 +26,8 @@ import { CashFlowComponent } from './cash-flow/cash-flow.component';
 import { CashBookComponent } from './cash-book/cash-book.component';
 import { BankBookComponent } from './bank-book/bank-book.component';
 import { DayBookComponent } from './day-book/day-book.component';
+import { FiscalYearListComponent } from './fiscal-year-list/fiscal-year-list.component';
+import { OpeningBalancesComponent } from './opening-balances/opening-balances.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -35,6 +40,9 @@ const routes: Routes = [
   { path: 'cash-book', component: CashBookComponent },
   { path: 'bank-book', component: BankBookComponent },
   { path: 'day-book', component: DayBookComponent },
+  // Phase A1 — fiscal rails
+  { path: 'fiscal-years', component: FiscalYearListComponent },
+  { path: 'opening-balances', component: OpeningBalancesComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
@@ -42,13 +50,16 @@ const routes: Routes = [
   declarations: [
     ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent,
     GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent,
-    CashBookComponent, BankBookComponent, DayBookComponent
+    CashBookComponent, BankBookComponent, DayBookComponent,
+    FiscalYearListComponent, OpeningBalancesComponent
   ],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
-    InputTextModule, InputNumberModule, SelectModule, CheckboxModule, TooltipModule
+    InputTextModule, InputNumberModule, SelectModule, CheckboxModule, TooltipModule,
+    TextareaModule,
+    SharedModule
   ]
 })
 export class AccountingModule {}

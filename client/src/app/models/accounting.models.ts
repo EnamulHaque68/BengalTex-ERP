@@ -10,6 +10,7 @@ export const ACCOUNT_TYPES: { label: string; value: string }[] = [
 
 export const JOURNAL_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
+  { label: 'Pending Approval', value: 'PendingApproval' },
   { label: 'Posted', value: 'Posted' }
 ];
 
@@ -73,6 +74,11 @@ export interface JournalEntryDto {
   totalDebit: number;
   totalCredit: number;
   lines: JournalEntryLineDto[];
+  // Phase A1 — voucher taxonomy + reversal linkage
+  voucherType: string;
+  reversedEntryId: number | null;
+  reversedEntryCode: string | null;
+  reversalReason: string | null;
 }
 
 export interface JournalEntryListItemDto {
@@ -86,7 +92,17 @@ export interface JournalEntryListItemDto {
   lineCount: number;
   sourceType: string | null;
   sourceCode: string | null;
+  voucherType: string;                 // Phase A1
 }
+
+export const VOUCHER_TYPES: { label: string; value: string }[] = [
+  { label: 'Journal (JV)', value: 'Journal' },
+  { label: 'Receipt (RV)', value: 'Receipt' },
+  { label: 'Payment (PV)', value: 'Payment' },
+  { label: 'Contra (CV)', value: 'Contra' },
+  { label: 'Opening (OB)', value: 'Opening' },
+  { label: 'Closing (CL)', value: 'Closing' }
+];
 
 export interface JournalEntryLineInput {
   accountId: number | null;

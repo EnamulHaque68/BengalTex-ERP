@@ -9,8 +9,10 @@
         <input pInputText type="text" placeholder="Search code, ref, narration..." (input)="onSearch($any($event.target).value)" />
       </span>
       <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All" styleClass="filter-select-sm" (onChange)="load()" />
+      <p-select [(ngModel)]="filterVoucherType" [options]="voucherTypes" optionLabel="label" optionValue="value" [showClear]="true" placeholder="All types" styleClass="filter-select-sm" (onChange)="load()" />
       <input pInputText type="date" [(ngModel)]="fromDate" class="date-input" (change)="load()" />
       <input pInputText type="date" [(ngModel)]="toDate" class="date-input" (change)="load()" />
+      <p-button *ngIf="canCreate" label="Fund Transfer" icon="pi pi-arrow-right-arrow-left" severity="secondary" [outlined]="true" (click)="openContra()" pTooltip="Contra voucher — bank↔bank / bank↔cash" />
       <p-button *ngIf="canCreate" label="New Voucher" icon="pi pi-plus" (click)="openCreate()" />
     </div>
   </div>
@@ -23,27 +25,29 @@
     <p-table [value]="entries" [loading]="loading" [paginator]="true" [rows]="parameters.pageSize || 25" [totalRecords]="totalCount"
              [lazy]="true" (onLazyLoad)="onPage($event)" [first]="((parameters.page||1)-1)*(parameters.pageSize||25)" [rowHover]="true" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Code</th><th>Date</th><th>Reference</th><th>Narration</th><th class="num-h">Amount</th><th>Status</th><th>Source</th><th style="width:120px"></th></tr>
+        <tr><th>Code</th><th>Type</th><th>Date</th><th>Reference</th><th>Narration</th><th class="num-h">Amount</th><th>Status</th><th>Source</th><th style="width:150px"></th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-e>
         <tr>
           <td><span class="code-badge">{{ e.code }}</span></td>
+          <td><span class="vt-badge" [ngClass]="voucherClass(e.voucherType)">{{ e.voucherType }}</span></td>
           <td class="num">{{ e.entryDate | date:'yyyy-MM-dd' }}</td>
           <td class="muted">{{ e.reference || '—' }}</td>
           <td class="narr">{{ e.narration || '—' }}</td>
           <td class="num fw-600">{{ e.amount | number:'1.2-2' }}</td>
-          <td><span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'">{{ e.status }}</span></td>
+          <td><span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'" [class.pending]="e.status==='PendingApproval'">{{ e.status === 'PendingApproval' ? 'Pending Approval' : e.status }}</span></td>
           <td class="muted">{{ e.sourceCode || (e.sourceType || '—') }}</td>
           <td>
             <div class="row-actions">
               <p-button [icon]="e.status==='Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="open(e)" [pTooltip]="e.status==='Draft' ? 'Edit' : 'View'" />
               <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small" *ngIf="e.status==='Draft' && canPost" [loading]="rowActionId===e.id" (click)="post(e)" pTooltip="Post to ledger" />
+              <p-button icon="pi pi-replay" severity="warn" [text]="true" size="small" *ngIf="e.status==='Posted' && canReverse" (click)="openReverse(e)" pTooltip="Reverse (mirror entry)" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status==='Draft' && canCreate" (click)="confirmDelete(e)" pTooltip="Delete" />
             </div>
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage"><tr><td colspan="8" class="empty-row"><i class="pi pi-book"></i><span>No journal vouchers.</span></td></tr></ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="9" class="empty-row"><i class="pi pi-book"></i><span>No journal vouchers.</span></td></tr></ng-template>
     </p-table>
   </p-card>
 </div>
@@ -51,7 +55,14 @@
 <p-dialog [(visible)]="dialogVisible" [header]="dialogMode==='create' ? 'New Journal Voucher' : (dialogMode==='edit' ? 'Edit Voucher' : 'View Voucher')" [modal]="true" [style]="{ width: '900px' }" [draggable]="false">
   <form [formGroup]="form" (ngSubmit)="save()">
     <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
-    <div class="alert alert-info" *ngIf="dialogMode==='view'"><i class="pi pi-lock"></i>Posted — read-only.</div>
+    <div class="alert alert-info" *ngIf="dialogMode==='view' && viewedEntry?.status === 'Posted'"><i class="pi pi-lock"></i>Posted — read-only.</div>
+    <div class="alert alert-warn" *ngIf="dialogMode==='view' && viewedEntry?.status === 'PendingApproval'"><i class="pi pi-clock"></i>Awaiting approval — it will post when approved from the Approvals inbox.</div>
+    <div class="meta-chips" *ngIf="viewedEntry">
+      <span class="vt-badge" [ngClass]="voucherClass(viewedEntry.voucherType)">{{ viewedEntry.voucherType }} voucher</span>
+      <span class="rev-chip" *ngIf="viewedEntry.reversedEntryId">
+        <i class="pi pi-replay"></i> Reversal of {{ viewedEntry.reversedEntryCode }} — {{ viewedEntry.reversalReason }}
+      </span>
+    </div>
     <div class="head-grid">
       <div class="field"><label>Date *</label><input pInputText type="date" formControlName="entryDate" class="w-full" /></div>
       <div class="field"><label>Reference</label><input pInputText formControlName="reference" class="w-full" placeholder="cheque / doc no" /></div>
@@ -86,11 +97,79 @@
     </table>
     <p-button *ngIf="dialogMode!=='view'" label="Add Line" icon="pi pi-plus" severity="secondary" [text]="true" size="small" (click)="addLine()" />
 
+    <!-- Phase A1 — supporting documents on saved vouchers -->
+    <app-attachments-panel *ngIf="editingId" entityType="JournalEntry" [entityId]="editingId"
+                           [canManage]="dialogMode !== 'view'"></app-attachments-panel>
+
     <div class="dialog-footer">
       <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
       <p-button *ngIf="dialogMode!=='view'" type="submit" [label]="dialogSaving ? 'Saving...' : (dialogMode==='create' ? 'Create Draft' : 'Save')" icon="pi pi-save" [loading]="dialogSaving" [disabled]="!balanced || dialogSaving" />
     </div>
   </form>
+</p-dialog>
+
+<!-- Phase A1 — Contra (fund transfer) voucher -->
+<p-dialog [(visible)]="contraVisible" header="Fund Transfer (Contra Voucher)" [modal]="true" [style]="{ width: '480px' }">
+  <div class="alert alert-error" *ngIf="contraError"><i class="pi pi-exclamation-circle"></i>{{ contraError }}</div>
+  <div class="field">
+    <label>Date *</label>
+    <input pInputText type="date" [(ngModel)]="contraDate" class="w-full" />
+  </div>
+  <div class="field">
+    <label>From (credit) *</label>
+    <p-select [(ngModel)]="contraFrom" [options]="cashBankAccounts" optionValue="id" [filter]="true" filterBy="code,name"
+              placeholder="Source cash/bank account" appendTo="body" styleClass="w-full">
+      <ng-template let-a pTemplate="item"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+      <ng-template let-a pTemplate="selectedItem"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+    </p-select>
+  </div>
+  <div class="field">
+    <label>To (debit) *</label>
+    <p-select [(ngModel)]="contraTo" [options]="cashBankAccounts" optionValue="id" [filter]="true" filterBy="code,name"
+              placeholder="Destination cash/bank account" appendTo="body" styleClass="w-full">
+      <ng-template let-a pTemplate="item"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+      <ng-template let-a pTemplate="selectedItem"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+    </p-select>
+  </div>
+  <div class="field">
+    <label>Amount *</label>
+    <p-inputNumber [(ngModel)]="contraAmount" [min]="0.01" [minFractionDigits]="2" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Reference</label>
+    <input pInputText [(ngModel)]="contraReference" placeholder="cheque no / slip no" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Notes</label>
+    <input pInputText [(ngModel)]="contraNotes" class="w-full" />
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="contraVisible=false" [disabled]="contraSaving" />
+    <p-button label="Transfer &amp; Post" icon="pi pi-arrow-right-arrow-left" [loading]="contraSaving"
+              [disabled]="!contraFrom || !contraTo || !contraAmount" (click)="saveContra()" />
+  </div>
+</p-dialog>
+
+<!-- Phase A1 — Reverse posted voucher -->
+<p-dialog [(visible)]="reverseVisible" header="Reverse Voucher" [modal]="true" [style]="{ width: '440px' }">
+  <div *ngIf="reverseTarget">
+    <p>Reverse <strong>{{ reverseTarget.code }}</strong>? A mirror entry (Dr↔Cr swapped) will be posted and linked back to it.
+      A voucher can be reversed only once.</p>
+    <div class="field">
+      <label>Reversal date</label>
+      <input pInputText type="date" [(ngModel)]="reverseDate" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Reason *</label>
+      <input pInputText [(ngModel)]="reverseReason" placeholder="e.g. wrong account selected" class="w-full" />
+    </div>
+    <div class="alert alert-error" *ngIf="reverseError"><i class="pi pi-exclamation-circle"></i>{{ reverseError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="reverseVisible=false" [disabled]="reversing" />
+      <p-button label="Reverse" icon="pi pi-replay" severity="warn" [loading]="reversing"
+                [disabled]="!reverseReason.trim()" (click)="confirmReverse()" />
+    </div>
+  </div>
 </p-dialog>
 
 <p-dialog [(visible)]="deleteDialogVisible" header="Delete Voucher" [modal]="true" [style]="{ width: '420px' }">

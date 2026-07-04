@@ -46,7 +46,7 @@ public class SupplierInvoicesController : ControllerBase
     {
         var result = await _mediator.Send(new CreateSupplierInvoiceCommand(
             request.PurchaseOrderId, request.SupplierInvoiceNumber, request.VatRate, request.InvoiceDate,
-            request.DueDate, request.Notes, request.Lines
+            request.DueDate, request.Notes, request.Lines, request.IsOpening
         ), ct);
         return Ok(result);
     }
@@ -94,7 +94,8 @@ public record CreateSupplierInvoiceRequest(
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
-    IReadOnlyList<SupplierInvoiceLineInput> Lines);
+    IReadOnlyList<SupplierInvoiceLineInput> Lines,
+    bool IsOpening = false);   // Phase A1 — go-live opening bill (no GL on approve)
 
 public record UpdateSupplierInvoiceRequest(
     string? SupplierInvoiceNumber,

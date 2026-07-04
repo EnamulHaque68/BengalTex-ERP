@@ -159,6 +159,7 @@ export interface CreateCustomerInvoiceRequest {
   dueDate: string | null;
   notes: string | null;
   lines: CustomerInvoiceLineInput[];
+  isOpening?: boolean;   // Phase A1 — go-live opening invoice (no GL / challan on issue)
 }
 
 export interface UpdateCustomerInvoiceRequest {

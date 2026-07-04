@@ -23,4 +23,10 @@ public class ApprovalSettings
 
     /// <summary>Role whose members can approve over-threshold sales orders.</summary>
     public string SalesOrderApproverRole { get; set; } = "Admin";
+
+    /// <summary>Manual journal voucher total at or below this posts directly; above it requires sign-off (Phase A1).</summary>
+    public decimal JournalEntryThreshold { get; set; } = 100000m;
+
+    /// <summary>Role whose members can approve over-threshold manual journal vouchers.</summary>
+    public string JournalEntryApproverRole { get; set; } = "Admin";
 }

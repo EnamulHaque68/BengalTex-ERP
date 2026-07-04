@@ -14,7 +14,12 @@ public record JournalEntryDto(
     string? PostedBy,
     decimal TotalDebit,
     decimal TotalCredit,
-    IReadOnlyList<JournalEntryLineDto> Lines);
+    IReadOnlyList<JournalEntryLineDto> Lines,
+    // ── Phase A1 — voucher taxonomy + reversal linkage ──
+    string VoucherType = "Journal",
+    long? ReversedEntryId = null,
+    string? ReversedEntryCode = null,
+    string? ReversalReason = null);
 
 public record JournalEntryLineDto(
     long Id,
@@ -36,4 +41,5 @@ public record JournalEntryListItemDto(
     decimal Amount,           // balanced total (= total debit = total credit)
     int LineCount,
     string? SourceType,
-    string? SourceCode);
+    string? SourceCode,
+    string VoucherType = "Journal");   // Phase A1

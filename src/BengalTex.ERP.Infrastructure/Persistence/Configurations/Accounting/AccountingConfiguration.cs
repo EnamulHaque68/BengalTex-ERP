@@ -49,10 +49,34 @@ public class JournalEntryConfiguration : IEntityTypeConfiguration<JournalEntry>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        // Phase A1 — voucher taxonomy. Default "Journal" so existing rows backfill correctly
+        // (explicit value — never the scaffolder's empty-string default).
+        builder.Property(j => j.VoucherType)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(VoucherType.Journal);
+
+        builder.Property(j => j.ReversalReason).HasMaxLength(500);
+
         builder.HasIndex(j => j.Code).IsUnique();
         builder.HasIndex(j => j.Status);
         builder.HasIndex(j => j.EntryDate);
         builder.HasIndex(j => new { j.SourceType, j.SourceId });
+        builder.HasIndex(j => j.VoucherType);
+        builder.HasIndex(j => j.AccountingPeriodId);
+        builder.HasIndex(j => j.ReversedEntryId);
+
+        // Period stamp — Restrict so a period with postings can't be deleted from under them.
+        builder.HasOne(j => j.AccountingPeriod)
+            .WithMany()
+            .HasForeignKey(j => j.AccountingPeriodId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Reversal linkage (self FK) — Restrict.
+        builder.HasOne(j => j.ReversedEntry)
+            .WithMany()
+            .HasForeignKey(j => j.ReversedEntryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(j => j.Lines)
             .WithOne(l => l.JournalEntry)

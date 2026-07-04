@@ -30,6 +30,9 @@ internal sealed class GetProfitAndLossQueryHandler
     {
         var totals = await _lineRepo.Query()
             .Where(l => l.JournalEntry.Status == JournalEntryStatus.Posted
+                     // Phase A1: year-end closing vouchers zero the P&L accounts into Retained
+                     // Earnings — excluding them keeps a closed year's P&L historically correct.
+                     && l.JournalEntry.VoucherType != VoucherType.Closing
                      && l.JournalEntry.EntryDate >= request.FromDate
                      && l.JournalEntry.EntryDate <= request.ToDate)
             .GroupBy(l => l.AccountId)

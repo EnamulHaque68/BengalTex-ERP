@@ -78,8 +78,8 @@ internal sealed class IssueCustomerInvoiceCommandHandler
 
         // Auto-create VAT Challan when VatAmount > 0. Bangladesh NBR requires a Mushok 6.3
         // form (challan) accompanying every VAT-able sale. VAT-exempt invoices (rate = 0)
-        // don't get one.
-        if (inv.VatAmount > 0m)
+        // don't get one. Opening invoices (Phase A1) are historic go-live documents — no challan.
+        if (inv.VatAmount > 0m && !inv.IsOpening)
         {
             var challanCode = await _numbering.NextAsync("VC", null, cancellationToken);
             var challan = new Domain.Entities.VatChallan
@@ -97,15 +97,20 @@ internal sealed class IssueCustomerInvoiceCommandHandler
 
         // Auto-journal (base BDT = doc amount × exchange rate):
         //   Dr Accounts Receivable (gross) / Cr Sales Revenue (net) / Cr VAT Payable (output VAT)
-        var rate = inv.ExchangeRate;
-        await _journal.PostAsync(
-            inv.InvoiceDate, $"Sales invoice {inv.Code}", "CustomerInvoice", inv.Id, inv.Code,
-            new[]
-            {
-                new JournalPostingLine(LedgerAccounts.AccountsReceivable, inv.TotalAmount * rate, 0m),
-                new JournalPostingLine(LedgerAccounts.SalesRevenue, 0m, inv.SubtotalAmount * rate),
-                new JournalPostingLine(LedgerAccounts.VatPayable, 0m, inv.VatAmount * rate),
-            }, cancellationToken);
+        // Phase A1: SUPPRESSED for opening invoices — their GL value lives on the opening-balance
+        // voucher; posting here would double-count AR and revenue. Receipts/ageing still work.
+        if (!inv.IsOpening)
+        {
+            var rate = inv.ExchangeRate;
+            await _journal.PostAsync(
+                inv.InvoiceDate, $"Sales invoice {inv.Code}", "CustomerInvoice", inv.Id, inv.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.AccountsReceivable, inv.TotalAmount * rate, 0m),
+                    new JournalPostingLine(LedgerAccounts.SalesRevenue, 0m, inv.SubtotalAmount * rate),
+                    new JournalPostingLine(LedgerAccounts.VatPayable, 0m, inv.VatAmount * rate),
+                }, cancellationToken);
+        }
 
         _repo.Update(inv);
         await _uow.SaveChangesAsync(cancellationToken);

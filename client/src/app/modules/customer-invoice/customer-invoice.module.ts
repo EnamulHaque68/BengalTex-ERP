@@ -12,6 +12,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { CustomerInvoiceListComponent } from './customer-invoice-list/customer-invoice-list.component';
 import { CustomerInvoicePrintComponent } from './customer-invoice-print/customer-invoice-print.component';
@@ -38,7 +39,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule, SharedModule
+    TooltipModule, CheckboxModule, SharedModule
   ]
 })
 export class CustomerInvoiceModule {}
