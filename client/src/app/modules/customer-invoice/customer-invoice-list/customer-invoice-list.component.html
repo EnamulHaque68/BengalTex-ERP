@@ -217,6 +217,13 @@
         <textarea pInputTextarea rows="2" formControlName="notes"
                   placeholder="Bill-to address, payment terms note..." class="w-full"></textarea>
       </div>
+      <div class="field col-span-2" *ngIf="dialogMode === 'create'">
+        <label class="opening-check">
+          <p-checkbox formControlName="isOpening" [binary]="true" inputId="ci-opening" />
+          <span>Opening invoice (go-live) &mdash; no revenue journal or VAT challan is posted; the GL balance
+            comes from the Opening Balances voucher. Receipts &amp; ageing work normally.</span>
+        </label>
+      </div>
     </div>
 
     <p class="section-label">Invoice Lines</p>

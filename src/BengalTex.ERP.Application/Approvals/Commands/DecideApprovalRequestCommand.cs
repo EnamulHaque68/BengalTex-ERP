@@ -27,6 +27,7 @@ internal sealed class DecideApprovalRequestCommandHandler
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IRepository<Domain.Entities.Expense, long> _expenseRepo;
     private readonly IRepository<Domain.Entities.SalesOrder, long> _soRepo;
+    private readonly IRepository<Domain.Entities.JournalEntry, long> _jeRepo;
     private readonly IMediator _mediator;
 
     public DecideApprovalRequestCommandHandler(
@@ -36,6 +37,7 @@ internal sealed class DecideApprovalRequestCommandHandler
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IRepository<Domain.Entities.Expense, long> expenseRepo,
         IRepository<Domain.Entities.SalesOrder, long> soRepo,
+        IRepository<Domain.Entities.JournalEntry, long> jeRepo,
         IMediator mediator)
     {
         _approval = approval;
@@ -44,6 +46,7 @@ internal sealed class DecideApprovalRequestCommandHandler
         _poRepo = poRepo;
         _expenseRepo = expenseRepo;
         _soRepo = soRepo;
+        _jeRepo = jeRepo;
         _mediator = mediator;
     }
 
@@ -114,6 +117,29 @@ internal sealed class DecideApprovalRequestCommandHandler
                         so.Status = SalesOrderStatus.Draft;
                     }
                     _soRepo.Update(so);
+                }
+            }
+            else if (result.DocumentType == "JournalEntry")   // Phase A1 — manual JV approval
+            {
+                var je = await _jeRepo.GetByIdAsync(result.DocumentId, cancellationToken);
+                if (je is not null && je.Status == JournalEntryStatus.PendingApproval)
+                {
+                    if (result.Outcome == ApprovalOutcome.Approved)
+                    {
+                        // Posts via the standard command (period re-checked there); the bypass flag
+                        // marks that the approval gate has already been satisfied.
+                        var post = await _mediator.Send(
+                            new Application.Accounting.Commands.PostJournalEntryCommand(je.Id, BypassApprovalGate: true),
+                            cancellationToken);
+                        if (!post.Success)
+                            return ApiResponse<bool>.Fail(
+                                $"Approved, but the voucher could not be posted: {post.Message}");
+                    }
+                    else // Rejected → back to Draft for editing / resubmission
+                    {
+                        je.Status = JournalEntryStatus.Draft;
+                        _jeRepo.Update(je);
+                    }
                 }
             }
         }

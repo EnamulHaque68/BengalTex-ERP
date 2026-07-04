@@ -244,3 +244,10 @@
     &:hover { opacity: 1; }
   }
 }
+
+/* Phase A1 — opening-invoice checkbox */
+.opening-check {
+  display: flex; align-items: flex-start; gap: .55rem; cursor: pointer;
+  background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: .55rem .7rem;
+  span { font-size: .78rem; color: #86198f; line-height: 1.45; }
+}

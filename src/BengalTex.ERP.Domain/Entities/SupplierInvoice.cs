@@ -70,6 +70,12 @@ public class SupplierInvoice : BaseTransactionalEntity
     public DateTimeOffset? ApprovedAt { get; set; }
     public string? ApprovedBy { get; set; }
 
+    /// <summary>
+    /// Go-live opening bill (Phase A1). When true, approving posts NO journal — the GL balance
+    /// comes from the opening-balance voucher — while payments and ageing work normally.
+    /// </summary>
+    public bool IsOpening { get; set; }
+
     public string? Notes { get; set; }
 
     public ICollection<SupplierInvoiceLine> Lines { get; set; } = new List<SupplierInvoiceLine>();

@@ -1,0 +1,126 @@
+<div class="page-shell">
+
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Fiscal Years &amp; Periods</h2>
+      <p class="page-subtitle">Period locking guards every posting path &mdash; year-end close sweeps net P&amp;L to Retained Earnings</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="New Fiscal Year" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+  <div class="alert alert-ok page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && years.length === 0">
+    <i class="pi pi-calendar"></i>
+    <p><strong>No fiscal year defined yet.</strong></p>
+    <p class="muted">Until a fiscal year exists, the period guard stays inactive and postings behave exactly as before.
+      Create the current year to activate period control.</p>
+  </div>
+
+  <div class="fy-card" *ngFor="let y of years">
+    <div class="fy-head">
+      <span class="fy-code">{{ y.code }}</span>
+      <span class="fy-range">{{ y.startDate }} → {{ y.endDate }}</span>
+      <span class="fy-status" [class.closed]="y.status === 'Closed'">{{ y.status }}</span>
+      <span class="fy-actions">
+        <p-button label="Close Year" icon="pi pi-lock" severity="warn" size="small" [outlined]="true"
+                  *ngIf="y.status === 'Open'" [disabled]="!canClose(y)"
+                  [pTooltip]="canClose(y) ? 'Sweep net P&L to Retained Earnings' : 'Lock all 12 periods first'"
+                  (click)="openClose(y)" />
+        <p-button label="Reopen" icon="pi pi-unlock" severity="danger" size="small" [outlined]="true"
+                  *ngIf="y.status === 'Closed'" (click)="openReopen(y)" />
+      </span>
+    </div>
+    <div class="period-grid">
+      <div class="period" *ngFor="let p of y.periods" [ngClass]="periodClass(p.status)">
+        <div class="p-name">{{ p.name }}</div>
+        <div class="p-status">{{ p.status === 'SoftClosed' ? 'Soft-closed' : p.status }}</div>
+        <div class="p-actions" *ngIf="y.status === 'Open'">
+          <button type="button" class="p-btn" *ngIf="p.status === 'Open'"
+                  [disabled]="periodActionId === p.id"
+                  (click)="changePeriod(p, 'soft-close')" pTooltip="Soft-close (auto-posts continue, manual JVs need Close-Books)">
+            <i class="pi pi-minus-circle"></i>
+          </button>
+          <button type="button" class="p-btn" *ngIf="p.status !== 'Locked'"
+                  [disabled]="periodActionId === p.id"
+                  (click)="changePeriod(p, 'lock')" pTooltip="Lock (no postings)">
+            <i class="pi pi-lock"></i>
+          </button>
+          <button type="button" class="p-btn" *ngIf="p.status !== 'Open'"
+                  [disabled]="periodActionId === p.id"
+                  (click)="changePeriod(p, 'reopen')" pTooltip="Reopen">
+            <i class="pi pi-unlock"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create year -->
+<p-dialog [(visible)]="createVisible" header="New Fiscal Year" [modal]="true" [style]="{ width: '460px' }">
+  <div class="alert alert-error" *ngIf="createError"><i class="pi pi-exclamation-circle"></i>{{ createError }}</div>
+  <div class="field">
+    <label>Year Code *</label>
+    <input pInputText [(ngModel)]="newCode" placeholder="e.g. FY2026 or FY2026-27" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Start Date * <small>(must be the 1st of a month; ends 12 months later)</small></label>
+    <input pInputText type="date" [(ngModel)]="newStartDate" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Notes</label>
+    <textarea pInputTextarea rows="2" [(ngModel)]="newNotes" class="w-full"></textarea>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="createVisible = false" [disabled]="creating" />
+    <p-button label="Create (12 periods)" icon="pi pi-plus" [loading]="creating" (click)="create()" />
+  </div>
+</p-dialog>
+
+<!-- Close year -->
+<p-dialog [(visible)]="closeVisible" header="Close Fiscal Year" [modal]="true" [style]="{ width: '500px' }">
+  <div *ngIf="closeTarget">
+    <p>Close <strong>{{ closeTarget.code }}</strong>? A Closing voucher will sweep the year's net result to
+      <strong>Retained Earnings (3200)</strong> and freeze the year.</p>
+    <div class="preview" *ngIf="closePreview">
+      <div><span>Total Income</span><strong>{{ formatMoney(closePreview.totalIncome) }}</strong></div>
+      <div><span>Total Expense</span><strong>{{ formatMoney(closePreview.totalExpense) }}</strong></div>
+      <div class="net" [class.loss]="closePreview.netIncome < 0">
+        <span>Net {{ closePreview.netIncome >= 0 ? 'Profit' : 'Loss' }}</span>
+        <strong>{{ formatMoney(closePreview.netIncome < 0 ? -closePreview.netIncome : closePreview.netIncome) }}</strong>
+      </div>
+    </div>
+    <div class="alert alert-error" *ngIf="closeError"><i class="pi pi-exclamation-circle"></i>{{ closeError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="closeVisible = false" [disabled]="closing" />
+      <p-button label="Close Year" icon="pi pi-lock" severity="warn" [loading]="closing" (click)="confirmClose()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Reopen year -->
+<p-dialog [(visible)]="reopenVisible" header="Reopen Fiscal Year" [modal]="true" [style]="{ width: '460px' }">
+  <div *ngIf="reopenTarget">
+    <p>Reopen <strong>{{ reopenTarget.code }}</strong>? The closing voucher will be reversed (audited).</p>
+    <div class="field">
+      <label>Reason *</label>
+      <textarea pInputTextarea rows="2" [(ngModel)]="reopenReason" placeholder="e.g. audit adjustment required" class="w-full"></textarea>
+    </div>
+    <div class="alert alert-error" *ngIf="reopenError"><i class="pi pi-exclamation-circle"></i>{{ reopenError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="reopenVisible = false" [disabled]="reopening" />
+      <p-button label="Reopen + Reverse Close" icon="pi pi-unlock" severity="danger"
+                [loading]="reopening" [disabled]="!reopenReason.trim()" (click)="confirmReopen()" />
+    </div>
+  </div>
+</p-dialog>

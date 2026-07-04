@@ -44,9 +44,39 @@ public class DataSeeder : IDataSeeder
         await SeedSuperAdminAsync(ct);
         await SeedNumberingSeriesAsync(ct);
         await SeedChartOfAccountsAsync(ct);
+        await ValidateLedgerAccountConstantsAsync(ct);   // Phase A1 — fail fast on a mis-seeded COA
         await SeedExpenseCategoriesAsync(ct);
         await SeedWastageReasonsAsync(ct);
         await SeedLeaveTypesAsync(ct);
+    }
+
+    // ─── Ledger-constant validator (Phase A1) ─────────────────────────────────
+
+    /// <summary>
+    /// Asserts that every <see cref="Application.Accounting.LedgerAccounts"/> constant exists in
+    /// the seeded chart of accounts. Converts a mis-seed (which previously surfaced as a runtime
+    /// posting failure) into a clear boot-time error.
+    /// </summary>
+    private async Task ValidateLedgerAccountConstantsAsync(CancellationToken ct)
+    {
+        var required = typeof(Application.Accounting.LedgerAccounts)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .Distinct()
+            .ToList();
+
+        var seeded = (await _db.Accounts.IgnoreQueryFilters()
+            .Where(a => required.Contains(a.Code))
+            .Select(a => a.Code)
+            .ToListAsync(ct)).ToHashSet();
+
+        var missing = required.Where(c => !seeded.Contains(c)).ToList();
+        if (missing.Count > 0)
+            throw new InvalidOperationException(
+                "Chart-of-accounts validation failed — LedgerAccounts constants missing from the seeded COA: " +
+                string.Join(", ", missing) +
+                ". Fix DataSeeder.SeedChartOfAccountsAsync before starting the application.");
     }
 
     // ─── Leave Types ───────────────────────────────────────────────────────────
@@ -160,9 +190,15 @@ public class DataSeeder : IDataSeeder
             ("1160", "Work In Progress (WIP)", AccountType.Asset, false, "1100"),
             ("1170", "VAT Receivable (Input VAT)", AccountType.Asset, false, "1100"),
             ("1180", "Advance to Suppliers", AccountType.Asset, false, "1100"),
+            // Phase A1 (Enterprise Accounting Blueprint) — seeded now, wired per phase
+            ("1145", "Raw Material in Transit (LC)", AccountType.Asset, false, "1100"),
+            ("1185", "LC Margin Deposits", AccountType.Asset, false, "1100"),
+            ("1186", "Export Incentive Receivable", AccountType.Asset, false, "1100"),
+            ("1190", "Employee Loans Receivable", AccountType.Asset, false, "1100"),
             ("1200", "Fixed Assets", AccountType.Asset, true, "1000"),
             ("1210", "Machinery & Equipment", AccountType.Asset, false, "1200"),
             ("1215", "Accumulated Depreciation", AccountType.Asset, false, "1200"),
+            ("1220", "Capital Work in Progress", AccountType.Asset, false, "1200"),
 
             // ── Liabilities (2000) ──
             ("2000", "Liabilities", AccountType.Liability, true, null),
@@ -171,6 +207,13 @@ public class DataSeeder : IDataSeeder
             ("2120", "VAT Payable (Output VAT)", AccountType.Liability, false, "2100"),
             ("2130", "Salary Payable", AccountType.Liability, false, "2100"),
             ("2140", "Advance from Customers", AccountType.Liability, false, "2100"),
+            // Phase A1 — blueprint additions
+            ("2150", "GR/IR Clearing (Goods Received Not Invoiced)", AccountType.Liability, false, "2100"),
+            ("2155", "WIP Accrual (Month-End Snapshot)", AccountType.Liability, false, "2100"),
+            ("2160", "AIT Payable (Withheld at Source)", AccountType.Liability, false, "2100"),
+            ("2170", "VDS Payable (VAT Deducted at Source)", AccountType.Liability, false, "2100"),
+            ("2180", "PAD Liability (LC Documents)", AccountType.Liability, false, "2100"),
+            ("2190", "Acceptance Liability (Usance/UPAS)", AccountType.Liability, false, "2100"),
             ("2200", "Long Term Liabilities", AccountType.Liability, true, "2000"),
             ("2210", "Bank Loan", AccountType.Liability, false, "2200"),
 
@@ -187,36 +230,46 @@ public class DataSeeder : IDataSeeder
             ("4150", "Sales Returns & Allowances", AccountType.Income, false, "4000"),
             ("4200", "Other Income", AccountType.Income, false, "4000"),
             ("4250", "Scrap Sales Income", AccountType.Income, false, "4000"),
+            ("4260", "Export Incentive Income", AccountType.Income, false, "4000"),
             ("4300", "Exchange Gain", AccountType.Income, false, "4000"),
+            ("4310", "Unrealized Exchange Gain", AccountType.Income, false, "4000"),
             ("4400", "Gain on Asset Disposal", AccountType.Income, false, "4000"),
 
             // ── Expenses (5000) ──
             ("5000", "Expenses", AccountType.Expense, true, null),
             ("5100", "Cost of Goods Sold", AccountType.Expense, false, "5000"),
             ("5150", "Purchase Returns & Allowances", AccountType.Expense, false, "5000"),
+            ("5155", "Purchase Price Variance", AccountType.Expense, false, "5000"),
+            ("5165", "Under/Over-Absorbed Overhead", AccountType.Expense, false, "5000"),
             ("5200", "Salary & Wages", AccountType.Expense, false, "5000"),
+            ("5211", "Applied Labour (Contra)", AccountType.Expense, false, "5000"),
             ("5300", "Factory Overhead", AccountType.Expense, false, "5000"),
+            ("5311", "Applied Factory Overhead (Contra)", AccountType.Expense, false, "5000"),
             ("5320", "Depreciation Expense", AccountType.Expense, false, "5000"),
             ("5350", "Loss on Asset Disposal", AccountType.Expense, false, "5000"),
             ("5400", "Administrative Expense", AccountType.Expense, false, "5000"),
+            ("5460", "Sample & Marketing Expense", AccountType.Expense, false, "5000"),
             ("5500", "Selling & Distribution Expense", AccountType.Expense, false, "5000"),
             ("5600", "Bank Charges", AccountType.Expense, false, "5000"),
             ("5700", "Material Wastage", AccountType.Expense, false, "5000"),
             ("5750", "Inventory Adjustment", AccountType.Expense, false, "5000"),
             ("5800", "Exchange Loss", AccountType.Expense, false, "5000"),
+            ("5810", "Unrealized Exchange Loss", AccountType.Expense, false, "5000"),
+            ("5860", "Interest Expense", AccountType.Expense, false, "5000"),
         };
 
-        var existingCodes = (await _db.Accounts.IgnoreQueryFilters()
-            .Select(a => a.Code).ToListAsync(ct)).ToHashSet();
-        var byCode = new Dictionary<string, Account>();
+        // Map code → Id for EXISTING accounts too, so blueprint additions seeded into an
+        // already-populated database resolve their parents (e.g. new 2150 under existing 2100).
+        var idByCode = await _db.Accounts.IgnoreQueryFilters()
+            .ToDictionaryAsync(a => a.Code, a => a.Id, ct);
 
         foreach (var d in defs)
         {
-            if (existingCodes.Contains(d.Code)) continue;
+            if (idByCode.ContainsKey(d.Code)) continue;
 
             int? parentId = null;
-            if (d.Parent is not null && byCode.TryGetValue(d.Parent, out var p))
-                parentId = p.Id;   // resolved after each batch save below; see two-pass note
+            if (d.Parent is not null && idByCode.TryGetValue(d.Parent, out var pid))
+                parentId = pid;
 
             var account = new Account
             {
@@ -228,10 +281,10 @@ public class DataSeeder : IDataSeeder
                 IsSystem = true,
                 IsActive = true
             };
-            byCode[d.Code] = account;
             _db.Accounts.Add(account);
             // Save immediately so the generated Id is available as a parent for the next rows.
             await _db.SaveChangesAsync(ct);
+            idByCode[d.Code] = account.Id;
         }
     }
 
@@ -698,6 +751,12 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "SCRAP", Description = "Scrap Sale",          Prefix = "BTX/SCRAP", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SMP",  Description = "Sample",              Prefix = "BTX/SMP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "WST",  Description = "Wastage Entry",       Prefix = "BTX/WST",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            // ── Phase A1 — voucher taxonomy series (Journal stays on JV) ──
+            new NumberingSeries { Code = "RV",   Description = "Receipt Voucher",     Prefix = "BTX/RV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "PV",   Description = "Payment Voucher",     Prefix = "BTX/PV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "CV",   Description = "Contra Voucher",      Prefix = "BTX/CV",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "OB",   Description = "Opening Balance",     Prefix = "BTX/OB",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "CL",   Description = "Closing Voucher",     Prefix = "BTX/CL",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
         };
 
         foreach (var s in series)

@@ -65,6 +65,13 @@ public class CustomerInvoice : BaseTransactionalEntity
     public DateTimeOffset? IssuedAt { get; set; }
     public string? IssuedBy { get; set; }
 
+    /// <summary>
+    /// Go-live opening invoice (Phase A1). When true, issuing posts NO revenue journal and no
+    /// VAT challan — the GL balance comes from the opening-balance voucher instead — while
+    /// receipts, payments and ageing work normally against it (party-wise AR/AP detail).
+    /// </summary>
+    public bool IsOpening { get; set; }
+
     public string? Notes { get; set; }
 
     // ── BD export reporting fields (EPB / Form-N / Form-EXP) ────────────────

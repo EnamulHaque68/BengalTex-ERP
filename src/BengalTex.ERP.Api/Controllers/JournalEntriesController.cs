@@ -25,8 +25,9 @@ public class JournalEntriesController : ControllerBase
         [FromQuery] string? status = null,
         [FromQuery] DateOnly? fromDate = null,
         [FromQuery] DateOnly? toDate = null,
+        [FromQuery] string? voucherType = null,
         CancellationToken ct = default)
-        => Ok(await _mediator.Send(new GetJournalEntriesQuery(parameters, status, fromDate, toDate), ct));
+        => Ok(await _mediator.Send(new GetJournalEntriesQuery(parameters, status, fromDate, toDate, voucherType), ct));
 
     [HttpGet("{id:long}")]
     [HasPermission(Permissions.Accounting.View)]
@@ -55,4 +56,23 @@ public class JournalEntriesController : ControllerBase
     [HasPermission(Permissions.Accounting.PostJournal)]
     public async Task<IActionResult> Post(long id, CancellationToken ct)
         => Ok(await _mediator.Send(new PostJournalEntryCommand(id), ct));
+
+    /// <summary>Phase A1 — contra (fund-transfer) voucher: bank↔bank, bank↔cash. Posts immediately.</summary>
+    [HttpPost("contra")]
+    [HasPermission(Permissions.Accounting.CreateJournal)]
+    public async Task<IActionResult> CreateContra([FromBody] CreateContraVoucherRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new CreateContraVoucherCommand(
+            request.EntryDate, request.FromAccountId, request.ToAccountId,
+            request.Amount, request.Reference, request.Notes), ct));
+
+    /// <summary>Phase A1 — one-click reversal of a posted voucher (mirror entry, mandatory reason).</summary>
+    [HttpPost("{id:long}/reverse")]
+    [HasPermission(Permissions.Accounting.ReverseJournal)]
+    public async Task<IActionResult> Reverse(long id, [FromBody] ReverseJournalRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new ReverseJournalEntryCommand(id, request.Reason, request.ReversalDate), ct));
 }
+
+public record CreateContraVoucherRequest(
+    DateOnly EntryDate, int FromAccountId, int ToAccountId, decimal Amount, string? Reference, string? Notes);
+
+public record ReverseJournalRequest(string Reason, DateOnly? ReversalDate = null);

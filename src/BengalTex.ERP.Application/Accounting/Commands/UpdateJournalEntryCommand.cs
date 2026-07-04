@@ -48,17 +48,20 @@ internal sealed class UpdateJournalEntryCommandHandler
 {
     private readonly IRepository<JournalEntry, long> _repo;
     private readonly IRepository<Domain.Entities.Account> _accountRepo;
+    private readonly Services.IPeriodGuard _periodGuard;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public UpdateJournalEntryCommandHandler(
         IRepository<JournalEntry, long> repo,
         IRepository<Domain.Entities.Account> accountRepo,
+        Services.IPeriodGuard periodGuard,
         IUnitOfWork uow,
         IMediator mediator)
     {
         _repo = repo;
         _accountRepo = accountRepo;
+        _periodGuard = periodGuard;
         _uow = uow;
         _mediator = mediator;
     }
@@ -72,6 +75,10 @@ internal sealed class UpdateJournalEntryCommandHandler
         if (entry is null) return ApiResponse<JournalEntryDto>.Fail("Journal voucher not found.");
         if (entry.Status != JournalEntryStatus.Draft)
             return ApiResponse<JournalEntryDto>.Fail("Only draft journal vouchers can be edited.");
+
+        // Phase A1 — fiscal-period guard on the (possibly changed) entry date.
+        var refusal = await _periodGuard.CheckAsync(cmd.EntryDate, isManualVoucher: true, cancellationToken);
+        if (refusal is not null) return ApiResponse<JournalEntryDto>.Fail(refusal);
 
         var accountIds = cmd.Lines.Select(l => l.AccountId).Distinct().ToList();
         var accounts = await _accountRepo.Query()

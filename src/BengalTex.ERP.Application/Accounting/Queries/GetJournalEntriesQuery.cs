@@ -12,7 +12,8 @@ public sealed record GetJournalEntriesQuery(
     PagedQueryParameters Parameters,
     string? Status = null,
     DateOnly? FromDate = null,
-    DateOnly? ToDate = null
+    DateOnly? ToDate = null,
+    string? VoucherType = null          // Phase A1 — filter by voucher classification
 ) : IRequest<ApiResponse<PagedResult<JournalEntryListItemDto>>>;
 
 internal sealed class GetJournalEntriesQueryHandler
@@ -30,6 +31,9 @@ internal sealed class GetJournalEntriesQueryHandler
         if (!string.IsNullOrEmpty(request.Status)
             && Enum.TryParse<JournalEntryStatus>(request.Status, out var status))
             query = query.Where(j => j.Status == status);
+        if (!string.IsNullOrEmpty(request.VoucherType)
+            && Enum.TryParse<VoucherType>(request.VoucherType, out var vType))
+            query = query.Where(j => j.VoucherType == vType);
         if (request.FromDate.HasValue) query = query.Where(j => j.EntryDate >= request.FromDate.Value);
         if (request.ToDate.HasValue) query = query.Where(j => j.EntryDate <= request.ToDate.Value);
 
@@ -48,7 +52,8 @@ internal sealed class GetJournalEntriesQueryHandler
             .Take(request.Parameters.PageSize)
             .Select(j => new JournalEntryListItemDto(
                 j.Id, j.Code, j.EntryDate, j.Reference, j.Narration, j.Status.ToString(),
-                j.Lines.Sum(l => l.Debit), j.Lines.Count, j.SourceType, j.SourceCode))
+                j.Lines.Sum(l => l.Debit), j.Lines.Count, j.SourceType, j.SourceCode,
+                j.VoucherType.ToString()))
             .ToListAsync(cancellationToken);
 
         var result = PagedResult<JournalEntryListItemDto>.Create(
@@ -72,6 +77,7 @@ internal sealed class GetJournalEntryByIdQueryHandler
         var j = await _repo.Query()
             .AsNoTracking()
             .Include(x => x.Lines).ThenInclude(l => l.Account)
+            .Include(x => x.ReversedEntry)
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
         if (j is null) return ApiResponse<JournalEntryDto>.Fail("Journal voucher not found.");
 
@@ -85,7 +91,9 @@ internal sealed class GetJournalEntryByIdQueryHandler
         var dto = new JournalEntryDto(
             j.Id, j.Code, j.EntryDate, j.Reference, j.Narration, j.Status.ToString(),
             j.SourceType, j.SourceId, j.SourceCode, j.PostedAt, j.PostedBy,
-            lines.Sum(l => l.Debit), lines.Sum(l => l.Credit), lines);
+            lines.Sum(l => l.Debit), lines.Sum(l => l.Credit), lines,
+            j.VoucherType.ToString(), j.ReversedEntryId,
+            j.ReversedEntry != null ? j.ReversedEntry.Code : null, j.ReversalReason);
 
         return ApiResponse<JournalEntryDto>.Ok(dto);
     }

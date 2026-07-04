@@ -61,6 +61,7 @@ internal sealed class CreateJournalEntryCommandHandler
 {
     private readonly IRepository<JournalEntry, long> _repo;
     private readonly IRepository<Domain.Entities.Account> _accountRepo;
+    private readonly IPeriodGuard _periodGuard;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -68,12 +69,14 @@ internal sealed class CreateJournalEntryCommandHandler
     public CreateJournalEntryCommandHandler(
         IRepository<JournalEntry, long> repo,
         IRepository<Domain.Entities.Account> accountRepo,
+        IPeriodGuard periodGuard,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
     {
         _repo = repo;
         _accountRepo = accountRepo;
+        _periodGuard = periodGuard;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -82,6 +85,10 @@ internal sealed class CreateJournalEntryCommandHandler
     public async Task<ApiResponse<JournalEntryDto>> Handle(
         CreateJournalEntryCommand cmd, CancellationToken cancellationToken)
     {
+        // Phase A1 — fiscal-period guard (manual voucher path).
+        var refusal = await _periodGuard.CheckAsync(cmd.EntryDate, isManualVoucher: true, cancellationToken);
+        if (refusal is not null) return ApiResponse<JournalEntryDto>.Fail(refusal);
+
         var accountIds = cmd.Lines.Select(l => l.AccountId).Distinct().ToList();
         var accounts = await _accountRepo.Query()
             .Where(a => accountIds.Contains(a.Id))

@@ -21,6 +21,25 @@ public class JournalEntry : BaseTransactionalEntity
 
     public JournalEntryStatus Status { get; set; } = JournalEntryStatus.Draft;
 
+    /// <summary>
+    /// Voucher classification (Phase A1). Drives the numbering series (JV/RV/PV/CV/OB/CL) and
+    /// report behaviour — <see cref="VoucherType.Closing"/> entries are excluded from period
+    /// P&amp;L / Trial-Balance reports (they would otherwise zero the closed year's figures).
+    /// Existing rows are backfilled to <see cref="VoucherType.Journal"/>.
+    /// </summary>
+    public VoucherType VoucherType { get; set; } = VoucherType.Journal;
+
+    /// <summary>The accounting period this entry was posted into (stamped at post time; null pre-fiscal-setup).</summary>
+    public int? AccountingPeriodId { get; set; }
+    public AccountingPeriod? AccountingPeriod { get; set; }
+
+    /// <summary>Set on a reversal entry — the posted voucher this entry mirrors.</summary>
+    public long? ReversedEntryId { get; set; }
+    public JournalEntry? ReversedEntry { get; set; }
+
+    /// <summary>Mandatory user-supplied reason when this entry is a reversal.</summary>
+    public string? ReversalReason { get; set; }
+
     // ── Originating document for auto-generated entries (null for manual vouchers) ──
     public string? SourceType { get; set; }
     public long? SourceId { get; set; }
@@ -55,5 +74,20 @@ public class JournalEntryLine : BaseTransactionalEntity
 public enum JournalEntryStatus
 {
     Draft = 1,
-    Posted = 2
+    Posted = 2,
+    PendingApproval = 3   // over-threshold manual voucher awaiting sign-off (Phase A1)
+}
+
+/// <summary>
+/// Voucher taxonomy (Phase A1). Each type numbers from its own series:
+/// Journal=JV, Receipt=RV, Payment=PV, Contra=CV, Opening=OB, Closing=CL.
+/// </summary>
+public enum VoucherType
+{
+    Journal = 1,   // manual JVs + auto-flows not otherwise classified
+    Receipt = 2,   // money-in auto-journals (customer receipts)
+    Payment = 3,   // money-out auto-journals (supplier payments, expenses)
+    Contra = 4,    // fund transfers between cash/bank accounts
+    Opening = 5,   // opening-balance import
+    Closing = 6    // year-end close (excluded from period P&L / TB)
 }

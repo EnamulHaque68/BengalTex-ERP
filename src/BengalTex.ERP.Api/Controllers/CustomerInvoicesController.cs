@@ -45,7 +45,8 @@ public class CustomerInvoicesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateCustomerInvoiceRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new CreateCustomerInvoiceCommand(
-            request.SalesOrderId, request.VatRate, request.InvoiceDate, request.DueDate, request.Notes, request.Lines
+            request.SalesOrderId, request.VatRate, request.InvoiceDate, request.DueDate, request.Notes, request.Lines,
+            request.IsOpening
         ), ct);
         return Ok(result);
     }
@@ -169,7 +170,8 @@ public record CreateCustomerInvoiceRequest(
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
-    IReadOnlyList<CustomerInvoiceLineInput> Lines);
+    IReadOnlyList<CustomerInvoiceLineInput> Lines,
+    bool IsOpening = false);   // Phase A1 — go-live opening invoice (no GL / challan on issue)
 
 /// <summary>Partial delivery → invoice request: how much of each DN line to invoice this time.</summary>
 public record CreateInvoiceFromDeliveryNoteRequest(

@@ -416,6 +416,10 @@ public static class Permissions
         public const string ManageAccounts = "Accounting.ManageAccounts";  // create/edit/delete chart-of-accounts nodes
         public const string CreateJournal = "Accounting.CreateJournal";    // create/edit/delete draft journal vouchers
         public const string PostJournal = "Accounting.PostJournal";        // post (freeze) journal vouchers into the ledger
+        // ── Phase A1 — fiscal control ──
+        public const string ManagePeriods = "Accounting.ManagePeriods";    // create fiscal years, manage period lifecycle
+        public const string CloseBooks = "Accounting.CloseBooks";          // soft-close/lock/reopen, opening balances, year close
+        public const string ReverseJournal = "Accounting.ReverseJournal";  // reverse a posted journal voucher
     }
 
     public static class Expenses

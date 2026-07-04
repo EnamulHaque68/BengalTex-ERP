@@ -88,6 +88,7 @@ public sealed class ApprovalService : IApprovalService
     {
         "Expense" => (_settings.ExpenseThreshold, _settings.ExpenseApproverRole),
         "SalesOrder" => (_settings.SalesOrderThreshold, _settings.SalesOrderApproverRole),
+        "JournalEntry" => (_settings.JournalEntryThreshold, _settings.JournalEntryApproverRole),   // Phase A1
         _ => (_settings.PurchaseOrderThreshold, _settings.PurchaseOrderApproverRole),
     };
 

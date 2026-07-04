@@ -30,7 +30,8 @@ public sealed record CreateSupplierInvoiceCommand(
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
-    IReadOnlyList<SupplierInvoiceLineInput> Lines
+    IReadOnlyList<SupplierInvoiceLineInput> Lines,
+    bool IsOpening = false           // Phase A1 — go-live opening bill (no GL on approve)
 ) : IRequest<ApiResponse<SupplierInvoiceDto>>;
 
 public sealed class CreateSupplierInvoiceCommandValidator : AbstractValidator<CreateSupplierInvoiceCommand>
@@ -133,6 +134,7 @@ internal sealed class CreateSupplierInvoiceCommandHandler
             VatAmount = vatAmount,
             TotalAmount = total,
             AmountPaid = 0m,
+            IsOpening = cmd.IsOpening,
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.SupplierInvoiceLine
             {

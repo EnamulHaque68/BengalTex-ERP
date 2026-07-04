@@ -105,6 +105,8 @@ export const NAV_MENU: NavItem[] = [
     children: [
       { title: 'Chart of Accounts', icon: 'pi pi-sitemap',  route: '/accounting/accounts',       permission: 'Accounting.View' },
       { title: 'Journal Entries',   icon: 'pi pi-book',      route: '/accounting/journals',       permission: 'Accounting.View' },
+      { title: 'Fiscal Years',      icon: 'pi pi-hourglass', route: '/accounting/fiscal-years',   permission: 'Accounting.View' },
+      { title: 'Opening Balances',  icon: 'pi pi-flag',      route: '/accounting/opening-balances', permission: 'Accounting.View' },
       { title: 'Cash Book',         icon: 'pi pi-money-bill',route: '/accounting/cash-book',      permission: 'Accounting.View' },
       { title: 'Bank Book',         icon: 'pi pi-building',  route: '/accounting/bank-book',      permission: 'Accounting.View' },
       { title: 'Day Book',          icon: 'pi pi-calendar',  route: '/accounting/day-book',       permission: 'Accounting.View' },

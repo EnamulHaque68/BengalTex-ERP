@@ -30,7 +30,8 @@ public sealed record CreateCustomerInvoiceCommand(
     DateOnly InvoiceDate,
     DateOnly? DueDate,
     string? Notes,
-    IReadOnlyList<CustomerInvoiceLineInput> Lines
+    IReadOnlyList<CustomerInvoiceLineInput> Lines,
+    bool IsOpening = false           // Phase A1 — go-live opening invoice (no GL / challan on issue)
 ) : IRequest<ApiResponse<CustomerInvoiceDto>>;
 
 public sealed class CreateCustomerInvoiceCommandValidator : AbstractValidator<CreateCustomerInvoiceCommand>
@@ -165,6 +166,7 @@ internal sealed class CreateCustomerInvoiceCommandHandler
             VatAmount = vatAmount,
             TotalAmount = total,
             AmountPaid = 0m,
+            IsOpening = cmd.IsOpening,
             Notes = cmd.Notes,
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.CustomerInvoiceLine
             {
