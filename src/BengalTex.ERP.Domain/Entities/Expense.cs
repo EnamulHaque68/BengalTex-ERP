@@ -33,6 +33,10 @@ public class Expense : BaseTransactionalEntity
     public int ExpenseCategoryId { get; set; }
     public ExpenseCategory ExpenseCategory { get; set; } = null!;
 
+    /// <summary>Phase A3 — cost center this expense belongs to (drives the cost-center dimension).</summary>
+    public int? CostCenterId { get; set; }
+    public CostCenter? CostCenter { get; set; }
+
     public decimal Amount { get; set; }
 
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;

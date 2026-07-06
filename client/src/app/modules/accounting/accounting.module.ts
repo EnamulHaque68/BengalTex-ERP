@@ -28,6 +28,9 @@ import { BankBookComponent } from './bank-book/bank-book.component';
 import { DayBookComponent } from './day-book/day-book.component';
 import { FiscalYearListComponent } from './fiscal-year-list/fiscal-year-list.component';
 import { OpeningBalancesComponent } from './opening-balances/opening-balances.component';
+import { InventoryTieOutComponent } from './inventory-tie-out/inventory-tie-out.component';
+import { CostCentersComponent } from './cost-centers/cost-centers.component';
+import { ProfitabilityComponent } from './profitability/profitability.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -43,6 +46,11 @@ const routes: Routes = [
   // Phase A1 — fiscal rails
   { path: 'fiscal-years', component: FiscalYearListComponent },
   { path: 'opening-balances', component: OpeningBalancesComponent },
+  // Phase A2 — inventory truth
+  { path: 'inventory-tie-out', component: InventoryTieOutComponent },
+  // Phase A3 — dimensions
+  { path: 'cost-centers', component: CostCentersComponent },
+  { path: 'profitability', component: ProfitabilityComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
@@ -51,7 +59,8 @@ const routes: Routes = [
     ChartOfAccountsComponent, JournalEntryListComponent, TrialBalanceComponent,
     GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent,
     CashBookComponent, BankBookComponent, DayBookComponent,
-    FiscalYearListComponent, OpeningBalancesComponent
+    FiscalYearListComponent, OpeningBalancesComponent, InventoryTieOutComponent,
+    CostCentersComponent, ProfitabilityComponent
   ],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,

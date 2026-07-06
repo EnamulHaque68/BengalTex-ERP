@@ -16,7 +16,8 @@ public sealed record CreateExpenseCommand(
     string PaymentMethod,
     string? Payee,
     string? ReferenceNumber,
-    string? Description
+    string? Description,
+    int? CostCenterId = null   // Phase A3
 ) : IRequest<ApiResponse<ExpenseDto>>;
 
 public sealed class CreateExpenseCommandValidator : AbstractValidator<CreateExpenseCommand>
@@ -66,6 +67,7 @@ internal sealed class CreateExpenseCommandHandler : IRequestHandler<CreateExpens
             Code = await _numbering.NextAsync("EXP", null, ct),
             ExpenseDate = cmd.ExpenseDate,
             ExpenseCategoryId = cmd.ExpenseCategoryId,
+            CostCenterId = cmd.CostCenterId,   // Phase A3
             Amount = cmd.Amount,
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
             Payee = string.IsNullOrWhiteSpace(cmd.Payee) ? null : cmd.Payee.Trim(),

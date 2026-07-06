@@ -62,7 +62,11 @@ public class SupplierInvoiceLineConfiguration : IEntityTypeConfiguration<Supplie
 {
     public void Configure(EntityTypeBuilder<SupplierInvoiceLine> builder)
     {
-        builder.ToTable("SupplierInvoiceLines");
+        builder.ToTable("SupplierInvoiceLines", t =>
+            // Phase A2 — a line is material (RawMaterialId) XOR service (AccountId), never both/neither.
+            t.HasCheckConstraint("CK_SupplierInvoiceLine_ItemXorService",
+                "([RawMaterialId] IS NOT NULL AND [AccountId] IS NULL) OR " +
+                "([RawMaterialId] IS NULL AND [AccountId] IS NOT NULL)"));
 
         builder.Property(l => l.Quantity).HasPrecision(18, 4);
         builder.Property(l => l.UnitPrice).HasPrecision(18, 4);
@@ -70,10 +74,17 @@ public class SupplierInvoiceLineConfiguration : IEntityTypeConfiguration<Supplie
 
         builder.HasIndex(l => l.SupplierInvoiceId);
         builder.HasIndex(l => l.RawMaterialId);
+        builder.HasIndex(l => l.AccountId);
 
         builder.HasOne(l => l.RawMaterial)
             .WithMany()
             .HasForeignKey(l => l.RawMaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Service-line expense account (Phase A2) — Restrict so a posted-to account can't be deleted.
+        builder.HasOne(l => l.Account)
+            .WithMany()
+            .HasForeignKey(l => l.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();

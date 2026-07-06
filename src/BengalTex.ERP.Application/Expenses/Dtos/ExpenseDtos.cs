@@ -22,7 +22,9 @@ public record ExpenseDto(
     string? Description,
     string Status,
     DateTimeOffset? ApprovedAt,
-    string? ApprovedBy);
+    string? ApprovedBy,
+    int? CostCenterId = null,
+    string? CostCenterName = null);   // Phase A3
 
 public record ExpenseListItemDto(
     long Id,

@@ -420,6 +420,8 @@ public static class Permissions
         public const string ManagePeriods = "Accounting.ManagePeriods";    // create fiscal years, manage period lifecycle
         public const string CloseBooks = "Accounting.CloseBooks";          // soft-close/lock/reopen, opening balances, year close
         public const string ReverseJournal = "Accounting.ReverseJournal";  // reverse a posted journal voucher
+        // ── Phase A3 — dimensions ──
+        public const string ManageDimensions = "Accounting.ManageDimensions";  // create/edit cost centers
     }
 
     public static class Expenses

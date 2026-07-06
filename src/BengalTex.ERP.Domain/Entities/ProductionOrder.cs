@@ -35,6 +35,10 @@ public class ProductionOrder : BaseTransactionalEntity
     public int ProductId { get; set; }
     public Product Product { get; set; } = null!;
 
+    /// <summary>Phase A3 — optional style/design produced (defaults from the linked SO line's style). Feeds the production journal's style dimension.</summary>
+    public int? StyleId { get; set; }
+    public Style? Style { get; set; }
+
     /// <summary>The BOM version this production uses (snapshot at create time).</summary>
     public int BomId { get; set; }
     public Bom Bom { get; set; } = null!;

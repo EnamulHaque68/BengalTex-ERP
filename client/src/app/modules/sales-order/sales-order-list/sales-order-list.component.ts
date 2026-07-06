@@ -12,6 +12,8 @@ import { CurrencyDto } from '../../../models/master-data.models';
 import { CurrencyService } from '../../../services/currency.service';
 import { CustomerPricingService } from '../../../services/customer-pricing.service';
 
+import { StyleService } from '../../../services/style.service';
+import { StyleListItemDto } from '../../../models/style.models';
 @Component({
   selector: 'app-sales-order-list',
   standalone: false,
@@ -34,6 +36,7 @@ export class SalesOrderListComponent implements OnInit {
   readonly statuses = SO_STATUSES;
   customers: CustomerListItemDto[] = [];
   products: ProductListItemDto[] = [];
+  styles: StyleListItemDto[] = [];   // Phase A3
   currencies: CurrencyDto[] = [];
 
   // Dialog
@@ -65,6 +68,7 @@ export class SalesOrderListComponent implements OnInit {
     private customerService: CustomerService,
     private productService: ProductService,
     private currencyService: CurrencyService,
+    private styleService: StyleService,
     private pricingService: CustomerPricingService,
     private fb: FormBuilder,
     private zone: NgZone,
@@ -137,10 +141,12 @@ export class SalesOrderListComponent implements OnInit {
     productId: number | null = null,
     quantity = 1,
     unitPrice = 0,
-    lineNotes = ''
+    lineNotes = '',
+    styleId: number | null = null
   ): FormGroup {
     return this.fb.group({
       productId: [productId, Validators.required],
+      styleId: [styleId],
       quantity: [quantity, [Validators.required, Validators.min(0.0001)]],
       unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
       lineNotes: [lineNotes, Validators.maxLength(1000)]
@@ -241,6 +247,10 @@ export class SalesOrderListComponent implements OnInit {
           this.cdr.detectChanges();
         });
       }
+    });
+    // Phase A3 — styles for the per-line style picker (buyer-linked; showing all active).
+    this.styleService.getAll({ page: 1, pageSize: 1000, search: '' }, false).subscribe({
+      next: (res) => this.zone.run(() => { if (res.success && res.data) this.styles = res.data.items; this.cdr.detectChanges(); })
     });
     this.productService.getAll({ page: 1, pageSize: 500, search: '' }, undefined, false).subscribe({
       next: (res) => {
@@ -382,7 +392,7 @@ export class SalesOrderListComponent implements OnInit {
               notes: s.notes ?? ''
             });
             s.lines.forEach(l => this.lines.push(
-              this.newLine(l.productId, l.quantity, l.unitPrice, l.lineNotes ?? '')
+              this.newLine(l.productId, l.quantity, l.unitPrice, l.lineNotes ?? '', l.styleId ?? null)
             ));
             if (this.dialogMode === 'view') this.form.disable();
             else this.onCustomerChange({ value: s.customerId });
@@ -403,6 +413,7 @@ export class SalesOrderListComponent implements OnInit {
     const v = this.form.getRawValue();
     const lines = (v.lines as any[]).map(l => ({
       productId: l.productId,
+      styleId: l.styleId ?? null,   // Phase A3
       quantity: Number(l.quantity) || 0,
       unitPrice: Number(l.unitPrice) || 0,
       lineNotes: (l.lineNotes as string)?.trim() || null

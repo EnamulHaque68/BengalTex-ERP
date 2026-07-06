@@ -24,6 +24,7 @@ public class GoodsReceiptNoteConfiguration : IEntityTypeConfiguration<GoodsRecei
         builder.HasIndex(g => g.LetterOfCreditId);
         builder.HasIndex(g => g.Status);
         builder.HasIndex(g => g.ReceiveDate);
+        builder.HasIndex(g => g.IsGlPosted);   // Phase A2 — new-vs-legacy bill path selector
 
         // PO FK — Restrict so a PO with GRNs can't be deleted out from under them
         builder.HasOne(g => g.PurchaseOrder)

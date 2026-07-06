@@ -37,6 +37,7 @@ internal sealed class MarkPayslipPaidCommandHandler
 {
     private readonly IRepository<Payslip, long> _repo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
+    private readonly IRepository<Domain.Entities.CostCenter> _ccRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IJournalPostingService _journal;
@@ -45,6 +46,7 @@ internal sealed class MarkPayslipPaidCommandHandler
     public MarkPayslipPaidCommandHandler(
         IRepository<Payslip, long> repo,
         IRepository<Domain.Entities.Employee> empRepo,
+        IRepository<Domain.Entities.CostCenter> ccRepo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IJournalPostingService journal,
@@ -52,6 +54,7 @@ internal sealed class MarkPayslipPaidCommandHandler
     {
         _repo = repo;
         _empRepo = empRepo;
+        _ccRepo = ccRepo;
         _uow = uow;
         _currentUser = currentUser;
         _journal = journal;
@@ -79,8 +82,16 @@ internal sealed class MarkPayslipPaidCommandHandler
             var cashAccount = method == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
 
             var emp = await _empRepo.Query().AsNoTracking().Where(e => e.Id == p.EmployeeId)
-                .Select(e => new { e.Code, e.FullName }).FirstOrDefaultAsync(ct);
+                .Select(e => new { e.Code, e.FullName, e.DepartmentId }).FirstOrDefaultAsync(ct);
             var empLabel = emp is null ? $"Emp #{p.EmployeeId}" : $"{emp.FullName} ({emp.Code})";
+
+            // Phase A3 — attribute salary to the employee's department cost center (if one is mapped).
+            int? deptCc = null;
+            if (emp?.DepartmentId is int deptId)
+                deptCc = await _ccRepo.Query().AsNoTracking()
+                    .Where(c => c.DepartmentId == deptId && c.IsActive)
+                    .Select(c => (int?)c.Id).FirstOrDefaultAsync(ct);
+            var salaryDims = deptCc is null ? (Dimensions?)null : new Dimensions(CostCenterId: deptCc);
 
             var payDate = DateOnly.FromDateTime(p.PaidAt!.Value.UtcDateTime);
             await _journal.PostAsync(
@@ -89,7 +100,7 @@ internal sealed class MarkPayslipPaidCommandHandler
                 "Payslip", p.Id, $"PS-{p.Year}{p.Month:D2}-{p.EmployeeId}",
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.SalaryExpense, p.NetPay, 0m),
+                    new JournalPostingLine(LedgerAccounts.SalaryExpense, p.NetPay, 0m, salaryDims),
                     new JournalPostingLine(cashAccount, 0m, p.NetPay),
                 }, ct);
         }

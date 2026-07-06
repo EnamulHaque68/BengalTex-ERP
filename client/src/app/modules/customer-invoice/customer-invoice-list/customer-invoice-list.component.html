@@ -190,7 +190,7 @@
                     (onChange)="onSoChange($event)" />
         <small class="hint" *ngIf="selectedSo">
           Customer: <strong>{{ selectedSo.customerName }}</strong>
-          &middot; SO Total: <strong>{{ formatCurrency(selectedSo.totalAmount) }}</strong>
+          &middot; SO Total: <strong>{{ formatMoney(selectedSo.totalAmount, dialogCurrencyCode) }}</strong>
         </small>
       </div>
 
@@ -257,7 +257,7 @@
               <p-inputNumber formControlName="unitPrice" [min]="0"
                              [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" />
             </td>
-            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td class="num fw-600">{{ formatMoney(lineTotal(lineCtrl), dialogCurrencyCode) }}</td>
             <td>
               <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
             </td>
@@ -279,17 +279,17 @@
         <tfoot>
           <tr>
             <td colspan="6" class="total-label">Subtotal</td>
-            <td class="num subtotal-val">{{ formatCurrency(subtotalAmount()) }}</td>
+            <td class="num subtotal-val">{{ formatMoney(subtotalAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
           <tr>
             <td colspan="6" class="total-label">VAT ({{ form.get('vatRatePercent')?.value || 0 }}%)</td>
-            <td class="num vat-val">{{ formatCurrency(vatAmount()) }}</td>
+            <td class="num vat-val">{{ formatMoney(vatAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
           <tr>
             <td colspan="6" class="total-label grand-label">Total (incl. VAT)</td>
-            <td class="num total-val">{{ formatCurrency(grandTotalAmount()) }}</td>
+            <td class="num total-val">{{ formatMoney(grandTotalAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
         </tfoot>

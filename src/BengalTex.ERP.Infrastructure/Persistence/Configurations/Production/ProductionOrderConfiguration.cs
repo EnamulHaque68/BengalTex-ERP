@@ -54,6 +54,10 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
             .HasForeignKey(p => p.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Phase A3 — optional style dimension
+        builder.HasOne(p => p.Style).WithMany().HasForeignKey(p => p.StyleId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(p => p.StyleId);
+
         // BOM FK — Restrict so the snapshot version stays traceable
         builder.HasOne(p => p.Bom)
             .WithMany()

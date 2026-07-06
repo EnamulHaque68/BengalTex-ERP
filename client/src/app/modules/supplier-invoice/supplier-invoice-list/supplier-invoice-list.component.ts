@@ -3,6 +3,8 @@ import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '
 import { SupplierInvoiceService } from '../../../services/supplier-invoice.service';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { SupplierService } from '../../../services/supplier.service';
+import { AccountingService } from '../../../services/accounting.service';
+import { AccountDto } from '../../../models/accounting.models';
 import { PagedQueryParameters } from '../../../models/user.models';
 import {
   SINV_STATUSES,
@@ -41,6 +43,8 @@ export class SupplierInvoiceListComponent implements OnInit {
   suppliers: SupplierListItemDto[] = [];
   invoiceablePos: InvoiceablePoOption[] = [];
   selectedPo: PurchaseOrderDto | null = null;
+  expenseAccounts: AccountDto[] = [];   // Phase A2 — service-line pickers
+  dialogCurrencyCode = 'BDT';           // document currency for the open dialog (inherited from PO)
 
   dialogVisible = false;
   dialogMode: 'create' | 'edit' | 'view' = 'create';
@@ -60,6 +64,7 @@ export class SupplierInvoiceListComponent implements OnInit {
     private invService: SupplierInvoiceService,
     private poService: PurchaseOrderService,
     private supplierService: SupplierService,
+    private accountingService: AccountingService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -109,6 +114,13 @@ export class SupplierInvoiceListComponent implements OnInit {
   }
 
   private loadDropdowns(): void {
+    // Phase A2 — expense accounts for service (C&F / freight / repair) lines.
+    this.accountingService.getAccounts('Expense', false, true).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.expenseAccounts = res.data;
+        this.cdr.detectChanges();
+      })
+    });
     this.supplierService.getAll({ page: 1, pageSize: 500, search: '' }, false).subscribe({
       next: (res) => {
         this.zone.run(() => {
@@ -180,16 +192,26 @@ export class SupplierInvoiceListComponent implements OnInit {
   }
 
   private newLine(rawMaterialId: number | null, rawMaterialDisplay: string, uomCode: string,
-                  quantity: number, unitPrice: number, lineNotes = ''): FormGroup {
+                  quantity: number, unitPrice: number, lineNotes = '',
+                  kind: 'material' | 'service' = 'material', accountId: number | null = null): FormGroup {
     return this.fb.group({
-      rawMaterialId: [rawMaterialId, Validators.required],
+      kind: [kind],
+      rawMaterialId: [rawMaterialId, kind === 'material' ? Validators.required : []],
       rawMaterialDisplay: [rawMaterialDisplay],
+      accountId: [accountId, kind === 'service' ? Validators.required : []],   // Phase A2
       uomCode: [uomCode],
       quantity: [quantity, [Validators.required, Validators.min(0.0001)]],
       unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
       lineNotes: [lineNotes, Validators.maxLength(1000)]
     });
   }
+
+  /** Phase A2 — add a service (expense-account) charge line, e.g. C&F, freight, repairs. */
+  addServiceLine(): void {
+    this.lines.push(this.newLine(null, '', '', 1, 0, '', 'service', null));
+  }
+  removeLine(i: number): void { this.lines.removeAt(i); }
+  isService(l: AbstractControl): boolean { return l.get('kind')?.value === 'service'; }
 
   private buildLinesFromPo(po: PurchaseOrderDto): void {
     this.lines.clear();
@@ -210,6 +232,7 @@ export class SupplierInvoiceListComponent implements OnInit {
     if (!poId) {
       this.lines.clear();
       this.selectedPo = null;
+      this.dialogCurrencyCode = 'BDT';
       return;
     }
     this.poService.getById(poId).subscribe({
@@ -217,6 +240,7 @@ export class SupplierInvoiceListComponent implements OnInit {
         this.zone.run(() => {
           if (res.success && res.data) {
             this.selectedPo = res.data;
+            this.dialogCurrencyCode = res.data.currencyCode || 'BDT';   // invoice inherits the PO's currency
             this.buildLinesFromPo(res.data);
             this.cdr.detectChanges();
           }
@@ -230,6 +254,7 @@ export class SupplierInvoiceListComponent implements OnInit {
     this.editingId = null;
     this.dialogError = '';
     this.selectedPo = null;
+    this.dialogCurrencyCode = 'BDT';   // until a PO is picked
     this.form.enable();
     this.lines.clear();
     this.form.reset({
@@ -259,6 +284,7 @@ export class SupplierInvoiceListComponent implements OnInit {
           if (res.success && res.data) {
             const s = res.data;
             this.dialogMode = s.status === 'Draft' ? 'edit' : 'view';
+            this.dialogCurrencyCode = s.currencyCode || 'BDT';   // show the invoice's own currency
             this.form.patchValue({
               purchaseOrderId: s.purchaseOrderId,
               supplierInvoiceNumber: s.supplierInvoiceNumber ?? '',
@@ -270,11 +296,13 @@ export class SupplierInvoiceListComponent implements OnInit {
             for (const l of s.lines) {
               this.lines.push(this.newLine(
                 l.rawMaterialId,
-                `${l.rawMaterialCode} — ${l.rawMaterialName}`,
+                l.isService ? `${l.accountCode} — ${l.accountName}` : `${l.rawMaterialCode} — ${l.rawMaterialName}`,
                 l.unitOfMeasureCode,
                 l.quantity,
                 l.unitPrice,
-                l.lineNotes ?? ''
+                l.lineNotes ?? '',
+                l.isService ? 'service' : 'material',
+                l.accountId
               ));
             }
             this.form.get('purchaseOrderId')?.disable();
@@ -295,7 +323,8 @@ export class SupplierInvoiceListComponent implements OnInit {
 
     const v = this.form.getRawValue();
     const lines = (v.lines as any[]).map(l => ({
-      rawMaterialId: l.rawMaterialId,
+      rawMaterialId: l.kind === 'service' ? null : l.rawMaterialId,
+      accountId: l.kind === 'service' ? l.accountId : null,   // Phase A2
       quantity: Number(l.quantity) || 0,
       unitPrice: Number(l.unitPrice) || 0,
       lineNotes: (l.lineNotes as string)?.trim() || null

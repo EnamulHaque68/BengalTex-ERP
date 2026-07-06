@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.GoodsReceipt.Dtos;
 using BengalTex.ERP.Application.GoodsReceipt.Queries;
@@ -30,6 +31,7 @@ internal sealed class PostGoodsReceiptCommandHandler
     private readonly IRepository<Domain.Entities.StockLot, long> _lotRepo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
+    private readonly IJournalPostingService _journal;
     private readonly INumberingService _numbering;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
@@ -40,6 +42,7 @@ internal sealed class PostGoodsReceiptCommandHandler
         IRepository<Domain.Entities.StockLot, long> lotRepo,
         IUnitOfWork uow,
         IStockService stock,
+        IJournalPostingService journal,
         INumberingService numbering,
         ICurrentUserService currentUser,
         IMediator mediator)
@@ -49,6 +52,7 @@ internal sealed class PostGoodsReceiptCommandHandler
         _lotRepo = lotRepo;
         _uow = uow;
         _stock = stock;
+        _journal = journal;
         _numbering = numbering;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -82,6 +86,7 @@ internal sealed class PostGoodsReceiptCommandHandler
 
         // Re-validate over-receipt against current PO line state, apply increments,
         // and post one StockMovement per line via IStockService.
+        var totalReceiptValue = 0m;   // Phase A2 — base-BDT value of goods received (for the GR/IR journal)
         foreach (var grnLine in grn.Lines)
         {
             var poLine = po.Lines.FirstOrDefault(pl => pl.Id == grnLine.PurchaseOrderLineId);
@@ -102,6 +107,7 @@ internal sealed class PostGoodsReceiptCommandHandler
             var qtyBefore = await _stock.GetRawMaterialTotalOnHandAsync(poLine.RawMaterialId, cancellationToken);
             // WAC is held in base currency (BDT) — convert the PO-currency price via the PO's rate.
             var receivedCost = poLine.UnitPrice * po.ExchangeRate;
+            totalReceiptValue += grnLine.ReceivedQuantity * receivedCost;   // Phase A2 — GR/IR value (same basis as WAC)
             var denom = qtyBefore + grnLine.ReceivedQuantity;
             if (denom > 0m)
             {
@@ -162,6 +168,24 @@ internal sealed class PostGoodsReceiptCommandHandler
         grn.Status = Domain.Entities.GoodsReceiptStatus.Posted;
         grn.PostedAt = DateTimeOffset.UtcNow;
         grn.PostedBy = _currentUser.UserName;
+        grn.IsGlPosted = true;   // Phase A2 — this GRN carries a GR/IR credit; bills clear it (new path)
+
+        // Phase A2 (F2) — inventory now hits the GL at the moment of receipt, matching the
+        // stock/WAC update above. Value = Σ(received qty × PO unit price × PO rate), the same
+        // basis the WAC recompute uses, so GL 1140 and perpetual stock stay in lock-step.
+        //   Dr Raw Material Inventory / Cr GR/IR Clearing
+        // The bill later clears GR/IR (Dr 2150 / Cr AP) instead of debiting inventory again.
+        if (totalReceiptValue > 0m)
+        {
+            await _journal.PostAsync(
+                grn.ReceiveDate, $"Goods received {grn.Code} (PO {po.Code})",
+                "GoodsReceiptNote", grn.Id, grn.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, totalReceiptValue, 0m),
+                    new JournalPostingLine(LedgerAccounts.GrIrClearing, 0m, totalReceiptValue),
+                }, cancellationToken);
+        }
 
         _repo.Update(grn);
         _poRepo.Update(po);

@@ -71,6 +71,7 @@ export interface CreateSupplierReturnNoteRequest {
   reason: string | null;
   notes: string | null;
   lines: SupplierReturnNoteLineInput[];
+  clearsGrIr?: boolean;   // Phase A2
 }
 
 export interface UpdateSupplierReturnNoteRequest {

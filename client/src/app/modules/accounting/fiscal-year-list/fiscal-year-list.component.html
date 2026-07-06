@@ -19,6 +19,19 @@
     <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
   </div>
 
+  <!-- Phase A2 — GR/IR initialization prompt -->
+  <div class="grir-banner" *ngIf="showGrIrBanner">
+    <div class="gb-text">
+      <i class="pi pi-info-circle"></i>
+      <span>
+        <strong>Bring existing receipts onto GR/IR.</strong>
+        {{ formatMoney(grIrPreview!.totalUnbilledValue) }} of goods were received but not yet billed under the old model.
+        Post a one-time catch-up so future bills clear GR/IR uniformly.
+      </span>
+    </div>
+    <p-button label="Review &amp; Initialize" icon="pi pi-bolt" size="small" (click)="openGrIr()" />
+  </div>
+
   <div class="empty-state" *ngIf="!loading && years.length === 0">
     <i class="pi pi-calendar"></i>
     <p><strong>No fiscal year defined yet.</strong></p>
@@ -104,6 +117,41 @@
     <div class="dialog-footer">
       <p-button label="Cancel" severity="secondary" [text]="true" (click)="closeVisible = false" [disabled]="closing" />
       <p-button label="Close Year" icon="pi pi-lock" severity="warn" [loading]="closing" (click)="confirmClose()" />
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Phase A2 — GR/IR initialization -->
+<p-dialog [(visible)]="grIrVisible" header="Initialize GR/IR" [modal]="true" [style]="{ width: '640px' }">
+  <div *ngIf="grIrPreview">
+    <p>This posts one catch-up voucher (<span class="mono">Dr Raw Material Inventory / Cr GR/IR Clearing</span>) for the
+      received-not-billed value of receipts made before the GR/IR model, then marks those receipts GL-posted so future
+      bills clear GR/IR uniformly. It runs once.</p>
+    <div class="field">
+      <label>Posting date</label>
+      <input pInputText type="date" [(ngModel)]="grIrDate" class="w-full" />
+    </div>
+    <div class="tbl-wrap">
+      <table class="mini-grid">
+        <thead><tr><th>PO</th><th>Supplier</th><th class="num">Received</th><th class="num">Billed</th><th class="num">Unbilled</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of grIrPreview.rows">
+            <td class="fw-600">{{ r.purchaseOrderCode }}</td>
+            <td>{{ r.supplierName }}</td>
+            <td class="num">{{ formatMoney(r.receivedValue) }}</td>
+            <td class="num">{{ formatMoney(r.billedValue) }}</td>
+            <td class="num fw-600">{{ formatMoney(r.unbilledValue) }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="4" class="ta-right">Total to catch up</td><td class="num total">{{ formatMoney(grIrPreview.totalUnbilledValue) }}</td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="alert alert-error" *ngIf="grIrError"><i class="pi pi-exclamation-circle"></i>{{ grIrError }}</div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="grIrVisible = false" [disabled]="grIrRunning" />
+      <p-button label="Post Catch-Up Voucher" icon="pi pi-bolt" [loading]="grIrRunning" (click)="runGrIr()" />
     </div>
   </div>
 </p-dialog>

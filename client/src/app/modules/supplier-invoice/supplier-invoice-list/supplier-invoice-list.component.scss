@@ -251,3 +251,11 @@
   background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: .55rem .7rem;
   span { font-size: .78rem; color: #86198f; line-height: 1.45; }
 }
+
+/* Phase A2 — service (expense-account) lines */
+.svc-chip {
+  display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .04em;
+  background: #eef2ff; color: #4338ca; border-radius: 4px; padding: .05rem .3rem; margin-right: .4rem;
+}
+:host ::ng-deep .svc-select { width: 100%; min-width: 160px; }
+.opt-code { font-family: monospace; font-size: .78rem; color: #4338ca; margin-right: .35rem; }

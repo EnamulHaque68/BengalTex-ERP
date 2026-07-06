@@ -82,16 +82,26 @@ public class SupplierInvoice : BaseTransactionalEntity
 }
 
 /// <summary>
-/// A single raw-material line on a <see cref="SupplierInvoice"/>. Editable while the
-/// parent is Draft; locked once Approved.
+/// A single line on a <see cref="SupplierInvoice"/>. Editable while the parent is Draft;
+/// locked once Approved.
+///
+/// A line is EITHER a material line (<see cref="RawMaterialId"/> set → clears GR/IR against the
+/// receipt) OR a service line (<see cref="AccountId"/> set → debits the picked expense account,
+/// e.g. C&amp;F, freight, repairs — never touching stock or inventory). Exactly one of the two is
+/// non-null, enforced by a DB check constraint. Existing pre-A2 rows are all material lines.
 /// </summary>
 public class SupplierInvoiceLine : BaseTransactionalEntity
 {
     public long SupplierInvoiceId { get; set; }
     public SupplierInvoice SupplierInvoice { get; set; } = null!;
 
-    public int RawMaterialId { get; set; }
-    public RawMaterial RawMaterial { get; set; } = null!;
+    /// <summary>Material line — the raw material billed (null on a service line).</summary>
+    public int? RawMaterialId { get; set; }
+    public RawMaterial? RawMaterial { get; set; }
+
+    /// <summary>Service line — the expense account to debit (null on a material line). Phase A2.</summary>
+    public int? AccountId { get; set; }
+    public Account? Account { get; set; }
 
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
@@ -99,6 +109,9 @@ public class SupplierInvoiceLine : BaseTransactionalEntity
     public int SortOrder { get; set; }
 
     public string? LineNotes { get; set; }
+
+    /// <summary>Convenience — true when this is a service (expense-account) line.</summary>
+    public bool IsService => AccountId.HasValue;
 }
 
 public enum SupplierInvoiceStatus

@@ -29,7 +29,16 @@ public record JournalEntryLineDto(
     decimal Debit,
     decimal Credit,
     string? LineNarration,
-    int SortOrder);
+    int SortOrder,
+    // Phase A3 — dimensions (for display / drill)
+    int? CostCenterId = null,
+    string? CostCenterName = null,
+    int? BuyerId = null,
+    string? BuyerName = null,
+    int? StyleId = null,
+    string? StyleName = null,
+    long? SalesOrderId = null,
+    string? SalesOrderCode = null);
 
 public record JournalEntryListItemDto(
     long Id,

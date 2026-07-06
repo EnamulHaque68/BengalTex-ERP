@@ -33,6 +33,7 @@ internal sealed class GetSalesOrderByIdQueryHandler
             .Include(s => s.Customer)
             .Include(s => s.Currency)
             .Include(s => s.Lines).ThenInclude(l => l.Product).ThenInclude(p => p.UnitOfMeasure)
+            .Include(s => s.Lines).ThenInclude(l => l.Style)
             .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
         if (so is null) return ApiResponse<SalesOrderDto>.Fail("Sales order not found.");
@@ -65,7 +66,8 @@ internal sealed class GetSalesOrderByIdQueryHandler
                     l.Product.UnitOfMeasure.Code,
                     l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
                     l.SortOrder, l.LineNotes,
-                    agg.Produced, agg.Allocated, l.InvoicedQuantity);
+                    agg.Produced, agg.Allocated, l.InvoicedQuantity,
+                    l.StyleId, l.Style != null ? l.Style.StyleName : null);   // Phase A3
             })
             .ToList();
 

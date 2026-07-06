@@ -10,7 +10,7 @@ export const SINV_STATUSES: { label: string; value: string }[] = [
 
 export interface SupplierInvoiceLineDto {
   id: number;
-  rawMaterialId: number;
+  rawMaterialId: number | null;
   rawMaterialCode: string;
   rawMaterialName: string;
   unitOfMeasureCode: string;
@@ -19,6 +19,11 @@ export interface SupplierInvoiceLineDto {
   lineTotal: number;
   sortOrder: number;
   lineNotes: string | null;
+  // Phase A2 — service line (mutually exclusive with the raw material)
+  accountId: number | null;
+  accountCode: string | null;
+  accountName: string | null;
+  isService: boolean;
 }
 
 export interface SupplierInvoiceDto {
@@ -74,10 +79,11 @@ export interface SupplierInvoiceListItemDto {
 }
 
 export interface SupplierInvoiceLineInput {
-  rawMaterialId: number;
+  rawMaterialId: number | null;
   quantity: number;
   unitPrice: number;
   lineNotes: string | null;
+  accountId?: number | null;   // Phase A2 — service line
 }
 
 export interface CreateSupplierInvoiceRequest {

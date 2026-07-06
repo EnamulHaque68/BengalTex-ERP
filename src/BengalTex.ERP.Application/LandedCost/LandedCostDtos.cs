@@ -17,8 +17,14 @@ public sealed record LandedCostVoucherDto(
     DateTimeOffset? PostedAt, string? PostedBy, string? Notes,
     decimal TotalCharges,
     IReadOnlyList<LandedCostChargeDto> Charges,
-    IReadOnlyList<LandedCostAllocationLineDto> Allocation);
+    IReadOnlyList<LandedCostAllocationLineDto> Allocation,
+    // Phase A2 — on-credit + settlement
+    bool IsOnCredit = false, int? SupplierId = null, string? AgentSupplierName = null,
+    DateOnly? SettledDate = null, string? SettledBy = null, string? SettlementMethod = null,
+    bool IsSettled = false);
 
 public sealed record LandedCostVoucherListItemDto(
     long Id, string Code, DateOnly VoucherDate, string GoodsReceiptCode, string SupplierName,
-    string AllocationBasis, string Status, int ChargeCount, decimal TotalCharges);
+    string AllocationBasis, string Status, int ChargeCount, decimal TotalCharges,
+    // Phase A2
+    bool IsOnCredit = false, bool IsSettled = false);

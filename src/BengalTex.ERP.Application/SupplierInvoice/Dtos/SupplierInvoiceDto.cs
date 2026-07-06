@@ -30,7 +30,7 @@ public record SupplierInvoiceDto(
 
 public record SupplierInvoiceLineDto(
     long Id,
-    int RawMaterialId,
+    int? RawMaterialId,
     string RawMaterialCode,
     string RawMaterialName,
     string UnitOfMeasureCode,
@@ -38,7 +38,12 @@ public record SupplierInvoiceLineDto(
     decimal UnitPrice,
     decimal LineTotal,
     int SortOrder,
-    string? LineNotes);
+    string? LineNotes,
+    // Phase A2 — service line (mutually exclusive with the raw material)
+    int? AccountId = null,
+    string? AccountCode = null,
+    string? AccountName = null,
+    bool IsService = false);
 
 public record SupplierInvoiceListItemDto(
     long Id,

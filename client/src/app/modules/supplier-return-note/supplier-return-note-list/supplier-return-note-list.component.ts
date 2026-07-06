@@ -93,6 +93,7 @@ export class SupplierReturnNoteListComponent implements OnInit {
       returnDate: [this.todayIso(), Validators.required],
       vehicleNumber: ['', Validators.maxLength(50)],
       reason: ['', Validators.maxLength(500)],
+      clearsGrIr: [false],   // Phase A2 — goods returned before billing
       notes: ['', Validators.maxLength(2000)],
       lines: this.fb.array([])
     });
@@ -231,6 +232,7 @@ export class SupplierReturnNoteListComponent implements OnInit {
       returnDate: this.todayIso(),
       vehicleNumber: '',
       reason: '',
+      clearsGrIr: false,
       notes: ''
     });
     this.dialogVisible = true;
@@ -309,6 +311,7 @@ export class SupplierReturnNoteListComponent implements OnInit {
         returnDate: v.returnDate,
         vehicleNumber: (v.vehicleNumber as string)?.trim() || null,
         reason: (v.reason as string)?.trim() || null,
+        clearsGrIr: !!v.clearsGrIr,   // Phase A2
         notes: (v.notes as string)?.trim() || null,
         lines
       }).subscribe({

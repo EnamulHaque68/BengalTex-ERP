@@ -47,6 +47,8 @@ export interface ExpenseDto {
   status: string;
   approvedAt: string | null;
   approvedBy: string | null;
+  costCenterId: number | null;      // Phase A3
+  costCenterName: string | null;
 }
 
 export interface ExpenseListItemDto {
@@ -69,6 +71,7 @@ export interface SaveExpenseRequest {
   payee: string | null;
   referenceNumber: string | null;
   description: string | null;
+  costCenterId?: number | null;   // Phase A3
 }
 
 export interface ExpenseSummaryRowDto {

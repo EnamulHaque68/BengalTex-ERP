@@ -11,4 +11,5 @@ public record AccountDto(
     string? ParentAccountName,
     bool IsSystem,
     bool IsActive,
-    string? Description);
+    string? Description,
+    bool RequiresCostCenter = false);   // Phase A3 — postings to this account must carry a cost center

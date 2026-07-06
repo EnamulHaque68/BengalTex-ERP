@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../../services/expense.service';
 import { AuthService } from '../../../services/auth.service';
 import { PagedQueryParameters } from '../../../models/user.models';
+import { AccountingService, CostCenterDto } from '../../../services/accounting.service';
 import {
   EXPENSE_PAYMENT_METHODS, EXPENSE_STATUSES,
   ExpenseCategoryDto, ExpenseListItemDto
@@ -30,6 +31,7 @@ export class ExpenseListComponent implements OnInit {
   readonly methods = EXPENSE_PAYMENT_METHODS;
   readonly statuses = EXPENSE_STATUSES;
   categories: ExpenseCategoryDto[] = [];
+  costCenters: CostCenterDto[] = [];   // Phase A3
 
   canCreate = false;
   canApprove = false;
@@ -49,6 +51,7 @@ export class ExpenseListComponent implements OnInit {
   constructor(
     private svc: ExpenseService,
     private auth: AuthService,
+    private accounting: AccountingService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
@@ -64,9 +67,13 @@ export class ExpenseListComponent implements OnInit {
       paymentMethod: ['Cash', Validators.required],
       payee: ['', Validators.maxLength(200)],
       referenceNumber: ['', Validators.maxLength(100)],
-      description: ['', Validators.maxLength(1000)]
+      description: ['', Validators.maxLength(1000)],
+      costCenterId: [null as number | null]   // Phase A3
     });
     this.loadCategories();
+    this.accounting.getCostCenters(false).subscribe({
+      next: (res) => this.zone.run(() => { if (res.success && res.data) this.costCenters = res.data; this.cdr.detectChanges(); })
+    });
     this.load();
   }
 
@@ -96,7 +103,7 @@ export class ExpenseListComponent implements OnInit {
 
   openCreate(): void {
     this.dialogMode = 'create'; this.editingId = null; this.dialogError = '';
-    this.form.reset({ expenseDate: this.todayIso(), expenseCategoryId: null, amount: 0, paymentMethod: 'Cash', payee: '', referenceNumber: '', description: '' });
+    this.form.reset({ expenseDate: this.todayIso(), expenseCategoryId: null, amount: 0, paymentMethod: 'Cash', payee: '', referenceNumber: '', description: '', costCenterId: null });
     this.form.enable();
     this.dialogVisible = true;
   }
@@ -110,7 +117,7 @@ export class ExpenseListComponent implements OnInit {
           this.dialogMode = x.status === 'Draft' ? 'edit' : 'view';
           this.form.patchValue({
             expenseDate: x.expenseDate, expenseCategoryId: x.expenseCategoryId, amount: x.amount,
-            paymentMethod: x.paymentMethod, payee: x.payee ?? '', referenceNumber: x.referenceNumber ?? '', description: x.description ?? ''
+            paymentMethod: x.paymentMethod, payee: x.payee ?? '', referenceNumber: x.referenceNumber ?? '', description: x.description ?? '', costCenterId: x.costCenterId ?? null
           });
           if (this.dialogMode === 'view') this.form.disable();
           this.cdr.detectChanges();
@@ -125,7 +132,7 @@ export class ExpenseListComponent implements OnInit {
     const v = this.form.getRawValue();
     const payload = {
       expenseDate: v.expenseDate, expenseCategoryId: v.expenseCategoryId, amount: Number(v.amount) || 0,
-      paymentMethod: v.paymentMethod, payee: (v.payee as string)?.trim() || null,
+      paymentMethod: v.paymentMethod, costCenterId: v.costCenterId ?? null, payee: (v.payee as string)?.trim() || null,
       referenceNumber: (v.referenceNumber as string)?.trim() || null, description: (v.description as string)?.trim() || null
     };
     const done = (res: any) => this.zone.run(() => { this.dialogSaving = false; if (res.success) { this.dialogVisible = false; this.load(); } else this.dialogError = res.message || 'Save failed.'; this.cdr.detectChanges(); });

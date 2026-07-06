@@ -70,7 +70,7 @@ public sealed class JournalPostingService : IJournalPostingService
         IReadOnlyList<JournalPostingLine> lines, CancellationToken ct = default)
     {
         var effective = lines
-            .Select(l => new JournalPostingLine(l.AccountCode, Math.Round(l.Debit, 2, MidpointRounding.AwayFromZero), Math.Round(l.Credit, 2, MidpointRounding.AwayFromZero)))
+            .Select(l => new JournalPostingLine(l.AccountCode, Math.Round(l.Debit, 2, MidpointRounding.AwayFromZero), Math.Round(l.Credit, 2, MidpointRounding.AwayFromZero), l.Dims))
             .Where(l => l.Debit != 0m || l.Credit != 0m)
             .ToList();
         if (effective.Count == 0) return;   // nothing to post (e.g. zero-value document)
@@ -101,6 +101,18 @@ public sealed class JournalPostingService : IJournalPostingService
             throw new InvalidOperationException(
                 $"Ledger account(s) {string.Join(", ", missing)} not found — chart of accounts not seeded?");
 
+        // Phase A3 — enforce cost center on accounts flagged RequiresCostCenter.
+        foreach (var l in effective)
+        {
+            var acc = accounts[l.AccountCode];
+            if (acc.RequiresCostCenter && l.Dims?.CostCenterId is null)
+                throw new FluentValidation.ValidationException(new[]
+                {
+                    new FluentValidation.Results.ValidationFailure("CostCenter",
+                        $"Account {acc.Code} — {acc.Name} requires a cost center.")
+                });
+        }
+
         var now = _clock.UtcNow;
         var entry = new JournalEntry
         {
@@ -120,7 +132,13 @@ public sealed class JournalPostingService : IJournalPostingService
                 AccountId = accounts[l.AccountCode].Id,
                 Debit = l.Debit,
                 Credit = l.Credit,
-                SortOrder = i
+                SortOrder = i,
+                // Phase A3 — stamp dimensions
+                CostCenterId = l.Dims?.CostCenterId,
+                BuyerId = l.Dims?.BuyerId,
+                StyleId = l.Dims?.StyleId,
+                SalesOrderId = l.Dims?.SalesOrderId,
+                ProductionOrderId = l.Dims?.ProductionOrderId
             }).ToList()
         };
 

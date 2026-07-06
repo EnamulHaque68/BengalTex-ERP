@@ -15,7 +15,8 @@ public sealed record JournalEntryLineInput(
     int AccountId,
     decimal Debit,
     decimal Credit,
-    string? LineNarration);
+    string? LineNarration,
+    int? CostCenterId = null);   // Phase A3 — optional cost-center dimension
 
 public sealed record CreateJournalEntryCommand(
     DateOnly EntryDate,
@@ -102,6 +103,14 @@ internal sealed class CreateJournalEntryCommandHandler
             if (!acc.IsActive) return ApiResponse<JournalEntryDto>.Fail($"'{acc.Name}' is inactive.");
         }
 
+        // Phase A3 — enforce cost center on flagged accounts.
+        foreach (var l in cmd.Lines)
+        {
+            var acc = accounts.First(a => a.Id == l.AccountId);
+            if (acc.RequiresCostCenter && l.CostCenterId is null)
+                return ApiResponse<JournalEntryDto>.Fail($"Account {acc.Code} — {acc.Name} requires a cost center.");
+        }
+
         var code = await _numbering.NextAsync("JV", null, cancellationToken);
 
         var entity = new JournalEntry
@@ -117,6 +126,7 @@ internal sealed class CreateJournalEntryCommandHandler
                 Debit = l.Debit,
                 Credit = l.Credit,
                 LineNarration = string.IsNullOrWhiteSpace(l.LineNarration) ? null : l.LineNarration.Trim(),
+                CostCenterId = l.CostCenterId,   // Phase A3
                 SortOrder = i
             }).ToList()
         };

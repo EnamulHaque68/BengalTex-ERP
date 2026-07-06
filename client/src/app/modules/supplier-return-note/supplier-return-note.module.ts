@@ -12,6 +12,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { SupplierReturnNoteListComponent } from './supplier-return-note-list/supplier-return-note-list.component';
 
@@ -24,7 +25,7 @@ const routes: Routes = [{ path: '', component: SupplierReturnNoteListComponent }
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
     InputTextModule, InputNumberModule, TextareaModule, SelectModule,
-    TooltipModule
+    TooltipModule, CheckboxModule
   ]
 })
 export class SupplierReturnNoteModule {}

@@ -235,6 +235,7 @@
         <thead>
           <tr>
             <th class="rm-col">Product</th>
+            <th class="rm-col">Style <small>(A3)</small></th>
             <th class="unit-col">Unit</th>
             <th class="num-col">Quantity</th>
             <th class="num-col">Unit Price</th>
@@ -255,6 +256,11 @@
                           appendTo="body" styleClass="w-full"
                           (onChange)="onLineProductChange(lineCtrl, $event)" />
             </td>
+            <td>
+              <p-select formControlName="styleId" [options]="styles" optionValue="id" optionLabel="styleName"
+                        [filter]="true" filterBy="code,styleName" [showClear]="true" placeholder="(none)"
+                        appendTo="body" styleClass="w-full" />
+            </td>
             <td class="unit-cell">{{ lineUomCode(lineCtrl) }}</td>
             <td>
               <p-inputNumber formControlName="quantity" [min]="0"
@@ -271,7 +277,7 @@
             </td>
           </tr>
           <tr *ngIf="lines.length === 0">
-            <td [attr.colspan]="dialogMode !== 'view' ? 6 : 5" class="empty-lines">
+            <td [attr.colspan]="dialogMode !== 'view' ? 7 : 6" class="empty-lines">
               No lines yet. Click "Add Line" below.
             </td>
           </tr>

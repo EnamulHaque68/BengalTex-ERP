@@ -46,6 +46,7 @@ export class CustomerInvoiceListComponent implements OnInit {
   customers: CustomerListItemDto[] = [];
   invoiceableSos: InvoiceableSoOption[] = [];
   selectedSo: SalesOrderDto | null = null;
+  dialogCurrencyCode = 'BDT';   // document currency for the open dialog (inherited from SO)
 
   dialogVisible = false;
   dialogMode: 'create' | 'edit' | 'view' = 'create';
@@ -503,6 +504,7 @@ export class CustomerInvoiceListComponent implements OnInit {
     if (!soId) {
       this.lines.clear();
       this.selectedSo = null;
+      this.dialogCurrencyCode = 'BDT';
       return;
     }
     this.soService.getById(soId).subscribe({
@@ -510,6 +512,7 @@ export class CustomerInvoiceListComponent implements OnInit {
         this.zone.run(() => {
           if (res.success && res.data) {
             this.selectedSo = res.data;
+            this.dialogCurrencyCode = res.data.currencyCode || 'BDT';   // invoice inherits the SO's currency
             this.buildLinesFromSo(res.data);
             this.cdr.detectChanges();
           }
@@ -523,6 +526,7 @@ export class CustomerInvoiceListComponent implements OnInit {
     this.editingId = null;
     this.dialogError = '';
     this.selectedSo = null;
+    this.dialogCurrencyCode = 'BDT';
     this.form.enable();
     this.lines.clear();
     this.form.reset({
@@ -551,6 +555,7 @@ export class CustomerInvoiceListComponent implements OnInit {
           if (res.success && res.data) {
             const c = res.data;
             this.dialogMode = c.status === 'Draft' ? 'edit' : 'view';
+            this.dialogCurrencyCode = c.currencyCode || 'BDT';   // show the invoice's own currency
             this.form.patchValue({
               salesOrderId: c.salesOrderId,
               vatRatePercent: Math.round((c.vatRate || 0) * 10000) / 100,

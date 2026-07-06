@@ -32,13 +32,19 @@ public sealed class UpdateSupplierInvoiceCommandValidator : AbstractValidator<Up
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A supplier invoice must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
         {
-            line.RuleFor(l => l.RawMaterialId).GreaterThan(0);
+            line.RuleFor(l => l)
+                .Must(l => (l.RawMaterialId.HasValue) ^ (l.AccountId.HasValue))
+                .WithMessage("Each line must be either a raw material or a service (expense account), not both or neither.");
             line.RuleFor(l => l.Quantity).GreaterThan(0);
             line.RuleFor(l => l.UnitPrice).GreaterThanOrEqualTo(0);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.RawMaterialId).Distinct().Count() == lines.Count)
+            .Must(lines =>
+            {
+                var rms = lines.Where(l => l.RawMaterialId.HasValue).Select(l => l.RawMaterialId!.Value).ToList();
+                return rms.Distinct().Count() == rms.Count;
+            })
             .WithMessage("The same raw material appears more than once in the invoice lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
@@ -49,17 +55,20 @@ internal sealed class UpdateSupplierInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.SupplierInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.RawMaterial> _rawMaterialRepo;
+    private readonly IRepository<Domain.Entities.Account> _accountRepo;
     private readonly IUnitOfWork _uow;
     private readonly IMediator _mediator;
 
     public UpdateSupplierInvoiceCommandHandler(
         IRepository<Domain.Entities.SupplierInvoice, long> repo,
         IRepository<Domain.Entities.RawMaterial> rawMaterialRepo,
+        IRepository<Domain.Entities.Account> accountRepo,
         IUnitOfWork uow,
         IMediator mediator)
     {
         _repo = repo;
         _rawMaterialRepo = rawMaterialRepo;
+        _accountRepo = accountRepo;
         _uow = uow;
         _mediator = mediator;
     }
@@ -75,11 +84,31 @@ internal sealed class UpdateSupplierInvoiceCommandHandler
         if (inv.Status != Domain.Entities.SupplierInvoiceStatus.Draft)
             return ApiResponse<SupplierInvoiceDto>.Fail("Only draft supplier invoices can be edited.");
 
-        var rawMaterialIds = cmd.Lines.Select(l => l.RawMaterialId).Distinct().ToList();
-        var existingCount = await _rawMaterialRepo.Query()
-            .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
-        if (existingCount != rawMaterialIds.Count)
-            return ApiResponse<SupplierInvoiceDto>.Fail("One or more raw materials not found.");
+        var rawMaterialIds = cmd.Lines.Where(l => l.RawMaterialId.HasValue)
+            .Select(l => l.RawMaterialId!.Value).Distinct().ToList();
+        if (rawMaterialIds.Count > 0)
+        {
+            var existingCount = await _rawMaterialRepo.Query()
+                .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
+            if (existingCount != rawMaterialIds.Count)
+                return ApiResponse<SupplierInvoiceDto>.Fail("One or more raw materials not found.");
+        }
+
+        // Phase A2 — validate service-line expense accounts.
+        var accountIds = cmd.Lines.Where(l => l.AccountId.HasValue)
+            .Select(l => l.AccountId!.Value).Distinct().ToList();
+        if (accountIds.Count > 0)
+        {
+            var accounts = await _accountRepo.Query()
+                .Where(a => accountIds.Contains(a.Id)).ToListAsync(cancellationToken);
+            foreach (var id in accountIds)
+            {
+                var acc = accounts.FirstOrDefault(a => a.Id == id);
+                if (acc is null) return ApiResponse<SupplierInvoiceDto>.Fail($"Service account {id} not found.");
+                if (acc.IsGroup) return ApiResponse<SupplierInvoiceDto>.Fail($"'{acc.Name}' is a group account — pick a postable account.");
+                if (!acc.IsActive) return ApiResponse<SupplierInvoiceDto>.Fail($"'{acc.Name}' is inactive.");
+            }
+        }
 
         inv.SupplierInvoiceNumber = string.IsNullOrWhiteSpace(cmd.SupplierInvoiceNumber)
             ? null : cmd.SupplierInvoiceNumber.Trim();
@@ -95,6 +124,7 @@ internal sealed class UpdateSupplierInvoiceCommandHandler
             inv.Lines.Add(new Domain.Entities.SupplierInvoiceLine
             {
                 RawMaterialId = line.RawMaterialId,
+                AccountId = line.AccountId,     // Phase A2 — service line
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
                 SortOrder = sortOrder++,

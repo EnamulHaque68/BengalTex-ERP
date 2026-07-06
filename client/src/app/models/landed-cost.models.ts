@@ -67,6 +67,14 @@ export interface LandedCostVoucherDto {
   totalCharges: number;
   charges: LandedCostChargeDto[];
   allocation: LandedCostAllocationLineDto[];
+  // Phase A2 — on-credit + settlement
+  isOnCredit: boolean;
+  supplierId: number | null;
+  agentSupplierName: string | null;
+  settledDate: string | null;
+  settledBy: string | null;
+  settlementMethod: string | null;
+  isSettled: boolean;
 }
 
 export interface LandedCostVoucherListItemDto {
@@ -79,6 +87,8 @@ export interface LandedCostVoucherListItemDto {
   status: string;
   chargeCount: number;
   totalCharges: number;
+  isOnCredit: boolean;    // Phase A2
+  isSettled: boolean;
 }
 
 export interface SaveLandedCostRequest {
@@ -88,4 +98,6 @@ export interface SaveLandedCostRequest {
   paymentMethod: string;
   notes: string | null;
   charges: LandedCostChargeInput[];
+  isOnCredit?: boolean;   // Phase A2
+  supplierId?: number | null;
 }

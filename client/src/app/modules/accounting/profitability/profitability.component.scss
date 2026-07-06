@@ -1,0 +1,37 @@
+.page-shell { padding: 1.25rem 1.5rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.page-title { font-size: 1.4rem; font-weight: 700; margin: 0; color: #111827; }
+.page-subtitle { margin: .15rem 0 0; color: #6b7280; font-size: .85rem; }
+.header-actions { display: flex; gap: .6rem; align-items: center; }
+.dt { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: #6b7280; input { width: 140px; } }
+
+.tabs { display: flex; gap: .3rem; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+.tab {
+  border: none; background: none; padding: .55rem .9rem; font-size: .85rem; font-weight: 600; color: #6b7280;
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  &:hover { color: #374151; }
+  &.on { color: #0d6e63; border-bottom-color: #0d6e63; }
+}
+
+.totals { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.t-tile {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .7rem 1.1rem;
+  display: flex; flex-direction: column; gap: .15rem; min-width: 150px;
+  .l { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
+  .v { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #111827; }
+  &.profit { background: #ecfdf5; border-color: #a7f3d0; .v { color: #065f46; } }
+}
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.num.neg { color: #b91c1c; }
+.fw-600 { font-weight: 600; }
+.margin {
+  font-weight: 700; font-size: .8rem; padding: .1rem .5rem; border-radius: 999px;
+  &.m-good { background: #d1fae5; color: #065f46; }
+  &.m-ok { background: #e0f2fe; color: #075985; }
+  &.m-low { background: #fef3c7; color: #92400e; }
+  &.m-loss { background: #fee2e2; color: #b91c1c; }
+}
+.empty-row { text-align: center; color: #9ca3af; padding: 2rem;
+  i { display: block; font-size: 1.8rem; margin-bottom: .5rem; color: #c7d2fe; }
+  span { display: block; max-width: 60ch; margin-inline: auto; } }

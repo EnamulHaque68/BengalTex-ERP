@@ -14,7 +14,8 @@ public sealed record SalesOrderLineInput(
     int ProductId,
     decimal Quantity,
     decimal UnitPrice,
-    string? LineNotes);
+    string? LineNotes,
+    int? StyleId = null);   // Phase A3 — optional buyer style/design (drives the style dimension)
 
 public sealed record CreateSalesOrderCommand(
     int CustomerId,
@@ -117,6 +118,7 @@ internal sealed class CreateSalesOrderCommandHandler
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.SalesOrderLine
             {
                 ProductId = l.ProductId,
+                StyleId = l.StyleId,   // Phase A3
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 SortOrder = i,

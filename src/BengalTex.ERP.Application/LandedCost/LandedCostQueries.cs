@@ -77,7 +77,8 @@ internal sealed class GetLandedCostVouchersQueryHandler
                 v.Id, v.Code, v.VoucherDate, v.GoodsReceiptNote.Code,
                 v.GoodsReceiptNote.PurchaseOrder.Supplier.Name,
                 v.AllocationBasis.ToString(), v.Status.ToString(),
-                v.Charges.Count, v.Charges.Sum(c => c.Amount)))
+                v.Charges.Count, v.Charges.Sum(c => c.Amount),
+                v.IsOnCredit, v.SettledAt != null))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<LandedCostVoucherListItemDto>>.Ok(
@@ -97,6 +98,7 @@ internal sealed class GetLandedCostVoucherByIdQueryHandler
     {
         var v = await _repo.Query().AsNoTracking()
             .Include(x => x.Charges)
+            .Include(x => x.Supplier)
             .Include(x => x.GoodsReceiptNote).ThenInclude(g => g.PurchaseOrder).ThenInclude(p => p.Supplier)
             .Include(x => x.GoodsReceiptNote).ThenInclude(g => g.Lines).ThenInclude(l => l.PurchaseOrderLine).ThenInclude(pl => pl.RawMaterial)
             .FirstOrDefaultAsync(x => x.Id == req.Id, ct);
@@ -123,6 +125,9 @@ internal sealed class GetLandedCostVoucherByIdQueryHandler
         return ApiResponse<LandedCostVoucherDto>.Ok(new LandedCostVoucherDto(
             v.Id, v.Code, v.VoucherDate, grn.Id, grn.Code, grn.PurchaseOrder.Code, grn.PurchaseOrder.Supplier.Name,
             v.AllocationBasis.ToString(), v.PaymentMethod.ToString(), v.Status.ToString(),
-            v.PostedAt, v.PostedBy, v.Notes, total, charges, allocation));
+            v.PostedAt, v.PostedBy, v.Notes, total, charges, allocation,
+            v.IsOnCredit, v.SupplierId, v.Supplier != null ? v.Supplier.Name : null,
+            v.SettledDate, v.SettledBy, v.SettlementMethod != null ? v.SettlementMethod.ToString() : null,
+            v.SettledAt != null));
     }
 }

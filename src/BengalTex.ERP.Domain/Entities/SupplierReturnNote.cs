@@ -37,6 +37,14 @@ public class SupplierReturnNote : BaseTransactionalEntity
 
     public SupplierReturnNoteStatus Status { get; set; } = SupplierReturnNoteStatus.Draft;
 
+    /// <summary>
+    /// Phase A2 — set when the returned goods were received but NOT yet billed. Posting then
+    /// credits the return against GR/IR Clearing (2150) — directly reversing the GRN's receipt
+    /// liability — instead of Purchase Returns (5150), which is for billed goods. Keeps the
+    /// GR/IR balance honest when goods go back before the supplier's bill arrives.
+    /// </summary>
+    public bool ClearsGrIr { get; set; }
+
     /// <summary>Vehicle / courier reference dispatching the return.</summary>
     public string? VehicleNumber { get; set; }
 

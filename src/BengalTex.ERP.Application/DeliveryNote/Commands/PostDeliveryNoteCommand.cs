@@ -112,13 +112,23 @@ internal sealed class PostDeliveryNoteCommandHandler
                     (reserved > 0m ? $", of which {reserved:0.####} is reserved/QC-held" : "") + ").");
         }
 
-        // Pass 2 — apply: increment SO lines + post movements; accumulate COGS at WAC
+        // Pass 2 — apply: increment SO lines + post movements; build per-line COGS legs (Phase A3).
+        // COGS is split per line so each Dr COGS carries its buyer/style/order dimensions; the
+        // balancing Cr FG stays aggregate (a balance-sheet account — no per-style analysis needed).
+        var cogsLegs = new List<JournalPostingLine>();
         var totalCogs = 0m;
         foreach (var dnLine in dn.Lines)
         {
             var soLine = so.Lines.First(sl => sl.Id == dnLine.SalesOrderLineId);
             soLine.DispatchedQuantity += dnLine.DispatchedQuantity;
-            totalCogs += dnLine.DispatchedQuantity * soLine.Product.WeightedAverageCost;
+
+            var lineCogs = Math.Round(dnLine.DispatchedQuantity * soLine.Product.WeightedAverageCost, 2, MidpointRounding.AwayFromZero);
+            if (lineCogs > 0m)
+            {
+                cogsLegs.Add(new JournalPostingLine(LedgerAccounts.CostOfGoodsSold, lineCogs, 0m,
+                    new Dimensions(BuyerId: so.CustomerId, StyleId: soLine.StyleId, SalesOrderId: so.Id)));
+                totalCogs += lineCogs;
+            }
 
             await _stock.PostProductMovementAsync(
                 productId: soLine.ProductId,
@@ -136,14 +146,11 @@ internal sealed class PostDeliveryNoteCommandHandler
         // Auto-journal — recognize cost of goods at dispatch (zero-cost FG → no entry).
         if (totalCogs > 0m)
         {
+            cogsLegs.Add(new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, totalCogs));
             await _journal.PostAsync(
                 dn.DispatchDate, $"COGS on dispatch {dn.Code} (SO {so.Code})",
                 "DeliveryNote", dn.Id, dn.Code,
-                new[]
-                {
-                    new JournalPostingLine(LedgerAccounts.CostOfGoodsSold, totalCogs, 0m),
-                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, totalCogs),
-                }, cancellationToken);
+                cogsLegs, cancellationToken);
         }
 
         // Recompute SO status

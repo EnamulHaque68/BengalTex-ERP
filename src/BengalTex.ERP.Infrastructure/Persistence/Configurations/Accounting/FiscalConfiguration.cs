@@ -31,6 +31,33 @@ public class FinancialYearConfiguration : IEntityTypeConfiguration<FinancialYear
     }
 }
 
+public class CostCenterConfiguration : IEntityTypeConfiguration<CostCenter>
+{
+    public void Configure(EntityTypeBuilder<CostCenter> builder)
+    {
+        builder.ToTable("CostCenters");
+
+        builder.Property(c => c.Code).IsRequired().HasMaxLength(30);
+        builder.Property(c => c.Name).IsRequired().HasMaxLength(150);
+        builder.Property(c => c.Description).HasMaxLength(500);
+        builder.Property(c => c.Kind).HasConversion<string>().HasMaxLength(20);
+
+        builder.HasIndex(c => c.Code).IsUnique();
+        builder.HasIndex(c => c.Kind);
+        builder.HasIndex(c => c.ParentCostCenterId);
+
+        builder.HasOne(c => c.ParentCostCenter)
+            .WithMany(c => c.Children)
+            .HasForeignKey(c => c.ParentCostCenterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(c => c.Department).WithMany().HasForeignKey(c => c.DepartmentId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(c => c.Factory).WithMany().HasForeignKey(c => c.FactoryId).OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(c => c.RowVersion).IsRowVersion();
+    }
+}
+
 public class AccountingPeriodConfiguration : IEntityTypeConfiguration<AccountingPeriod>
 {
     public void Configure(EntityTypeBuilder<AccountingPeriod> builder)

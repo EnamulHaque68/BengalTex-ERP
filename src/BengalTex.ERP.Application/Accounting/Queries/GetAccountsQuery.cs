@@ -45,7 +45,7 @@ internal sealed class GetAccountsQueryHandler
                 a.Id, a.Code, a.Name, a.AccountType, a.IsGroup,
                 a.ParentAccountId,
                 ParentName = a.ParentAccount != null ? a.ParentAccount.Name : null,
-                a.IsSystem, a.IsActive, a.Description
+                a.IsSystem, a.IsActive, a.Description, a.RequiresCostCenter
             })
             .ToListAsync(cancellationToken);
 
@@ -53,7 +53,7 @@ internal sealed class GetAccountsQueryHandler
             a.Id, a.Code, a.Name, a.AccountType.ToString(),
             AccountingMapping.NormalBalanceOf(a.AccountType),
             a.IsGroup, a.ParentAccountId, a.ParentName,
-            a.IsSystem, a.IsActive, a.Description)).ToList();
+            a.IsSystem, a.IsActive, a.Description, a.RequiresCostCenter)).ToList();
 
         return ApiResponse<IReadOnlyList<AccountDto>>.Ok(items);
     }
@@ -78,7 +78,7 @@ internal sealed class GetAccountByIdQueryHandler
                 x.Id, x.Code, x.Name, x.AccountType, x.IsGroup,
                 x.ParentAccountId,
                 ParentName = x.ParentAccount != null ? x.ParentAccount.Name : null,
-                x.IsSystem, x.IsActive, x.Description
+                x.IsSystem, x.IsActive, x.Description, x.RequiresCostCenter
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -88,6 +88,6 @@ internal sealed class GetAccountByIdQueryHandler
             a.Id, a.Code, a.Name, a.AccountType.ToString(),
             AccountingMapping.NormalBalanceOf(a.AccountType),
             a.IsGroup, a.ParentAccountId, a.ParentName,
-            a.IsSystem, a.IsActive, a.Description));
+            a.IsSystem, a.IsActive, a.Description, a.RequiresCostCenter));
     }
 }

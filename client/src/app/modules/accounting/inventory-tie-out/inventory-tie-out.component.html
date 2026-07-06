@@ -1,0 +1,71 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Inventory &harr; GL Tie-Out</h2>
+      <p class="page-subtitle">Perpetual stock valuation vs the general-ledger inventory accounts &mdash; and the open GR/IR schedule</p>
+    </div>
+    <div class="header-actions">
+      <label class="asof">As of <input pInputText type="date" [(ngModel)]="asOfDate" (change)="load()" /></label>
+    </div>
+  </div>
+
+  <div *ngIf="data">
+    <div class="verdict" [class.ok]="allMatch" [class.off]="!allMatch">
+      <i class="pi" [class.pi-check-circle]="allMatch" [class.pi-exclamation-triangle]="!allMatch"></i>
+      {{ allMatch ? 'Books tie to stock — all inventory accounts reconcile.' : 'Variances found — investigate the highlighted rows below.' }}
+    </div>
+
+    <p-card styleClass="tbl-card">
+      <p-table [value]="data.rows" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Inventory Account</th>
+            <th class="num">Stock Value (qty × WAC)</th>
+            <th class="num">GL Balance</th>
+            <th class="num">Variance</th>
+            <th style="width:90px">Status</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr [class.variance-row]="!r.matches">
+            <td class="fw-600">{{ r.label }} <span class="code">{{ r.accountCode }}</span></td>
+            <td class="num">{{ formatMoney(r.stockValue) }}</td>
+            <td class="num">{{ formatMoney(r.glBalance) }}</td>
+            <td class="num" [class.bad]="!r.matches">{{ formatMoney(r.variance) }}</td>
+            <td>
+              <span class="pill" [class.ok]="r.matches" [class.off]="!r.matches">
+                <i class="pi" [class.pi-check]="r.matches" [class.pi-times]="!r.matches"></i>
+                {{ r.matches ? 'Tied' : 'Off' }}
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+      <p class="note">WIP has no perpetual stock snapshot until absorption costing (Phase A4) — its GL balance is shown, stock side reads 0.</p>
+    </p-card>
+
+    <div class="grir-block">
+      <div class="grir-head">
+        <h3>Open GR/IR — Received Not Billed</h3>
+        <span class="grir-total">Balance: <strong>{{ formatMoney(data.grIrBalance) }}</strong></span>
+      </div>
+      <p-card styleClass="tbl-card">
+        <p-table [value]="data.openGrIr" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr><th>Purchase Order</th><th>Supplier</th><th class="num">Unbilled Value</th></tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-r>
+            <tr>
+              <td class="fw-600">{{ r.purchaseOrderCode }}</td>
+              <td>{{ r.supplierName }}</td>
+              <td class="num">{{ formatMoney(r.unbilledValue) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr><td colspan="3" class="empty">No goods received-not-billed — GR/IR is clear.</td></tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</div>

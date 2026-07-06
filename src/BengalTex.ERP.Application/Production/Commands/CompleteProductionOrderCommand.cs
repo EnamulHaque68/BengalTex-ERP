@@ -222,15 +222,19 @@ internal sealed class CompleteProductionOrderCommandHandler
         //  materials out of Raw Material Inventory — the credit splits accordingly; zero lines are dropped.)
         if (totalRmCost > 0m)
         {
+            // Phase A3 — tag production legs with the order + style so WIP/output value is
+            // attributable per production order and style.
+            var prodDims = new Dimensions(StyleId: po.StyleId, ProductionOrderId: po.Id);
+
             await _journal.PostAsync(
                 movementDate,
                 $"Production {po.Code} — materials issued to WIP for {po.Product.Name}",
                 "ProductionOrder", po.Id, po.Code,
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, totalRmCost, 0m),
-                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, rmCost),
-                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, componentCost),
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, totalRmCost, 0m, prodDims),
+                    new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, rmCost, prodDims),
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, componentCost, prodDims),
                 }, cancellationToken);
 
             await _journal.PostAsync(
@@ -239,8 +243,8 @@ internal sealed class CompleteProductionOrderCommandHandler
                 "ProductionOrder", po.Id, po.Code,
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalRmCost, 0m),
-                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, totalRmCost),
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalRmCost, 0m, prodDims),
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, totalRmCost, prodDims),
                 }, cancellationToken);
         }
 

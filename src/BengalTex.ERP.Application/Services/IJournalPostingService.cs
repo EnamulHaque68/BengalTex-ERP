@@ -22,5 +22,21 @@ public interface IJournalPostingService
         CancellationToken ct = default);
 }
 
-/// <summary>One leg of an auto-journal — debit OR credit to the account with the given code.</summary>
-public readonly record struct JournalPostingLine(string AccountCode, decimal Debit, decimal Credit);
+/// <summary>
+/// One leg of an auto-journal — debit OR credit to the account with the given code, optionally
+/// tagged with accounting dimensions (Phase A3). Existing call sites pass three positional args;
+/// <paramref name="Dims"/> defaults to null so they compile unchanged.
+/// </summary>
+public readonly record struct JournalPostingLine(
+    string AccountCode, decimal Debit, decimal Credit, Dimensions? Dims = null);
+
+/// <summary>
+/// Accounting dimensions carried on a journal line (Phase A3). All optional — a flow tags only
+/// the dimensions it knows (revenue legs carry buyer/style/order; expense legs carry a cost center).
+/// </summary>
+public readonly record struct Dimensions(
+    int? CostCenterId = null,
+    int? BuyerId = null,
+    int? StyleId = null,
+    long? SalesOrderId = null,
+    long? ProductionOrderId = null);

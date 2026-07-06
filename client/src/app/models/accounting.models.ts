@@ -26,6 +26,7 @@ export interface AccountDto {
   isSystem: boolean;
   isActive: boolean;
   description: string | null;
+  requiresCostCenter: boolean;  // Phase A3
 }
 
 export interface CreateAccountRequest {
@@ -35,6 +36,7 @@ export interface CreateAccountRequest {
   isGroup: boolean;
   parentAccountId: number | null;
   description: string | null;
+  requiresCostCenter?: boolean;   // Phase A3
 }
 
 export interface UpdateAccountRequest {
@@ -46,6 +48,7 @@ export interface UpdateAccountRequest {
   parentAccountId: number | null;
   isActive: boolean;
   description: string | null;
+  requiresCostCenter?: boolean;   // Phase A3
 }
 
 export interface JournalEntryLineDto {
