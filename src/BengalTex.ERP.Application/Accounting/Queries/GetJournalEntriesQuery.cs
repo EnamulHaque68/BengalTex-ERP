@@ -77,6 +77,10 @@ internal sealed class GetJournalEntryByIdQueryHandler
         var j = await _repo.Query()
             .AsNoTracking()
             .Include(x => x.Lines).ThenInclude(l => l.Account)
+            .Include(x => x.Lines).ThenInclude(l => l.CostCenter)
+            .Include(x => x.Lines).ThenInclude(l => l.Buyer)
+            .Include(x => x.Lines).ThenInclude(l => l.Style)
+            .Include(x => x.Lines).ThenInclude(l => l.SalesOrder)
             .Include(x => x.ReversedEntry)
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
         if (j is null) return ApiResponse<JournalEntryDto>.Fail("Journal voucher not found.");
@@ -85,7 +89,11 @@ internal sealed class GetJournalEntryByIdQueryHandler
             .OrderBy(l => l.SortOrder)
             .Select(l => new JournalEntryLineDto(
                 l.Id, l.AccountId, l.Account.Code, l.Account.Name,
-                l.Debit, l.Credit, l.LineNarration, l.SortOrder))
+                l.Debit, l.Credit, l.LineNarration, l.SortOrder,
+                l.CostCenterId, l.CostCenter != null ? l.CostCenter.Name : null,
+                l.BuyerId, l.Buyer != null ? l.Buyer.Name : null,
+                l.StyleId, l.Style != null ? l.Style.StyleName : null,
+                l.SalesOrderId, l.SalesOrder != null ? l.SalesOrder.Code : null))
             .ToList();
 
         var dto = new JournalEntryDto(

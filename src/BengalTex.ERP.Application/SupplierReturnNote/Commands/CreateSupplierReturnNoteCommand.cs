@@ -21,7 +21,8 @@ public sealed record CreateSupplierReturnNoteCommand(
     string? VehicleNumber,
     string? Reason,
     string? Notes,
-    IReadOnlyList<SupplierReturnNoteLineInput> Lines
+    IReadOnlyList<SupplierReturnNoteLineInput> Lines,
+    bool ClearsGrIr = false   // Phase A2 — goods returned before billing → clear GR/IR not Purchase Returns
 ) : IRequest<ApiResponse<SupplierReturnNoteDto>>;
 
 public sealed class CreateSupplierReturnNoteCommandValidator : AbstractValidator<CreateSupplierReturnNoteCommand>
@@ -115,6 +116,7 @@ internal sealed class CreateSupplierReturnNoteCommandHandler
             ReturnDate = cmd.ReturnDate,
             ReturnFromWarehouseId = cmd.ReturnFromWarehouseId,
             Status = Domain.Entities.SupplierReturnNoteStatus.Draft,
+            ClearsGrIr = cmd.ClearsGrIr,   // Phase A2
             VehicleNumber = cmd.VehicleNumber,
             Reason = cmd.Reason,
             Notes = cmd.Notes,

@@ -32,11 +32,16 @@
           <td>{{ e.allocationBasis === 'ByValue' ? 'By Value' : 'By Qty' }}</td>
           <td class="num">{{ e.chargeCount }}</td>
           <td class="num fw-600">{{ formatCurrency(e.totalCharges) }}</td>
-          <td><span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'">{{ e.status }}</span></td>
+          <td>
+            <span class="status-badge" [class.draft]="e.status==='Draft'" [class.posted]="e.status==='Posted'">{{ e.status }}</span>
+            <span class="credit-badge" *ngIf="e.isOnCredit && !e.isSettled" pTooltip="Charges owed to the agent — not yet settled">Unsettled</span>
+            <span class="settled-badge" *ngIf="e.isOnCredit && e.isSettled">Settled</span>
+          </td>
           <td>
             <div class="row-actions">
               <p-button [icon]="e.status==='Draft' ? 'pi pi-pencil' : 'pi pi-eye'" severity="secondary" [text]="true" size="small" (click)="openEdit(e)" [pTooltip]="e.status==='Draft' ? 'Edit' : 'View'" />
               <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="e.status==='Draft'" [loading]="rowActionId===e.id" (click)="post(e)" pTooltip="Post (capitalise into WAC)" />
+              <p-button icon="pi pi-wallet" severity="warn" [text]="true" size="small" *ngIf="e.status==='Posted' && e.isOnCredit && !e.isSettled" (click)="openSettle(e)" pTooltip="Settle the agent charges" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="e.status==='Draft'" (click)="confirmDelete(e)" pTooltip="Delete" />
             </div>
           </td>
@@ -75,7 +80,20 @@
       </div>
       <div class="field">
         <label>Paid Via *</label>
-        <p-select formControlName="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+        <p-select formControlName="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" [disabled]="form.get('isOnCredit')?.value" />
+      </div>
+      <!-- Phase A2 — on credit -->
+      <div class="field col-span-2" *ngIf="dialogMode !== 'view' || form.get('isOnCredit')?.value">
+        <label class="credit-check">
+          <p-checkbox formControlName="isOnCredit" [binary]="true" inputId="lc-credit" />
+          <span>On credit (payable) &mdash; charges are owed to a C&amp;F agent / supplier and settled later, instead of paid now</span>
+        </label>
+      </div>
+      <div class="field col-span-2" *ngIf="form.get('isOnCredit')?.value">
+        <label>Agent / Supplier *</label>
+        <p-select formControlName="supplierId" [options]="suppliers" optionValue="id" optionLabel="name"
+                  [filter]="true" filterBy="name" placeholder="Who is owed these charges?" appendTo="body" class="w-full" styleClass="w-full" />
       </div>
       <div class="field col-span-2">
         <label>Notes</label>
@@ -130,6 +148,22 @@
   <ng-template pTemplate="footer">
     <p-button [label]="dialogMode==='view' ? 'Close' : 'Cancel'" severity="secondary" [text]="true" (click)="dialogVisible=false" [disabled]="dialogSaving" />
     <p-button *ngIf="dialogMode!=='view'" [label]="dialogMode==='create' ? 'Create' : 'Update'" (click)="save()" [loading]="dialogSaving" [disabled]="form.invalid" />
+  </ng-template>
+</p-dialog>
+
+<!-- Phase A2 — Settle on-credit charges -->
+<p-dialog [(visible)]="settleVisible" [modal]="true" [style]="{ width: '26rem' }" header="Settle Landed-Cost Charges">
+  <div *ngIf="settleTarget">
+    <p>Pay off the accrued charges on <strong>{{ settleTarget.code }}</strong> (<span class="mono">Dr Accrued Charges / Cr Cash-Bank</span>).</p>
+    <div class="field"><label>Settlement date</label><input pInputText type="date" [(ngModel)]="settleDate" class="w-full" /></div>
+    <div class="field"><label>Paid via</label>
+      <p-select [(ngModel)]="settleMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+    <div class="alert alert-error" *ngIf="settleError"><i class="pi pi-exclamation-circle"></i>{{ settleError }}</div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="settleVisible=false" [disabled]="settling" />
+    <p-button label="Settle" icon="pi pi-wallet" severity="warn" (click)="confirmSettle()" [loading]="settling" />
   </ng-template>
 </p-dialog>
 

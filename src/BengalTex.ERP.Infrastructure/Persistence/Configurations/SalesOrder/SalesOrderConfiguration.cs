@@ -75,6 +75,10 @@ public class SalesOrderLineConfiguration : IEntityTypeConfiguration<SalesOrderLi
             .HasForeignKey(l => l.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Phase A3 — optional style (drives the style dimension)
+        builder.HasOne(l => l.Style).WithMany().HasForeignKey(l => l.StyleId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(l => l.StyleId);
+
         builder.Property(l => l.RowVersion).IsRowVersion();
     }
 }

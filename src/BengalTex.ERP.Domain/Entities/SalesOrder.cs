@@ -64,6 +64,10 @@ public class SalesOrderLine : BaseTransactionalEntity
     public int ProductId { get; set; }
     public Product Product { get; set; } = null!;
 
+    /// <summary>Phase A3 — optional buyer style/design for this line (drives the style dimension into revenue/COGS/production). Filtered to the order's buyer.</summary>
+    public int? StyleId { get; set; }
+    public Style? Style { get; set; }
+
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
 

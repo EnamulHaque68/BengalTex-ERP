@@ -16,7 +16,8 @@ public sealed record UpdateExpenseCommand(
     string PaymentMethod,
     string? Payee,
     string? ReferenceNumber,
-    string? Description
+    string? Description,
+    int? CostCenterId = null   // Phase A3
 ) : IRequest<ApiResponse<ExpenseDto>>;
 
 public sealed class UpdateExpenseCommandValidator : AbstractValidator<UpdateExpenseCommand>
@@ -66,6 +67,7 @@ internal sealed class UpdateExpenseCommandHandler : IRequestHandler<UpdateExpens
 
         e.ExpenseDate = cmd.ExpenseDate;
         e.ExpenseCategoryId = cmd.ExpenseCategoryId;
+        e.CostCenterId = cmd.CostCenterId;   // Phase A3
         e.Amount = cmd.Amount;
         e.PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod);
         e.Payee = string.IsNullOrWhiteSpace(cmd.Payee) ? null : cmd.Payee.Trim();

@@ -2,8 +2,10 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LandedCostService } from '../../../services/landed-cost.service';
 import { GoodsReceiptService } from '../../../services/goods-receipt.service';
+import { SupplierService } from '../../../services/supplier.service';
 import { PagedQueryParameters } from '../../../models/user.models';
 import { GoodsReceiptListItemDto } from '../../../models/goods-receipt.models';
+import { SupplierListItemDto } from '../../../models/supplier.models';
 import {
   LANDED_COST_STATUSES, LANDED_COST_ALLOCATION_BASES, LANDED_COST_CHARGE_TYPES, LANDED_COST_PAYMENT_METHODS,
   LandedCostVoucherListItemDto, LandedCostAllocationLineDto
@@ -31,6 +33,15 @@ export class LandedCostListComponent implements OnInit {
   readonly paymentMethods = LANDED_COST_PAYMENT_METHODS;
 
   postedGrns: GoodsReceiptListItemDto[] = [];
+  suppliers: SupplierListItemDto[] = [];   // Phase A2 — on-credit agent picker
+
+  // Phase A2 — settle dialog
+  settleVisible = false;
+  settling = false;
+  settleError = '';
+  settleTarget: LandedCostVoucherListItemDto | null = null;
+  settleDate = '';
+  settleMethod = 'BankTransfer';
 
   dialogVisible = false;
   dialogMode: 'create' | 'edit' | 'view' = 'create';
@@ -50,14 +61,45 @@ export class LandedCostListComponent implements OnInit {
   constructor(
     private svc: LandedCostService,
     private grnService: GoodsReceiptService,
+    private supplierService: SupplierService,
     private fb: FormBuilder,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {}
 
+  // ── Phase A2 — settle an on-credit voucher ──
+  openSettle(v: LandedCostVoucherListItemDto): void {
+    this.settleTarget = v;
+    this.settleDate = this.todayIso();
+    this.settleMethod = 'BankTransfer';
+    this.settleError = '';
+    this.settleVisible = true;
+  }
+  confirmSettle(): void {
+    if (!this.settleTarget || this.settling) return;
+    this.settling = true;
+    this.settleError = '';
+    this.svc.settle(this.settleTarget.id, this.settleDate, this.settleMethod).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.settling = false;
+        if (res.success) { this.settleVisible = false; this.load(); }
+        else this.settleError = res.message || 'Settle failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.settling = false;
+        this.settleError = err?.error?.message || 'Settle failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
   ngOnInit(): void {
     this.buildForm();
     this.loadGrns();
+    this.supplierService.getAll({ page: 1, pageSize: 500, search: '' }, false).subscribe({
+      next: (res) => this.zone.run(() => { if (res.success && res.data) this.suppliers = res.data.items; this.cdr.detectChanges(); })
+    });
     this.load();
   }
 
@@ -69,6 +111,8 @@ export class LandedCostListComponent implements OnInit {
       goodsReceiptNoteId: [null as number | null, Validators.required],
       allocationBasis: ['ByValue', Validators.required],
       paymentMethod: ['BankTransfer', Validators.required],
+      isOnCredit: [false],                     // Phase A2
+      supplierId: [null as number | null],     // Phase A2 — agent/supplier when on credit
       notes: ['', Validators.maxLength(2000)],
       charges: this.fb.array([])
     });
@@ -128,7 +172,7 @@ export class LandedCostListComponent implements OnInit {
     this.allocationPreview = [];
     this.form.enable();
     this.charges.clear();
-    this.form.reset({ voucherDate: this.todayIso(), goodsReceiptNoteId: null, allocationBasis: 'ByValue', paymentMethod: 'BankTransfer', notes: '' });
+    this.form.reset({ voucherDate: this.todayIso(), goodsReceiptNoteId: null, allocationBasis: 'ByValue', paymentMethod: 'BankTransfer', isOnCredit: false, supplierId: null, notes: '' });
     this.addCharge();
     this.dialogVisible = true;
   }
@@ -150,7 +194,8 @@ export class LandedCostListComponent implements OnInit {
           this.allocationPreview = e.allocation;
           this.form.patchValue({
             voucherDate: e.voucherDate, goodsReceiptNoteId: e.goodsReceiptNoteId,
-            allocationBasis: e.allocationBasis, paymentMethod: e.paymentMethod, notes: e.notes ?? ''
+            allocationBasis: e.allocationBasis, paymentMethod: e.paymentMethod, notes: e.notes ?? '',
+            isOnCredit: e.isOnCredit, supplierId: e.supplierId
           });
           e.charges.forEach(c => this.charges.push(this.newCharge(c.chargeType, c.amount, c.notes ?? '')));
           if (this.dialogMode === 'view') this.form.disable();
@@ -178,10 +223,18 @@ export class LandedCostListComponent implements OnInit {
       return;
     }
 
+    if (v.isOnCredit && !v.supplierId) {
+      this.dialogSaving = false;
+      this.dialogError = 'Select the agent/supplier the charges are owed to when booking on credit.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     const body = {
       voucherDate: v.voucherDate, goodsReceiptNoteId: v.goodsReceiptNoteId,
       allocationBasis: v.allocationBasis, paymentMethod: v.paymentMethod,
-      notes: (v.notes as string)?.trim() || null, charges
+      notes: (v.notes as string)?.trim() || null, charges,
+      isOnCredit: !!v.isOnCredit, supplierId: v.isOnCredit ? v.supplierId : null   // Phase A2
     };
     const obs = this.dialogMode === 'create' ? this.svc.create(body) : this.svc.update(this.editingId!, body);
     obs.subscribe({

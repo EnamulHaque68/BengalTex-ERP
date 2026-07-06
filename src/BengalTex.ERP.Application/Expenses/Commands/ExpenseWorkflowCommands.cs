@@ -62,12 +62,13 @@ internal sealed class ApproveExpenseCommandHandler : IRequestHandler<ApproveExpe
         e.ApprovedBy = _currentUser.UserName;
         _repo.Update(e);
 
+        var ccDims = e.CostCenterId is null ? (Dimensions?)null : new Dimensions(CostCenterId: e.CostCenterId);   // Phase A3
         await _journal.PostAsync(
             e.ExpenseDate, $"Expense {e.Code}" + (e.Payee is null ? "" : $" — {e.Payee}"),
             "Expense", e.Id, e.Code,
             new[]
             {
-                new JournalPostingLine(expenseAccount, e.Amount, 0m),
+                new JournalPostingLine(expenseAccount, e.Amount, 0m, ccDims),
                 new JournalPostingLine(cashAccount, 0m, e.Amount),
             }, ct);
 
@@ -169,12 +170,13 @@ internal sealed class CancelExpenseCommandHandler : IRequestHandler<CancelExpens
             var expenseAccount = category?.LedgerAccount?.Code ?? LedgerAccounts.AdministrativeExpense;
             var cashAccount = e.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
 
+            var ccDims = e.CostCenterId is null ? (Dimensions?)null : new Dimensions(CostCenterId: e.CostCenterId);   // Phase A3
             await _journal.PostAsync(
                 DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of expense {e.Code}", "ExpenseReversal", e.Id, e.Code,
                 new[]
                 {
                     new JournalPostingLine(cashAccount, e.Amount, 0m),
-                    new JournalPostingLine(expenseAccount, 0m, e.Amount),
+                    new JournalPostingLine(expenseAccount, 0m, e.Amount, ccDims),
                 }, ct);
         }
 

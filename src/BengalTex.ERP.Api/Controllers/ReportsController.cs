@@ -1,4 +1,5 @@
 using BengalTex.ERP.Api.Authorization;
+using BengalTex.ERP.Application.Accounting.Dimensions;
 using BengalTex.ERP.Application.Reports.Commands;
 using BengalTex.ERP.Application.Reports.Queries;
 using BengalTex.ERP.Shared.Permissions;
@@ -16,6 +17,26 @@ public class ReportsController : ControllerBase
     private readonly IMediator _mediator;
 
     public ReportsController(IMediator mediator) => _mediator = mediator;
+
+    // ── Phase A3 — dimensional profitability ──
+
+    /// <summary>Revenue − COGS gross margin by buyer / style / order.</summary>
+    [HttpGet("profitability/{dimension}")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetProfitability(
+        string dimension, [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+    {
+        if (!Enum.TryParse<ProfitDimension>(dimension, true, out var dim))
+            return BadRequest("Dimension must be buyer, style or order.");
+        return Ok(await _mediator.Send(new GetProfitabilityReportQuery(dim, fromDate, toDate), ct));
+    }
+
+    /// <summary>Income &amp; expense by cost center for a period.</summary>
+    [HttpGet("cost-center-statement")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetCostCenterStatement(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetCostCenterStatementQuery(fromDate, toDate), ct));
 
     [HttpGet("stock-summary")]
     [HasPermission(Permissions.Reports.ViewInventory)]

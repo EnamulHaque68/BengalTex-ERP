@@ -69,6 +69,25 @@ public class JournalEntryLine : BaseTransactionalEntity
     public string? LineNarration { get; set; }
 
     public int SortOrder { get; set; }
+
+    // ── Phase A3 — accounting dimensions (all optional; null = unassigned) ──
+    /// <summary>Cost / profit center this line belongs to.</summary>
+    public int? CostCenterId { get; set; }
+    public CostCenter? CostCenter { get; set; }
+
+    /// <summary>Buyer (a <see cref="Customer"/>) — carried on revenue / COGS legs.</summary>
+    public int? BuyerId { get; set; }
+    public Customer? Buyer { get; set; }
+
+    /// <summary>Style / design — carried on revenue / COGS / production legs.</summary>
+    public int? StyleId { get; set; }
+    public Style? Style { get; set; }
+
+    public long? SalesOrderId { get; set; }
+    public SalesOrder? SalesOrder { get; set; }
+
+    public long? ProductionOrderId { get; set; }
+    public ProductionOrder? ProductionOrder { get; set; }
 }
 
 public enum JournalEntryStatus

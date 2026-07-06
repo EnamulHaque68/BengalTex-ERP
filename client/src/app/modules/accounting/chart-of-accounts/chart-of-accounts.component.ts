@@ -51,7 +51,8 @@ export class ChartOfAccountsComponent implements OnInit {
       isGroup: [false],
       parentAccountId: [null as number | null],
       isActive: [true],
-      description: ['', Validators.maxLength(500)]
+      description: ['', Validators.maxLength(500)],
+      requiresCostCenter: [false]   // Phase A3
     });
     this.load();
   }
@@ -85,7 +86,7 @@ export class ChartOfAccountsComponent implements OnInit {
     this.editingId = null;
     this.editingIsSystem = false;
     this.dialogError = '';
-    this.form.reset({ code: '', name: '', accountType: 'Asset', isGroup: false, parentAccountId: null, isActive: true, description: '' });
+    this.form.reset({ code: '', name: '', accountType: 'Asset', isGroup: false, parentAccountId: null, isActive: true, description: '', requiresCostCenter: false });
     this.form.get('code')?.enable();
     this.form.get('accountType')?.enable();
     this.form.get('isGroup')?.enable();
@@ -99,7 +100,8 @@ export class ChartOfAccountsComponent implements OnInit {
     this.dialogError = '';
     this.form.reset({
       code: a.code, name: a.name, accountType: a.accountType, isGroup: a.isGroup,
-      parentAccountId: a.parentAccountId, isActive: a.isActive, description: a.description ?? ''
+      parentAccountId: a.parentAccountId, isActive: a.isActive, description: a.description ?? '',
+      requiresCostCenter: a.requiresCostCenter
     });
     // System accounts: lock code/type/grouping (backend enforces too)
     if (a.isSystem) { this.form.get('code')?.disable(); this.form.get('accountType')?.disable(); this.form.get('isGroup')?.disable(); }
@@ -119,7 +121,8 @@ export class ChartOfAccountsComponent implements OnInit {
       accountType: v.accountType,
       isGroup: !!v.isGroup,
       parentAccountId: v.parentAccountId ?? null,
-      description: (v.description as string)?.trim() || null
+      description: (v.description as string)?.trim() || null,
+      requiresCostCenter: !v.isGroup && !!v.requiresCostCenter   // Phase A3 — detail accounts only
     };
     const done = (res: any) => this.zone.run(() => {
       this.dialogSaving = false;

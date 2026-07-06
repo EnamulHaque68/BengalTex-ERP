@@ -82,6 +82,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int?>("ParentAccountId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("RequiresCostCenter")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1525,6 +1530,88 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("ComplianceCertificates", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostCenter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("FactoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ParentCostCenterId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("FactoryId");
+
+                    b.HasIndex("Kind");
+
+                    b.HasIndex("ParentCostCenterId");
+
+                    b.ToTable("CostCenters", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CreditNote", b =>
@@ -3402,6 +3489,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -3461,6 +3551,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CostCenterId");
 
                     b.HasIndex("ExpenseCategoryId");
 
@@ -4338,6 +4430,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsGlPosted")
+                        .HasColumnType("bit");
+
                     b.Property<long?>("LetterOfCreditId")
                         .HasColumnType("bigint");
 
@@ -4386,6 +4481,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("IsGlPosted");
 
                     b.HasIndex("LetterOfCreditId");
 
@@ -4764,6 +4861,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("AccountId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -4800,20 +4903,44 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<long?>("ProductionOrderId")
+                        .HasColumnType("bigint");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<long?>("SalesOrderId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StyleId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
 
+                    b.HasIndex("BuyerId")
+                        .HasFilter("[BuyerId] IS NOT NULL");
+
+                    b.HasIndex("CostCenterId")
+                        .HasFilter("[CostCenterId] IS NOT NULL");
+
                     b.HasIndex("JournalEntryId");
+
+                    b.HasIndex("ProductionOrderId")
+                        .HasFilter("[ProductionOrderId] IS NOT NULL");
+
+                    b.HasIndex("SalesOrderId")
+                        .HasFilter("[SalesOrderId] IS NOT NULL");
+
+                    b.HasIndex("StyleId")
+                        .HasFilter("[StyleId] IS NOT NULL");
 
                     b.ToTable("JournalEntryLines", (string)null);
                 });
@@ -4915,6 +5042,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsOnCredit")
+                        .HasColumnType("bit");
+
                     b.Property<DateTimeOffset?>("ModifiedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -4943,10 +5073,27 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<DateTimeOffset?>("SettledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SettledBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly?>("SettledDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("SettlementMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
 
                     b.Property<DateOnly>("VoucherDate")
                         .HasColumnType("date");
@@ -4959,6 +5106,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("GoodsReceiptNoteId");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId");
 
                     b.ToTable("LandedCostVouchers", (string)null);
                 });
@@ -6403,6 +6552,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("StyleId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("SubcontractCost")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -6431,6 +6583,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("SalesOrderLineId");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("StyleId");
 
                     b.ToTable("ProductionOrders", (string)null);
                 });
@@ -8066,6 +8220,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
+                    b.Property<int?>("StyleId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -8075,6 +8232,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("StyleId");
 
                     b.ToTable("SalesOrderLines", (string)null);
                 });
@@ -9732,6 +9891,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -9761,7 +9923,7 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<int>("RawMaterialId")
+                    b.Property<int?>("RawMaterialId")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
@@ -9782,11 +9944,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AccountId");
+
                     b.HasIndex("RawMaterialId");
 
                     b.HasIndex("SupplierInvoiceId");
 
-                    b.ToTable("SupplierInvoiceLines", (string)null);
+                    b.ToTable("SupplierInvoiceLines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SupplierInvoiceLine_ItemXorService", "([RawMaterialId] IS NOT NULL AND [AccountId] IS NULL) OR ([RawMaterialId] IS NULL AND [AccountId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SupplierQuotation", b =>
@@ -9961,6 +10128,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("ClearsGrIr")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -11827,6 +11997,30 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("RawMaterial");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostCenter", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Factory", "Factory")
+                        .WithMany()
+                        .HasForeignKey("FactoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CostCenter", "ParentCostCenter")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentCostCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Factory");
+
+                    b.Navigation("ParentCostCenter");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CreditNote", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
@@ -12197,11 +12391,18 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Expense", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.ExpenseCategory", "ExpenseCategory")
                         .WithMany()
                         .HasForeignKey("ExpenseCategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CostCenter");
 
                     b.Navigation("ExpenseCategory");
                 });
@@ -12372,15 +12573,50 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Customer", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.JournalEntry", "JournalEntry")
                         .WithMany("Lines")
                         .HasForeignKey("JournalEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.ProductionOrder", "ProductionOrder")
+                        .WithMany()
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.SalesOrder", "SalesOrder")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Style", "Style")
+                        .WithMany()
+                        .HasForeignKey("StyleId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Account");
 
+                    b.Navigation("Buyer");
+
+                    b.Navigation("CostCenter");
+
                     b.Navigation("JournalEntry");
+
+                    b.Navigation("ProductionOrder");
+
+                    b.Navigation("SalesOrder");
+
+                    b.Navigation("Style");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostCharge", b =>
@@ -12402,7 +12638,14 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("GoodsReceiptNote");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LeaveApplication", b =>
@@ -12640,6 +12883,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasForeignKey("SalesOrderLineId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Style", "Style")
+                        .WithMany()
+                        .HasForeignKey("StyleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Bom");
 
                     b.Navigation("IssueWarehouse");
@@ -12651,6 +12899,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("SalesOrder");
 
                     b.Navigation("SalesOrderLine");
+
+                    b.Navigation("Style");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ProductionStage", b =>
@@ -13066,9 +13316,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Style", "Style")
+                        .WithMany()
+                        .HasForeignKey("StyleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Product");
 
                     b.Navigation("SalesOrder");
+
+                    b.Navigation("Style");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Sample", b =>
@@ -13386,17 +13643,23 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.SupplierInvoiceLine", b =>
                 {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BengalTex.ERP.Domain.Entities.RawMaterial", "RawMaterial")
                         .WithMany()
                         .HasForeignKey("RawMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BengalTex.ERP.Domain.Entities.SupplierInvoice", "SupplierInvoice")
                         .WithMany("Lines")
                         .HasForeignKey("SupplierInvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Account");
 
                     b.Navigation("RawMaterial");
 
@@ -13656,6 +13919,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ComplianceAudit", b =>
                 {
                     b.Navigation("Findings");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostCenter", b =>
+                {
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CustomerInvoice", b =>

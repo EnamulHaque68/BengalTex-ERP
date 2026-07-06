@@ -26,6 +26,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
 {
     private readonly IRepository<Domain.Entities.CustomerInvoice, long> _repo;
     private readonly IRepository<Domain.Entities.VatChallan, long> _challanRepo;
+    private readonly IRepository<Domain.Entities.SalesOrderLine, long> _soLineRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly INumberingService _numbering;
@@ -35,6 +36,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
     public IssueCustomerInvoiceCommandHandler(
         IRepository<Domain.Entities.CustomerInvoice, long> repo,
         IRepository<Domain.Entities.VatChallan, long> challanRepo,
+        IRepository<Domain.Entities.SalesOrderLine, long> soLineRepo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         INumberingService numbering,
@@ -43,6 +45,7 @@ internal sealed class IssueCustomerInvoiceCommandHandler
     {
         _repo = repo;
         _challanRepo = challanRepo;
+        _soLineRepo = soLineRepo;
         _uow = uow;
         _currentUser = currentUser;
         _numbering = numbering;
@@ -95,21 +98,53 @@ internal sealed class IssueCustomerInvoiceCommandHandler
             await _challanRepo.AddAsync(challan, cancellationToken);
         }
 
-        // Auto-journal (base BDT = doc amount × exchange rate):
-        //   Dr Accounts Receivable (gross) / Cr Sales Revenue (net) / Cr VAT Payable (output VAT)
+        // Auto-journal (base BDT = doc amount × exchange rate). Phase A3 — dimensioned & split
+        // per line so per-style/buyer P&L is exact:
+        //   Dr Accounts Receivable (gross)          [BUYER, ORDER]
+        //   Cr Sales Revenue — one leg per invoice line  [BUYER, STYLE, ORDER]
+        //   Cr VAT Payable (output VAT)              [ORDER]
         // Phase A1: SUPPRESSED for opening invoices — their GL value lives on the opening-balance
         // voucher; posting here would double-count AR and revenue. Receipts/ageing still work.
         if (!inv.IsOpening)
         {
             var rate = inv.ExchangeRate;
+
+            // Resolve each invoice line's style via its linked SO line (buyer & order are header-level).
+            var soLineIds = inv.Lines.Where(l => l.SalesOrderLineId.HasValue)
+                .Select(l => l.SalesOrderLineId!.Value).Distinct().ToList();
+            var styleBySoLine = soLineIds.Count == 0
+                ? new Dictionary<long, int?>()
+                : await _soLineRepo.Query().Where(sl => soLineIds.Contains(sl.Id))
+                    .ToDictionaryAsync(sl => sl.Id, sl => sl.StyleId, cancellationToken);
+
+            var buyer = inv.CustomerId;
+            var order = inv.SalesOrderId;
+            var legs = new List<JournalPostingLine>();
+
+            // Credit legs first (pre-rounded per line) so the AR debit is their exact sum → always balanced.
+            decimal creditTotal = 0m;
+            foreach (var line in inv.Lines)
+            {
+                var net = Math.Round(line.Quantity * line.UnitPrice * rate, 2, MidpointRounding.AwayFromZero);
+                if (net == 0m) continue;
+                int? style = line.SalesOrderLineId.HasValue && styleBySoLine.TryGetValue(line.SalesOrderLineId.Value, out var s) ? s : null;
+                legs.Add(new JournalPostingLine(LedgerAccounts.SalesRevenue, 0m, net,
+                    new Dimensions(BuyerId: buyer, StyleId: style, SalesOrderId: order)));
+                creditTotal += net;
+            }
+            var vat = Math.Round(inv.VatAmount * rate, 2, MidpointRounding.AwayFromZero);
+            if (vat != 0m)
+            {
+                legs.Add(new JournalPostingLine(LedgerAccounts.VatPayable, 0m, vat,
+                    new Dimensions(SalesOrderId: order)));
+                creditTotal += vat;
+            }
+            legs.Insert(0, new JournalPostingLine(LedgerAccounts.AccountsReceivable, creditTotal, 0m,
+                new Dimensions(BuyerId: buyer, SalesOrderId: order)));
+
             await _journal.PostAsync(
                 inv.InvoiceDate, $"Sales invoice {inv.Code}", "CustomerInvoice", inv.Id, inv.Code,
-                new[]
-                {
-                    new JournalPostingLine(LedgerAccounts.AccountsReceivable, inv.TotalAmount * rate, 0m),
-                    new JournalPostingLine(LedgerAccounts.SalesRevenue, 0m, inv.SubtotalAmount * rate),
-                    new JournalPostingLine(LedgerAccounts.VatPayable, 0m, inv.VatAmount * rate),
-                }, cancellationToken);
+                legs, cancellationToken);
         }
 
         _repo.Update(inv);

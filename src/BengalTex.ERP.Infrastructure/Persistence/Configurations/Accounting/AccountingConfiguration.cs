@@ -18,6 +18,8 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(a => a.RequiresCostCenter).HasDefaultValue(false);   // Phase A3
+
         builder.HasIndex(a => a.Code).IsUnique();
         builder.HasIndex(a => a.AccountType);
         builder.HasIndex(a => a.ParentAccountId);
@@ -105,6 +107,19 @@ public class JournalEntryLineConfiguration : IEntityTypeConfiguration<JournalEnt
             .WithMany()
             .HasForeignKey(l => l.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ── Phase A3 — dimension FKs (all NoAction: no inverse nav, avoids cascade cycles) ──
+        builder.HasOne(l => l.CostCenter).WithMany().HasForeignKey(l => l.CostCenterId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(l => l.Buyer).WithMany().HasForeignKey(l => l.BuyerId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(l => l.Style).WithMany().HasForeignKey(l => l.StyleId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(l => l.SalesOrder).WithMany().HasForeignKey(l => l.SalesOrderId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(l => l.ProductionOrder).WithMany().HasForeignKey(l => l.ProductionOrderId).OnDelete(DeleteBehavior.NoAction);
+        // Filtered indexes — only the tagged lines (keeps them small; dimensional reports use them).
+        builder.HasIndex(l => l.CostCenterId).HasFilter("[CostCenterId] IS NOT NULL");
+        builder.HasIndex(l => l.BuyerId).HasFilter("[BuyerId] IS NOT NULL");
+        builder.HasIndex(l => l.StyleId).HasFilter("[StyleId] IS NOT NULL");
+        builder.HasIndex(l => l.SalesOrderId).HasFilter("[SalesOrderId] IS NOT NULL");
+        builder.HasIndex(l => l.ProductionOrderId).HasFilter("[ProductionOrderId] IS NOT NULL");
 
         builder.Property(l => l.RowVersion).IsRowVersion();
     }

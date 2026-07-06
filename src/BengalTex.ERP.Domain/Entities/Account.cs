@@ -26,6 +26,13 @@ public class Account : BaseEntity
     /// <summary>Seeded system account — protected from deletion / type change.</summary>
     public bool IsSystem { get; set; }
 
+    /// <summary>
+    /// Phase A3 — when true, a posting to this account must carry a cost center; the posting
+    /// service rejects an untagged line. Applied to expense accounts so dimensional reports
+    /// never miss a cost. Off by default.
+    /// </summary>
+    public bool RequiresCostCenter { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public string? Description { get; set; }

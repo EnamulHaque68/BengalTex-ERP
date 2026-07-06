@@ -50,6 +50,10 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Domain.Entities.Exp
             .HasForeignKey(e => e.ExpenseCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Phase A3 — optional cost center dimension
+        builder.HasOne(e => e.CostCenter).WithMany().HasForeignKey(e => e.CostCenterId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(e => e.CostCenterId);
+
         builder.Property(e => e.RowVersion).IsRowVersion();
     }
 }

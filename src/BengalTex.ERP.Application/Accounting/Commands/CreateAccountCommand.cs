@@ -15,7 +15,8 @@ public sealed record CreateAccountCommand(
     string AccountType,
     bool IsGroup,
     int? ParentAccountId,
-    string? Description
+    string? Description,
+    bool RequiresCostCenter = false   // Phase A3
 ) : IRequest<ApiResponse<AccountDto>>;
 
 public sealed class CreateAccountCommandValidator : AbstractValidator<CreateAccountCommand>
@@ -74,6 +75,7 @@ internal sealed class CreateAccountCommandHandler
             ParentAccountId = cmd.ParentAccountId,
             IsSystem = false,
             IsActive = true,
+            RequiresCostCenter = !cmd.IsGroup && cmd.RequiresCostCenter,   // Phase A3 — only detail accounts
             Description = string.IsNullOrWhiteSpace(cmd.Description) ? null : cmd.Description.Trim()
         };
 

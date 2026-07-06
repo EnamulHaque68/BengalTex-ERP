@@ -44,4 +44,9 @@ export class LandedCostService {
   post(id: number): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(`${this.base}/${id}/post`, {});
   }
+
+  /** Phase A2 — settle an on-credit voucher's Accrued Charges Payable. */
+  settle(id: number, settleDate: string, paymentMethod: string): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/${id}/settle`, { settleDate, paymentMethod });
+  }
 }

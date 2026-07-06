@@ -144,6 +144,92 @@ export class AccountingService {
     : Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(`${this.fiscal}/opening-balances/import`, { asOfDate, lines });
   }
+
+  // ── Phase A2 — Inventory ↔ GL (GR/IR init + tie-out) ──
+  private readonly inventoryGl = `${environment.apiBaseUrl}/api/inventory-gl`;
+
+  grIrInitPreview(): Observable<ApiResponse<GrIrInitPreviewDto>> {
+    return this.http.get<ApiResponse<GrIrInitPreviewDto>>(`${this.inventoryGl}/gr-ir/init-preview`);
+  }
+  initializeGrIr(asOfDate: string): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.inventoryGl}/gr-ir/initialize`, { asOfDate });
+  }
+  inventoryGlTieOut(asOfDate?: string): Observable<ApiResponse<InventoryGlTieOutDto>> {
+    let params = new HttpParams();
+    if (asOfDate) params = params.set('asOfDate', asOfDate);
+    return this.http.get<ApiResponse<InventoryGlTieOutDto>>(`${this.inventoryGl}/tie-out`, { params });
+  }
+
+  // ── Phase A3 — cost centers + profitability ──
+  private readonly costCenters = `${environment.apiBaseUrl}/api/cost-centers`;
+  private readonly reports = `${environment.apiBaseUrl}/api/reports`;
+
+  getCostCenters(includeInactive = false): Observable<ApiResponse<CostCenterDto[]>> {
+    let params = new HttpParams().set('includeInactive', includeInactive.toString());
+    return this.http.get<ApiResponse<CostCenterDto[]>>(this.costCenters, { params });
+  }
+  createCostCenter(data: SaveCostCenterRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(this.costCenters, data);
+  }
+  updateCostCenter(id: number, data: SaveCostCenterRequest & { isActive: boolean }): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(`${this.costCenters}/${id}`, { id, ...data });
+  }
+  profitability(dimension: 'buyer' | 'style' | 'order', fromDate: string, toDate: string)
+    : Observable<ApiResponse<ProfitabilityReportDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<ProfitabilityReportDto>>(`${this.reports}/profitability/${dimension}`, { params });
+  }
+  costCenterStatement(fromDate: string, toDate: string): Observable<ApiResponse<CostCenterStatementDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<CostCenterStatementDto>>(`${this.reports}/cost-center-statement`, { params });
+  }
+}
+
+// ── Phase A3 DTOs ──
+export interface CostCenterDto {
+  id: number; code: string; name: string; kind: string;
+  parentCostCenterId: number | null; parentName: string | null;
+  departmentId: number | null; departmentName: string | null;
+  factoryId: number | null; factoryName: string | null;
+  isActive: boolean; description: string | null;
+}
+export interface SaveCostCenterRequest {
+  code?: string; name: string; kind: string;
+  parentCostCenterId: number | null; departmentId: number | null; factoryId: number | null; description: string | null;
+}
+export interface ProfitabilityRowDto {
+  dimensionId: number | null; dimensionName: string;
+  revenue: number; cogs: number; grossProfit: number; marginPercent: number;
+}
+export interface ProfitabilityReportDto {
+  fromDate: string; toDate: string; dimension: string;
+  rows: ProfitabilityRowDto[]; totalRevenue: number; totalCogs: number; totalGrossProfit: number;
+}
+export interface CostCenterStatementRowDto {
+  costCenterId: number | null; costCenterName: string; income: number; expense: number; net: number;
+}
+export interface CostCenterStatementDto { fromDate: string; toDate: string; rows: CostCenterStatementRowDto[]; }
+
+export const COST_CENTER_KINDS = [
+  { label: 'Cost', value: 'Cost' }, { label: 'Profit', value: 'Profit' }, { label: 'Both', value: 'Both' }
+];
+
+// ── Phase A2 DTOs ──
+export interface GrIrInitPoRowDto {
+  purchaseOrderId: number; purchaseOrderCode: string; supplierName: string;
+  receivedValue: number; billedValue: number; unbilledValue: number;
+}
+export interface GrIrInitPreviewDto {
+  alreadyInitialized: boolean; totalUnbilledValue: number; rows: GrIrInitPoRowDto[];
+}
+export interface TieOutRowDto {
+  label: string; accountCode: string; stockValue: number; glBalance: number; variance: number; matches: boolean;
+}
+export interface OpenGrIrPoRowDto {
+  purchaseOrderId: number; purchaseOrderCode: string; supplierName: string; unbilledValue: number;
+}
+export interface InventoryGlTieOutDto {
+  asOfDate: string; rows: TieOutRowDto[]; grIrBalance: number; openGrIr: OpenGrIrPoRowDto[];
 }
 
 // ── Phase A1 DTOs (kept here with the service for cohesion) ──

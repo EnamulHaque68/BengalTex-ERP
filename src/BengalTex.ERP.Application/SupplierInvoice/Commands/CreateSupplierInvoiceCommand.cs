@@ -9,12 +9,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BengalTex.ERP.Application.SupplierInvoice.Commands;
 
-/// <summary>One raw-material line submitted with a create/update Supplier Invoice request.</summary>
+/// <summary>
+/// One line submitted with a create/update Supplier Invoice request. A material line sets
+/// <see cref="RawMaterialId"/>; a service line (Phase A2) sets <see cref="AccountId"/> to the
+/// expense account instead (e.g. C&amp;F, freight). Exactly one of the two must be provided.
+/// </summary>
 public sealed record SupplierInvoiceLineInput(
-    int RawMaterialId,
+    int? RawMaterialId,
     decimal Quantity,
     decimal UnitPrice,
-    string? LineNotes);
+    string? LineNotes,
+    int? AccountId = null);
 
 /// <summary>
 /// Records a Draft Supplier Invoice against an existing Purchase Order. The frontend
@@ -47,13 +52,20 @@ public sealed class CreateSupplierInvoiceCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.Lines).NotEmpty().WithMessage("A supplier invoice must have at least one line.");
         RuleForEach(x => x.Lines).ChildRules(line =>
         {
-            line.RuleFor(l => l.RawMaterialId).GreaterThan(0);
+            // Phase A2 — material XOR service: exactly one of RawMaterialId / AccountId set.
+            line.RuleFor(l => l)
+                .Must(l => (l.RawMaterialId.HasValue) ^ (l.AccountId.HasValue))
+                .WithMessage("Each line must be either a raw material or a service (expense account), not both or neither.");
             line.RuleFor(l => l.Quantity).GreaterThan(0);
             line.RuleFor(l => l.UnitPrice).GreaterThanOrEqualTo(0);
             line.RuleFor(l => l.LineNotes).MaximumLength(1000);
         });
         RuleFor(x => x.Lines)
-            .Must(lines => lines.Select(l => l.RawMaterialId).Distinct().Count() == lines.Count)
+            .Must(lines =>
+            {
+                var rms = lines.Where(l => l.RawMaterialId.HasValue).Select(l => l.RawMaterialId!.Value).ToList();
+                return rms.Distinct().Count() == rms.Count;
+            })
             .WithMessage("The same raw material appears more than once in the invoice lines.")
             .When(x => x.Lines is { Count: > 0 });
     }
@@ -66,6 +78,7 @@ internal sealed class CreateSupplierInvoiceCommandHandler
     private readonly IRepository<Domain.Entities.PurchaseOrder, long> _poRepo;
     private readonly IRepository<Domain.Entities.Supplier> _supplierRepo;
     private readonly IRepository<Domain.Entities.RawMaterial> _rawMaterialRepo;
+    private readonly IRepository<Domain.Entities.Account> _accountRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
     private readonly IMediator _mediator;
@@ -75,6 +88,7 @@ internal sealed class CreateSupplierInvoiceCommandHandler
         IRepository<Domain.Entities.PurchaseOrder, long> poRepo,
         IRepository<Domain.Entities.Supplier> supplierRepo,
         IRepository<Domain.Entities.RawMaterial> rawMaterialRepo,
+        IRepository<Domain.Entities.Account> accountRepo,
         IUnitOfWork uow,
         INumberingService numbering,
         IMediator mediator)
@@ -83,6 +97,7 @@ internal sealed class CreateSupplierInvoiceCommandHandler
         _poRepo = poRepo;
         _supplierRepo = supplierRepo;
         _rawMaterialRepo = rawMaterialRepo;
+        _accountRepo = accountRepo;
         _uow = uow;
         _numbering = numbering;
         _mediator = mediator;
@@ -104,11 +119,31 @@ internal sealed class CreateSupplierInvoiceCommandHandler
         var supplier = await _supplierRepo.GetByIdAsync(po.SupplierId, cancellationToken);
         if (supplier is null) return ApiResponse<SupplierInvoiceDto>.Fail("Supplier not found.");
 
-        var rawMaterialIds = cmd.Lines.Select(l => l.RawMaterialId).Distinct().ToList();
-        var existingCount = await _rawMaterialRepo.Query()
-            .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
-        if (existingCount != rawMaterialIds.Count)
-            return ApiResponse<SupplierInvoiceDto>.Fail("One or more raw materials not found.");
+        var rawMaterialIds = cmd.Lines.Where(l => l.RawMaterialId.HasValue)
+            .Select(l => l.RawMaterialId!.Value).Distinct().ToList();
+        if (rawMaterialIds.Count > 0)
+        {
+            var existingCount = await _rawMaterialRepo.Query()
+                .CountAsync(rm => rawMaterialIds.Contains(rm.Id), cancellationToken);
+            if (existingCount != rawMaterialIds.Count)
+                return ApiResponse<SupplierInvoiceDto>.Fail("One or more raw materials not found.");
+        }
+
+        // Phase A2 — validate service-line expense accounts (postable + active).
+        var accountIds = cmd.Lines.Where(l => l.AccountId.HasValue)
+            .Select(l => l.AccountId!.Value).Distinct().ToList();
+        if (accountIds.Count > 0)
+        {
+            var accounts = await _accountRepo.Query()
+                .Where(a => accountIds.Contains(a.Id)).ToListAsync(cancellationToken);
+            foreach (var id in accountIds)
+            {
+                var acc = accounts.FirstOrDefault(a => a.Id == id);
+                if (acc is null) return ApiResponse<SupplierInvoiceDto>.Fail($"Service account {id} not found.");
+                if (acc.IsGroup) return ApiResponse<SupplierInvoiceDto>.Fail($"'{acc.Name}' is a group account — pick a postable account.");
+                if (!acc.IsActive) return ApiResponse<SupplierInvoiceDto>.Fail($"'{acc.Name}' is inactive.");
+            }
+        }
 
         var code = await _numbering.NextAsync("SINV", null, cancellationToken);
 
@@ -139,6 +174,7 @@ internal sealed class CreateSupplierInvoiceCommandHandler
             Lines = cmd.Lines.Select((l, i) => new Domain.Entities.SupplierInvoiceLine
             {
                 RawMaterialId = l.RawMaterialId,
+                AccountId = l.AccountId,        // Phase A2 — service line (mutually exclusive with RM)
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 SortOrder = i,

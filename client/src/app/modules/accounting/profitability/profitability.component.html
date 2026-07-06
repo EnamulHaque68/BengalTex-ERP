@@ -1,0 +1,65 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Profitability</h2>
+      <p class="page-subtitle">Revenue &minus; COGS gross margin by the dimension that matters &mdash; buyer, style, order</p>
+    </div>
+    <div class="header-actions">
+      <label class="dt">From <input pInputText type="date" [(ngModel)]="fromDate" (change)="load()" /></label>
+      <label class="dt">To <input pInputText type="date" [(ngModel)]="toDate" (change)="load()" /></label>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" *ngFor="let t of tabs" class="tab" [class.on]="tab === t.key" (click)="setTab(t.key)">{{ t.label }}</button>
+  </div>
+
+  <!-- Buyer / Style / Order -->
+  <p-card styleClass="table-card" *ngIf="tab !== 'cost-center'">
+    <div class="totals" *ngIf="report">
+      <div class="t-tile"><span class="l">Revenue</span><span class="v">{{ formatMoney(report.totalRevenue) }}</span></div>
+      <div class="t-tile"><span class="l">COGS</span><span class="v">{{ formatMoney(report.totalCogs) }}</span></div>
+      <div class="t-tile profit"><span class="l">Gross Profit</span><span class="v">{{ formatMoney(report.totalGrossProfit) }}</span></div>
+    </div>
+    <p-table [value]="report?.rows || []" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr><th>{{ tab === 'buyer' ? 'Buyer' : tab === 'style' ? 'Style' : 'Order' }}</th>
+          <th class="num">Revenue</th><th class="num">COGS</th><th class="num">Gross Profit</th><th class="num" style="width:110px">Margin %</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.dimensionName }}</td>
+          <td class="num">{{ formatMoney(r.revenue) }}</td>
+          <td class="num">{{ formatMoney(r.cogs) }}</td>
+          <td class="num" [class.neg]="r.grossProfit < 0">{{ formatMoney(r.grossProfit) }}</td>
+          <td class="num"><span class="margin" [ngClass]="marginClass(r.marginPercent)">{{ r.marginPercent | number:'1.1-1' }}%</span></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="5" class="empty-row"><i class="pi pi-chart-bar"></i>
+          <span>No dimensioned {{ tab }} data in range. Tag sales orders with styles and post invoices/deliveries to populate this.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Cost center statement -->
+  <p-card styleClass="table-card" *ngIf="tab === 'cost-center'">
+    <p-table [value]="ccStatement?.rows || []" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr><th>Cost Center</th><th class="num">Income</th><th class="num">Expense</th><th class="num">Net</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.costCenterName }}</td>
+          <td class="num">{{ formatMoney(r.income) }}</td>
+          <td class="num">{{ formatMoney(r.expense) }}</td>
+          <td class="num" [class.neg]="r.net < 0">{{ formatMoney(r.net) }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4" class="empty-row"><i class="pi pi-sitemap"></i>
+          <span>No cost-center activity in range. Tag expenses &amp; payroll with cost centers to populate this.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

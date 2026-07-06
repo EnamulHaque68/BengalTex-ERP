@@ -24,13 +24,29 @@ public class LandedCostVoucher : BaseTransactionalEntity
 
     public LandedCostAllocationBasis AllocationBasis { get; set; } = LandedCostAllocationBasis.ByValue;
 
-    /// <summary>How the charges were settled — picks the credit account (Cash vs Bank).</summary>
+    /// <summary>How the charges were settled — picks the credit account (Cash vs Bank). Ignored when <see cref="IsOnCredit"/>.</summary>
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.BankTransfer;
+
+    /// <summary>
+    /// Phase A2 — when true, posting credits Accrued Charges Payable (2115) to the C&amp;F agent /
+    /// <see cref="Supplier"/> instead of cash/bank, and the charge is cleared later via Settle.
+    /// </summary>
+    public bool IsOnCredit { get; set; }
+
+    /// <summary>The agent/supplier owed the charges when <see cref="IsOnCredit"/>. Required in that case.</summary>
+    public int? SupplierId { get; set; }
+    public Supplier? Supplier { get; set; }
 
     public LandedCostVoucherStatus Status { get; set; } = LandedCostVoucherStatus.Draft;
 
     public DateTimeOffset? PostedAt { get; set; }
     public string? PostedBy { get; set; }
+
+    // ── Settlement of an on-credit voucher (Phase A2) ──
+    public DateOnly? SettledDate { get; set; }
+    public DateTimeOffset? SettledAt { get; set; }
+    public string? SettledBy { get; set; }
+    public PaymentMethod? SettlementMethod { get; set; }
 
     public string? Notes { get; set; }
 

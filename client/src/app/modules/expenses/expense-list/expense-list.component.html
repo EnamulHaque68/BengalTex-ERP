@@ -65,6 +65,10 @@
       <div class="field"><label>Payment Method *</label>
         <p-select formControlName="paymentMethod" [options]="methods" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" />
       </div>
+      <div class="field"><label>Cost Center <small>(Phase A3 — for dimensional reporting)</small></label>
+        <p-select formControlName="costCenterId" [options]="costCenters" optionValue="id" optionLabel="name"
+                  [filter]="true" filterBy="code,name" [showClear]="true" placeholder="(none)" appendTo="body" styleClass="w-full" />
+      </div>
       <div class="field"><label>Payee</label><input pInputText formControlName="payee" class="w-full" /></div>
       <div class="field col-span-2"><label>Reference</label><input pInputText formControlName="referenceNumber" class="w-full" placeholder="voucher / cheque no" /></div>
       <div class="field col-span-2"><label>Description</label><input pInputText formControlName="description" class="w-full" /></div>

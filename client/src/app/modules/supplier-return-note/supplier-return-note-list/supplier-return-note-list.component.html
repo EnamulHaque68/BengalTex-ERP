@@ -174,6 +174,15 @@
         <textarea pInputTextarea rows="2" formControlName="notes"
                   placeholder="Additional context..." class="w-full"></textarea>
       </div>
+
+      <!-- Phase A2 — never-billed returns clear GR/IR -->
+      <div class="field col-span-2" *ngIf="dialogMode === 'create'">
+        <label class="grir-check">
+          <p-checkbox formControlName="clearsGrIr" [binary]="true" inputId="srn-grir" />
+          <span>These goods were received but <strong>not yet billed</strong> &mdash; clear GR/IR (not Purchase Returns).
+            Use when returning before the supplier's bill arrives.</span>
+        </label>
+      </div>
     </div>
 
     <p class="section-label">Return Lines <small *ngIf="lines.length > 0">— enter qty only for the lines being returned (leave others at 0)</small></p>

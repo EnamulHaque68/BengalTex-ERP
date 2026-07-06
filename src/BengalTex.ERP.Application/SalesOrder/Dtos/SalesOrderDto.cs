@@ -56,7 +56,10 @@ public record SalesOrderLineDto(
     decimal ProducedQuantity = 0m,       // Σ qty of Completed production orders on this line
     decimal AllocatedQuantity = 0m,      // Σ qty of all non-cancelled production orders on this line
     // ── Invoice coverage per line ──
-    decimal InvoicedQuantity = 0m);      // Σ qty already billed onto customer invoices (remaining = Quantity − this)
+    decimal InvoicedQuantity = 0m,       // Σ qty already billed onto customer invoices (remaining = Quantity − this)
+    // ── Phase A3 — style dimension ──
+    int? StyleId = null,
+    string? StyleName = null);
 
 public record SalesOrderListItemDto(
     long Id,

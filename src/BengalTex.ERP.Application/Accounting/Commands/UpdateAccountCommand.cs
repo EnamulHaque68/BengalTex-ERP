@@ -17,7 +17,8 @@ public sealed record UpdateAccountCommand(
     bool IsGroup,
     int? ParentAccountId,
     bool IsActive,
-    string? Description
+    string? Description,
+    bool RequiresCostCenter = false   // Phase A3
 ) : IRequest<ApiResponse<AccountDto>>;
 
 public sealed class UpdateAccountCommandValidator : AbstractValidator<UpdateAccountCommand>
@@ -84,6 +85,7 @@ internal sealed class UpdateAccountCommandHandler
         account.IsGroup = cmd.IsGroup;
         account.ParentAccountId = cmd.ParentAccountId;
         account.IsActive = cmd.IsActive;
+        account.RequiresCostCenter = !cmd.IsGroup && cmd.RequiresCostCenter;   // Phase A3 — only detail accounts
         account.Description = string.IsNullOrWhiteSpace(cmd.Description) ? null : cmd.Description.Trim();
 
         _repo.Update(account);

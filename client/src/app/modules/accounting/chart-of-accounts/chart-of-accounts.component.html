@@ -60,6 +60,11 @@
       </div>
       <div class="field check-field"><label>Group (header) account</label><p-checkbox formControlName="isGroup" [binary]="true" /></div>
       <div class="field check-field" *ngIf="dialogMode === 'edit'"><label>Active</label><p-checkbox formControlName="isActive" [binary]="true" /></div>
+      <!-- Phase A3 — require a cost center on postings to this account (detail accounts only) -->
+      <div class="field col-span-2 check-field" *ngIf="!form.get('isGroup')?.value">
+        <label>Requires Cost Center <small>— block posting without a cost center (dimensional control)</small></label>
+        <p-checkbox formControlName="requiresCostCenter" [binary]="true" />
+      </div>
       <div class="field col-span-2"><label>Description</label><input pInputText formControlName="description" class="w-full" /></div>
     </div>
     <div class="dialog-footer">

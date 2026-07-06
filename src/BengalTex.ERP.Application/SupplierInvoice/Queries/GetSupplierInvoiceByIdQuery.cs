@@ -23,7 +23,8 @@ internal sealed class GetSupplierInvoiceByIdQueryHandler
             .Include(s => s.Supplier)
             .Include(s => s.PurchaseOrder)
             .Include(s => s.Currency)
-            .Include(s => s.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm.UnitOfMeasure)
+            .Include(s => s.Lines).ThenInclude(l => l.RawMaterial).ThenInclude(rm => rm!.UnitOfMeasure)
+            .Include(s => s.Lines).ThenInclude(l => l.Account)
             .FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
 
         if (inv is null) return ApiResponse<SupplierInvoiceDto>.Fail("Supplier invoice not found.");
@@ -31,10 +32,16 @@ internal sealed class GetSupplierInvoiceByIdQueryHandler
         var lines = inv.Lines
             .OrderBy(l => l.SortOrder)
             .Select(l => new SupplierInvoiceLineDto(
-                l.Id, l.RawMaterialId, l.RawMaterial.Code, l.RawMaterial.Name,
-                l.RawMaterial.UnitOfMeasure.Code,
+                l.Id, l.RawMaterialId,
+                l.RawMaterial != null ? l.RawMaterial.Code : (l.Account != null ? l.Account.Code : ""),
+                l.RawMaterial != null ? l.RawMaterial.Name : (l.Account != null ? l.Account.Name : ""),
+                l.RawMaterial != null ? l.RawMaterial.UnitOfMeasure.Code : "",
                 l.Quantity, l.UnitPrice, l.Quantity * l.UnitPrice,
-                l.SortOrder, l.LineNotes))
+                l.SortOrder, l.LineNotes,
+                l.AccountId,
+                l.Account != null ? l.Account.Code : null,
+                l.Account != null ? l.Account.Name : null,
+                l.AccountId.HasValue))
             .ToList();
 
         var dto = new SupplierInvoiceDto(

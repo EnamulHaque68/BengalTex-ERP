@@ -35,6 +35,14 @@ public class GoodsReceiptNote : BaseTransactionalEntity
 
     public GoodsReceiptStatus Status { get; set; } = GoodsReceiptStatus.Draft;
 
+    /// <summary>
+    /// True once this GRN has posted its inventory journal (Dr RM Inventory / Cr GR/IR) under
+    /// the Phase A2 model. Pre-A2 GRNs stay false until the one-time GR/IR initialization runs,
+    /// which lets supplier-bill approval choose the new (clear GR/IR) vs legacy (debit inventory)
+    /// posting path without corrupting the 2150 balance.
+    /// </summary>
+    public bool IsGlPosted { get; set; }
+
     /// <summary>Supplier's challan / delivery-note reference, if any.</summary>
     public string? SupplierDeliveryRef { get; set; }
 

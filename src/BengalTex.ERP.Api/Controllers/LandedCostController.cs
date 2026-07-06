@@ -53,4 +53,12 @@ public class LandedCostController : ControllerBase
     [HasPermission(Permissions.GoodsReceipts.Post)]
     public async Task<IActionResult> Post(long id, CancellationToken ct)
         => Ok(await _mediator.Send(new PostLandedCostVoucherCommand(id), ct));
+
+    /// <summary>Phase A2 — settle an on-credit voucher's Accrued Charges Payable (Dr 2115 / Cr cash-bank).</summary>
+    [HttpPost("{id:long}/settle")]
+    [HasPermission(Permissions.GoodsReceipts.Post)]
+    public async Task<IActionResult> Settle(long id, [FromBody] SettleLandedCostRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new SettleLandedCostVoucherCommand(id, request.SettleDate, request.PaymentMethod), ct));
 }
+
+public record SettleLandedCostRequest(DateOnly SettleDate, string PaymentMethod);

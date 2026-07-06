@@ -26,6 +26,8 @@ export interface SalesOrderLineDto {
   lineNotes: string | null;
   producedQuantity?: number;              // Phase 1 — Σ qty of Completed production orders on this line
   allocatedQuantity?: number;             // Phase 1 — Σ qty of all non-cancelled production orders on this line
+  styleId: number | null;      // Phase A3
+  styleName: string | null;
 }
 
 export interface SalesOrderDto {
@@ -92,6 +94,7 @@ export interface SalesOrderListItemDto {
 
 export interface SalesOrderLineInput {
   productId: number;
+  styleId?: number | null;   // Phase A3
   quantity: number;
   unitPrice: number;
   lineNotes: string | null;

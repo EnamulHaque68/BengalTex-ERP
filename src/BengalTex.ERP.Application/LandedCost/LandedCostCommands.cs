@@ -37,7 +37,8 @@ internal static class LandedCostRules
 // ── Create ──
 public sealed record CreateLandedCostVoucherCommand(
     DateOnly VoucherDate, long GoodsReceiptNoteId, string AllocationBasis, string PaymentMethod,
-    string? Notes, IReadOnlyList<LandedCostChargeInput> Charges) : IRequest<ApiResponse<long>>;
+    string? Notes, IReadOnlyList<LandedCostChargeInput> Charges,
+    bool IsOnCredit = false, int? SupplierId = null) : IRequest<ApiResponse<long>>;
 
 public sealed class CreateLandedCostVoucherCommandValidator : AbstractValidator<CreateLandedCostVoucherCommand>
 {
@@ -48,6 +49,10 @@ public sealed class CreateLandedCostVoucherCommandValidator : AbstractValidator<
         RuleFor(x => x.AllocationBasis).Must(b => Enum.TryParse<LandedCostAllocationBasis>(b, out _)).WithMessage("Invalid allocation basis.");
         RuleFor(x => x.PaymentMethod).Must(p => Enum.TryParse<PaymentMethod>(p, out _)).WithMessage("Invalid payment method.");
         RuleFor(x => x.Notes).MaximumLength(2000);
+        // Phase A2 — on credit requires the agent/supplier owed.
+        RuleFor(x => x.SupplierId).NotNull().GreaterThan(0)
+            .When(x => x.IsOnCredit)
+            .WithMessage("Select the agent/supplier the charges are owed to when booking on credit.");
         LandedCostRules.ApplyCharges(this, x => x.Charges);
     }
 }
@@ -78,6 +83,8 @@ internal sealed class CreateLandedCostVoucherCommandHandler : IRequestHandler<Cr
             GoodsReceiptNoteId = cmd.GoodsReceiptNoteId,
             AllocationBasis = Enum.Parse<LandedCostAllocationBasis>(cmd.AllocationBasis),
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
+            IsOnCredit = cmd.IsOnCredit,
+            SupplierId = cmd.IsOnCredit ? cmd.SupplierId : null,
             Status = LandedCostVoucherStatus.Draft,
             Notes = cmd.Notes,
             Charges = LandedCostRules.Build(cmd.Charges)
@@ -91,7 +98,8 @@ internal sealed class CreateLandedCostVoucherCommandHandler : IRequestHandler<Cr
 // ── Update (draft only) ──
 public sealed record UpdateLandedCostVoucherCommand(
     long Id, DateOnly VoucherDate, string AllocationBasis, string PaymentMethod,
-    string? Notes, IReadOnlyList<LandedCostChargeInput> Charges) : IRequest<ApiResponse<long>>;
+    string? Notes, IReadOnlyList<LandedCostChargeInput> Charges,
+    bool IsOnCredit = false, int? SupplierId = null) : IRequest<ApiResponse<long>>;
 
 public sealed class UpdateLandedCostVoucherCommandValidator : AbstractValidator<UpdateLandedCostVoucherCommand>
 {
@@ -102,6 +110,9 @@ public sealed class UpdateLandedCostVoucherCommandValidator : AbstractValidator<
         RuleFor(x => x.AllocationBasis).Must(b => Enum.TryParse<LandedCostAllocationBasis>(b, out _)).WithMessage("Invalid allocation basis.");
         RuleFor(x => x.PaymentMethod).Must(p => Enum.TryParse<PaymentMethod>(p, out _)).WithMessage("Invalid payment method.");
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x.SupplierId).NotNull().GreaterThan(0)
+            .When(x => x.IsOnCredit)
+            .WithMessage("Select the agent/supplier the charges are owed to when booking on credit.");
         LandedCostRules.ApplyCharges(this, x => x.Charges);
     }
 }
@@ -122,6 +133,8 @@ internal sealed class UpdateLandedCostVoucherCommandHandler : IRequestHandler<Up
         e.VoucherDate = cmd.VoucherDate;
         e.AllocationBasis = Enum.Parse<LandedCostAllocationBasis>(cmd.AllocationBasis);
         e.PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod);
+        e.IsOnCredit = cmd.IsOnCredit;
+        e.SupplierId = cmd.IsOnCredit ? cmd.SupplierId : null;
         e.Notes = cmd.Notes;
         e.Charges.Clear();
         foreach (var c in LandedCostRules.Build(cmd.Charges)) e.Charges.Add(c);
@@ -215,7 +228,11 @@ internal sealed class PostLandedCostVoucherCommandHandler : IRequestHandler<Post
         var toCogs = total - absorbed;
         if (total > 0m)
         {
-            var cashAccount = v.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+            // Phase A2 — on credit → the C&F agent is owed (2115 Accrued Charges), settled later;
+            // otherwise settled immediately from cash/bank (existing behaviour).
+            var creditAccount = v.IsOnCredit
+                ? LedgerAccounts.AccruedChargesPayable
+                : (v.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank);
             await _journal.PostAsync(
                 v.VoucherDate, $"Landed cost {v.Code} on GRN {grn.Code}",
                 "LandedCostVoucher", v.Id, v.Code,
@@ -223,7 +240,7 @@ internal sealed class PostLandedCostVoucherCommandHandler : IRequestHandler<Post
                 {
                     new JournalPostingLine(LedgerAccounts.RawMaterialInventory, absorbed, 0m),
                     new JournalPostingLine(LedgerAccounts.CostOfGoodsSold, toCogs, 0m),
-                    new JournalPostingLine(cashAccount, 0m, total),
+                    new JournalPostingLine(creditAccount, 0m, total),
                 }, ct);
         }
 
@@ -233,5 +250,63 @@ internal sealed class PostLandedCostVoucherCommandHandler : IRequestHandler<Post
         _repo.Update(v);
         await _uow.SaveChangesAsync(ct);
         return ApiResponse<long>.Ok(v.Id, "Landed-cost voucher posted.");
+    }
+}
+
+// ── Settle (on-credit voucher: pay off Accrued Charges Payable) — Phase A2 ──
+public sealed record SettleLandedCostVoucherCommand(long Id, DateOnly SettleDate, string PaymentMethod)
+    : IRequest<ApiResponse<long>>;
+
+public sealed class SettleLandedCostVoucherCommandValidator : AbstractValidator<SettleLandedCostVoucherCommand>
+{
+    public SettleLandedCostVoucherCommandValidator()
+    {
+        RuleFor(x => x.Id).GreaterThan(0);
+        RuleFor(x => x.SettleDate).NotEmpty();
+        RuleFor(x => x.PaymentMethod).Must(p => Enum.TryParse<PaymentMethod>(p, out _)).WithMessage("Invalid payment method.");
+    }
+}
+
+internal sealed class SettleLandedCostVoucherCommandHandler : IRequestHandler<SettleLandedCostVoucherCommand, ApiResponse<long>>
+{
+    private readonly IRepository<LandedCostVoucher, long> _repo;
+    private readonly IJournalPostingService _journal;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _uow;
+
+    public SettleLandedCostVoucherCommandHandler(
+        IRepository<LandedCostVoucher, long> repo, IJournalPostingService journal,
+        ICurrentUserService currentUser, IUnitOfWork uow)
+    { _repo = repo; _journal = journal; _currentUser = currentUser; _uow = uow; }
+
+    public async Task<ApiResponse<long>> Handle(SettleLandedCostVoucherCommand cmd, CancellationToken ct)
+    {
+        var v = await _repo.Query().Include(x => x.Charges)
+            .FirstOrDefaultAsync(x => x.Id == cmd.Id, ct);
+        if (v is null) return ApiResponse<long>.Fail("Landed-cost voucher not found.");
+        if (v.Status != LandedCostVoucherStatus.Posted) return ApiResponse<long>.Fail("Only a posted voucher can be settled.");
+        if (!v.IsOnCredit) return ApiResponse<long>.Fail("This voucher was paid on posting — nothing to settle.");
+        if (v.SettledAt is not null) return ApiResponse<long>.Fail("This voucher is already settled.");
+
+        var method = Enum.Parse<PaymentMethod>(cmd.PaymentMethod);
+        var total = v.Charges.Sum(c => c.Amount);
+        var cashAccount = method == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+
+        // Dr Accrued Charges Payable 2115 / Cr Cash|Bank — clears the agent liability.
+        await _journal.PostAsync(
+            cmd.SettleDate, $"Settle landed cost {v.Code}", "LandedCostSettlement", v.Id, v.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.AccruedChargesPayable, total, 0m),
+                new JournalPostingLine(cashAccount, 0m, total),
+            }, ct);
+
+        v.SettledDate = cmd.SettleDate;
+        v.SettledAt = DateTimeOffset.UtcNow;
+        v.SettledBy = _currentUser.UserName;
+        v.SettlementMethod = method;
+        _repo.Update(v);
+        await _uow.SaveChangesAsync(ct);
+        return ApiResponse<long>.Ok(v.Id, "Landed-cost charges settled.");
     }
 }

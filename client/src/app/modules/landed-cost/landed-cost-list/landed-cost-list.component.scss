@@ -34,3 +34,11 @@
 .lines-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.6rem; background: #f8fafc; }
 .grand-total { font-size: 0.9rem; strong { color: #0f766e; } }
 :host ::ng-deep .grid-num { width: 8rem; text-align: right; }
+
+/* Phase A2 — on-credit + settlement */
+.credit-check { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer;
+  background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: .55rem .7rem;
+  span { font-size: .8rem; color: #075985; line-height: 1.4; } }
+.credit-badge { margin-left: .4rem; font-size: .62rem; font-weight: 700; background: #fef3c7; color: #92400e; border-radius: 4px; padding: .1rem .4rem; }
+.settled-badge { margin-left: .4rem; font-size: .62rem; font-weight: 700; background: #d1fae5; color: #065f46; border-radius: 4px; padding: .1rem .4rem; }
+.mono { font-family: monospace; font-size: .78rem; }

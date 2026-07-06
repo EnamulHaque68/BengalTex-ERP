@@ -46,6 +46,7 @@ public static class LedgerAccounts
     public const string EmployeeLoans = "1190";             // employee loan receivable sub-ledger (Phase A5)
     public const string CapitalWorkInProgress = "1220";     // CWIP — assets under construction (Phase A8)
     public const string GrIrClearing = "2150";              // goods-received-not-invoiced clearing (Phase A2)
+    public const string AccruedChargesPayable = "2115";     // unsettled landed-cost / C&F agent charges (Phase A2)
     public const string WipAccrual = "2155";                // month-end WIP snapshot contra (Phase A4)
     public const string AitPayable = "2160";                // income tax withheld at source (Phase A5)
     public const string VdsPayable = "2170";                // VAT deducted at source (Phase A5)

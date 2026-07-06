@@ -68,7 +68,8 @@ internal sealed class GetExpenseByIdQueryHandler : IRequestHandler<GetExpenseByI
             .Select(e => new ExpenseDto(
                 e.Id, e.Code, e.ExpenseDate, e.ExpenseCategoryId, e.ExpenseCategory.Name,
                 e.Amount, e.PaymentMethod.ToString(), e.Payee, e.ReferenceNumber, e.Description,
-                e.Status.ToString(), e.ApprovedAt, e.ApprovedBy))
+                e.Status.ToString(), e.ApprovedAt, e.ApprovedBy,
+                e.CostCenterId, e.CostCenter != null ? e.CostCenter.Name : null))
             .FirstOrDefaultAsync(ct);
         return dto is null ? ApiResponse<ExpenseDto>.Fail("Expense not found.") : ApiResponse<ExpenseDto>.Ok(dto);
     }

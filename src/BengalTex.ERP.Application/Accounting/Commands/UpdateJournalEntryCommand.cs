@@ -105,6 +105,7 @@ internal sealed class UpdateJournalEntryCommandHandler
                 Debit = l.Debit,
                 Credit = l.Credit,
                 LineNarration = string.IsNullOrWhiteSpace(l.LineNarration) ? null : l.LineNarration.Trim(),
+                CostCenterId = l.CostCenterId,   // Phase A3
                 SortOrder = sort++
             });
         }

@@ -162,7 +162,7 @@
                     (onChange)="onPoChange($event)" />
         <small class="hint" *ngIf="selectedPo">
           Supplier: <strong>{{ selectedPo.supplierName }}</strong>
-          &middot; PO Total: <strong>{{ formatCurrency(selectedPo.totalAmount) }}</strong>
+          &middot; PO Total: <strong>{{ formatMoney(selectedPo.totalAmount, dialogCurrencyCode) }}</strong>
         </small>
       </div>
 
@@ -208,17 +208,30 @@
       <table class="line-grid">
         <thead>
           <tr>
-            <th class="prod-col">Raw Material</th>
+            <th class="prod-col">Item / Service</th>
             <th class="unit-col">Unit</th>
             <th class="num-col">Quantity</th>
             <th class="num-col">Unit Price</th>
             <th class="num-col">Line Total</th>
             <th>Line Notes</th>
+            <th *ngIf="dialogMode !== 'view'" style="width:36px"></th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let lineCtrl of lines.controls; let i = index" [formGroupName]="i">
-            <td class="prod-cell">{{ meta(lineCtrl).rawMaterialDisplay }}</td>
+            <td class="prod-cell">
+              <ng-container *ngIf="!isService(lineCtrl)">{{ meta(lineCtrl).rawMaterialDisplay }}</ng-container>
+              <ng-container *ngIf="isService(lineCtrl)">
+                <span class="svc-chip">SERVICE</span>
+                <span *ngIf="dialogMode === 'view'">{{ meta(lineCtrl).rawMaterialDisplay }}</span>
+                <p-select *ngIf="dialogMode !== 'view'" formControlName="accountId" [options]="expenseAccounts"
+                          optionValue="id" [filter]="true" filterBy="code,name" placeholder="Expense account"
+                          appendTo="body" styleClass="svc-select">
+                  <ng-template let-a pTemplate="item"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+                  <ng-template let-a pTemplate="selectedItem"><span class="opt-code">{{ a.code }}</span> {{ a.name }}</ng-template>
+                </p-select>
+              </ng-container>
+            </td>
             <td class="unit-cell">{{ meta(lineCtrl).uomCode }}</td>
             <td>
               <p-inputNumber formControlName="quantity" [min]="0"
@@ -228,13 +241,17 @@
               <p-inputNumber formControlName="unitPrice" [min]="0"
                              [minFractionDigits]="2" [maxFractionDigits]="4" inputStyleClass="grid-num" />
             </td>
-            <td class="num fw-600">{{ formatCurrency(lineTotal(lineCtrl)) }}</td>
+            <td class="num fw-600">{{ formatMoney(lineTotal(lineCtrl), dialogCurrencyCode) }}</td>
             <td>
               <input pInputText formControlName="lineNotes" placeholder="(optional)" class="line-notes-input" />
             </td>
+            <td *ngIf="dialogMode !== 'view'">
+              <p-button *ngIf="isService(lineCtrl)" icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="removeLine(i)" pTooltip="Remove service line" />
+            </td>
           </tr>
           <tr *ngIf="lines.length === 0">
-            <td colspan="6" class="empty-lines">
+            <td colspan="7" class="empty-lines">
               <ng-container *ngIf="!form.get('purchaseOrderId')?.value">
                 Select a Purchase Order to load its lines.
               </ng-container>
@@ -247,21 +264,24 @@
         <tfoot>
           <tr>
             <td colspan="4" class="total-label">Subtotal</td>
-            <td class="num subtotal-val">{{ formatCurrency(subtotalAmount()) }}</td>
+            <td class="num subtotal-val">{{ formatMoney(subtotalAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
           <tr>
             <td colspan="4" class="total-label">VAT ({{ form.get('vatRatePercent')?.value || 0 }}%)</td>
-            <td class="num vat-val">{{ formatCurrency(vatAmount()) }}</td>
+            <td class="num vat-val">{{ formatMoney(vatAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
           <tr>
             <td colspan="4" class="total-label grand-label">Total (incl. VAT)</td>
-            <td class="num total-val">{{ formatCurrency(grandTotalAmount()) }}</td>
+            <td class="num total-val">{{ formatMoney(grandTotalAmount(), dialogCurrencyCode) }}</td>
             <td></td>
           </tr>
         </tfoot>
       </table>
+      <p-button *ngIf="dialogMode !== 'view'" label="Add Service Charge" icon="pi pi-plus"
+                severity="secondary" [text]="true" size="small" (click)="addServiceLine()"
+                pTooltip="C&amp;F, freight, repairs — posts to an expense account, not inventory" />
     </div>
 
     <div class="dialog-footer">

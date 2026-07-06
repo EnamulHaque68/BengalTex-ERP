@@ -204,6 +204,7 @@ public class DataSeeder : IDataSeeder
             ("2000", "Liabilities", AccountType.Liability, true, null),
             ("2100", "Current Liabilities", AccountType.Liability, true, "2000"),
             ("2110", "Accounts Payable", AccountType.Liability, false, "2100"),
+            ("2115", "Accrued Charges Payable (Landed Cost)", AccountType.Liability, false, "2100"),
             ("2120", "VAT Payable (Output VAT)", AccountType.Liability, false, "2100"),
             ("2130", "Salary Payable", AccountType.Liability, false, "2100"),
             ("2140", "Advance from Customers", AccountType.Liability, false, "2100"),

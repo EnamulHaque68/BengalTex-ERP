@@ -1,0 +1,78 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Cost Centers</h2>
+      <p class="page-subtitle">The primary accounting dimension &mdash; tags expense, payroll &amp; production so results slice by department / line</p>
+    </div>
+    <div class="header-actions">
+      <p-button *ngIf="canManage" label="New Cost Center" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-error page-alert" *ngIf="error">{{ error }}</div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="centers" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr><th style="width:120px">Code</th><th>Name</th><th style="width:100px">Kind</th><th>Parent</th><th>Department</th><th>Factory</th><th style="width:90px">Status</th><th style="width:70px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-c>
+        <tr>
+          <td><span class="code-badge">{{ c.code }}</span></td>
+          <td class="fw-600">{{ c.name }}</td>
+          <td><span class="kind-badge" [ngClass]="kindClass(c.kind)">{{ c.kind }}</span></td>
+          <td class="muted">{{ c.parentName || '—' }}</td>
+          <td class="muted">{{ c.departmentName || '—' }}</td>
+          <td class="muted">{{ c.factoryName || '—' }}</td>
+          <td><span class="status-badge" [class.active]="c.isActive" [class.inactive]="!c.isActive">{{ c.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td><p-button *ngIf="canManage" icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(c)" pTooltip="Edit" /></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty-row"><i class="pi pi-sitemap"></i><span>No cost centers yet. Create one to start tagging costs.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="editingId ? 'Edit Cost Center' : 'New Cost Center'" [modal]="true" [style]="{ width: '460px' }">
+  <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+  <div class="field" *ngIf="!editingId">
+    <label>Code *</label>
+    <input pInputText [(ngModel)]="code" placeholder="e.g. CUT, SEW, ADM" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Name *</label>
+    <input pInputText [(ngModel)]="name" placeholder="e.g. Cutting Department" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Kind *</label>
+    <p-select [(ngModel)]="kind" [options]="kinds" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Parent (optional)</label>
+    <p-select [(ngModel)]="parentCostCenterId" [options]="parentOptions" optionValue="id" optionLabel="name"
+              [showClear]="true" placeholder="Top-level" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Department (optional) <small>— maps payroll to this cost center</small></label>
+    <p-select [(ngModel)]="departmentId" [options]="departments" optionValue="id" optionLabel="name"
+              [filter]="true" filterBy="code,name" [showClear]="true" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Factory (optional)</label>
+    <p-select [(ngModel)]="factoryId" [options]="factories" optionValue="id" optionLabel="name"
+              [filter]="true" filterBy="code,name" [showClear]="true" placeholder="(none)" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Description</label>
+    <input pInputText [(ngModel)]="description" class="w-full" />
+  </div>
+  <div class="field" *ngIf="editingId">
+    <label class="inline-check"><p-checkbox [(ngModel)]="isActive" [binary]="true" /> Active</label>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="saving" />
+    <p-button [label]="editingId ? 'Save' : 'Create'" icon="pi pi-save" [loading]="saving" (click)="save()" />
+  </div>
+</p-dialog>

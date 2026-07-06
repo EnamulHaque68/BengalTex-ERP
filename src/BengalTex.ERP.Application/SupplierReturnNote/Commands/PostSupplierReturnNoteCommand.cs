@@ -147,17 +147,22 @@ internal sealed class PostSupplierReturnNoteCommandHandler
                 ct: cancellationToken);
         }
 
-        // Auto-journal — goods leave stock back to the supplier at current WAC:
-        // Dr Purchase Returns & Allowances / Cr Raw Material Inventory. Pairs with the
-        // Debit Note's "Dr AP / Cr Purchase Returns" so the two docs net to Dr AP / Cr Inventory.
+        // Auto-journal — goods leave stock back to the supplier at current WAC. Two cases:
+        //   • Billed goods (default): Dr Purchase Returns 5150 / Cr RM Inventory — pairs with the
+        //     Debit Note's "Dr AP / Cr Purchase Returns" so the two net to Dr AP / Cr Inventory.
+        //   • Never-billed goods (Phase A2, ClearsGrIr): Dr GR/IR 2150 / Cr RM Inventory — directly
+        //     reverses the GRN's receipt liability, since there is no bill / AP to adjust.
         if (totalReturnCost > 0m)
         {
+            var debitAccount = srn.ClearsGrIr
+                ? LedgerAccounts.GrIrClearing
+                : LedgerAccounts.PurchaseReturnsAllowances;
             await _journal.PostAsync(
                 srn.ReturnDate, $"Supplier return {srn.Code} (GRN {grn.Code}) — stock out at WAC",
                 "SupplierReturnNote", srn.Id, srn.Code,
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.PurchaseReturnsAllowances, totalReturnCost, 0m),
+                    new JournalPostingLine(debitAccount, totalReturnCost, 0m),
                     new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, totalReturnCost),
                 }, cancellationToken);
         }

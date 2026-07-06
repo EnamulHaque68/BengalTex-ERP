@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { LandedCostListComponent } from './landed-cost-list/landed-cost-list.component';
 
@@ -22,7 +23,7 @@ const routes: Routes = [{ path: '', component: LandedCostListComponent }];
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),
     CardModule, TableModule, ButtonModule, DialogModule,
-    InputTextModule, InputNumberModule, SelectModule, TooltipModule
+    InputTextModule, InputNumberModule, SelectModule, TooltipModule, CheckboxModule
   ]
 })
 export class LandedCostModule {}

@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
-import { AccountingService, FinancialYearDto, AccountingPeriodDto, YearClosePreviewDto } from '../../../services/accounting.service';
+import { AccountingService, FinancialYearDto, AccountingPeriodDto, YearClosePreviewDto, GrIrInitPreviewDto } from '../../../services/accounting.service';
 
 import { apiErrorMessage } from '../../../shared/utils/http-error.util';
 /**
@@ -43,13 +43,63 @@ export class FiscalYearListComponent implements OnInit {
 
   periodActionId: number | null = null;
 
+  // Phase A2 — GR/IR initialization banner
+  grIrPreview: GrIrInitPreviewDto | null = null;
+  grIrVisible = false;
+  grIrRunning = false;
+  grIrError = '';
+  grIrDate = '';
+
   constructor(
     private svc: AccountingService,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    this.loadGrIrPreview();
+  }
+
+  // ── Phase A2 — GR/IR initialization ──
+  loadGrIrPreview(): void {
+    this.svc.grIrInitPreview().subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) this.grIrPreview = res.data;
+        this.cdr.detectChanges();
+      }),
+      error: () => { /* silently skip the banner if not permitted */ }
+    });
+  }
+
+  get showGrIrBanner(): boolean {
+    return !!this.grIrPreview && !this.grIrPreview.alreadyInitialized && this.grIrPreview.totalUnbilledValue > 0;
+  }
+
+  openGrIr(): void {
+    this.grIrDate = new Date().toISOString().slice(0, 10);
+    this.grIrError = '';
+    this.grIrVisible = true;
+  }
+
+  runGrIr(): void {
+    if (this.grIrRunning) return;
+    this.grIrRunning = true;
+    this.grIrError = '';
+    this.svc.initializeGrIr(this.grIrDate).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.grIrRunning = false;
+        if (res.success) { this.grIrVisible = false; this.actionMessage = res.message || 'GR/IR initialized.'; this.loadGrIrPreview(); }
+        else this.grIrError = res.message || 'Initialization failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.grIrRunning = false;
+        this.grIrError = apiErrorMessage(err, 'Initialization failed.');
+        this.cdr.detectChanges();
+      })
+    });
+  }
 
   load(): void {
     this.loading = true;

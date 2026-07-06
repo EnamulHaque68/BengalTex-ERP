@@ -113,6 +113,7 @@ internal sealed class UpdateSalesOrderCommandHandler
             so.Lines.Add(new Domain.Entities.SalesOrderLine
             {
                 ProductId = line.ProductId,
+                StyleId = line.StyleId,   // Phase A3
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
                 SortOrder = sortOrder++,
