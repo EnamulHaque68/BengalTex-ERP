@@ -39,6 +39,9 @@ public class SubcontractOrder : BaseTransactionalEntity
     public DateTimeOffset? ReceivedAt { get; set; }
     public string? ReceivedBy { get; set; }
 
+    /// <summary>Phase A4 — true once the processing charge has been journalled (Dr WIP / Cr AP), guarding double-post.</summary>
+    public bool IsGlPosted { get; set; }
+
     public string? Notes { get; set; }
 
     public ICollection<SubcontractLine> Lines { get; set; } = new List<SubcontractLine>();

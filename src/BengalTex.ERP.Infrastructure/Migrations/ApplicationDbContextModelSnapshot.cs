@@ -1614,6 +1614,77 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("CostCenters", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostingRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Basis")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
+
+                    b.Property<string>("RateType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("WorkCenterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkCenterId");
+
+                    b.HasIndex("RateType", "WorkCenterId", "EffectiveFrom");
+
+                    b.ToTable("CostingRates", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CreditNote", b =>
                 {
                     b.Property<long>("Id")
@@ -9553,6 +9624,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsGlPosted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTimeOffset?>("IssuedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -12019,6 +12093,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Factory");
 
                     b.Navigation("ParentCostCenter");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostingRate", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.WorkCenter", "WorkCenter")
+                        .WithMany()
+                        .HasForeignKey("WorkCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("WorkCenter");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CreditNote", b =>

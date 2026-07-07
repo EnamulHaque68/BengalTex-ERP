@@ -57,6 +57,7 @@ public static class LedgerAccounts
     public const string UnrealizedExchangeLoss = "5810";    // month-end FC revaluation loss (Phase A6)
     public const string PurchasePriceVariance = "5155";     // PO price vs bill price (Phase A2)
     public const string OverheadAbsorptionVariance = "5165";// under/over-absorbed conversion cost (Phase A4)
+    public const string FactoryOverhead = "5300";           // actual factory-overhead pool (Phase A4 true-up)
     public const string AppliedLabour = "5211";             // contra credited when labour is absorbed into WIP (Phase A4)
     public const string AppliedFactoryOverhead = "5311";    // contra credited when FOH is absorbed into WIP (Phase A4)
     public const string SampleMarketingExpense = "5460";    // free samples / marketing (Phase A8)

@@ -18,11 +18,13 @@ public class CompleteProductionOrderGateTests
 {
     private static CompleteProductionOrderCommandHandler Handler(ApplicationDbContext ctx) =>
         new(new Repository<ProductionOrder, long>(ctx),
+            new Repository<JobCard, long>(ctx),
             new BengalTex.ERP.Infrastructure.Persistence.UnitOfWork(ctx),
             new Mock<IStockService>().Object,
             new Mock<IStockLotService>().Object,
             new Mock<IStockReservationService>().Object,
             new Mock<IJournalPostingService>().Object,
+            new Mock<ICostingRateResolver>().Object,
             new StubCurrentUser(),
             new Mock<INotificationService>().Object,
             new Mock<IMediator>().Object);

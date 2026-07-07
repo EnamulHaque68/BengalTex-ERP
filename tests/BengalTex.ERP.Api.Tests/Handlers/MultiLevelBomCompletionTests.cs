@@ -70,10 +70,15 @@ public class MultiLevelBomCompletionTests
         var mediator = new Mock<IMediator>();
         mediator.Setup(m => m.Send(It.IsAny<GetProductionOrderByIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ApiResponse<ProductionOrderDto>.Ok(null!));
+        var rates = new Mock<ICostingRateResolver>();
+        rates.Setup(r => r.ResolveAsync(It.IsAny<CostingRateType>(), It.IsAny<DateOnly>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(0m);   // no absorption rates → material-only (pre-A4 behaviour) for these tests
         return new CompleteProductionOrderCommandHandler(
             new Repository<ProductionOrder, long>(ctx),
+            new Repository<JobCard, long>(ctx),
             new UnitOfWork(ctx),
             _stock.Object, _lots.Object, new Mock<IStockReservationService>().Object, _journal.Object,
+            rates.Object,
             new StubCurrentUser(), new Mock<INotificationService>().Object, mediator.Object);
     }
 

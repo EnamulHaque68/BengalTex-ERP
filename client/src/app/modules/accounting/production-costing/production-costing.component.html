@@ -1,0 +1,84 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Production Costing</h2>
+      <p class="page-subtitle">Fully-loaded cost per order (material + labour + machine + overhead + subcontract) &amp; WIP valuation</p>
+    </div>
+    <div class="header-actions">
+      <label class="dt">From <input pInputText type="date" [(ngModel)]="fromDate" (change)="load()" /></label>
+      <label class="dt">To <input pInputText type="date" [(ngModel)]="toDate" (change)="load()" /></label>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.on]="tab === 'cost-sheet'" (click)="setTab('cost-sheet')">Cost Sheet</button>
+    <button type="button" class="tab" [class.on]="tab === 'wip'" (click)="setTab('wip')">WIP Valuation</button>
+  </div>
+
+  <!-- Cost sheet -->
+  <p-card styleClass="table-card" *ngIf="tab === 'cost-sheet'">
+    <div class="totals" *ngIf="sheet">
+      <div class="t-tile mat"><span class="l">Material</span><span class="v">{{ formatMoney(sheet.totalMaterial) }}</span></div>
+      <div class="t-tile lab"><span class="l">Labour</span><span class="v">{{ formatMoney(sheet.totalLabour) }}</span></div>
+      <div class="t-tile mac"><span class="l">Machine</span><span class="v">{{ formatMoney(sheet.totalMachine) }}</span></div>
+      <div class="t-tile oh"><span class="l">Factory OH</span><span class="v">{{ formatMoney(sheet.totalOverhead) }}</span></div>
+      <div class="t-tile sub"><span class="l">Subcontract</span><span class="v">{{ formatMoney(sheet.totalSubcontract) }}</span></div>
+      <div class="t-tile tot"><span class="l">Total</span><span class="v">{{ formatMoney(sheet.grandTotal) }}</span></div>
+    </div>
+    <div class="scroll-x">
+      <p-table [value]="sheet?.rows || []" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+        <ng-template pTemplate="header">
+          <tr><th>Order</th><th>Product</th><th>Style</th><th class="num">Qty</th>
+            <th class="num">Material</th><th class="num">Labour</th><th class="num">Machine</th><th class="num">Factory OH</th><th class="num">Subcon</th>
+            <th class="num">Total</th><th class="num">Unit Cost</th></tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr>
+            <td class="fw-600">{{ r.code }}</td>
+            <td>{{ r.productName }}</td>
+            <td class="muted">{{ r.styleName || '—' }}</td>
+            <td class="num">{{ r.quantity | number:'1.0-4' }}</td>
+            <td class="num">{{ formatMoney(r.materialCost) }}</td>
+            <td class="num">{{ formatMoney(r.labourCost) }}</td>
+            <td class="num">{{ formatMoney(r.machineCost) }}</td>
+            <td class="num">{{ formatMoney(r.overheadCost) }}</td>
+            <td class="num">{{ formatMoney(r.subcontractCost) }}</td>
+            <td class="num fw-600">{{ formatMoney(r.totalCost) }}</td>
+            <td class="num">{{ formatMoney(r.unitCost) }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="11" class="empty-row"><i class="pi pi-calculator"></i>
+            <span>No completed production orders in range. Configure costing rates &amp; complete orders to see loaded cost.</span></td></tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </p-card>
+
+  <!-- WIP valuation -->
+  <p-card styleClass="table-card" *ngIf="tab === 'wip'">
+    <div class="wip-tie" *ngIf="wip">
+      <span>Estimated WIP: <strong>{{ formatMoney(wip.totalEstimatedValue) }}</strong></span>
+      <span>GL 1160 balance: <strong>{{ formatMoney(wip.glWipBalance) }}</strong></span>
+      <span class="var" [class.off]="wip.variance !== 0">Variance: <strong>{{ formatMoney(wip.variance) }}</strong></span>
+    </div>
+    <p-table [value]="wip?.rows || []" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr><th>Order</th><th>Product</th><th>Style</th><th class="num">Qty</th><th class="num">Estimated Value</th><th>Started</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.code }}</td>
+          <td>{{ r.productName }}</td>
+          <td class="muted">{{ r.styleName || '—' }}</td>
+          <td class="num">{{ r.quantity | number:'1.0-4' }}</td>
+          <td class="num fw-600">{{ formatMoney(r.estimatedValue) }}</td>
+          <td class="muted">{{ r.startDate || '—' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="6" class="empty-row"><i class="pi pi-cog"></i><span>No in-progress production orders.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

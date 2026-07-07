@@ -32,6 +32,22 @@
     <p-button label="Review &amp; Initialize" icon="pi pi-bolt" size="small" (click)="openGrIr()" />
   </div>
 
+  <!-- Phase A4 — month-end costing close steps -->
+  <div class="close-steps">
+    <div class="cs-head"><i class="pi pi-calculator"></i> Month-End Costing (Phase A4)</div>
+    <div class="cs-body">
+      <label class="cs-dt">From <input pInputText type="date" [(ngModel)]="costFrom" /></label>
+      <label class="cs-dt">To <input pInputText type="date" [(ngModel)]="costTo" /></label>
+      <label class="cs-dt">Post date <input pInputText type="date" [(ngModel)]="costDate" /></label>
+      <p-button label="Run Absorption True-Up" icon="pi pi-sync" size="small" [outlined]="true"
+                [loading]="costBusy" (click)="runAbsorptionTrueUp()"
+                pTooltip="Relieve applied conversion (5211/5311) to Over/Under-Absorbed (5165)" />
+      <p-button label="Post WIP Snapshot" icon="pi pi-camera" size="small" [outlined]="true"
+                [loading]="costBusy" (click)="runWipSnapshot()"
+                pTooltip="Value in-progress orders at cut-off (auto-reverses next day)" />
+    </div>
+  </div>
+
   <div class="empty-state" *ngIf="!loading && years.length === 0">
     <i class="pi pi-calendar"></i>
     <p><strong>No fiscal year defined yet.</strong></p>
