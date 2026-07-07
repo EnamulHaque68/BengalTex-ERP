@@ -1,0 +1,33 @@
+.page-shell { padding: 1.25rem 1.5rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.page-title { font-size: 1.4rem; font-weight: 700; margin: 0; color: #111827; }
+.page-subtitle { margin: .15rem 0 0; color: #6b7280; font-size: .85rem; }
+
+.hint-banner {
+  display: flex; align-items: flex-start; gap: .55rem; background: #eff6ff; border: 1px solid #bfdbfe;
+  border-radius: 10px; padding: .7rem 1rem; margin-bottom: 1rem; font-size: .85rem; color: #1e40af; max-width: 90ch;
+  i { font-size: 1.05rem; margin-top: .1rem; } strong { color: #1e3a8a; }
+}
+.alert { display: flex; align-items: center; gap: .5rem; border-radius: 8px; padding: .6rem .8rem; font-size: .85rem; }
+.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; } .fw-600 { font-weight: 600; } .muted { color: #9ca3af; }
+.type-badge {
+  font-size: .66rem; font-weight: 700; padding: .12rem .5rem; border-radius: 999px;
+  &.t-lab { background: #e4f2ea; color: #157a45; }
+  &.t-mac { background: #f8eddb; color: #b06a12; }
+  &.t-foh { background: #fdf4ff; color: #a21caf; }
+}
+.status-badge {
+  font-size: .66rem; font-weight: 700; padding: .12rem .5rem; border-radius: 999px;
+  &.active { background: #d1fae5; color: #065f46; } &.inactive { background: #f3f4f6; color: #6b7280; }
+}
+.empty-row { text-align: center; color: #9ca3af; padding: 2rem;
+  i { display: block; font-size: 1.8rem; margin-bottom: .5rem; color: #c7d2fe; }
+  span { display: block; max-width: 56ch; margin-inline: auto; } }
+
+.field { margin-bottom: .9rem; label { display: block; font-size: .8125rem; font-weight: 500; color: #374151; margin-bottom: .35rem;
+  small { color: #9ca3af; font-weight: 400; } } }
+.inline-check { display: flex; align-items: center; gap: .5rem; }
+.w-full { width: 100%; }
+.dialog-footer { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid #f3f4f6; }

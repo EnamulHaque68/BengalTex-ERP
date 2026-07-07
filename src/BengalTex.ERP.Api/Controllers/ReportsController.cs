@@ -1,5 +1,6 @@
 using BengalTex.ERP.Api.Authorization;
 using BengalTex.ERP.Application.Accounting.Dimensions;
+using BengalTex.ERP.Application.Accounting.Costing;
 using BengalTex.ERP.Application.Reports.Commands;
 using BengalTex.ERP.Application.Reports.Queries;
 using BengalTex.ERP.Shared.Permissions;
@@ -37,6 +38,21 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> GetCostCenterStatement(
         [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetCostCenterStatementQuery(fromDate, toDate), ct));
+
+    // ── Phase A4 — production costing ──
+
+    /// <summary>Fully-loaded cost sheet per completed production order for a period.</summary>
+    [HttpGet("production-cost-sheet")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetProductionCostSheet(
+        [FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetProductionCostSheetQuery(fromDate, toDate), ct));
+
+    /// <summary>In-progress production orders with estimated WIP value, tied to GL 1160 (financial WIP valuation).</summary>
+    [HttpGet("wip-valuation")]
+    [HasPermission(Permissions.Reports.ViewFinance)]
+    public async Task<IActionResult> GetWipValuation([FromQuery] DateOnly? asOfDate = null, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetWipCostReportQuery(asOfDate), ct));
 
     [HttpGet("stock-summary")]
     [HasPermission(Permissions.Reports.ViewInventory)]

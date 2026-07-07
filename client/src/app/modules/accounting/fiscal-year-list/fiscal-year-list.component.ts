@@ -59,6 +59,7 @@ export class FiscalYearListComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadGrIrPreview();
+    this.monthRange();   // Phase A4 — default the costing close-step dates to this month
   }
 
   // ── Phase A2 — GR/IR initialization ──
@@ -98,6 +99,46 @@ export class FiscalYearListComponent implements OnInit {
         this.grIrError = apiErrorMessage(err, 'Initialization failed.');
         this.cdr.detectChanges();
       })
+    });
+  }
+
+  // ── Phase A4 — month-end costing close steps ──
+  costFrom = '';
+  costTo = '';
+  costDate = '';
+  costBusy = false;
+
+  private monthRange(): void {
+    const now = new Date();
+    this.costFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    this.costTo = this.costDate = now.toISOString().slice(0, 10);
+  }
+
+  runAbsorptionTrueUp(): void {
+    if (this.costBusy) return;
+    if (!this.costFrom) this.monthRange();
+    this.costBusy = true; this.actionError = '';
+    this.svc.postAbsorptionTrueUp(this.costFrom, this.costTo, this.costDate).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.costBusy = false;
+        if (res.success) this.actionMessage = res.message || 'Absorption trued up.'; else this.actionError = res.message || 'True-up failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.costBusy = false; this.actionError = apiErrorMessage(err, 'True-up failed.'); this.cdr.detectChanges(); })
+    });
+  }
+
+  runWipSnapshot(): void {
+    if (this.costBusy) return;
+    if (!this.costTo) this.monthRange();
+    this.costBusy = true; this.actionError = '';
+    this.svc.postWipSnapshot(this.costTo).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.costBusy = false;
+        if (res.success) this.actionMessage = res.message || 'WIP snapshot posted.'; else this.actionError = res.message || 'Snapshot failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.costBusy = false; this.actionError = apiErrorMessage(err, 'Snapshot failed.'); this.cdr.detectChanges(); })
     });
   }
 

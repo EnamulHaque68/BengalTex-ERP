@@ -84,3 +84,12 @@
   tfoot td { border-top: 1px solid #e5e7eb; font-weight: 600; } .total { color: #b45309; }
 }
 .mono { font-family: monospace; font-size: .8rem; }
+
+/* Phase A4 — month-end costing close steps */
+.close-steps {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 1rem; overflow: hidden;
+  .cs-head { display: flex; align-items: center; gap: .5rem; padding: .7rem 1.1rem; background: #fafbfc; border-bottom: 1px solid #eef1f5; font-weight: 700; font-size: .9rem; color: #374151;
+    i { color: #0d6e63; } }
+  .cs-body { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; padding: .8rem 1.1rem; }
+  .cs-dt { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: #6b7280; input { width: 140px; } }
+}

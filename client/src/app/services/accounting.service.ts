@@ -183,7 +183,76 @@ export class AccountingService {
     const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
     return this.http.get<ApiResponse<CostCenterStatementDto>>(`${this.reports}/cost-center-statement`, { params });
   }
+
+  // ── Phase A4 — costing rates + production costing + close steps ──
+  private readonly costingRates = `${environment.apiBaseUrl}/api/costing-rates`;
+
+  getCostingRates(includeInactive = false): Observable<ApiResponse<CostingRateDto[]>> {
+    return this.http.get<ApiResponse<CostingRateDto[]>>(this.costingRates, { params: new HttpParams().set('includeInactive', includeInactive.toString()) });
+  }
+  createCostingRate(data: SaveCostingRateRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(this.costingRates, data);
+  }
+  updateCostingRate(id: number, data: SaveCostingRateRequest & { isActive: boolean }): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(`${this.costingRates}/${id}`, { id, ...data });
+  }
+  productionCostSheet(fromDate: string, toDate: string): Observable<ApiResponse<ProductionCostSheetDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<ProductionCostSheetDto>>(`${this.reports}/production-cost-sheet`, { params });
+  }
+  wipValuation(asOfDate?: string): Observable<ApiResponse<WipReportDto>> {
+    let params = new HttpParams();
+    if (asOfDate) params = params.set('asOfDate', asOfDate);
+    return this.http.get<ApiResponse<WipReportDto>>(`${this.reports}/wip-valuation`, { params });
+  }
+  absorptionPreview(fromDate: string, toDate: string): Observable<ApiResponse<AbsorptionPreviewDto>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<AbsorptionPreviewDto>>(`${this.inventoryGl}/absorption-preview`, { params });
+  }
+  postAbsorptionTrueUp(fromDate: string, toDate: string, postDate: string): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.inventoryGl}/absorption-true-up`, { fromDate, toDate, postDate });
+  }
+  postWipSnapshot(asOfDate: string): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.inventoryGl}/wip-snapshot`, { asOfDate });
+  }
 }
+
+// ── Phase A4 DTOs ──
+export interface CostingRateDto {
+  id: number; rateType: string; basis: string; rate: number; effectiveFrom: string;
+  workCenterId: number | null; workCenterName: string | null; isActive: boolean; notes: string | null;
+}
+export interface SaveCostingRateRequest {
+  rateType: string; basis: string; rate: number; effectiveFrom: string; workCenterId: number | null; notes: string | null;
+}
+export interface ProductionCostSheetRowDto {
+  productionOrderId: number; code: string; productName: string; styleName: string | null;
+  quantity: number; status: string;
+  materialCost: number; labourCost: number; machineCost: number; overheadCost: number; subcontractCost: number;
+  totalCost: number; unitCost: number;
+}
+export interface ProductionCostSheetDto {
+  fromDate: string; toDate: string; rows: ProductionCostSheetRowDto[];
+  totalMaterial: number; totalLabour: number; totalMachine: number; totalOverhead: number; totalSubcontract: number; grandTotal: number;
+}
+export interface WipReportRowDto {
+  productionOrderId: number; code: string; productName: string; styleName: string | null;
+  quantity: number; estimatedValue: number; startDate: string | null;
+}
+export interface WipReportDto {
+  rows: WipReportRowDto[]; totalEstimatedValue: number; glWipBalance: number; variance: number;
+}
+export interface AbsorptionPreviewDto {
+  appliedLabour: number; appliedFactoryOverhead: number; appliedTotal: number;
+  actualLabour: number; actualFactoryOverhead: number; actualTotal: number;
+  variance: number; varianceKind: string;
+}
+export const COSTING_RATE_TYPES = [
+  { label: 'Labour', value: 'Labour' }, { label: 'Machine OH', value: 'MachineOH' }, { label: 'Factory OH', value: 'FactoryOH' }
+];
+export const COSTING_RATE_BASES = [
+  { label: 'Per labour-minute', value: 'PerLabourMinute' }, { label: 'Per machine-hour', value: 'PerMachineHour' }, { label: 'Per unit', value: 'PerUnit' }
+];
 
 // ── Phase A3 DTOs ──
 export interface CostCenterDto {

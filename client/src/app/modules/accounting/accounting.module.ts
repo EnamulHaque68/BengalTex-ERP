@@ -31,6 +31,8 @@ import { OpeningBalancesComponent } from './opening-balances/opening-balances.co
 import { InventoryTieOutComponent } from './inventory-tie-out/inventory-tie-out.component';
 import { CostCentersComponent } from './cost-centers/cost-centers.component';
 import { ProfitabilityComponent } from './profitability/profitability.component';
+import { CostingRatesComponent } from './costing-rates/costing-rates.component';
+import { ProductionCostingComponent } from './production-costing/production-costing.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -51,6 +53,9 @@ const routes: Routes = [
   // Phase A3 — dimensions
   { path: 'cost-centers', component: CostCentersComponent },
   { path: 'profitability', component: ProfitabilityComponent },
+  // Phase A4 — true cost
+  { path: 'costing-rates', component: CostingRatesComponent },
+  { path: 'production-costing', component: ProductionCostingComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
@@ -60,7 +65,8 @@ const routes: Routes = [
     GeneralLedgerComponent, ProfitLossComponent, BalanceSheetComponent, CashFlowComponent,
     CashBookComponent, BankBookComponent, DayBookComponent,
     FiscalYearListComponent, OpeningBalancesComponent, InventoryTieOutComponent,
-    CostCentersComponent, ProfitabilityComponent
+    CostCentersComponent, ProfitabilityComponent,
+    CostingRatesComponent, ProductionCostingComponent
   ],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,

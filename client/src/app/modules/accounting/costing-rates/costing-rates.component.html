@@ -1,0 +1,70 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Costing Rates</h2>
+      <p class="page-subtitle">Absorption rates that load labour / machine / factory-overhead into product cost &mdash; no rate = material-only (as before)</p>
+    </div>
+    <div class="header-actions">
+      <p-button *ngIf="canManage" label="New Rate" icon="pi pi-plus" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="hint-banner">
+    <i class="pi pi-info-circle"></i>
+    Set a <strong>Labour</strong> rate (per operator-minute) and a <strong>Factory OH</strong> rate (per unit) to activate fully-loaded product costing.
+    A work-center-specific rate overrides the global one for that center.
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="rates" [loading]="loading" styleClass="p-datatable-sm" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr><th style="width:130px">Type</th><th>Basis</th><th class="num">Rate (BDT)</th><th>Effective From</th><th>Work Center</th><th style="width:90px">Status</th><th style="width:70px"></th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td><span class="type-badge" [ngClass]="typeClass(r.rateType)">{{ typeLabel(r.rateType) }}</span></td>
+          <td class="muted">{{ r.basis }}</td>
+          <td class="num fw-600">{{ r.rate | number:'1.2-6' }}</td>
+          <td>{{ r.effectiveFrom }}</td>
+          <td class="muted">{{ r.workCenterName || 'Global' }}</td>
+          <td><span class="status-badge" [class.active]="r.isActive" [class.inactive]="!r.isActive">{{ r.isActive ? 'Active' : 'Inactive' }}</span></td>
+          <td><p-button *ngIf="canManage" icon="pi pi-pencil" severity="secondary" [text]="true" size="small" (click)="openEdit(r)" pTooltip="Edit" /></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="empty-row"><i class="pi pi-calculator"></i><span>No costing rates — production is currently material-only. Add a rate to load conversion cost.</span></td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [header]="editingId ? 'Edit Costing Rate' : 'New Costing Rate'" [modal]="true" [style]="{ width: '460px' }">
+  <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+  <div class="field">
+    <label>Rate Type *</label>
+    <p-select [(ngModel)]="rateType" [options]="types" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" (onChange)="onTypeChange()" />
+  </div>
+  <div class="field">
+    <label>Basis *</label>
+    <p-select [(ngModel)]="basis" [options]="bases" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Rate (BDT) *</label>
+    <p-inputNumber [(ngModel)]="rate" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="6" inputStyleClass="w-full" styleClass="w-full" />
+  </div>
+  <div class="field">
+    <label>Effective From *</label>
+    <input pInputText type="date" [(ngModel)]="effectiveFrom" class="w-full" />
+  </div>
+  <div class="field">
+    <label>Work Center (optional) <small>— overrides the global rate for this center</small></label>
+    <p-select [(ngModel)]="workCenterId" [options]="workCenters" optionValue="id" optionLabel="name"
+              [filter]="true" filterBy="code,name" [showClear]="true" placeholder="Global (all centers)" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field"><label>Notes</label><input pInputText [(ngModel)]="notes" class="w-full" /></div>
+  <div class="field" *ngIf="editingId"><label class="inline-check"><p-checkbox [(ngModel)]="isActive" [binary]="true" /> Active</label></div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="saving" />
+    <p-button [label]="editingId ? 'Save' : 'Create'" icon="pi pi-save" [loading]="saving" (click)="save()" />
+  </div>
+</p-dialog>

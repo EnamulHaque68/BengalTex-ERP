@@ -27,32 +27,38 @@ internal sealed class CompleteProductionOrderCommandHandler
     : IRequestHandler<CompleteProductionOrderCommand, ApiResponse<ProductionOrderDto>>
 {
     private readonly IRepository<Domain.Entities.ProductionOrder, long> _repo;
+    private readonly IRepository<Domain.Entities.JobCard, long> _jobCardRepo;
     private readonly IUnitOfWork _uow;
     private readonly IStockService _stock;
     private readonly IStockLotService _lots;
     private readonly IStockReservationService _reservations;
     private readonly IJournalPostingService _journal;
+    private readonly ICostingRateResolver _rates;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
     private readonly IMediator _mediator;
 
     public CompleteProductionOrderCommandHandler(
         IRepository<Domain.Entities.ProductionOrder, long> repo,
+        IRepository<Domain.Entities.JobCard, long> jobCardRepo,
         IUnitOfWork uow,
         IStockService stock,
         IStockLotService lots,
         IStockReservationService reservations,
         IJournalPostingService journal,
+        ICostingRateResolver rates,
         ICurrentUserService currentUser,
         INotificationService notifications,
         IMediator mediator)
     {
         _repo = repo;
+        _jobCardRepo = jobCardRepo;
         _uow = uow;
         _stock = stock;
         _lots = lots;
         _reservations = reservations;
         _journal = journal;
+        _rates = rates;
         _currentUser = currentUser;
         _notifications = notifications;
         _mediator = mediator;
@@ -167,12 +173,43 @@ internal sealed class CompleteProductionOrderCommandHandler
         }
         var totalRmCost = rmCost + componentCost;   // total material cost rolled into the output FG
 
-        // ── Phase 3: recompute Product WAC, then post finished-goods movement ────
-        // FG unit cost = total RM cost consumed ÷ produced qty. Weighted-average it into
-        // the Product's existing stock value (qtyBefore captured before the receipt).
+        // ── Phase A4: absorb conversion cost into WIP (labour + machine + factory OH) ──
+        // Labour  = Σ over the order's job cards of ActiveMinutes × labour rate (per stage work center).
+        // Machine = Σ (job cards with a machine) machine-hours × machine-OH rate.
+        // FOH     = output quantity × factory-OH per-unit rate (global).
+        // No configured rate → that layer is 0 → production stays material-only (pre-A4 behaviour).
+        var jobCards = await _jobCardRepo.Query().AsNoTracking()
+            .Where(j => j.ProductionOrderId == po.Id)
+            .Select(j => new { j.ActiveMinutes, j.MachineId, WcId = j.ProductionStage != null ? j.ProductionStage.WorkCenterId : null })
+            .ToListAsync(cancellationToken);
+
+        decimal labourCost = 0m, machineCost = 0m;
+        foreach (var jc in jobCards)
+        {
+            var mins = jc.ActiveMinutes ?? 0;
+            if (mins <= 0) continue;
+            var labourRate = await _rates.ResolveAsync(CostingRateType.Labour, movementDate, jc.WcId, cancellationToken);
+            labourCost += mins * labourRate;
+            if (jc.MachineId is not null)
+            {
+                var machineRate = await _rates.ResolveAsync(CostingRateType.MachineOH, movementDate, jc.WcId, cancellationToken);
+                machineCost += (mins / 60m) * machineRate;
+            }
+        }
+        var fohRate = await _rates.ResolveAsync(CostingRateType.FactoryOH, movementDate, null, cancellationToken);
+        var overheadCost = po.Quantity * fohRate;
+
+        labourCost = Math.Round(labourCost, 2, MidpointRounding.AwayFromZero);
+        machineCost = Math.Round(machineCost, 2, MidpointRounding.AwayFromZero);
+        overheadCost = Math.Round(overheadCost, 2, MidpointRounding.AwayFromZero);
+        var loadedCost = totalRmCost + labourCost + machineCost + overheadCost;   // fully-loaded FG cost (F1)
+
+        // ── Phase 3/A4: recompute Product WAC on the FULLY-LOADED cost, then post FG movement ──
+        // FG unit cost = loaded cost ÷ produced qty (material + labour + machine + OH). Weighted-average
+        // into the Product's existing stock value (qtyBefore captured before the receipt).
         if (po.Quantity > 0m)
         {
-            var fgUnitCost = totalRmCost / po.Quantity;
+            var fgUnitCost = loadedCost / po.Quantity;
             var productQtyBefore = await _stock.GetProductTotalOnHandAsync(po.ProductId, cancellationToken);
             var denom = productQtyBefore + po.Quantity;
             if (denom > 0m)
@@ -206,6 +243,9 @@ internal sealed class CompleteProductionOrderCommandHandler
         // ── Phase 4: mark order completed ────────────────────────────────────────
         po.Status = ProductionOrderStatus.Completed;
         po.MaterialCost = totalRmCost;            // Phase 6 — persist consumed RM cost on the cost sheet
+        po.LabourCost = labourCost;               // Phase A4 — GL-backed absorbed conversion cost
+        po.MachineCost = machineCost;
+        po.OverheadCost = overheadCost;
         po.ActualEndDate = movementDate;
         po.CompletedAt = DateTimeOffset.UtcNow;
         po.CompletedBy = _currentUser.UserName;
@@ -220,12 +260,13 @@ internal sealed class CompleteProductionOrderCommandHandler
         // (Only when consumed cost is non-zero — zero-cost components would produce zero-balance entries.
         //  Multi-level BOM: component sub-assemblies are issued out of Finished Goods Inventory, raw
         //  materials out of Raw Material Inventory — the credit splits accordingly; zero lines are dropped.)
+        // Phase A3 — tag production legs with the order + style so WIP/output value is
+        // attributable per production order and style.
+        var prodDims = new Dimensions(StyleId: po.StyleId, ProductionOrderId: po.Id);
+
+        // (a) materials issued to WIP (backflush) — only when material was consumed.
         if (totalRmCost > 0m)
         {
-            // Phase A3 — tag production legs with the order + style so WIP/output value is
-            // attributable per production order and style.
-            var prodDims = new Dimensions(StyleId: po.StyleId, ProductionOrderId: po.Id);
-
             await _journal.PostAsync(
                 movementDate,
                 $"Production {po.Code} — materials issued to WIP for {po.Product.Name}",
@@ -236,15 +277,46 @@ internal sealed class CompleteProductionOrderCommandHandler
                     new JournalPostingLine(LedgerAccounts.RawMaterialInventory, 0m, rmCost, prodDims),
                     new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, 0m, componentCost, prodDims),
                 }, cancellationToken);
+        }
 
+        // (a2) Phase A4 — applied labour absorbed into WIP against the Applied Labour contra.
+        if (labourCost > 0m)
+        {
+            await _journal.PostAsync(
+                movementDate, $"Production {po.Code} — labour absorbed to WIP",
+                "ProductionOrder", po.Id, po.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, labourCost, 0m, prodDims),
+                    new JournalPostingLine(LedgerAccounts.AppliedLabour, 0m, labourCost, prodDims),
+                }, cancellationToken);
+        }
+
+        // (a3) Phase A4 — applied machine + factory overhead absorbed into WIP against Applied FOH contra.
+        var appliedFoh = machineCost + overheadCost;
+        if (appliedFoh > 0m)
+        {
+            await _journal.PostAsync(
+                movementDate, $"Production {po.Code} — machine + factory overhead absorbed to WIP",
+                "ProductionOrder", po.Id, po.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, appliedFoh, 0m, prodDims),
+                    new JournalPostingLine(LedgerAccounts.AppliedFactoryOverhead, 0m, appliedFoh, prodDims),
+                }, cancellationToken);
+        }
+
+        // (b) WIP completed to finished goods at the FULLY-LOADED cost (material + conversion).
+        if (loadedCost > 0m)
+        {
             await _journal.PostAsync(
                 movementDate,
                 $"Production {po.Code} — WIP completed to finished goods ({po.Product.Name})",
                 "ProductionOrder", po.Id, po.Code,
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, totalRmCost, 0m, prodDims),
-                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, totalRmCost, prodDims),
+                    new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, loadedCost, 0m, prodDims),
+                    new JournalPostingLine(LedgerAccounts.WorkInProgressInventory, 0m, loadedCost, prodDims),
                 }, cancellationToken);
         }
 

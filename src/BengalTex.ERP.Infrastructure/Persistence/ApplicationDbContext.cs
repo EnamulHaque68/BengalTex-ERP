@@ -118,6 +118,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<FinancialYear> FinancialYears => Set<FinancialYear>();
     public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
     public DbSet<CostCenter> CostCenters => Set<CostCenter>();
+    public DbSet<CostingRate> CostingRates => Set<CostingRate>();
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Quotation> Quotations => Set<Quotation>();

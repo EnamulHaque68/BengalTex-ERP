@@ -36,6 +36,28 @@ public class InventoryGlController : ControllerBase
     [HasPermission(Permissions.Reports.ViewFinance)]
     public async Task<IActionResult> TieOut([FromQuery] DateOnly? asOfDate = null, CancellationToken ct = default)
         => Ok(await _mediator.Send(new GetInventoryGlTieOutQuery(asOfDate), ct));
+
+    // ── Phase A4 — month-close absorption steps ──
+
+    /// <summary>Preview applied conversion vs actual pools for a period (the absorption variance).</summary>
+    [HttpGet("absorption-preview")]
+    [HasPermission(Permissions.Accounting.CloseBooks)]
+    public async Task<IActionResult> AbsorptionPreview([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetAbsorptionTrueUpPreviewQuery(fromDate, toDate), ct));
+
+    /// <summary>Post the absorption true-up (relieve applied contra to 5165).</summary>
+    [HttpPost("absorption-true-up")]
+    [HasPermission(Permissions.Accounting.CloseBooks)]
+    public async Task<IActionResult> AbsorptionTrueUp([FromBody] AbsorptionTrueUpRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new PostAbsorptionTrueUpCommand(request.FromDate, request.ToDate, request.PostDate), ct));
+
+    /// <summary>Post the month-end WIP snapshot (auto-reversing next day).</summary>
+    [HttpPost("wip-snapshot")]
+    [HasPermission(Permissions.Accounting.CloseBooks)]
+    public async Task<IActionResult> WipSnapshot([FromBody] WipSnapshotRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new PostWipSnapshotCommand(request.AsOfDate), ct));
 }
 
 public record InitializeGrIrRequest(DateOnly AsOfDate);
+public record AbsorptionTrueUpRequest(DateOnly FromDate, DateOnly ToDate, DateOnly PostDate);
+public record WipSnapshotRequest(DateOnly AsOfDate);

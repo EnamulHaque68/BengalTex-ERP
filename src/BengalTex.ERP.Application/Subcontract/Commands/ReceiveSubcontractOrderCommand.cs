@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Services;
 using BengalTex.ERP.Application.Subcontract.Dtos;
@@ -42,17 +43,28 @@ internal sealed class ReceiveSubcontractOrderCommandHandler
     : IRequestHandler<ReceiveSubcontractOrderCommand, ApiResponse<SubcontractOrderDto>>
 {
     private readonly IRepository<SubcontractOrder, long> _repo;
+    private readonly IRepository<Domain.Entities.RawMaterial> _rmRepo;
+    private readonly IRepository<Domain.Entities.Product> _productRepo;
     private readonly IStockService _stock;
+    private readonly IJournalPostingService _journal;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IMediator _mediator;
 
     public ReceiveSubcontractOrderCommandHandler(
-        IRepository<SubcontractOrder, long> repo, IStockService stock, IUnitOfWork uow,
+        IRepository<SubcontractOrder, long> repo,
+        IRepository<Domain.Entities.RawMaterial> rmRepo,
+        IRepository<Domain.Entities.Product> productRepo,
+        IStockService stock,
+        IJournalPostingService journal,
+        IUnitOfWork uow,
         ICurrentUserService currentUser, IMediator mediator)
     {
         _repo = repo;
+        _rmRepo = rmRepo;
+        _productRepo = productRepo;
         _stock = stock;
+        _journal = journal;
         _uow = uow;
         _currentUser = currentUser;
         _mediator = mediator;
@@ -80,7 +92,10 @@ internal sealed class ReceiveSubcontractOrderCommandHandler
                     $"Received quantity ({input.ReceivedQuantity:0.####}) cannot exceed issued ({line.IssuedQuantity:0.####}).");
         }
 
+        var receiveDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
         // Pass 2 — set received + move in
+        var totalReceivedQty = cmd.Lines.Sum(l => l.ReceivedQuantity);
         foreach (var input in cmd.Lines)
         {
             var line = order.Lines.First(l => l.Id == input.LineId);
@@ -91,12 +106,63 @@ internal sealed class ReceiveSubcontractOrderCommandHandler
                 await _stock.PostRawMaterialMovementAsync(
                     line.RawMaterialId.Value, order.WarehouseId, input.ReceivedQuantity,
                     StockMovementType.SubcontractReceiveIn, "SubcontractOrder", order.Id, order.Code,
-                    DateOnly.FromDateTime(DateTime.UtcNow), line.LineNotes, ct);
+                    receiveDate, line.LineNotes, ct);
             else
                 await _stock.PostProductMovementAsync(
                     line.ProductId!.Value, order.WarehouseId, input.ReceivedQuantity,
                     StockMovementType.SubcontractReceiveIn, "SubcontractOrder", order.Id, order.Code,
-                    DateOnly.FromDateTime(DateTime.UtcNow), line.LineNotes, ct);
+                    receiveDate, line.LineNotes, ct);
+        }
+
+        // ── Phase A4 (F5) — capitalise the subcontractor's processing charge onto the returned
+        // goods' weighted-average cost (the landed-cost pattern — the processed material is now
+        // worth more), and raise the payable to the subcontractor. Allocated across received lines
+        // by received quantity; RM share debits RM Inventory, product share debits FG Inventory.
+        if (order.ChargeAmount > 0m && totalReceivedQty > 0m && !order.IsGlPosted)
+        {
+            decimal rmShare = 0m, fgShare = 0m;
+            foreach (var input in cmd.Lines)
+            {
+                if (input.ReceivedQuantity <= 0m) continue;
+                var line = order.Lines.First(l => l.Id == input.LineId);
+                var allocated = Math.Round(order.ChargeAmount * (input.ReceivedQuantity / totalReceivedQty), 2, MidpointRounding.AwayFromZero);
+                if (allocated <= 0m) continue;
+
+                if (line.RawMaterialId is int rmId)
+                {
+                    var rm = await _rmRepo.GetByIdAsync(rmId, ct);
+                    if (rm is not null)
+                    {
+                        var onHand = await _stock.GetRawMaterialTotalOnHandAsync(rmId, ct);
+                        if (onHand > 0m) rm.WeightedAverageCost += allocated / onHand;
+                        _rmRepo.Update(rm);
+                    }
+                    rmShare += allocated;
+                }
+                else if (line.ProductId is int pid)
+                {
+                    var prod = await _productRepo.GetByIdAsync(pid, ct);
+                    if (prod is not null)
+                    {
+                        var onHand = await _stock.GetProductTotalOnHandAsync(pid, ct);
+                        if (onHand > 0m) prod.WeightedAverageCost += allocated / onHand;
+                        _productRepo.Update(prod);
+                    }
+                    fgShare += allocated;
+                }
+            }
+
+            var legs = new List<JournalPostingLine>();
+            if (rmShare > 0m) legs.Add(new JournalPostingLine(LedgerAccounts.RawMaterialInventory, rmShare, 0m));
+            if (fgShare > 0m) legs.Add(new JournalPostingLine(LedgerAccounts.FinishedGoodsInventory, fgShare, 0m));
+            if (legs.Count > 0)
+            {
+                legs.Add(new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, rmShare + fgShare));
+                await _journal.PostAsync(
+                    receiveDate, $"Subcontract {order.Code} — processing charge capitalised ({order.ProcessType})",
+                    "SubcontractOrder", order.Id, order.Code, legs, ct);
+                order.IsGlPosted = true;
+            }
         }
 
         order.Status = SubcontractStatus.Received;
