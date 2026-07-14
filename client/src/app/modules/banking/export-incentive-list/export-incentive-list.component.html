@@ -1,0 +1,120 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Export Cash Incentives</h2>
+      <p class="page-subtitle">Government export subsidy — accrued on claim (Dr 1186 / Cr 4260), cleared when the bank credits it</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="Accrue Incentive" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-ok page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <div class="out-card">
+    <span class="oc-label">Outstanding receivable (accrued, not yet received)</span>
+    <span class="oc-value">{{ formatMoney(outstanding) }}</span>
+  </div>
+
+  <p-card styleClass="table-card">
+    <div class="filter-row">
+      <p-select [(ngModel)]="filterStatus" [options]="statuses" optionLabel="label" optionValue="value"
+                [showClear]="true" placeholder="All statuses" (onChange)="load()" styleClass="filter-select-sm" />
+    </div>
+    <p-table [value]="claims" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Ref</th><th class="num">Rate %</th><th class="num">Amount</th>
+          <th>Claim Date</th><th>Status</th><th>Received</th><th style="width:120px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-c>
+        <tr>
+          <td class="fw-600">{{ c.code }}</td>
+          <td>{{ c.exportReference || '—' }}</td>
+          <td class="num">{{ c.incentiveRate || 0 }}</td>
+          <td class="num fw-700">{{ formatMoney(c.amount) }}</td>
+          <td>{{ c.claimDate }}</td>
+          <td><span class="status-badge" [ngClass]="statusClass(c.status)">{{ c.status }}</span></td>
+          <td>{{ c.receivedDate || '—' }}</td>
+          <td>
+            <div class="row-actions" *ngIf="canManage && c.status === 'Accrued'">
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        (click)="openReceive(c)" pTooltip="Mark received (Dr Bank / Cr 1186)" />
+              <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                        (click)="cancel(c)" pTooltip="Cancel (reverse accrual)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty-row"><i class="pi pi-gift"></i> No incentive claims yet.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Accrue dialog -->
+<p-dialog [(visible)]="createVisible" header="Accrue Export Incentive" [modal]="true" [style]="{ width: '480px' }" [draggable]="false">
+  <div class="alert alert-error" *ngIf="createError"><i class="pi pi-exclamation-circle"></i>{{ createError }}</div>
+  <p class="hint">Posts <span class="mono">Dr 1186 Export Incentive Receivable / Cr 4260 Income</span>.</p>
+  <div class="dlg-grid">
+    <div class="field">
+      <label>Export Reference</label>
+      <input pInputText [(ngModel)]="exportReference" placeholder="Form-EXP / bill #" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Incentive Rate %</label>
+      <p-inputNumber [(ngModel)]="incentiveRate" [min]="0" [maxFractionDigits]="4" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Amount (BDT) *</label>
+      <p-inputNumber [(ngModel)]="amount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Claim Date *</label>
+      <input pInputText type="date" [(ngModel)]="claimDate" class="w-full" />
+    </div>
+    <div class="field col-span-2">
+      <label>Notes</label>
+      <textarea pInputTextarea rows="2" [(ngModel)]="notes" class="w-full"></textarea>
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="createVisible = false" [disabled]="saving" />
+    <p-button label="Accrue" icon="pi pi-plus" [loading]="saving" [disabled]="amount <= 0" (click)="doCreate()" />
+  </div>
+</p-dialog>
+
+<!-- Received dialog -->
+<p-dialog [(visible)]="receiveVisible" header="Mark Incentive Received" [modal]="true" [style]="{ width: '460px' }" [draggable]="false">
+  <div *ngIf="receiveTarget">
+    <div class="alert alert-error" *ngIf="receiveError"><i class="pi pi-exclamation-circle"></i>{{ receiveError }}</div>
+    <p class="hint">Posts <span class="mono">Dr Bank / Cr 1186</span> for <strong>{{ formatMoney(receiveTarget.amount) }}</strong>.</p>
+    <div class="dlg-grid">
+      <div class="field">
+        <label>Received Date *</label>
+        <input pInputText type="date" [(ngModel)]="receivedDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Via *</label>
+        <p-select [(ngModel)]="receivedMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+      </div>
+      <div class="field col-span-2">
+        <label>Bank Reference</label>
+        <input pInputText [(ngModel)]="bankReference" placeholder="credit advice #" class="w-full" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <p-button label="Cancel" severity="secondary" [text]="true" (click)="receiveVisible = false" [disabled]="receiving" />
+      <p-button label="Mark Received" icon="pi pi-check-circle" [loading]="receiving" (click)="doReceive()" />
+    </div>
+  </div>
+</p-dialog>

@@ -1,5 +1,6 @@
 using BengalTex.ERP.Api.Authorization;
 using BengalTex.ERP.Application.Accounting.InventoryGL;
+using BengalTex.ERP.Application.Accounting.Revaluation;
 using BengalTex.ERP.Shared.Permissions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -56,6 +57,20 @@ public class InventoryGlController : ControllerBase
     [HasPermission(Permissions.Accounting.CloseBooks)]
     public async Task<IActionResult> WipSnapshot([FromBody] WipSnapshotRequest request, CancellationToken ct)
         => Ok(await _mediator.Send(new PostWipSnapshotCommand(request.AsOfDate), ct));
+
+    // ── Phase A7b — month-end FC revaluation ──
+
+    /// <summary>Preview unrealized FX on open foreign-currency AR/AP at the as-of dated rate.</summary>
+    [HttpGet("fx-revaluation-preview")]
+    [HasPermission(Permissions.Accounting.CloseBooks)]
+    public async Task<IActionResult> FxRevaluationPreview([FromQuery] DateOnly asOfDate, CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetFxRevaluationPreviewQuery(asOfDate), ct));
+
+    /// <summary>Post the month-end FC revaluation to 4310/5810 (auto-reversing next day).</summary>
+    [HttpPost("fx-revaluation")]
+    [HasPermission(Permissions.Accounting.CloseBooks)]
+    public async Task<IActionResult> FxRevaluation([FromBody] WipSnapshotRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new PostFxRevaluationCommand(request.AsOfDate), ct));
 }
 
 public record InitializeGrIrRequest(DateOnly AsOfDate);

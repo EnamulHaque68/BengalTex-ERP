@@ -1,0 +1,59 @@
+<div class="cert-shell">
+  <div class="toolbar no-print">
+    <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="back()" />
+    <p-button label="Print" icon="pi pi-print" (click)="print()" [disabled]="!cert" />
+  </div>
+
+  <div class="alert alert-error no-print" *ngIf="error"><i class="pi pi-exclamation-circle"></i>{{ error }}</div>
+
+  <div class="cert-page" *ngIf="cert as c">
+    <div class="cert-head">
+      <img *ngIf="logoSrc" [src]="logoSrc" alt="logo" class="logo" />
+      <div class="co">
+        <div class="co-name">{{ c.companyName }}</div>
+        <div class="co-line" *ngIf="c.companyAddress">{{ c.companyAddress }}</div>
+        <div class="co-line" *ngIf="c.companyBin">BIN: {{ c.companyBin }}</div>
+      </div>
+    </div>
+
+    <h2 class="cert-title">Tax Withholding Certificate</h2>
+    <p class="cert-sub">Certificate of tax deducted at source (AIT / VDS) — Certificate No. <strong>{{ c.paymentCode }}</strong></p>
+
+    <div class="party-grid">
+      <div class="party">
+        <div class="ptitle">Deducting Authority (Withholding Agent)</div>
+        <div class="pname">{{ c.companyName }}</div>
+        <div *ngIf="c.companyAddress">{{ c.companyAddress }}</div>
+        <div *ngIf="c.companyTin">TIN: {{ c.companyTin }}</div>
+      </div>
+      <div class="party">
+        <div class="ptitle">Payee (Deductee / Supplier)</div>
+        <div class="pname">{{ c.supplierName }}</div>
+        <div *ngIf="c.supplierAddress">{{ c.supplierAddress }}</div>
+        <div *ngIf="c.supplierBin">BIN: {{ c.supplierBin }}</div>
+        <div *ngIf="c.supplierTin">TIN: {{ c.supplierTin }}</div>
+      </div>
+    </div>
+
+    <table class="cert-tbl">
+      <tbody>
+        <tr><th>Payment reference</th><td>{{ c.paymentCode }} &nbsp;·&nbsp; against invoice {{ c.supplierInvoiceCode }}</td></tr>
+        <tr><th>Payment date</th><td>{{ c.paymentDate }}</td></tr>
+        <tr><th>Payment method</th><td>{{ c.paymentMethod }}<span *ngIf="c.referenceNumber"> — {{ c.referenceNumber }}</span></td></tr>
+        <tr><th>Gross amount</th><td class="num">{{ formatCurrency(c.grossBdt) }}</td></tr>
+        <tr class="hi"><th>AIT deducted (income tax at source)</th><td class="num">{{ formatCurrency(c.aitAmount) }}</td></tr>
+        <tr class="hi"><th>VDS deducted (VAT at source)</th><td class="num">{{ formatCurrency(c.vdsAmount) }}</td></tr>
+        <tr class="tot"><th>Net paid to supplier</th><td class="num">{{ formatCurrency(c.netPaidBdt) }}</td></tr>
+      </tbody>
+    </table>
+
+    <p class="words">Tax deducted (in words): <strong>{{ amountInWords(c.aitAmount + c.vdsAmount) }}</strong></p>
+
+    <div class="sign-row">
+      <div class="sign"><div class="line"></div>Authorized Signature</div>
+      <div class="sign"><div class="line"></div>Company Seal</div>
+    </div>
+
+    <p class="foot">This certificate evidences tax deducted at source and deposited to the Government treasury against the above payment.</p>
+  </div>
+</div>

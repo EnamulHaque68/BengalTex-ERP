@@ -33,7 +33,16 @@ export interface CreateEmployeeLoanRequest {
   tenureMonths: number;
   startYearMonth: number;
   notes: string | null;
+  disbursementMethod?: string;   // Cash | BankTransfer | Cheque | MobileBanking | Other
 }
+
+export const DISBURSEMENT_METHODS: { label: string; value: string }[] = [
+  { label: 'Bank Transfer', value: 'BankTransfer' },
+  { label: 'Cash', value: 'Cash' },
+  { label: 'Cheque', value: 'Cheque' },
+  { label: 'Mobile Banking', value: 'MobileBanking' },
+  { label: 'Other', value: 'Other' }
+];
 
 export interface UpdateEmployeeLoanRequest {
   emiAmount: number;

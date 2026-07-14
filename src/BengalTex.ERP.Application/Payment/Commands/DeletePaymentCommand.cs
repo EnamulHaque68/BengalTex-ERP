@@ -58,16 +58,27 @@ internal sealed class DeletePaymentCommandHandler : IRequestHandler<DeletePaymen
 
         _repo.Remove(pay);
 
-        // Reversing journal — mirror of the original payment entry (Dr Cash/Bank, Cr AP).
+        // Reversing journal — exact mirror of the original payment entry: give back the cash actually
+        // paid (net of withholding) + reverse the AIT/VDS held + reverse any FX, all against AP.
         var cashAccount = pay.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
-        var baseAmount = pay.Amount * inv.ExchangeRate;
+        var apBdt = pay.Amount * inv.ExchangeRate;
+        var cashBdt = pay.Amount * pay.ExchangeRate;
+        var fxDiff = apBdt - cashBdt;
+        var netCash = cashBdt - pay.AitAmount - pay.VdsAmount;
+
+        var lines = new List<JournalPostingLine>
+        {
+            new(LedgerAccounts.AccountsPayable, 0m, apBdt),
+        };
+        if (netCash > 0m) lines.Add(new(cashAccount, netCash, 0m));
+        if (pay.AitAmount > 0m) lines.Add(new(LedgerAccounts.AitPayable, pay.AitAmount, 0m));
+        if (pay.VdsAmount > 0m) lines.Add(new(LedgerAccounts.VdsPayable, pay.VdsAmount, 0m));
+        if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, fxDiff, 0m));
+        else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, 0m, -fxDiff));
+
         await _journal.PostAsync(
             DateOnly.FromDateTime(DateTime.UtcNow), $"Reversal of payment {pay.Code}", "PaymentReversal", pay.Id, pay.Code,
-            new[]
-            {
-                new JournalPostingLine(cashAccount, baseAmount, 0m),
-                new JournalPostingLine(LedgerAccounts.AccountsPayable, 0m, baseAmount),
-            }, cancellationToken);
+            lines, cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
 

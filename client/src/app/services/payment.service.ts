@@ -7,7 +7,8 @@ import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
   CreatePaymentRequest,
   PaymentDto,
-  PaymentListItemDto
+  PaymentListItemDto,
+  WithholdingCertificateDto
 } from '../models/payment.models';
 
 @Injectable({ providedIn: 'root' })
@@ -44,5 +45,10 @@ export class PaymentService {
 
   delete(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.base}/${id}`);
+  }
+
+  /** Phase A5b — data for the printable AIT/VDS withholding certificate. */
+  withholdingCertificate(id: number): Observable<ApiResponse<WithholdingCertificateDto>> {
+    return this.http.get<ApiResponse<WithholdingCertificateDto>>(`${this.base}/${id}/withholding-certificate`);
   }
 }

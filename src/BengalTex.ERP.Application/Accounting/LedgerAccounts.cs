@@ -18,11 +18,13 @@ public static class LedgerAccounts
     public const string AccountsPayable = "2110";
     public const string VatPayable = "2120";       // output VAT
     public const string SalaryPayable = "2130";
+    public const string ProvidentFundPayable = "2135";  // employee + employer PF held, remitted to the PF trust (Phase A5)
     public const string SalesRevenue = "4100";
     public const string SalesReturnsAllowances = "4150";   // contra-revenue: debited by Credit Notes
     public const string CostOfGoodsSold = "5100";
     public const string PurchaseReturnsAllowances = "5150"; // contra-expense: credited by Debit Notes
     public const string SalaryExpense = "5200";
+    public const string EmployerPfGratuity = "5210";       // employer PF contribution + gratuity + loan write-off (Phase A5)
     public const string DepreciationExpense = "5320";      // posted by AssetDepreciation monthly run
     public const string AdministrativeExpense = "5400";   // default expense account for unmapped categories
     public const string GainOnAssetDisposal = "4400";      // credited when disposal proceeds > NBV
@@ -45,6 +47,8 @@ public static class LedgerAccounts
     public const string ExportIncentiveReceivable = "1186"; // govt. cash-incentive claims filed (Phase A6)
     public const string EmployeeLoans = "1190";             // employee loan receivable sub-ledger (Phase A5)
     public const string CapitalWorkInProgress = "1220";     // CWIP — assets under construction (Phase A8)
+    public const string FixedDeposits = "1250";             // FDR / fixed-deposit placements with banks (Phase A6c)
+    public const string OtherIncome = "4200";               // misc income incl. FDR interest (existed in seed; Phase A6c)
     public const string GrIrClearing = "2150";              // goods-received-not-invoiced clearing (Phase A2)
     public const string AccruedChargesPayable = "2115";     // unsettled landed-cost / C&F agent charges (Phase A2)
     public const string WipAccrual = "2155";                // month-end WIP snapshot contra (Phase A4)

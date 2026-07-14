@@ -28,8 +28,11 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
                      nameof(Payslip.LeaveDays), nameof(Payslip.OvertimeHours) })
             builder.Property(qty).HasPrecision(9, 2);
 
-        // One payslip per employee per month
-        builder.HasIndex(p => new { p.EmployeeId, p.Year, p.Month }).IsUnique();
+        // One LIVE payslip per employee per month. Filtered on IsDeleted so a soft-deleted draft
+        // does NOT occupy the slot — otherwise re-generating that month collides with the hidden row
+        // (GeneratePayroll's "already exists" check is soft-delete-filtered, so it tries to re-insert).
+        builder.HasIndex(p => new { p.EmployeeId, p.Year, p.Month }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(p => new { p.Year, p.Month });
         builder.HasIndex(p => p.Status);
 

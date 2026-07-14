@@ -46,6 +46,16 @@ public class Receipt : BaseTransactionalEntity
     /// <summary>Cheque #, transaction ID, bKash trxId, etc.</summary>
     public string? ReferenceNumber { get; set; }
 
+    /// <summary>
+    /// Phase A6b — export realization (FDBP): bank commission / negotiation charge deducted from the
+    /// export proceeds, in BDT → Bank Charges (5600). The customer receivable is still cleared in
+    /// full; the charge reduces the cash actually credited. Default 0.
+    /// </summary>
+    public decimal BankChargeAmount { get; set; }
+
+    /// <summary>Phase A6b — interest / discount the bank charged for advancing against the export bill, BDT → 5860.</summary>
+    public decimal InterestAmount { get; set; }
+
     public string? Notes { get; set; }
 }
 

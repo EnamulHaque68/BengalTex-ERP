@@ -2,6 +2,7 @@
 
 export const PAYSLIP_STATUSES: { label: string; value: string }[] = [
   { label: 'Draft', value: 'Draft' },
+  { label: 'Approved', value: 'Approved' },
   { label: 'Paid', value: 'Paid' }
 ];
 

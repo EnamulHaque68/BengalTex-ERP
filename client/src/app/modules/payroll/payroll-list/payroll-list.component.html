@@ -6,6 +6,9 @@
       <p class="page-subtitle">Monthly payslips &mdash; computed from salary &amp; attendance</p>
     </div>
     <div class="header-actions">
+      <p-button label="Approve Month" icon="pi pi-check-circle" severity="secondary" [outlined]="true"
+                [loading]="rowActionId === -1" (click)="approveMonth()"
+                pTooltip="Accrue all Draft payslips for the filtered month (posts the gross salary + deduction payables)" />
       <p-button label="Generate Payroll" icon="pi pi-cog" (click)="openGenerate()" />
     </div>
   </div>
@@ -69,7 +72,8 @@
           <td class="num">{{ formatCurrency(p.deductions) }}</td>
           <td class="num fw-700 net">{{ formatCurrency(p.netPay) }}</td>
           <td>
-            <span class="status-badge" [class.draft]="p.status === 'Draft'" [class.paid]="p.status === 'Paid'">
+            <span class="status-badge" [class.draft]="p.status === 'Draft'"
+                  [class.approved]="p.status === 'Approved'" [class.paid]="p.status === 'Paid'">
               {{ p.status }}
             </span>
           </td>
@@ -77,9 +81,12 @@
             <div class="row-actions">
               <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'" (click)="openEdit(p)" pTooltip="Adjust" />
-              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+              <p-button icon="pi pi-verified" severity="warn" [text]="true" size="small"
                         *ngIf="p.status === 'Draft'" [loading]="rowActionId === p.id"
-                        (click)="markPaid(p)" pTooltip="Mark paid" />
+                        (click)="approve(p)" pTooltip="Approve — accrue salary (gross expense + deduction payables)" />
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" size="small"
+                        *ngIf="p.status === 'Approved'" [loading]="rowActionId === p.id"
+                        (click)="markPaid(p)" pTooltip="Mark paid (settles the net Salary Payable)" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         [routerLink]="['/payroll', p.id, 'print']" pTooltip="Print salary slip" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"

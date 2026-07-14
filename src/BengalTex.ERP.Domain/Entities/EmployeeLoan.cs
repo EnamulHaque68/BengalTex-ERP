@@ -33,6 +33,9 @@ public class EmployeeLoan : BaseTransactionalEntity
 
     public EmployeeLoanStatus Status { get; set; } = EmployeeLoanStatus.Active;
 
+    /// <summary>Phase A5 — true once the disbursement journal (Dr Employee Loans / Cr Cash|Bank) is posted.</summary>
+    public bool IsGlPosted { get; set; }
+
     public string? Notes { get; set; }
 }
 

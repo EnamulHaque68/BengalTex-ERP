@@ -1,0 +1,107 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Statutory Liabilities</h2>
+      <p class="page-subtitle">Tax withheld at source (AIT / VDS) &amp; provident fund held for remittance to the NBR / fund</p>
+    </div>
+  </div>
+
+  <div class="alert alert-ok page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <div class="liab-cards">
+    <div class="liab-card" *ngFor="let l of liabilities" [ngClass]="cardClass(l.taxType)">
+      <div class="lc-head">
+        <span class="lc-code">{{ l.accountCode }}</span>
+        <span class="lc-label">{{ l.label }}</span>
+      </div>
+      <div class="lc-amount">{{ formatMoney(l.outstanding) }}</div>
+      <div class="lc-foot">
+        <span class="muted">outstanding</span>
+        <p-button label="Remit" icon="pi pi-send" size="small" *ngIf="canManage && l.outstanding > 0"
+                  (click)="openRemit(l)" />
+      </div>
+    </div>
+  </div>
+
+  <div class="reg-head">
+    <h3>Remittance Register (Challans)</h3>
+    <p-button label="New Remittance" icon="pi pi-plus" size="small" [outlined]="true"
+              *ngIf="canManage" (click)="openRemit()" />
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="remittances" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Code</th><th>Type</th><th>Period</th><th class="num">Amount</th>
+          <th>Date</th><th>Method</th><th>Challan #</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="fw-600">{{ r.code }}</td>
+          <td>{{ taxLabel(r.taxType) }}</td>
+          <td>{{ ym(r.periodYear, r.periodMonth) }}</td>
+          <td class="num fw-700">{{ formatMoney(r.amount) }}</td>
+          <td>{{ r.remittanceDate }}</td>
+          <td>{{ r.paymentMethod }}</td>
+          <td>{{ r.challanNo || '—' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="empty-row"><i class="pi pi-receipt"></i> No remittances yet.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Remit dialog -->
+<p-dialog [(visible)]="dialogVisible" header="Remit Statutory Liability" [modal]="true" [style]="{ width: '520px' }" [draggable]="false">
+  <div class="alert alert-error" *ngIf="dialogError"><i class="pi pi-exclamation-circle"></i>{{ dialogError }}</div>
+  <p class="hint">Posts <span class="mono">Dr {{ taxLabel(taxType) }} / Cr Cash|Bank</span> and records the challan.</p>
+  <div class="rm-grid">
+    <div class="field col-span-2">
+      <label>Liability *</label>
+      <p-select [(ngModel)]="taxType" [options]="taxTypes" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Period Year *</label>
+      <input pInputText type="number" [(ngModel)]="periodYear" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Period Month *</label>
+      <input pInputText type="number" [(ngModel)]="periodMonth" min="1" max="12" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Amount (BDT) *</label>
+      <p-inputNumber [(ngModel)]="amount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Remittance Date *</label>
+      <input pInputText type="date" [(ngModel)]="remittanceDate" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Paid via *</label>
+      <p-select [(ngModel)]="paymentMethod" [options]="paymentMethods" optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Challan No.</label>
+      <input pInputText [(ngModel)]="challanNo" placeholder="treasury challan #" class="w-full" />
+    </div>
+    <div class="field col-span-2">
+      <label>Notes</label>
+      <textarea pInputTextarea rows="2" [(ngModel)]="notes" class="w-full"></textarea>
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="dialogVisible = false" [disabled]="saving" />
+    <p-button label="Post Remittance" icon="pi pi-send" [loading]="saving" [disabled]="amount <= 0" (click)="doRemit()" />
+  </div>
+</p-dialog>

@@ -47,6 +47,9 @@ public class LetterOfCredit : BaseTransactionalEntity
     public DateOnly? SettlementDate { get; set; }
 
     public string? Notes { get; set; }
+
+    /// <summary>Phase A6a — financial events (margin, charges, retirement, interest, settlement).</summary>
+    public ICollection<LcFinancialEvent> Events { get; set; } = new List<LcFinancialEvent>();
 }
 
 public enum LcStatus

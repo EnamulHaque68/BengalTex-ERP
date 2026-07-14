@@ -5,7 +5,8 @@ import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PagedQueryParameters, PagedResult } from '../models/user.models';
 import {
-  CreateLetterOfCreditRequest, LetterOfCreditDto, LetterOfCreditListItemDto, UpdateLetterOfCreditRequest
+  CreateLetterOfCreditRequest, LetterOfCreditDto, LetterOfCreditListItemDto, UpdateLetterOfCreditRequest,
+  LcEventsResultDto, AddLcEventRequest
 } from '../models/letter-of-credit.models';
 
 @Injectable({ providedIn: 'root' })
@@ -60,5 +61,13 @@ export class LetterOfCreditService {
   }
   cancel(id: number): Observable<ApiResponse<LetterOfCreditDto>> {
     return this.http.post<ApiResponse<LetterOfCreditDto>>(`${this.base}/${id}/cancel`, {});
+  }
+
+  // Phase A6a — LC financial events
+  getEvents(id: number): Observable<ApiResponse<LcEventsResultDto>> {
+    return this.http.get<ApiResponse<LcEventsResultDto>>(`${this.base}/${id}/events`);
+  }
+  addEvent(id: number, body: AddLcEventRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/${id}/events`, body);
   }
 }

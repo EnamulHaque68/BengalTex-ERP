@@ -112,6 +112,10 @@ export const NAV_MENU: NavItem[] = [
       { title: 'Costing Rates',     icon: 'pi pi-calculator', route: '/accounting/costing-rates',  permission: 'Accounting.View' },
       { title: 'Profitability',     icon: 'pi pi-chart-bar', route: '/accounting/profitability',   permission: 'Reports.ViewFinance' },
       { title: 'Production Costing', icon: 'pi pi-box',       route: '/accounting/production-costing', permission: 'Reports.ViewFinance' },
+      { title: 'Statutory Liabilities', icon: 'pi pi-percentage', route: '/accounting/statutory-liabilities', permission: 'Accounting.View' },
+      { title: 'Exchange Rates',    icon: 'pi pi-dollar',    route: '/accounting/exchange-rates', permission: 'Accounting.View' },
+      { title: 'Budgets',           icon: 'pi pi-wallet',    route: '/accounting/budgets',        permission: 'Accounting.View' },
+      { title: 'Financial Intelligence', icon: 'pi pi-chart-line', route: '/accounting/financial-intelligence', permission: 'Reports.ViewFinance' },
       { title: 'Cash Book',         icon: 'pi pi-money-bill',route: '/accounting/cash-book',      permission: 'Accounting.View' },
       { title: 'Bank Book',         icon: 'pi pi-building',  route: '/accounting/bank-book',      permission: 'Accounting.View' },
       { title: 'Day Book',          icon: 'pi pi-calendar',  route: '/accounting/day-book',       permission: 'Accounting.View' },
@@ -134,6 +138,8 @@ export const NAV_MENU: NavItem[] = [
     icon: 'pi pi-building-columns',
     children: [
       { title: 'Letters of Credit',  icon: 'pi pi-file',      route: '/letters-of-credit',    permission: 'Banking.View' },
+      { title: 'Export Incentives',  icon: 'pi pi-gift',      route: '/letters-of-credit/export-incentives', permission: 'Banking.View' },
+      { title: 'Bank Facilities',    icon: 'pi pi-building-columns', route: '/letters-of-credit/bank-facilities', permission: 'Banking.View' },
       { title: 'Bank Reconciliation',icon: 'pi pi-check-circle', route: '/bank-reconciliation', permission: 'BankReconciliation.View' }
     ]
   },

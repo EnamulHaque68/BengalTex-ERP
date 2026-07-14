@@ -1,0 +1,39 @@
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.fw-600 { font-weight: 600; } .fw-700 { font-weight: 700; }
+.empty-row { text-align: center; color: #9ca3af; padding: 1.5rem; }
+.row-actions { display: flex; gap: .05rem; }
+
+.status-badge { padding: .15rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.status-badge.s-draft    { background: #fef3c7; color: #92400e; }
+.status-badge.s-approved { background: #d1fae5; color: #065f46; }
+
+.field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .7rem; }
+.field label { font-size: .8rem; font-weight: 600; }
+
+/* Lines grid */
+.lines-scroll { overflow-x: auto; max-height: 55vh; overflow-y: auto; }
+.lines-grid { border-collapse: collapse; width: 100%; }
+.lines-grid th, .lines-grid td { padding: .25rem .35rem; border-bottom: 1px solid #eee; font-size: .8rem; }
+.lines-grid th { position: sticky; top: 0; background: var(--surface-card, #fff); z-index: 1; text-align: center; color: #6b7280; }
+.lines-grid .acc-col { min-width: 200px; }
+.lines-grid .cc-col { min-width: 140px; }
+.lines-grid .m-col { width: 68px; }
+.lines-grid .tot-col { min-width: 90px; text-align: right; font-weight: 700; }
+.m-input { width: 62px; padding: .2rem .3rem; border: 1px solid var(--surface-border, #d1d5db); border-radius: 4px; text-align: right; font-size: .78rem; }
+.add-line-btn { margin-top: .5rem; }
+
+.var-filters { display: flex; gap: 1.2rem; align-items: center; margin-bottom: .8rem; flex-wrap: wrap; }
+.var-filters label { font-size: .8rem; font-weight: 600; display: flex; align-items: center; gap: .4rem; }
+.mini-num { width: 56px; padding: .3rem; border: 1px solid var(--surface-border, #d1d5db); border-radius: 4px; }
+.cc-select { min-width: 180px; }
+.acc-code { font-family: monospace; font-size: .72rem; color: #6b7280; }
+.num.over { color: #b91c1c; }   /* actual over budget */
+.num.under { color: #047857; }  /* actual under budget */
+.tot-row td { border-top: 2px solid #111; font-weight: 800; }
+
+.dialog-footer { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1rem; }
+.page-alert { display: flex; align-items: center; gap: .5rem; }
+.alert { padding: .6rem .9rem; border-radius: 6px; margin-bottom: 1rem; }
+.alert-ok { background: #d1fae5; color: #065f46; }
+.alert-error { background: #fee2e2; color: #991b1b; }
+.alert-close { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 1.1rem; }

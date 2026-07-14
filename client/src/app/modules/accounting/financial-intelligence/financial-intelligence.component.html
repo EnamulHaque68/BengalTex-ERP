@@ -1,0 +1,125 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Financial Intelligence</h2>
+      <p class="page-subtitle">Liquidity, profitability &amp; efficiency ratios · AR/AP aging · P&amp;L trend</p>
+    </div>
+    <div class="fi-dates">
+      <label>As of <input pInputText type="date" [(ngModel)]="asOf" (change)="load()" /></label>
+      <label>P&amp;L from <input pInputText type="date" [(ngModel)]="fromDate" (change)="load()" /></label>
+      <label>to <input pInputText type="date" [(ngModel)]="toDate" (change)="load()" /></label>
+    </div>
+  </div>
+
+  <ng-container *ngIf="kpis as k">
+    <!-- Ratio groups -->
+    <div class="ratio-groups">
+      <div class="ratio-group">
+        <div class="rg-title">Liquidity</div>
+        <div class="rg-cards">
+          <div class="kpi" [ngClass]="ratioClass(k.currentRatio, 1.5, 1)">
+            <span class="kpi-val">{{ formatNum(k.currentRatio) }}</span><span class="kpi-lbl">Current Ratio</span>
+          </div>
+          <div class="kpi" [ngClass]="ratioClass(k.quickRatio, 1, 0.7)">
+            <span class="kpi-val">{{ formatNum(k.quickRatio) }}</span><span class="kpi-lbl">Quick Ratio</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-val">{{ formatMoney(k.workingCapital) }}</span><span class="kpi-lbl">Working Capital</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ratio-group">
+        <div class="rg-title">Profitability</div>
+        <div class="rg-cards">
+          <div class="kpi" [ngClass]="ratioClass(k.grossMarginPct, 25, 10)">
+            <span class="kpi-val">{{ formatNum(k.grossMarginPct, 1) }}%</span><span class="kpi-lbl">Gross Margin</span>
+          </div>
+          <div class="kpi" [ngClass]="ratioClass(k.netMarginPct, 8, 2)">
+            <span class="kpi-val">{{ formatNum(k.netMarginPct, 1) }}%</span><span class="kpi-lbl">Net Margin</span>
+          </div>
+          <div class="kpi" [ngClass]="ratioClass(k.returnOnAssetsPct, 5, 1)">
+            <span class="kpi-val">{{ formatNum(k.returnOnAssetsPct, 1) }}%</span><span class="kpi-lbl">Return on Assets</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ratio-group">
+        <div class="rg-title">Efficiency</div>
+        <div class="rg-cards">
+          <div class="kpi"><span class="kpi-val">{{ formatNum(k.inventoryTurnover, 1) }}×</span><span class="kpi-lbl">Inventory Turnover</span></div>
+          <div class="kpi"><span class="kpi-val">{{ formatNum(k.dso, 0) }}</span><span class="kpi-lbl">Days Sales O/S (DSO)</span></div>
+          <div class="kpi"><span class="kpi-val">{{ formatNum(k.dpo, 0) }}</span><span class="kpi-lbl">Days Payable O/S (DPO)</span></div>
+        </div>
+      </div>
+
+      <div class="ratio-group">
+        <div class="rg-title">Leverage &amp; Position</div>
+        <div class="rg-cards">
+          <div class="kpi"><span class="kpi-val">{{ formatNum(k.debtToEquity) }}</span><span class="kpi-lbl">Debt / Equity</span></div>
+          <div class="kpi"><span class="kpi-val">{{ formatMoney(k.revenue) }}</span><span class="kpi-lbl">Revenue (period)</span></div>
+          <div class="kpi"><span class="kpi-val">{{ formatMoney(k.netProfit) }}</span><span class="kpi-lbl">Net Profit (period)</span></div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- P&L trend -->
+  <div class="panel" *ngIf="trend.length">
+    <div class="panel-title">P&amp;L Trend — last 12 months</div>
+    <div class="trend-legend"><span class="lg rev">Revenue</span><span class="lg exp">Expense</span></div>
+    <div class="trend-chart">
+      <div class="trend-col" *ngFor="let p of trend" [pTooltip]="p.label + ': Rev ' + formatMoney(p.revenue) + ' · Exp ' + formatMoney(p.expense) + ' · Net ' + formatMoney(p.netProfit)">
+        <div class="bars">
+          <div class="bar rev" [style.height.%]="barHeight(p.revenue)"></div>
+          <div class="bar exp" [style.height.%]="barHeight(p.expense)"></div>
+        </div>
+        <div class="net" [class.loss]="p.netProfit < 0">{{ (p.netProfit / 1000) | number:'1.0-0' }}k</div>
+        <div class="mlabel">{{ p.label }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AR / AP aging -->
+  <div class="aging-wrap" *ngIf="aging as a">
+    <div class="panel">
+      <div class="panel-title">Receivables Aging <span class="pt-total">{{ formatMoney(a.receivables.grandTotal) }}</span></div>
+      <table class="aging-table">
+        <thead><tr><th>Customer</th><th class="num">0–30</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of a.receivables.rows">
+            <td>{{ r.party }}</td>
+            <td class="num">{{ formatMoney(r.bucket0_30) }}</td><td class="num">{{ formatMoney(r.bucket31_60) }}</td>
+            <td class="num">{{ formatMoney(r.bucket61_90) }}</td><td class="num warn90">{{ formatMoney(r.bucket90Plus) }}</td>
+            <td class="num fw-700">{{ formatMoney(r.total) }}</td>
+          </tr>
+          <tr *ngIf="a.receivables.rows.length === 0"><td colspan="6" class="empty">No open receivables.</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td>
+          <td class="num">{{ formatMoney(a.receivables.total0_30) }}</td><td class="num">{{ formatMoney(a.receivables.total31_60) }}</td>
+          <td class="num">{{ formatMoney(a.receivables.total61_90) }}</td><td class="num">{{ formatMoney(a.receivables.total90Plus) }}</td>
+          <td class="num">{{ formatMoney(a.receivables.grandTotal) }}</td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Payables Aging <span class="pt-total">{{ formatMoney(a.payables.grandTotal) }}</span></div>
+      <table class="aging-table">
+        <thead><tr><th>Supplier</th><th class="num">0–30</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of a.payables.rows">
+            <td>{{ r.party }}</td>
+            <td class="num">{{ formatMoney(r.bucket0_30) }}</td><td class="num">{{ formatMoney(r.bucket31_60) }}</td>
+            <td class="num">{{ formatMoney(r.bucket61_90) }}</td><td class="num warn90">{{ formatMoney(r.bucket90Plus) }}</td>
+            <td class="num fw-700">{{ formatMoney(r.total) }}</td>
+          </tr>
+          <tr *ngIf="a.payables.rows.length === 0"><td colspan="6" class="empty">No open payables.</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td>
+          <td class="num">{{ formatMoney(a.payables.total0_30) }}</td><td class="num">{{ formatMoney(a.payables.total31_60) }}</td>
+          <td class="num">{{ formatMoney(a.payables.total61_90) }}</td><td class="num">{{ formatMoney(a.payables.total90Plus) }}</td>
+          <td class="num">{{ formatMoney(a.payables.grandTotal) }}</td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>

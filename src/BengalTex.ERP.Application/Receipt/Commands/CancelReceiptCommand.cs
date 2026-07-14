@@ -73,17 +73,20 @@ internal sealed class CancelReceiptCommandHandler
 
             await _uow.SaveChangesAsync(cancellationToken);
 
-            // Mirror journal of the original posting (Dr AR / Cr Cash, plus reversed FX).
+            // Mirror journal of the original posting (Dr AR / Cr Bank net + Cr charge/interest, reversed FX).
             var cashAccount = rct.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
             var cashBdt = rct.Amount * rct.ExchangeRate;
             var arBdt = rct.Amount * inv.ExchangeRate;
             var fxDiff = cashBdt - arBdt;
+            var netCash = cashBdt - rct.BankChargeAmount - rct.InterestAmount;
 
             var lines = new List<JournalPostingLine>
             {
                 new(LedgerAccounts.AccountsReceivable, arBdt, 0m),
-                new(cashAccount, 0m, cashBdt),
+                new(cashAccount, 0m, netCash),
             };
+            if (rct.BankChargeAmount > 0m) lines.Add(new(LedgerAccounts.BankCharges, 0m, rct.BankChargeAmount));
+            if (rct.InterestAmount > 0m) lines.Add(new(LedgerAccounts.InterestExpense, 0m, rct.InterestAmount));
             if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, fxDiff, 0m));
             else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, 0m, -fxDiff));
 

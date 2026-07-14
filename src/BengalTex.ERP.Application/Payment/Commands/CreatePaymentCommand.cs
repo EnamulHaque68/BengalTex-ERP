@@ -26,7 +26,9 @@ public sealed record CreatePaymentCommand(
     string PaymentMethod,                // enum string
     string? ReferenceNumber,
     string? Notes,
-    decimal? ExchangeRate = null         // BDT/currency at payment time; null → invoice's rate (no FX)
+    decimal? ExchangeRate = null,        // BDT/currency at payment time; null → invoice's rate (no FX)
+    decimal AitAmount = 0m,              // Phase A5b — BDT income tax withheld at source (→ 2160)
+    decimal VdsAmount = 0m               // Phase A5b — BDT VAT deducted at source (→ 2170)
 ) : IRequest<ApiResponse<PaymentDto>>;
 
 public sealed class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentCommand>
@@ -42,6 +44,8 @@ public sealed class CreatePaymentCommandValidator : AbstractValidator<CreatePaym
         RuleFor(x => x.ReferenceNumber).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
         RuleFor(x => x.ExchangeRate).GreaterThan(0).When(x => x.ExchangeRate.HasValue);
+        RuleFor(x => x.AitAmount).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.VdsAmount).GreaterThanOrEqualTo(0);
     }
 }
 
@@ -93,10 +97,19 @@ internal sealed class CreatePaymentCommandHandler
                 $"attempted {cmd.Amount:0.####}).");
         }
 
-        var code = await _numbering.NextAsync("PAY", null, cancellationToken);
-
         // Payment-time rate: caller-supplied, else the invoice's locked rate (= no FX effect).
         var paymentRate = cmd.ExchangeRate ?? inv.ExchangeRate;
+
+        // Phase A5b — withholding (BDT) is deducted from the cash actually paid to the supplier;
+        // it can never exceed the cash leg (the BDT the payment is worth at the payment rate).
+        var cashBdt = cmd.Amount * paymentRate;
+        var ait = Math.Round(cmd.AitAmount, 2, MidpointRounding.AwayFromZero);
+        var vds = Math.Round(cmd.VdsAmount, 2, MidpointRounding.AwayFromZero);
+        if (ait + vds > cashBdt)
+            return ApiResponse<PaymentDto>.Fail(
+                $"Withholding (AIT {ait:0.##} + VDS {vds:0.##}) exceeds the payment value ({cashBdt:0.##}).");
+
+        var code = await _numbering.NextAsync("PAY", null, cancellationToken);
 
         var entity = new Domain.Entities.Payment
         {
@@ -107,6 +120,8 @@ internal sealed class CreatePaymentCommandHandler
             ExchangeRate = paymentRate,
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
             ReferenceNumber = string.IsNullOrWhiteSpace(cmd.ReferenceNumber) ? null : cmd.ReferenceNumber.Trim(),
+            AitAmount = ait,
+            VdsAmount = vds,
             Notes = cmd.Notes
         };
         await _repo.AddAsync(entity, cancellationToken);
@@ -119,19 +134,21 @@ internal sealed class CreatePaymentCommandHandler
 
         await _uow.SaveChangesAsync(cancellationToken);   // persist payment (gets its Id) + invoice
 
-        // Auto-journal: Dr Accounts Payable at the INVOICE rate (the booked payable being cleared),
-        // Cr Cash/Bank at the PAYMENT rate (actual BDT out). Any difference is a realized FX gain
-        // (paid fewer BDT than booked) or loss (paid more).
+        // Auto-journal: Dr Accounts Payable at the INVOICE rate (the booked payable being cleared).
+        // The credit splits into the cash actually paid (net of withholding) + the AIT/VDS held for
+        // remittance. Any invoice-vs-payment rate difference is a realized FX gain/loss.
         var cashAccount = entity.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
         var apBdt = cmd.Amount * inv.ExchangeRate;
-        var cashBdt = cmd.Amount * paymentRate;
         var fxDiff = apBdt - cashBdt;
+        var netCash = cashBdt - ait - vds;
 
         var lines = new List<JournalPostingLine>
         {
             new(LedgerAccounts.AccountsPayable, apBdt, 0m),
-            new(cashAccount, 0m, cashBdt),
         };
+        if (netCash > 0m) lines.Add(new(cashAccount, 0m, netCash));
+        if (ait > 0m) lines.Add(new(LedgerAccounts.AitPayable, 0m, ait));
+        if (vds > 0m) lines.Add(new(LedgerAccounts.VdsPayable, 0m, vds));
         if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, 0m, fxDiff));
         else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, -fxDiff, 0m));
 

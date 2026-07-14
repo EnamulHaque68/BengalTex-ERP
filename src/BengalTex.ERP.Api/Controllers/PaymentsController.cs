@@ -46,7 +46,8 @@ public class PaymentsController : ControllerBase
     {
         var result = await _mediator.Send(new CreatePaymentCommand(
             request.SupplierInvoiceId, request.PaymentDate, request.Amount,
-            request.PaymentMethod, request.ReferenceNumber, request.Notes, request.ExchangeRate
+            request.PaymentMethod, request.ReferenceNumber, request.Notes, request.ExchangeRate,
+            request.AitAmount, request.VdsAmount
         ), ct);
         return Ok(result);
     }
@@ -58,6 +59,12 @@ public class PaymentsController : ControllerBase
         var result = await _mediator.Send(new DeletePaymentCommand(id), ct);
         return Ok(result);
     }
+
+    /// <summary>Phase A5b — data for the printable AIT/VDS withholding certificate issued to the supplier.</summary>
+    [HttpGet("{id:long}/withholding-certificate")]
+    [HasPermission(Permissions.Payments.View)]
+    public async Task<IActionResult> WithholdingCertificate(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetWithholdingCertificateQuery(id), ct));
 }
 
 public record CreatePaymentRequest(
@@ -67,4 +74,6 @@ public record CreatePaymentRequest(
     string PaymentMethod,
     string? ReferenceNumber,
     string? Notes,
-    decimal? ExchangeRate = null);
+    decimal? ExchangeRate = null,
+    decimal AitAmount = 0m,
+    decimal VdsAmount = 0m);

@@ -142,6 +142,21 @@ export class FiscalYearListComponent implements OnInit {
     });
   }
 
+  // ── Phase A7b — month-end FC revaluation ──
+  runFxRevaluation(): void {
+    if (this.costBusy) return;
+    if (!this.costTo) this.monthRange();
+    this.costBusy = true; this.actionError = '';
+    this.svc.postFxRevaluation(this.costTo).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.costBusy = false;
+        if (res.success) this.actionMessage = res.message || 'FX revaluation posted.'; else this.actionError = res.message || 'Revaluation failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.costBusy = false; this.actionError = apiErrorMessage(err, 'Revaluation failed.'); this.cdr.detectChanges(); })
+    });
+  }
+
   load(): void {
     this.loading = true;
     this.svc.getFinancialYears().subscribe({

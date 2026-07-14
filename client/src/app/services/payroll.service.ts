@@ -48,6 +48,16 @@ export class PayrollService {
     return this.http.put<ApiResponse<PayslipDto>>(`${this.base}/${id}`, data);
   }
 
+  /** Phase A5 — approve (accrue) a single Draft payslip: books gross expense + deduction payables. */
+  approve(id: number): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.base}/${id}/approve`, {});
+  }
+
+  /** Phase A5 — approve (accrue) every still-Draft payslip for a payroll month. */
+  approveMonth(data: GeneratePayrollRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.base}/approve-month`, data);
+  }
+
   markPaid(id: number): Observable<ApiResponse<PayslipDto>> {
     return this.http.post<ApiResponse<PayslipDto>>(`${this.base}/${id}/mark-paid`, {});
   }

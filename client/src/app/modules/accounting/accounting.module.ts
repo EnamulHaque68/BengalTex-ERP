@@ -33,6 +33,10 @@ import { CostCentersComponent } from './cost-centers/cost-centers.component';
 import { ProfitabilityComponent } from './profitability/profitability.component';
 import { CostingRatesComponent } from './costing-rates/costing-rates.component';
 import { ProductionCostingComponent } from './production-costing/production-costing.component';
+import { StatutoryLiabilitiesComponent } from './statutory-liabilities/statutory-liabilities.component';
+import { ExchangeRatesComponent } from './exchange-rates/exchange-rates.component';
+import { BudgetsComponent } from './budgets/budgets.component';
+import { FinancialIntelligenceComponent } from './financial-intelligence/financial-intelligence.component';
 
 const routes: Routes = [
   { path: 'accounts', component: ChartOfAccountsComponent },
@@ -56,6 +60,14 @@ const routes: Routes = [
   // Phase A4 — true cost
   { path: 'costing-rates', component: CostingRatesComponent },
   { path: 'production-costing', component: ProductionCostingComponent },
+  // Phase A5b — statutory withholding
+  { path: 'statutory-liabilities', component: StatutoryLiabilitiesComponent },
+  // Phase A6c — dated exchange rates
+  { path: 'exchange-rates', component: ExchangeRatesComponent },
+  // Phase A7a — budgeting
+  { path: 'budgets', component: BudgetsComponent },
+  // Phase A8 — financial intelligence
+  { path: 'financial-intelligence', component: FinancialIntelligenceComponent },
   { path: '', redirectTo: 'accounts', pathMatch: 'full' }
 ];
 
@@ -66,7 +78,9 @@ const routes: Routes = [
     CashBookComponent, BankBookComponent, DayBookComponent,
     FiscalYearListComponent, OpeningBalancesComponent, InventoryTieOutComponent,
     CostCentersComponent, ProfitabilityComponent,
-    CostingRatesComponent, ProductionCostingComponent
+    CostingRatesComponent, ProductionCostingComponent,
+    StatutoryLiabilitiesComponent, ExchangeRatesComponent, BudgetsComponent,
+    FinancialIntelligenceComponent
   ],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,

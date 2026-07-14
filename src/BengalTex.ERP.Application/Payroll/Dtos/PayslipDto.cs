@@ -28,6 +28,6 @@ public sealed record PayslipDto(
     decimal LoanDeduction,
     decimal GrossPay,
     decimal NetPay,
-    string Status,                 // Draft | Paid
+    string Status,                 // Draft | Approved | Paid
     DateTimeOffset? PaidAt,
     string? Notes);

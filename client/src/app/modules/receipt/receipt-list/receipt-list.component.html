@@ -196,6 +196,22 @@
         <input pInputText formControlName="referenceNumber" placeholder="e.g. CHQ-12345 / bKash trxId" class="w-full" />
       </div>
 
+      <!-- Phase A6b — export realization (FDBP): bank commission + interest deducted from proceeds -->
+      <div class="field">
+        <label>Bank charge <small>(FDBP commission, BDT)</small></label>
+        <p-inputNumber formControlName="bankChargeAmount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Interest / discount <small>(FDBP, BDT)</small></label>
+        <p-inputNumber formControlName="interestAmount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2 wh-preview" *ngIf="fdbpTotal > 0">
+        <i class="pi pi-info-circle"></i>
+        Net proceeds to bank <strong>{{ formatCurrency(netProceedsPreview) }}</strong>
+        after <strong>{{ formatCurrency(fdbpTotal) }}</strong> bank charge + interest.
+      </div>
+
       <div class="field col-span-2">
         <label>Notes</label>
         <textarea pInputTextarea rows="2" formControlName="notes"

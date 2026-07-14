@@ -23,8 +23,9 @@ internal sealed class DeletePayslipCommandHandler
     {
         var p = await _repo.GetByIdAsync(cmd.Id, ct);
         if (p is null) return ApiResponse.Fail("Payslip not found.");
-        if (p.Status == PayslipStatus.Paid)
-            return ApiResponse.Fail("A paid payslip cannot be deleted.");
+        // Only a Draft is deletable — Approved/Paid already carry posted journals (accrual/payment).
+        if (p.Status != PayslipStatus.Draft)
+            return ApiResponse.Fail($"A {p.Status} payslip cannot be deleted (its salary is already accrued).");
 
         _repo.Remove(p);
         await _uow.SaveChangesAsync(ct);

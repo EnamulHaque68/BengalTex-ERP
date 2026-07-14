@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Interfaces;
 using BengalTex.ERP.Application.Common.Models;
 using BengalTex.ERP.Application.Payroll.Dtos;
@@ -285,16 +286,21 @@ internal sealed class ApproveFinalSettlementCommandHandler
 {
     private readonly IRepository<FinalSettlement, long> _repo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
+    private readonly IRepository<Domain.Entities.CostCenter> _ccRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
+    private readonly IJournalPostingService _journal;
 
     public ApproveFinalSettlementCommandHandler(
         IRepository<FinalSettlement, long> repo,
         IRepository<Domain.Entities.Employee> empRepo,
+        IRepository<Domain.Entities.CostCenter> ccRepo,
         IUnitOfWork uow,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IJournalPostingService journal)
     {
-        _repo = repo; _empRepo = empRepo; _uow = uow; _currentUser = currentUser;
+        _repo = repo; _empRepo = empRepo; _ccRepo = ccRepo; _uow = uow;
+        _currentUser = currentUser; _journal = journal;
     }
 
     public async Task<ApiResponse> Handle(ApproveFinalSettlementCommand cmd, CancellationToken ct)
@@ -317,6 +323,30 @@ internal sealed class ApproveFinalSettlementCommandHandler
             SettlementReason.Termination => EmployeeStatus.Terminated,
             _ => EmployeeStatus.Inactive
         };
+
+        // Phase A5 — book the settlement liability (final dues expensed, loan receivable recovered):
+        //   Dr 5200 Salary Expense   = ProratedSalary + LeaveEncashment + OtherEarnings
+        //   Dr 5210 Staff Cost       = Gratuity
+        //     Cr 1190 Employee Loans = OutstandingLoan (recovers receivable)
+        //     Cr 5200 (contra)       = OtherDeductions (recovery against staff cost)
+        //     Cr 2130 Salary Payable = NetPayable   (Dr instead when the employee owes, i.e. net < 0)
+        int? deptCc = await PayrollAccrual.DeptCostCenterAsync(_ccRepo, emp.DepartmentId, ct);
+        var dims = deptCc is null ? (Dimensions?)null : new Dimensions(CostCenterId: deptCc);
+
+        var earnings = s.ProratedSalary + s.LeaveEncashmentAmount + s.OtherEarnings;
+        var lines = new List<JournalPostingLine>();
+        if (earnings > 0m) lines.Add(new(LedgerAccounts.SalaryExpense, earnings, 0m, dims));
+        if (s.GratuityAmount > 0m) lines.Add(new(LedgerAccounts.EmployerPfGratuity, s.GratuityAmount, 0m, dims));
+        if (s.OutstandingLoan > 0m) lines.Add(new(LedgerAccounts.EmployeeLoans, 0m, s.OutstandingLoan));
+        if (s.OtherDeductions > 0m) lines.Add(new(LedgerAccounts.SalaryExpense, 0m, s.OtherDeductions, dims));
+        if (s.NetPayable > 0m) lines.Add(new(LedgerAccounts.SalaryPayable, 0m, s.NetPayable));
+        else if (s.NetPayable < 0m) lines.Add(new(LedgerAccounts.SalaryPayable, -s.NetPayable, 0m));
+
+        if (lines.Count > 0)
+            await _journal.PostAsync(
+                s.SettlementDate,
+                $"Final settlement {s.Code} — {emp.FullName} ({emp.Code})",
+                "FinalSettlement", s.Id, s.Code, lines, ct);
 
         _repo.Update(s);
         _empRepo.Update(emp);
@@ -347,13 +377,15 @@ internal sealed class MarkFinalSettlementPaidCommandHandler
     private readonly IRepository<FinalSettlement, long> _repo;
     private readonly IRepository<EmployeeLoan, long> _loanRepo;
     private readonly IUnitOfWork _uow;
+    private readonly IJournalPostingService _journal;
 
     public MarkFinalSettlementPaidCommandHandler(
         IRepository<FinalSettlement, long> repo,
         IRepository<EmployeeLoan, long> loanRepo,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IJournalPostingService journal)
     {
-        _repo = repo; _loanRepo = loanRepo; _uow = uow;
+        _repo = repo; _loanRepo = loanRepo; _uow = uow; _journal = journal;
     }
 
     public async Task<ApiResponse> Handle(MarkFinalSettlementPaidCommand cmd, CancellationToken ct)
@@ -369,7 +401,22 @@ internal sealed class MarkFinalSettlementPaidCommandHandler
         s.PaymentReference = string.IsNullOrWhiteSpace(cmd.PaymentReference) ? null : cmd.PaymentReference.Trim();
         _repo.Update(s);
 
-        // Close any active loans for this employee — their balance was already deducted from net payable
+        // Phase A5 — settle the net payable raised at Approve: Dr Salary Payable / Cr Cash|Bank
+        // (reversed when the employee owed a net, i.e. NetPayable < 0).
+        if (s.NetPayable != 0m)
+        {
+            var cashAccount = s.PaymentMethod.Equals("Cash", StringComparison.OrdinalIgnoreCase)
+                ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+            var abs = Math.Abs(s.NetPayable);
+            var lines = s.NetPayable > 0m
+                ? new[] { new JournalPostingLine(LedgerAccounts.SalaryPayable, abs, 0m), new JournalPostingLine(cashAccount, 0m, abs) }
+                : new[] { new JournalPostingLine(cashAccount, abs, 0m), new JournalPostingLine(LedgerAccounts.SalaryPayable, 0m, abs) };
+            await _journal.PostAsync(
+                s.SettlementDate, $"Final settlement {s.Code} paid", "FinalSettlement", s.Id, s.Code, lines, ct);
+        }
+
+        // Close any active loans for this employee — the receivable was already recovered in the
+        // Approve accrual (Cr 1190 for the outstanding snapshot); here we just close the records.
         var activeLoans = await _loanRepo.Query()
             .Where(l => l.EmployeeId == s.EmployeeId && l.Status == EmployeeLoanStatus.Active)
             .ToListAsync(ct);

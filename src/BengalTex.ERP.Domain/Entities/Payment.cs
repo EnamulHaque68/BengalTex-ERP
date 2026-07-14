@@ -37,5 +37,15 @@ public class Payment : BaseTransactionalEntity
     /// <summary>Cheque #, transaction ID, bKash trxId, etc.</summary>
     public string? ReferenceNumber { get; set; }
 
+    /// <summary>
+    /// Phase A5b — advance income tax (AIT) withheld at source from this payment, in BDT. The
+    /// supplier receives the payment net of AIT + VDS; the withheld amount is held in AIT Payable
+    /// (2160) until remitted to the NBR on a treasury challan. Default 0 = no withholding.
+    /// </summary>
+    public decimal AitAmount { get; set; }
+
+    /// <summary>Phase A5b — VAT deducted at source (VDS) withheld from this payment, in BDT → VDS Payable (2170).</summary>
+    public decimal VdsAmount { get; set; }
+
     public string? Notes { get; set; }
 }
