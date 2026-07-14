@@ -13,6 +13,51 @@ export const LC_TYPES: { label: string; value: string }[] = [
   { label: 'Back-to-Back LC', value: 'BackToBack' }
 ];
 
+// Phase A6a — LC financial events (bank-finance sub-ledger)
+export const LC_EVENT_TYPES: { label: string; value: string; hint: string }[] = [
+  { label: 'Margin Deposit', value: 'MarginDeposit', hint: 'Dr LC Margin / Cr Bank' },
+  { label: 'Bank Charge / Commission', value: 'BankCharge', hint: 'Dr Bank Charges / Cr Bank' },
+  { label: 'Document Retirement — Sight (PAD)', value: 'RetirementSight', hint: 'Dr AP / Cr Margin + Cr PAD' },
+  { label: 'Document Acceptance — Usance/UPAS', value: 'AcceptanceUsance', hint: 'Dr AP / Cr Margin + Cr Acceptance' },
+  { label: 'Interest', value: 'Interest', hint: 'Dr Interest Expense / Cr Bank' },
+  { label: 'PAD Settlement', value: 'PadSettlement', hint: 'Dr PAD / Cr Bank' },
+  { label: 'Acceptance Settlement', value: 'AcceptanceSettlement', hint: 'Dr Acceptance / Cr Bank' }
+];
+
+export interface LcFinancialEventDto {
+  id: number;
+  eventType: string;
+  eventDate: string;
+  amount: number;
+  marginApplied: number;
+  paymentMethod: string;
+  reference: string | null;
+  notes: string | null;
+}
+
+export interface LcEventsSummaryDto {
+  marginBalance: number;
+  padOutstanding: number;
+  acceptanceOutstanding: number;
+  totalCharges: number;
+  totalInterest: number;
+}
+
+export interface LcEventsResultDto {
+  events: LcFinancialEventDto[];
+  summary: LcEventsSummaryDto;
+}
+
+export interface AddLcEventRequest {
+  eventType: string;
+  eventDate: string;
+  amount: number;
+  marginApplied: number;
+  paymentMethod: string;
+  reference: string | null;
+  notes: string | null;
+}
+
 export interface LetterOfCreditDto {
   id: number;
   code: string;

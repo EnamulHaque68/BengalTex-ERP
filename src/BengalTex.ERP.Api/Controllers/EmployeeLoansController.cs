@@ -30,7 +30,7 @@ public class EmployeeLoansController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateEmployeeLoanRequest req, CancellationToken ct)
         => Ok(await _mediator.Send(new CreateEmployeeLoanCommand(
             req.EmployeeId, req.IssuedDate, req.Principal, req.EmiAmount,
-            req.TenureMonths, req.StartYearMonth, req.Notes), ct));
+            req.TenureMonths, req.StartYearMonth, req.Notes, req.DisbursementMethod), ct));
 
     [HttpPut("{id:long}")]
     [HasPermission(Permissions.EmployeeLoans.Edit)]
@@ -45,6 +45,7 @@ public class EmployeeLoansController : ControllerBase
 }
 
 public record CreateEmployeeLoanRequest(int EmployeeId, DateOnly IssuedDate,
-    decimal Principal, decimal EmiAmount, int TenureMonths, int StartYearMonth, string? Notes);
+    decimal Principal, decimal EmiAmount, int TenureMonths, int StartYearMonth, string? Notes,
+    string? DisbursementMethod = "BankTransfer");
 
 public record UpdateEmployeeLoanRequest(decimal EmiAmount, int TenureMonths, int StartYearMonth, string? Notes);

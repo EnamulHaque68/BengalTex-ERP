@@ -30,8 +30,9 @@
 
 .status-badge {
   padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
-  &.draft { background: #fef3c7; color: #92400e; }
-  &.paid  { background: #d1fae5; color: #065f46; }
+  &.draft    { background: #fef3c7; color: #92400e; }
+  &.approved { background: #dbeafe; color: #1e40af; }
+  &.paid     { background: #d1fae5; color: #065f46; }
 }
 .paid-note { font-size: 0.72rem; color: #9ca3af; }
 .row-actions { display: flex; align-items: center; gap: 0.05rem; }

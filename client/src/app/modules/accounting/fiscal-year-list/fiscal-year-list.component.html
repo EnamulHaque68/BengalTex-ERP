@@ -34,7 +34,7 @@
 
   <!-- Phase A4 — month-end costing close steps -->
   <div class="close-steps">
-    <div class="cs-head"><i class="pi pi-calculator"></i> Month-End Costing (Phase A4)</div>
+    <div class="cs-head"><i class="pi pi-calculator"></i> Month-End Costing</div>
     <div class="cs-body">
       <label class="cs-dt">From <input pInputText type="date" [(ngModel)]="costFrom" /></label>
       <label class="cs-dt">To <input pInputText type="date" [(ngModel)]="costTo" /></label>
@@ -45,6 +45,9 @@
       <p-button label="Post WIP Snapshot" icon="pi pi-camera" size="small" [outlined]="true"
                 [loading]="costBusy" (click)="runWipSnapshot()"
                 pTooltip="Value in-progress orders at cut-off (auto-reverses next day)" />
+      <p-button label="Run FX Revaluation" icon="pi pi-dollar" size="small" [outlined]="true"
+                [loading]="costBusy" (click)="runFxRevaluation()"
+                pTooltip="Restate open FC AR/AP at the 'To' date's rate → unrealized 4310/5810 (auto-reverses next day)" />
     </div>
   </div>
 

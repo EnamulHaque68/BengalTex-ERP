@@ -215,6 +215,23 @@ export class AccountingService {
   postWipSnapshot(asOfDate: string): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(`${this.inventoryGl}/wip-snapshot`, { asOfDate });
   }
+  // Phase A7b — month-end FC revaluation
+  fxRevaluationPreview(asOfDate: string): Observable<ApiResponse<FxRevaluationPreviewDto>> {
+    const params = new HttpParams().set('asOfDate', asOfDate);
+    return this.http.get<ApiResponse<FxRevaluationPreviewDto>>(`${this.inventoryGl}/fx-revaluation-preview`, { params });
+  }
+  postFxRevaluation(asOfDate: string): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(`${this.inventoryGl}/fx-revaluation`, { asOfDate });
+  }
+}
+
+export interface FxRevaluationRowDto {
+  kind: string; invoiceCode: string; currencyCode: string;
+  outstandingFc: number; bookedRate: number; currentRate: number; deltaBdt: number;
+}
+export interface FxRevaluationPreviewDto {
+  asOfDate: string; rows: FxRevaluationRowDto[];
+  arDelta: number; apDelta: number; netUnrealized: number;
 }
 
 // ── Phase A4 DTOs ──

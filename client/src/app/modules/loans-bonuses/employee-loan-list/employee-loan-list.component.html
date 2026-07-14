@@ -97,9 +97,14 @@
         <label>EMI Amount (BDT) *</label>
         <p-inputNumber formControlName="emiAmount" [min]="0" [maxFractionDigits]="2" inputStyleClass="w-full" styleClass="w-full" />
       </div>
-      <div class="field col-span-2">
+      <div class="field" [class.col-span-2]="dialogMode !== 'create'">
         <label>Tenure (months) *</label>
         <p-inputNumber formControlName="tenureMonths" [min]="1" [max]="120" [maxFractionDigits]="0" inputStyleClass="w-full" styleClass="w-full" />
+      </div>
+      <div class="field" *ngIf="dialogMode === 'create'">
+        <label>Disbursed via *</label>
+        <p-select formControlName="disbursementMethod" [options]="disbursementMethods" optionLabel="label" optionValue="value"
+                  appendTo="body" class="w-full" styleClass="w-full" />
       </div>
       <div class="field col-span-2">
         <label>Notes</label>

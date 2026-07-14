@@ -83,6 +83,9 @@
                         (click)="openView(p)" pTooltip="View" />
               <p-button icon="pi pi-print" severity="info" [text]="true" size="small"
                         [routerLink]="['/payments', p.id, 'print']" pTooltip="Print payment voucher" />
+              <p-button icon="pi pi-percentage" severity="warn" [text]="true" size="small"
+                        [routerLink]="['/payments', p.id, 'withholding-certificate']"
+                        pTooltip="AIT/VDS withholding certificate" />
               <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         (click)="confirmDelete(p)" pTooltip="Delete (reverses invoice)" />
             </div>
@@ -172,6 +175,22 @@
       <div class="field">
         <label>Reference Number <small>(cheque #, txn ID)</small></label>
         <input pInputText formControlName="referenceNumber" placeholder="e.g. CHQ-12345 / bKash trxId" class="w-full" />
+      </div>
+
+      <!-- Phase A5b — tax withheld at source (deducted from the supplier's payment) -->
+      <div class="field">
+        <label>AIT withheld <small>(income tax at source, BDT)</small></label>
+        <p-inputNumber formControlName="aitAmount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>VDS withheld <small>(VAT deducted at source, BDT)</small></label>
+        <p-inputNumber formControlName="vdsAmount" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+
+      <div class="field col-span-2 wh-preview" *ngIf="withholdingTotal > 0">
+        <i class="pi pi-info-circle"></i>
+        Supplier receives <strong>{{ formatCurrency(netPayablePreview) }}</strong> net;
+        <strong>{{ formatCurrency(withholdingTotal) }}</strong> is withheld (AIT + VDS) and held for remittance to the NBR.
       </div>
 
       <div class="field col-span-2">

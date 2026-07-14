@@ -14,11 +14,17 @@ import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { LcListComponent } from './lc-list/lc-list.component';
+import { ExportIncentiveListComponent } from './export-incentive-list/export-incentive-list.component';
+import { BankFacilityListComponent } from './bank-facility-list/bank-facility-list.component';
 
-const routes: Routes = [{ path: '', component: LcListComponent }];
+const routes: Routes = [
+  { path: '', component: LcListComponent },
+  { path: 'export-incentives', component: ExportIncentiveListComponent },
+  { path: 'bank-facilities', component: BankFacilityListComponent }
+];
 
 @NgModule({
-  declarations: [LcListComponent],
+  declarations: [LcListComponent, ExportIncentiveListComponent, BankFacilityListComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

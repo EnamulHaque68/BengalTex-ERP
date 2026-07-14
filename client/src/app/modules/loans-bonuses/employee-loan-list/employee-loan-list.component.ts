@@ -4,7 +4,7 @@ import { LoanBonusService } from '../../../services/loan-bonus.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { AuthService } from '../../../services/auth.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { EmployeeLoanDto, EmployeeLoanStatus, LOAN_STATUSES } from '../../../models/loan-bonus.models';
+import { EmployeeLoanDto, EmployeeLoanStatus, LOAN_STATUSES, DISBURSEMENT_METHODS } from '../../../models/loan-bonus.models';
 
 @Component({
   selector: 'app-employee-loan-list',
@@ -24,6 +24,7 @@ export class EmployeeLoanListComponent implements OnInit {
   employees: any[] = [];
 
   readonly statuses = LOAN_STATUSES;
+  readonly disbursementMethods = DISBURSEMENT_METHODS;
 
   canCreate = false;
   canEdit = false;
@@ -63,6 +64,7 @@ export class EmployeeLoanListComponent implements OnInit {
       emiAmount: [0, [Validators.required, Validators.min(0.01)]],
       tenureMonths: [12, [Validators.required, Validators.min(1)]],
       startYearMonth: [this.currentYm(), [Validators.required]],
+      disbursementMethod: ['BankTransfer', Validators.required],
       notes: ['', Validators.maxLength(1000)]
     });
 
@@ -96,7 +98,7 @@ export class EmployeeLoanListComponent implements OnInit {
 
   openCreate(): void {
     this.dialogMode = 'create'; this.editingId = null; this.dialogError = '';
-    this.form.reset({ employeeId: null, issuedDate: this.todayIso(), principal: 0, emiAmount: 0, tenureMonths: 12, startYearMonth: this.currentYm(), notes: '' });
+    this.form.reset({ employeeId: null, issuedDate: this.todayIso(), principal: 0, emiAmount: 0, tenureMonths: 12, startYearMonth: this.currentYm(), disbursementMethod: 'BankTransfer', notes: '' });
     this.form.get('employeeId')?.enable(); this.form.get('issuedDate')?.enable(); this.form.get('principal')?.enable();
     this.dialogVisible = true;
   }
@@ -122,7 +124,8 @@ export class EmployeeLoanListComponent implements OnInit {
       this.svc.createLoan({
         employeeId: v.employeeId, issuedDate: v.issuedDate, principal: Number(v.principal) || 0,
         emiAmount: Number(v.emiAmount) || 0, tenureMonths: Number(v.tenureMonths) || 1,
-        startYearMonth: Number(v.startYearMonth) || this.currentYm(), notes
+        startYearMonth: Number(v.startYearMonth) || this.currentYm(),
+        disbursementMethod: v.disbursementMethod || 'BankTransfer', notes
       }).subscribe({ next: done, error: err });
     } else {
       this.svc.updateLoan(this.editingId!, {

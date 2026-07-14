@@ -70,6 +70,18 @@ public class PayrollController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Phase A5 — approve (accrue) a single Draft payslip: books the gross expense + deduction payables.</summary>
+    [HttpPost("{id:long}/approve")]
+    [HasPermission(Permissions.Payroll.Process)]
+    public async Task<IActionResult> Approve(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new ApprovePayslipCommand(id), ct));
+
+    /// <summary>Phase A5 — approve (accrue) every still-Draft payslip for a payroll month in one post.</summary>
+    [HttpPost("approve-month")]
+    [HasPermission(Permissions.Payroll.Process)]
+    public async Task<IActionResult> ApproveMonth([FromBody] GeneratePayrollRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new ApprovePayrollMonthCommand(request.Year, request.Month), ct));
+
     [HttpPost("{id:long}/mark-paid")]
     [HasPermission(Permissions.Payroll.Process)]
     public async Task<IActionResult> MarkPaid(long id, [FromBody] MarkPayslipPaidRequest? request, CancellationToken ct = default)

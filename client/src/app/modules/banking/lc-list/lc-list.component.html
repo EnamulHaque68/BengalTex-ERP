@@ -211,6 +211,73 @@
       <p class="muted" *ngIf="!loadedLc.relatedGoodsReceipts || loadedLc.relatedGoodsReceipts.length === 0">
         No goods receipts drawn against this LC yet.
       </p>
+
+      <!-- Phase A6a — bank-finance events -->
+      <div class="lc-finance" *ngIf="loadedLc.status !== 'Draft' && loadedLc.status !== 'Cancelled'">
+        <div class="section-title"><i class="pi pi-wallet"></i> Bank Finance (Financial Events)</div>
+
+        <div class="fin-summary" *ngIf="lcSummary">
+          <div class="fin-chip"><span>Margin held</span><strong>{{ formatMoney(lcSummary.marginBalance, 'BDT') }}</strong></div>
+          <div class="fin-chip warn"><span>PAD outstanding</span><strong>{{ formatMoney(lcSummary.padOutstanding, 'BDT') }}</strong></div>
+          <div class="fin-chip warn"><span>Acceptance outstanding</span><strong>{{ formatMoney(lcSummary.acceptanceOutstanding, 'BDT') }}</strong></div>
+          <div class="fin-chip"><span>Charges</span><strong>{{ formatMoney(lcSummary.totalCharges, 'BDT') }}</strong></div>
+          <div class="fin-chip"><span>Interest</span><strong>{{ formatMoney(lcSummary.totalInterest, 'BDT') }}</strong></div>
+        </div>
+
+        <table class="line-grid" *ngIf="lcEvents.length > 0">
+          <thead>
+            <tr><th>Date</th><th>Event</th><th class="num-col">Amount (BDT)</th><th class="num-col">Margin</th><th>Method</th><th>Ref</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of lcEvents">
+              <td>{{ e.eventDate }}</td>
+              <td>{{ eventLabel(e.eventType) }}</td>
+              <td class="num">{{ formatMoney(e.amount, 'BDT') }}</td>
+              <td class="num">{{ e.marginApplied ? formatMoney(e.marginApplied, 'BDT') : '—' }}</td>
+              <td>{{ e.paymentMethod }}</td>
+              <td>{{ e.reference || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted" *ngIf="lcEvents.length === 0">No financial events recorded yet.</p>
+
+        <!-- Add event (Open / Shipped only) -->
+        <div class="add-event" *ngIf="loadedLc.status === 'Open' || loadedLc.status === 'Shipped'">
+          <div class="alert alert-error" *ngIf="eventError"><i class="pi pi-exclamation-circle"></i>{{ eventError }}</div>
+          <div class="ae-grid">
+            <div class="ae-field ae-wide">
+              <label>Event</label>
+              <p-select [(ngModel)]="evType" [ngModelOptions]="{standalone: true}" [options]="eventTypes"
+                        optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+              <small class="ae-hint">{{ eventHint(evType) }}</small>
+            </div>
+            <div class="ae-field">
+              <label>Date</label>
+              <input pInputText type="date" [(ngModel)]="evDate" [ngModelOptions]="{standalone: true}" class="w-full" />
+            </div>
+            <div class="ae-field">
+              <label>Amount (BDT)</label>
+              <p-inputNumber [(ngModel)]="evAmount" [ngModelOptions]="{standalone: true}" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+            <div class="ae-field" *ngIf="isRetirementEvent">
+              <label>Margin applied</label>
+              <p-inputNumber [(ngModel)]="evMargin" [ngModelOptions]="{standalone: true}" [min]="0" [maxFractionDigits]="2" class="w-full" styleClass="w-full" inputStyleClass="w-full" />
+            </div>
+            <div class="ae-field">
+              <label>Via</label>
+              <p-select [(ngModel)]="evMethod" [ngModelOptions]="{standalone: true}" [options]="paymentMethods"
+                        optionLabel="label" optionValue="value" appendTo="body" class="w-full" styleClass="w-full" />
+            </div>
+            <div class="ae-field">
+              <label>Ref</label>
+              <input pInputText [(ngModel)]="evRef" [ngModelOptions]="{standalone: true}" placeholder="challan / advice #" class="w-full" />
+            </div>
+            <div class="ae-field ae-btn">
+              <p-button label="Record" icon="pi pi-plus" [loading]="eventBusy" [disabled]="evAmount <= 0" (click)="addEvent()" />
+            </div>
+          </div>
+        </div>
+      </div>
     </ng-container>
 
     <div class="dialog-footer">

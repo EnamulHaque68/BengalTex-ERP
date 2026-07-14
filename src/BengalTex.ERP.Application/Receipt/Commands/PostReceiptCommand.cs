@@ -76,6 +76,12 @@ internal sealed class PostReceiptCommandHandler
                 $"attempted {rct.Amount:0.####}).");
         }
 
+        // Phase A6b — FDBP charges/interest are deducted from the proceeds actually credited to the bank.
+        var cashBdtCheck = rct.Amount * rct.ExchangeRate;
+        if (rct.BankChargeAmount + rct.InterestAmount > cashBdtCheck)
+            return ApiResponse<ReceiptDto>.Fail(
+                $"Bank charge + interest ({rct.BankChargeAmount + rct.InterestAmount:0.##}) exceed the proceeds ({cashBdtCheck:0.##}).");
+
         rct.Status = Domain.Entities.ReceiptStatus.Posted;
         rct.PostedAt = DateTimeOffset.UtcNow;
         rct.PostedBy = _currentUser.UserName;
@@ -92,16 +98,21 @@ internal sealed class PostReceiptCommandHandler
         // Auto-journal: Dr Cash/Bank at the RECEIPT rate (actual BDT in), Cr Accounts Receivable
         // at the INVOICE rate (the booked receivable being cleared). Any difference is a realized
         // FX gain (received more BDT than booked) or loss (received less).
+        // The receivable is cleared in full at the invoice rate; the proceeds credited to the bank are
+        // net of any FDBP bank charge (5600) + interest (5860). FX = proceeds − receivable.
         var cashAccount = rct.PaymentMethod == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
         var cashBdt = rct.Amount * rct.ExchangeRate;
         var arBdt = rct.Amount * inv.ExchangeRate;
         var fxDiff = cashBdt - arBdt;
+        var netCash = cashBdt - rct.BankChargeAmount - rct.InterestAmount;
 
         var lines = new List<JournalPostingLine>
         {
-            new(cashAccount, cashBdt, 0m),
+            new(cashAccount, netCash, 0m),
             new(LedgerAccounts.AccountsReceivable, 0m, arBdt),
         };
+        if (rct.BankChargeAmount > 0m) lines.Add(new(LedgerAccounts.BankCharges, rct.BankChargeAmount, 0m));
+        if (rct.InterestAmount > 0m) lines.Add(new(LedgerAccounts.InterestExpense, rct.InterestAmount, 0m));
         if (fxDiff > 0m) lines.Add(new(LedgerAccounts.ExchangeGain, 0m, fxDiff));
         else if (fxDiff < 0m) lines.Add(new(LedgerAccounts.ExchangeLoss, -fxDiff, 0m));
 

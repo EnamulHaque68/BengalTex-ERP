@@ -13,10 +13,11 @@ using Microsoft.EntityFrameworkCore;
 namespace BengalTex.ERP.Application.Payroll.Commands;
 
 /// <summary>
-/// Marks a Draft payslip as Paid (immutable thereafter) AND auto-journals the payment:
-///   Dr Salary Expense (5200)  / Cr Cash (1110) or Bank (1120) by chosen <see cref="PaymentMethod"/>.
-/// Amount = <c>p.NetPay</c>. v1a defaults to BankTransfer if unspecified; v1b will split into
-/// gross-vs-net (Salary Expense + Salary Payable + PF + Income Tax) for full payroll accounting.
+/// Phase A5 — marks an Approved payslip Paid (immutable thereafter) and posts the net-pay
+/// settlement. The gross was already expensed and deductions moved to payables at Approve
+/// (see <see cref="ApprovePayslipCommand"/>), so payment only clears the net Salary Payable:
+///   Dr Salary Payable (2130)  / Cr Cash (1110) or Bank (1120) by chosen <see cref="PaymentMethod"/>.
+/// Amount = <c>p.NetPay</c>. Defaults to BankTransfer if unspecified.
 /// </summary>
 public sealed record MarkPayslipPaidCommand(long Id, string? PaymentMethod = "BankTransfer")
     : IRequest<ApiResponse<PayslipDto>>;
@@ -37,7 +38,6 @@ internal sealed class MarkPayslipPaidCommandHandler
 {
     private readonly IRepository<Payslip, long> _repo;
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
-    private readonly IRepository<Domain.Entities.CostCenter> _ccRepo;
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUserService _currentUser;
     private readonly IJournalPostingService _journal;
@@ -46,7 +46,6 @@ internal sealed class MarkPayslipPaidCommandHandler
     public MarkPayslipPaidCommandHandler(
         IRepository<Payslip, long> repo,
         IRepository<Domain.Entities.Employee> empRepo,
-        IRepository<Domain.Entities.CostCenter> ccRepo,
         IUnitOfWork uow,
         ICurrentUserService currentUser,
         IJournalPostingService journal,
@@ -54,7 +53,6 @@ internal sealed class MarkPayslipPaidCommandHandler
     {
         _repo = repo;
         _empRepo = empRepo;
-        _ccRepo = ccRepo;
         _uow = uow;
         _currentUser = currentUser;
         _journal = journal;
@@ -67,13 +65,16 @@ internal sealed class MarkPayslipPaidCommandHandler
         if (p is null) return ApiResponse<PayslipDto>.Fail("Payslip not found.");
         if (p.Status == PayslipStatus.Paid)
             return ApiResponse<PayslipDto>.Fail("Payslip is already marked paid.");
+        if (p.Status != PayslipStatus.Approved)
+            return ApiResponse<PayslipDto>.Fail("Approve the payslip first to accrue the salary, then mark it paid.");
 
         p.Status = PayslipStatus.Paid;
         p.PaidAt = DateTimeOffset.UtcNow;
         p.PaidBy = _currentUser.UserName;
         _repo.Update(p);
 
-        // Auto-journal: Dr Salary Expense / Cr Cash|Bank for NetPay
+        // Net-pay settlement — the accrual already expensed the gross and raised the payables,
+        // so payment only clears the net Salary Payable against Cash|Bank.
         if (p.NetPay > 0m)
         {
             var method = string.IsNullOrEmpty(cmd.PaymentMethod)
@@ -82,16 +83,8 @@ internal sealed class MarkPayslipPaidCommandHandler
             var cashAccount = method == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
 
             var emp = await _empRepo.Query().AsNoTracking().Where(e => e.Id == p.EmployeeId)
-                .Select(e => new { e.Code, e.FullName, e.DepartmentId }).FirstOrDefaultAsync(ct);
+                .Select(e => new { e.Code, e.FullName }).FirstOrDefaultAsync(ct);
             var empLabel = emp is null ? $"Emp #{p.EmployeeId}" : $"{emp.FullName} ({emp.Code})";
-
-            // Phase A3 — attribute salary to the employee's department cost center (if one is mapped).
-            int? deptCc = null;
-            if (emp?.DepartmentId is int deptId)
-                deptCc = await _ccRepo.Query().AsNoTracking()
-                    .Where(c => c.DepartmentId == deptId && c.IsActive)
-                    .Select(c => (int?)c.Id).FirstOrDefaultAsync(ct);
-            var salaryDims = deptCc is null ? (Dimensions?)null : new Dimensions(CostCenterId: deptCc);
 
             var payDate = DateOnly.FromDateTime(p.PaidAt!.Value.UtcDateTime);
             await _journal.PostAsync(
@@ -100,7 +93,7 @@ internal sealed class MarkPayslipPaidCommandHandler
                 "Payslip", p.Id, $"PS-{p.Year}{p.Month:D2}-{p.EmployeeId}",
                 new[]
                 {
-                    new JournalPostingLine(LedgerAccounts.SalaryExpense, p.NetPay, 0m, salaryDims),
+                    new JournalPostingLine(LedgerAccounts.SalaryPayable, p.NetPay, 0m),
                     new JournalPostingLine(cashAccount, 0m, p.NetPay),
                 }, ct);
         }

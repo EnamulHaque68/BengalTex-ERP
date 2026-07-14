@@ -46,6 +46,13 @@ public class Payslip : BaseTransactionalEntity
     public decimal NetPay { get; set; }
 
     public PayslipStatus Status { get; set; } = PayslipStatus.Draft;
+
+    // Phase A5 — gross accrual: on Approve the full earned-gross expense + deduction payables are
+    // posted (Salary/PF Expense Dr; Salary/PF/AIT Payable + Loan Cr); Mark-Paid then only clears
+    // the net Salary Payable against Cash/Bank.
+    public DateTimeOffset? ApprovedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+
     public DateTimeOffset? PaidAt { get; set; }
     public string? PaidBy { get; set; }
 
@@ -55,5 +62,6 @@ public class Payslip : BaseTransactionalEntity
 public enum PayslipStatus
 {
     Draft = 1,
-    Paid = 2
+    Paid = 2,
+    Approved = 3   // accrued (gross expensed, deductions moved to payables) — awaiting net payment
 }

@@ -23,6 +23,8 @@ export interface ReceiptDto {
   status: string;                       // Draft | Posted | Cancelled
   paymentMethod: string;
   referenceNumber: string | null;
+  bankChargeAmount: number;             // Phase A6b — FDBP bank commission (BDT)
+  interestAmount: number;               // Phase A6b — FDBP interest/discount (BDT)
   notes: string | null;
 }
 
@@ -51,4 +53,6 @@ export interface CreateReceiptRequest {
   referenceNumber: string | null;
   notes: string | null;
   exchangeRate?: number | null;         // null → backend uses the invoice's locked rate (no FX)
+  bankChargeAmount?: number;            // Phase A6b — FDBP bank commission (BDT)
+  interestAmount?: number;             // Phase A6b — FDBP interest/discount (BDT)
 }

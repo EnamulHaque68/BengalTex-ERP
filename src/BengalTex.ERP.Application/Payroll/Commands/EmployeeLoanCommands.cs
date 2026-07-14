@@ -1,3 +1,4 @@
+using BengalTex.ERP.Application.Accounting;
 using BengalTex.ERP.Application.Common.Models;
 using BengalTex.ERP.Application.Payroll.Dtos;
 using BengalTex.ERP.Application.Services;
@@ -64,7 +65,8 @@ public sealed record CreateEmployeeLoanCommand(
     decimal EmiAmount,
     int TenureMonths,
     int StartYearMonth,        // YYYYMM e.g. 202607
-    string? Notes
+    string? Notes,
+    string? DisbursementMethod = "BankTransfer"   // Phase A5 — Cash|Bank the principal is paid out of
 ) : IRequest<ApiResponse<long>>;
 
 public sealed class CreateEmployeeLoanCommandValidator : AbstractValidator<CreateEmployeeLoanCommand>
@@ -78,6 +80,9 @@ public sealed class CreateEmployeeLoanCommandValidator : AbstractValidator<Creat
         RuleFor(x => x.StartYearMonth).InclusiveBetween(200001, 210012)
             .Must(ym => ym % 100 >= 1 && ym % 100 <= 12).WithMessage("StartYearMonth month part must be 01-12.");
         RuleFor(x => x.Notes).MaximumLength(1000);
+        RuleFor(x => x.DisbursementMethod)
+            .Must(m => string.IsNullOrEmpty(m) || Enum.TryParse<PaymentMethod>(m, out _))
+            .WithMessage("DisbursementMethod must be Cash, BankTransfer, Cheque, MobileBanking, or Other.");
     }
 }
 
@@ -87,15 +92,18 @@ internal sealed class CreateEmployeeLoanCommandHandler : IRequestHandler<CreateE
     private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
     private readonly INumberingService _numbering;
+    private readonly IJournalPostingService _journal;
 
     public CreateEmployeeLoanCommandHandler(IRepository<EmployeeLoan, long> repo,
-        IRepository<Domain.Entities.Employee> empRepo, IUnitOfWork uow, INumberingService numbering)
-    { _repo = repo; _empRepo = empRepo; _uow = uow; _numbering = numbering; }
+        IRepository<Domain.Entities.Employee> empRepo, IUnitOfWork uow, INumberingService numbering,
+        IJournalPostingService journal)
+    { _repo = repo; _empRepo = empRepo; _uow = uow; _numbering = numbering; _journal = journal; }
 
     public async Task<ApiResponse<long>> Handle(CreateEmployeeLoanCommand cmd, CancellationToken ct)
     {
-        if (!await _empRepo.Query().AnyAsync(e => e.Id == cmd.EmployeeId && e.IsActive, ct))
-            return ApiResponse<long>.Fail("Employee not found or inactive.");
+        var emp = await _empRepo.Query().AsNoTracking().Where(e => e.Id == cmd.EmployeeId && e.IsActive)
+            .Select(e => new { e.Code, e.FullName }).FirstOrDefaultAsync(ct);
+        if (emp is null) return ApiResponse<long>.Fail("Employee not found or inactive.");
 
         var code = await _numbering.NextAsync("LN", null, ct);
         var loan = new EmployeeLoan
@@ -109,11 +117,28 @@ internal sealed class CreateEmployeeLoanCommandHandler : IRequestHandler<CreateE
             StartYearMonth = cmd.StartYearMonth,
             OutstandingPrincipal = cmd.Principal,
             Status = EmployeeLoanStatus.Active,
+            IsGlPosted = true,
             Notes = string.IsNullOrWhiteSpace(cmd.Notes) ? null : cmd.Notes.Trim()
         };
         await _repo.AddAsync(loan, ct);
+        await _uow.SaveChangesAsync(ct);   // persist so the loan Id exists for the journal source link
+
+        // Phase A5 — disbursement: Dr Employee Loans (receivable) / Cr Cash|Bank for the principal paid out.
+        var method = string.IsNullOrEmpty(cmd.DisbursementMethod)
+            ? PaymentMethod.BankTransfer : Enum.Parse<PaymentMethod>(cmd.DisbursementMethod);
+        var cashAccount = method == PaymentMethod.Cash ? LedgerAccounts.Cash : LedgerAccounts.Bank;
+        await _journal.PostAsync(
+            cmd.IssuedDate,
+            $"Loan {loan.Code} disbursed to {emp.FullName} ({emp.Code})",
+            "EmployeeLoan", loan.Id, loan.Code,
+            new[]
+            {
+                new JournalPostingLine(LedgerAccounts.EmployeeLoans, cmd.Principal, 0m),
+                new JournalPostingLine(cashAccount, 0m, cmd.Principal),
+            }, ct);
         await _uow.SaveChangesAsync(ct);
-        return ApiResponse<long>.Ok(loan.Id, "Loan created.");
+
+        return ApiResponse<long>.Ok(loan.Id, "Loan created and disbursed.");
     }
 }
 
@@ -161,8 +186,14 @@ public sealed record CloseEmployeeLoanCommand(long Id, bool Cancel = false) : IR
 internal sealed class CloseEmployeeLoanCommandHandler : IRequestHandler<CloseEmployeeLoanCommand, ApiResponse>
 {
     private readonly IRepository<EmployeeLoan, long> _repo;
+    private readonly IRepository<Domain.Entities.Employee> _empRepo;
     private readonly IUnitOfWork _uow;
-    public CloseEmployeeLoanCommandHandler(IRepository<EmployeeLoan, long> repo, IUnitOfWork uow) { _repo = repo; _uow = uow; }
+    private readonly IJournalPostingService _journal;
+
+    public CloseEmployeeLoanCommandHandler(
+        IRepository<EmployeeLoan, long> repo, IRepository<Domain.Entities.Employee> empRepo,
+        IUnitOfWork uow, IJournalPostingService journal)
+    { _repo = repo; _empRepo = empRepo; _uow = uow; _journal = journal; }
 
     public async Task<ApiResponse> Handle(CloseEmployeeLoanCommand cmd, CancellationToken ct)
     {
@@ -170,6 +201,27 @@ internal sealed class CloseEmployeeLoanCommandHandler : IRequestHandler<CloseEmp
         if (l is null) return ApiResponse.Fail("Loan not found.");
         if (l.Status != EmployeeLoanStatus.Active)
             return ApiResponse.Fail($"Loan is already {l.Status}.");
+
+        // Phase A5 — writing off a GL-backed loan with a remaining balance must clear the 1190
+        // receivable (it will never be recovered through payroll): Dr Staff Cost / Cr Employee Loans.
+        var writeOff = l.OutstandingPrincipal;
+        if (l.IsGlPosted && writeOff > 0m)
+        {
+            var emp = await _empRepo.Query().AsNoTracking().Where(e => e.Id == l.EmployeeId)
+                .Select(e => new { e.Code, e.FullName }).FirstOrDefaultAsync(ct);
+            var empLabel = emp is null ? $"Emp #{l.EmployeeId}" : $"{emp.FullName} ({emp.Code})";
+            await _journal.PostAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow),
+                $"Loan {l.Code} {(cmd.Cancel ? "cancelled" : "written off")} — {empLabel}",
+                "EmployeeLoan", l.Id, l.Code,
+                new[]
+                {
+                    new JournalPostingLine(LedgerAccounts.EmployerPfGratuity, writeOff, 0m),
+                    new JournalPostingLine(LedgerAccounts.EmployeeLoans, 0m, writeOff),
+                }, ct);
+            l.OutstandingPrincipal = 0m;
+        }
+
         l.Status = cmd.Cancel ? EmployeeLoanStatus.Cancelled : EmployeeLoanStatus.Closed;
         _repo.Update(l);
         await _uow.SaveChangesAsync(ct);

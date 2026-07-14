@@ -105,8 +105,21 @@ export class ReceiptListComponent implements OnInit {
       exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
       paymentMethod: ['Cash', Validators.required],
       referenceNumber: ['', Validators.maxLength(100)],
+      bankChargeAmount: [0, [Validators.min(0)]],
+      interestAmount: [0, [Validators.min(0)]],
       notes: ['', Validators.maxLength(2000)]
     });
+  }
+
+  /** Phase A6b — net proceeds actually credited to the bank after FDBP charge + interest. */
+  get netProceedsPreview(): number {
+    const v = this.form.getRawValue();
+    const rate = this.isForeignInvoice ? (Number(v.exchangeRate) || 0) : 1;
+    return (Number(v.amount) || 0) * rate - (Number(v.bankChargeAmount) || 0) - (Number(v.interestAmount) || 0);
+  }
+  get fdbpTotal(): number {
+    const v = this.form.getRawValue();
+    return (Number(v.bankChargeAmount) || 0) + (Number(v.interestAmount) || 0);
   }
 
   /** Selected invoice is in a foreign currency → the receipt-date rate matters (FX gain/loss). */
@@ -208,6 +221,8 @@ export class ReceiptListComponent implements OnInit {
       exchangeRate: 1,
       paymentMethod: 'Cash',
       referenceNumber: '',
+      bankChargeAmount: 0,
+      interestAmount: 0,
       notes: ''
     });
     this.loadPayableInvoices();
@@ -241,7 +256,9 @@ export class ReceiptListComponent implements OnInit {
       referenceNumber: (v.referenceNumber as string)?.trim() || null,
       notes: (v.notes as string)?.trim() || null,
       // Only send a rate for foreign-currency invoices; BDT invoices ignore it (rate = 1).
-      exchangeRate: this.isForeignInvoice ? Number(v.exchangeRate) : null
+      exchangeRate: this.isForeignInvoice ? Number(v.exchangeRate) : null,
+      bankChargeAmount: Number(v.bankChargeAmount) || 0,
+      interestAmount: Number(v.interestAmount) || 0
     }).subscribe({
       next: (res) => this.handleSave(res),
       error: (err) => this.handleError(err)

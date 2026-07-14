@@ -108,7 +108,32 @@ public class LettersOfCreditController : ControllerBase
         var result = await _mediator.Send(new ChangeLcStatusCommand(id, action, date), ct);
         return Ok(result);
     }
+
+    // ── Phase A6a — LC financial events (margin, charges, retirement, interest, settlement) ──
+
+    /// <summary>Financial-event ledger for an LC + its running bank-finance balances.</summary>
+    [HttpGet("{id:long}/events")]
+    [HasPermission(Permissions.Banking.View)]
+    public async Task<IActionResult> GetEvents(long id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetLcFinancialEventsQuery(id), ct));
+
+    /// <summary>Record a financial event and post its journal.</summary>
+    [HttpPost("{id:long}/events")]
+    [HasPermission(Permissions.Banking.Manage)]
+    public async Task<IActionResult> AddEvent(long id, [FromBody] AddLcEventRequest request, CancellationToken ct)
+        => Ok(await _mediator.Send(new AddLcFinancialEventCommand(
+            id, request.EventType, request.EventDate, request.Amount, request.MarginApplied,
+            request.PaymentMethod, request.Reference, request.Notes), ct));
 }
+
+public record AddLcEventRequest(
+    string EventType,
+    DateOnly EventDate,
+    decimal Amount,
+    decimal MarginApplied,
+    string PaymentMethod,
+    string? Reference,
+    string? Notes);
 
 public record CreateLetterOfCreditRequest(
     string? Code,

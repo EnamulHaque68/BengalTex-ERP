@@ -60,6 +60,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<SubcontractLine> SubcontractLines => Set<SubcontractLine>();
     public DbSet<Style> Styles => Set<Style>();
     public DbSet<LetterOfCredit> LettersOfCredit => Set<LetterOfCredit>();
+    public DbSet<LcFinancialEvent> LcFinancialEvents => Set<LcFinancialEvent>();
+    public DbSet<ExportIncentiveClaim> ExportIncentiveClaims => Set<ExportIncentiveClaim>();
+    public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
+    public DbSet<BankFacility> BankFacilities => Set<BankFacility>();
+    public DbSet<BankFacilityEvent> BankFacilityEvents => Set<BankFacilityEvent>();
+    public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<BudgetLine> BudgetLines => Set<BudgetLine>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
@@ -119,6 +126,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
     public DbSet<CostCenter> CostCenters => Set<CostCenter>();
     public DbSet<CostingRate> CostingRates => Set<CostingRate>();
+    public DbSet<StatutoryRemittance> StatutoryRemittances => Set<StatutoryRemittance>();
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Quotation> Quotations => Set<Quotation>();

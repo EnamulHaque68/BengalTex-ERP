@@ -199,6 +199,7 @@ public class DataSeeder : IDataSeeder
             ("1210", "Machinery & Equipment", AccountType.Asset, false, "1200"),
             ("1215", "Accumulated Depreciation", AccountType.Asset, false, "1200"),
             ("1220", "Capital Work in Progress", AccountType.Asset, false, "1200"),
+            ("1250", "Fixed Deposits (FDR)", AccountType.Asset, false, "1100"),
 
             // ── Liabilities (2000) ──
             ("2000", "Liabilities", AccountType.Liability, true, null),
@@ -207,6 +208,7 @@ public class DataSeeder : IDataSeeder
             ("2115", "Accrued Charges Payable (Landed Cost)", AccountType.Liability, false, "2100"),
             ("2120", "VAT Payable (Output VAT)", AccountType.Liability, false, "2100"),
             ("2130", "Salary Payable", AccountType.Liability, false, "2100"),
+            ("2135", "Provident Fund Payable", AccountType.Liability, false, "2100"),
             ("2140", "Advance from Customers", AccountType.Liability, false, "2100"),
             // Phase A1 — blueprint additions
             ("2150", "GR/IR Clearing (Goods Received Not Invoiced)", AccountType.Liability, false, "2100"),
@@ -243,6 +245,7 @@ public class DataSeeder : IDataSeeder
             ("5155", "Purchase Price Variance", AccountType.Expense, false, "5000"),
             ("5165", "Under/Over-Absorbed Overhead", AccountType.Expense, false, "5000"),
             ("5200", "Salary & Wages", AccountType.Expense, false, "5000"),
+            ("5210", "Employer PF & Gratuity", AccountType.Expense, false, "5000"),
             ("5211", "Applied Labour (Contra)", AccountType.Expense, false, "5000"),
             ("5300", "Factory Overhead", AccountType.Expense, false, "5000"),
             ("5311", "Applied Factory Overhead (Contra)", AccountType.Expense, false, "5000"),
@@ -749,6 +752,10 @@ public class DataSeeder : IDataSeeder
             new NumberingSeries { Code = "LN",    Description = "Employee Loan",       Prefix = "BTX/LN",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "FB",    Description = "Festival Bonus",      Prefix = "BTX/FB",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "FS",    Description = "Final Settlement",    Prefix = "BTX/FS",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "SR",    Description = "Statutory Remittance",Prefix = "BTX/SR",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "EI",    Description = "Export Incentive",    Prefix = "BTX/EI",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "BF",    Description = "Bank Facility",       Prefix = "BTX/BF",    Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
+            new NumberingSeries { Code = "BUD",   Description = "Budget",              Prefix = "BTX/BUD",   Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SCRAP", Description = "Scrap Sale",          Prefix = "BTX/SCRAP", Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "SMP",  Description = "Sample",              Prefix = "BTX/SMP",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },
             new NumberingSeries { Code = "WST",  Description = "Wastage Entry",       Prefix = "BTX/WST",  Separator = "/", IncludeYear = true, PaddingLength = 5, ResetCycle = ResetCycle.Yearly, CurrentYear = year },

@@ -27,7 +27,8 @@ public class HolidayConfiguration : IEntityTypeConfiguration<Holiday>
         builder.Property(h => h.Name).IsRequired().HasMaxLength(150);
         builder.Property(h => h.Description).HasMaxLength(500);
         builder.HasIndex(h => h.Date);
-        builder.HasIndex(h => new { h.Date, h.Name }).IsUnique();
+        builder.HasIndex(h => new { h.Date, h.Name }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");   // filtered so a soft-deleted holiday doesn't block re-creating it
         builder.Property(h => h.RowVersion).IsRowVersion();
     }
 }
@@ -40,7 +41,8 @@ public class LeaveBalanceConfiguration : IEntityTypeConfiguration<LeaveBalance>
         builder.Ignore(b => b.Remaining);    // computed in domain — not persisted
         builder.Property(b => b.Entitled).HasPrecision(9, 2);
         builder.Property(b => b.Taken).HasPrecision(9, 2);
-        builder.HasIndex(b => new { b.EmployeeId, b.LeaveTypeId, b.Year }).IsUnique();
+        builder.HasIndex(b => new { b.EmployeeId, b.LeaveTypeId, b.Year }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");   // filtered so a soft-deleted balance doesn't block re-creating it
         builder.HasIndex(b => b.Year);
 
         builder.HasOne(b => b.Employee).WithMany()

@@ -6,7 +6,11 @@ import { SupplierService } from '../../../services/supplier.service';
 import { CurrencyService } from '../../../services/currency.service';
 import { PurchaseOrderService } from '../../../services/purchase-order.service';
 import { PagedQueryParameters } from '../../../models/user.models';
-import { LetterOfCreditDto, LetterOfCreditListItemDto, LC_STATUSES, LC_TYPES } from '../../../models/letter-of-credit.models';
+import {
+  LetterOfCreditDto, LetterOfCreditListItemDto, LC_STATUSES, LC_TYPES,
+  LC_EVENT_TYPES, LcFinancialEventDto, LcEventsSummaryDto
+} from '../../../models/letter-of-credit.models';
+import { PAYMENT_METHODS } from '../../../models/payment.models';
 import { SupplierListItemDto } from '../../../models/supplier.models';
 import { CurrencyDto } from '../../../models/master-data.models';
 import { PurchaseOrderListItemDto } from '../../../models/purchase-order.models';
@@ -51,6 +55,20 @@ export class LcListComponent implements OnInit {
 
   /** Full LC detail (with utilisation summary + related GRNs) shown while editing. */
   loadedLc: LetterOfCreditDto | null = null;
+
+  // Phase A6a — LC financial events (shown inside the edit dialog for an Open+ LC)
+  readonly eventTypes = LC_EVENT_TYPES;
+  readonly paymentMethods = PAYMENT_METHODS;
+  lcEvents: LcFinancialEventDto[] = [];
+  lcSummary: LcEventsSummaryDto | null = null;
+  eventBusy = false;
+  eventError = '';
+  evType = 'MarginDeposit';
+  evDate = '';
+  evAmount = 0;
+  evMargin = 0;
+  evMethod = 'BankTransfer';
+  evRef = '';
 
   constructor(
     private service: LetterOfCreditService,
@@ -166,12 +184,19 @@ export class LcListComponent implements OnInit {
     this.editingId = lc.id;
     this.dialogError = '';
     this.loadedLc = null;
+    this.lcEvents = [];
+    this.lcSummary = null;
+    this.eventError = '';
+    this.evType = 'MarginDeposit';
+    this.evDate = this.todayIso();
+    this.evAmount = 0; this.evMargin = 0; this.evMethod = 'BankTransfer'; this.evRef = '';
     this.dialogVisible = true;
     this.service.getById(lc.id).subscribe({
       next: (res) => this.zone.run(() => {
         if (res.success && res.data) {
           const l = res.data;
           this.loadedLc = l;
+          if (l.status !== 'Draft' && l.status !== 'Cancelled') this.loadEvents(l.id);
           this.form.patchValue({
             code: l.code, type: l.type ?? 'Import',
             masterLcReference: l.masterLcReference ?? '', masterLcBuyer: l.masterLcBuyer ?? '',
@@ -277,6 +302,45 @@ export class LcListComponent implements OnInit {
         this.deleteError = err?.error?.message || 'Delete failed.';
         this.cdr.detectChanges();
       })
+    });
+  }
+
+  // ─── Phase A6a — LC financial events ───────────────────────────────────────
+
+  get isRetirementEvent(): boolean { return this.evType === 'RetirementSight' || this.evType === 'AcceptanceUsance'; }
+  eventLabel(v: string): string { return this.eventTypes.find(e => e.value === v)?.label ?? v; }
+  eventHint(v: string): string { return this.eventTypes.find(e => e.value === v)?.hint ?? ''; }
+
+  loadEvents(id: number): void {
+    this.service.getEvents(id).subscribe({
+      next: (res) => this.zone.run(() => {
+        if (res.success && res.data) { this.lcEvents = res.data.events; this.lcSummary = res.data.summary; }
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  addEvent(): void {
+    if (!this.editingId || this.eventBusy || this.evAmount <= 0 || !this.evDate) return;
+    this.eventBusy = true; this.eventError = '';
+    this.service.addEvent(this.editingId, {
+      eventType: this.evType, eventDate: this.evDate, amount: Number(this.evAmount) || 0,
+      marginApplied: this.isRetirementEvent ? (Number(this.evMargin) || 0) : 0,
+      paymentMethod: this.evMethod, reference: this.evRef.trim() || null, notes: null
+    }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.eventBusy = false;
+        if (res.success) {
+          this.evAmount = 0; this.evMargin = 0; this.evRef = '';
+          this.loadEvents(this.editingId!);
+          this.service.getById(this.editingId!).subscribe({
+            next: (r) => this.zone.run(() => { if (r.success && r.data) this.loadedLc = r.data; this.cdr.detectChanges(); })
+          });
+          this.load();   // status may have advanced
+        } else this.eventError = res.message || 'Could not record the event.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => { this.eventBusy = false; this.eventError = err?.error?.message || 'Could not record the event.'; this.cdr.detectChanges(); })
     });
   }
 

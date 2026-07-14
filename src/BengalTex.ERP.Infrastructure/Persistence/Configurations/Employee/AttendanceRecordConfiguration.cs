@@ -40,8 +40,10 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
         builder.HasIndex(a => a.ApprovalStatus);
         builder.HasIndex(a => a.CheckInIsProxyVpn);
 
-        // One attendance row per employee per date
-        builder.HasIndex(a => new { a.EmployeeId, a.AttendanceDate }).IsUnique();
+        // One LIVE attendance row per employee per date (filtered so a soft-deleted row doesn't
+        // block re-creating that date — the "already exists" checks are soft-delete-filtered).
+        builder.HasIndex(a => new { a.EmployeeId, a.AttendanceDate }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");
         builder.HasIndex(a => a.AttendanceDate);
 
         builder.HasOne(a => a.Employee)

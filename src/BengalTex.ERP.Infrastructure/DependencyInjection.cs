@@ -95,6 +95,7 @@ public static class DependencyInjection
         services.AddScoped<IJournalPostingService, JournalPostingService>();
         services.AddScoped<IPeriodGuard, PeriodGuard>();   // Phase A1 — fiscal-period posting guard
         services.AddScoped<ICostingRateResolver, CostingRateResolver>();   // Phase A4 — absorption rates
+        services.AddScoped<IExchangeRateResolver, ExchangeRateResolver>(); // Phase A6c — dated FX rates
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IApprovalService, ApprovalService>();

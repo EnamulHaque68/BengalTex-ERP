@@ -15,14 +15,16 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { PaymentListComponent } from './payment-list/payment-list.component';
 import { PaymentPrintComponent } from './payment-print/payment-print.component';
+import { WithholdingCertificateComponent } from './withholding-certificate/withholding-certificate.component';
 
 const routes: Routes = [
   { path: '', component: PaymentListComponent },
-  { path: ':id/print', component: PaymentPrintComponent }
+  { path: ':id/print', component: PaymentPrintComponent },
+  { path: ':id/withholding-certificate', component: WithholdingCertificateComponent }
 ];
 
 @NgModule({
-  declarations: [PaymentListComponent, PaymentPrintComponent],
+  declarations: [PaymentListComponent, PaymentPrintComponent, WithholdingCertificateComponent],
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     RouterModule.forChild(routes),

@@ -31,7 +31,7 @@ internal sealed class GetPaymentByIdQueryHandler
             pay.SupplierInvoice.SupplierId, pay.SupplierInvoice.Supplier.Name,
             pay.PaymentDate, pay.Amount, pay.ExchangeRate,
             pay.PaymentMethod.ToString(),
-            pay.ReferenceNumber, pay.Notes);
+            pay.ReferenceNumber, pay.AitAmount, pay.VdsAmount, pay.Notes);
 
         return ApiResponse<PaymentDto>.Ok(dto);
     }

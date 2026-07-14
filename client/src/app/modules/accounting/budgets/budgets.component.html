@@ -1,0 +1,139 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Budgets</h2>
+      <p class="page-subtitle">Annual budgets per account &amp; cost center &mdash; compared to posted actuals in the variance report</p>
+    </div>
+    <div class="header-actions">
+      <p-button label="New Budget" icon="pi pi-plus" *ngIf="canManage" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <div class="alert alert-ok page-alert" *ngIf="actionMessage">
+    <i class="pi pi-check-circle"></i>{{ actionMessage }}
+    <button type="button" class="alert-close" (click)="actionMessage = ''">&times;</button>
+  </div>
+  <div class="alert alert-error page-alert" *ngIf="actionError">
+    <i class="pi pi-exclamation-circle"></i>{{ actionError }}
+    <button type="button" class="alert-close" (click)="actionError = ''">&times;</button>
+  </div>
+
+  <p-card styleClass="table-card">
+    <p-table [value]="budgets" [loading]="loading" [rowHover]="true" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Code</th><th>Name</th><th>FY</th><th class="num">Lines</th><th class="num">Annual Total</th><th>Status</th><th style="width:180px">Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-b>
+        <tr>
+          <td class="fw-600">{{ b.code }}</td>
+          <td>{{ b.name }}</td>
+          <td>{{ b.financialYearCode }}</td>
+          <td class="num">{{ b.lineCount }}</td>
+          <td class="num fw-700">{{ formatMoney(b.annualTotal) }}</td>
+          <td><span class="status-badge" [ngClass]="statusClass(b.status)">{{ b.status }}</span></td>
+          <td>
+            <div class="row-actions">
+              <p-button icon="pi pi-chart-bar" severity="info" [text]="true" size="small" (click)="openVariance(b)" pTooltip="Budget vs Actual" />
+              <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" *ngIf="canManage && b.status === 'Draft'" (click)="openEdit(b.id)" pTooltip="Edit lines" />
+              <p-button icon="pi pi-check" severity="success" [text]="true" size="small" *ngIf="canManage && b.status === 'Draft'" (click)="approve(b)" pTooltip="Approve" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" *ngIf="canManage && b.status === 'Draft'" (click)="deleteBudget(b)" pTooltip="Delete" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="empty-row"><i class="pi pi-wallet"></i> No budgets yet.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Create -->
+<p-dialog [(visible)]="createVisible" header="New Budget" [modal]="true" [style]="{ width: '440px' }" [draggable]="false">
+  <div class="alert alert-error" *ngIf="createError"><i class="pi pi-exclamation-circle"></i>{{ createError }}</div>
+  <div class="field"><label>Financial Year *</label>
+    <p-select [(ngModel)]="newFyId" [options]="financialYears" optionLabel="code" optionValue="id" appendTo="body" class="w-full" styleClass="w-full" />
+  </div>
+  <div class="field"><label>Name *</label><input pInputText [(ngModel)]="newName" placeholder="e.g. FY2026 Operating Budget" class="w-full" /></div>
+  <div class="field"><label>Notes</label><textarea pInputTextarea rows="2" [(ngModel)]="newNotes" class="w-full"></textarea></div>
+  <div class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (click)="createVisible = false" [disabled]="saving" />
+    <p-button label="Create & Edit Lines" icon="pi pi-plus" [loading]="saving" [disabled]="!newFyId || !newName.trim()" (click)="doCreate()" />
+  </div>
+</p-dialog>
+
+<!-- Edit lines -->
+<p-dialog [(visible)]="editVisible" [header]="'Budget Lines — ' + editBudgetCode" [modal]="true" [style]="{ width: '1000px' }" [draggable]="false">
+  <div class="alert alert-error" *ngIf="editError"><i class="pi pi-exclamation-circle"></i>{{ editError }}</div>
+  <div class="lines-scroll">
+    <table class="lines-grid">
+      <thead>
+        <tr>
+          <th class="acc-col">Account</th>
+          <th class="cc-col">Cost Center</th>
+          <th *ngFor="let m of monthNums" class="m-col">M{{ m + 1 }}</th>
+          <th class="tot-col">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of editLines; let i = index">
+          <td class="acc-col">
+            <p-select [(ngModel)]="l.accountId" [options]="accounts" optionLabel="name" optionValue="id" [filter]="true" filterBy="code,name" appendTo="body" placeholder="Account" styleClass="w-full" />
+          </td>
+          <td class="cc-col">
+            <p-select [(ngModel)]="l.costCenterId" [options]="costCenters" optionLabel="name" optionValue="id" [showClear]="true" appendTo="body" placeholder="—" styleClass="w-full" />
+          </td>
+          <td *ngFor="let m of monthNums" class="m-col">
+            <input type="number" [(ngModel)]="l.m[m]" class="m-input" />
+          </td>
+          <td class="tot-col num">{{ formatMoney(lineTotal(l)) }}</td>
+          <td><p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (click)="removeLine(i)" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p-button label="Add Line" icon="pi pi-plus" size="small" [outlined]="true" (click)="addLine()" styleClass="add-line-btn" />
+  <div class="dialog-footer">
+    <p-button label="Close" severity="secondary" [text]="true" (click)="editVisible = false" [disabled]="editSaving" />
+    <p-button label="Save Lines" icon="pi pi-save" [loading]="editSaving" (click)="saveLines()" />
+  </div>
+</p-dialog>
+
+<!-- Variance -->
+<p-dialog [(visible)]="varVisible" [header]="'Budget vs Actual — ' + (varBudget?.code || '')" [modal]="true" [style]="{ width: '820px' }" [draggable]="false">
+  <div class="var-filters">
+    <label>From month <input type="number" [(ngModel)]="varFrom" min="1" max="12" (change)="runVariance()" class="mini-num" /></label>
+    <label>To month <input type="number" [(ngModel)]="varTo" min="1" max="12" (change)="runVariance()" class="mini-num" /></label>
+    <label>Cost Center
+      <p-select [(ngModel)]="varCcId" [options]="costCenters" optionLabel="name" optionValue="id" [showClear]="true" placeholder="All" appendTo="body" (onChange)="runVariance()" styleClass="cc-select" />
+    </label>
+  </div>
+  <p-table [value]="varReport?.rows || []" [loading]="varLoading" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr><th>Account</th><th>Type</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Variance</th><th class="num">%</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-r>
+      <tr>
+        <td><span class="acc-code">{{ r.accountCode }}</span> {{ r.accountName }}</td>
+        <td>{{ r.accountType }}</td>
+        <td class="num">{{ formatMoney(r.budget) }}</td>
+        <td class="num">{{ formatMoney(r.actual) }}</td>
+        <td class="num" [class.over]="r.variance > 0" [class.under]="r.variance < 0">{{ formatMoney(r.variance) }}</td>
+        <td class="num">{{ r.variancePct }}%</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="footer" *ngIf="varReport">
+      <tr class="tot-row">
+        <td colspan="2">Total</td>
+        <td class="num">{{ formatMoney(varReport.totalBudget) }}</td>
+        <td class="num">{{ formatMoney(varReport.totalActual) }}</td>
+        <td class="num">{{ formatMoney(varReport.totalVariance) }}</td>
+        <td></td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="6" class="empty-row">No budget lines in this range.</td></tr>
+    </ng-template>
+  </p-table>
+</p-dialog>

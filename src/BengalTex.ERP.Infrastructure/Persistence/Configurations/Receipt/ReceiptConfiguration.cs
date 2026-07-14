@@ -14,6 +14,8 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<ReceiptEntity>
         builder.Property(r => r.Code).IsRequired().HasMaxLength(50);
         builder.Property(r => r.Amount).HasPrecision(18, 4);
         builder.Property(r => r.ExchangeRate).HasPrecision(18, 6);
+        builder.Property(r => r.BankChargeAmount).HasPrecision(18, 2);   // Phase A6b — FDBP
+        builder.Property(r => r.InterestAmount).HasPrecision(18, 2);
         builder.Property(r => r.ReferenceNumber).HasMaxLength(100);
         builder.Property(r => r.Notes).HasMaxLength(2000);
         builder.Property(r => r.PostedBy).HasMaxLength(100);

@@ -85,8 +85,22 @@ export class PaymentListComponent implements OnInit {
       exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
       paymentMethod: ['Cash', Validators.required],
       referenceNumber: ['', Validators.maxLength(100)],
+      aitAmount: [0, [Validators.min(0)]],
+      vdsAmount: [0, [Validators.min(0)]],
       notes: ['', Validators.maxLength(2000)]
     });
+  }
+
+  /** BDT actually paid to the supplier = amount × rate − AIT − VDS. */
+  get netPayablePreview(): number {
+    const v = this.form.getRawValue();
+    const rate = this.isForeignInvoice ? (Number(v.exchangeRate) || 0) : 1;
+    return (Number(v.amount) || 0) * rate - (Number(v.aitAmount) || 0) - (Number(v.vdsAmount) || 0);
+  }
+
+  get withholdingTotal(): number {
+    const v = this.form.getRawValue();
+    return (Number(v.aitAmount) || 0) + (Number(v.vdsAmount) || 0);
   }
 
   /** Selected invoice is in a foreign currency → the payment-date rate matters (FX gain/loss). */
@@ -188,6 +202,8 @@ export class PaymentListComponent implements OnInit {
       exchangeRate: 1,
       paymentMethod: 'Cash',
       referenceNumber: '',
+      aitAmount: 0,
+      vdsAmount: 0,
       notes: ''
     });
     this.loadPayableInvoices();
@@ -221,7 +237,9 @@ export class PaymentListComponent implements OnInit {
       referenceNumber: (v.referenceNumber as string)?.trim() || null,
       notes: (v.notes as string)?.trim() || null,
       // Only send a rate for foreign-currency invoices; BDT invoices ignore it (rate = 1).
-      exchangeRate: this.isForeignInvoice ? Number(v.exchangeRate) : null
+      exchangeRate: this.isForeignInvoice ? Number(v.exchangeRate) : null,
+      aitAmount: Number(v.aitAmount) || 0,
+      vdsAmount: Number(v.vdsAmount) || 0
     }).subscribe({
       next: (res) => this.handleSave(res),
       error: (err) => this.handleError(err)

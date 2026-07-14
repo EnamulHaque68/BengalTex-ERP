@@ -47,7 +47,8 @@ public class FestivalBonusConfiguration : IEntityTypeConfiguration<FestivalBonus
         builder.Property(b => b.PaymentMethod).HasConversion<string>().HasMaxLength(30);
 
         builder.HasIndex(b => b.Code).IsUnique();
-        builder.HasIndex(b => new { b.EmployeeId, b.BonusYear, b.BonusType }).IsUnique();
+        builder.HasIndex(b => new { b.EmployeeId, b.BonusYear, b.BonusType }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");   // filtered so a soft-deleted bonus doesn't block re-creating it
         builder.HasIndex(b => new { b.BonusYear, b.BonusType });
         builder.HasIndex(b => b.Status);
 

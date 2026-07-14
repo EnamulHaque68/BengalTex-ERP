@@ -260,6 +260,49 @@ export class PayrollListComponent implements OnInit {
     });
   }
 
+  // ─── Approve (accrue) ──────────────────────────────────────────────────────
+
+  approve(p: PayslipDto): void {
+    if (this.rowActionId) return;
+    this.rowActionId = p.id;
+    this.actionError = '';
+    this.cdr.detectChanges();
+    this.service.approve(p.id).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.rowActionId = null;
+        if (res.success) { this.actionMessage = res.message || 'Payslip approved.'; this.load(); }
+        else this.actionError = res.message || 'Approval failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.rowActionId = null;
+        this.actionError = err?.error?.message || 'Approval failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
+  approveMonth(): void {
+    if (this.rowActionId) return;
+    const month = this.filterMonth ?? (new Date().getMonth() + 1);
+    this.rowActionId = -1;
+    this.actionError = '';
+    this.cdr.detectChanges();
+    this.service.approveMonth({ year: this.filterYear, month }).subscribe({
+      next: (res) => this.zone.run(() => {
+        this.rowActionId = null;
+        if (res.success) { this.actionMessage = res.message || 'Payslips approved.'; this.load(); }
+        else this.actionError = res.message || 'Approval failed.';
+        this.cdr.detectChanges();
+      }),
+      error: (err) => this.zone.run(() => {
+        this.rowActionId = null;
+        this.actionError = err?.error?.message || 'Approval failed.';
+        this.cdr.detectChanges();
+      })
+    });
+  }
+
   // ─── Mark paid ─────────────────────────────────────────────────────────────
 
   markPaid(p: PayslipDto): void {

@@ -34,7 +34,7 @@ internal sealed class GetReceiptByIdQueryHandler
             rct.CustomerInvoice.Currency.Code, rct.Amount * rct.ExchangeRate,
             rct.Status.ToString(),
             rct.PaymentMethod.ToString(),
-            rct.ReferenceNumber, rct.Notes);
+            rct.ReferenceNumber, rct.BankChargeAmount, rct.InterestAmount, rct.Notes);
 
         return ApiResponse<ReceiptDto>.Ok(dto);
     }

@@ -15,6 +15,8 @@ public record ReceiptDto(
     string Status,                       // Draft | Posted | Cancelled
     string PaymentMethod,                // enum as string
     string? ReferenceNumber,
+    decimal BankChargeAmount,            // Phase A6b — FDBP bank commission (BDT)
+    decimal InterestAmount,              // Phase A6b — FDBP interest/discount (BDT)
     string? Notes);
 
 public record ReceiptListItemDto(

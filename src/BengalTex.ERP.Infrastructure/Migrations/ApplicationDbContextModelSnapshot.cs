@@ -568,7 +568,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("MatchedOfficeLocationId");
 
                     b.HasIndex("EmployeeId", "AttendanceDate")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("AttendanceRecords", (string)null);
                 });
@@ -920,6 +921,166 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("BankAccounts", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankFacility", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccountReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FacilityType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("InterestRate")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("MaturityDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("BankFacilities", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankFacilityEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("BankFacilityId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("EventDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankFacilityId");
+
+                    b.HasIndex("EventType", "EventDate");
+
+                    b.ToTable("BankFacilityEvents", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankStatement", b =>
                 {
                     b.Property<long>("Id")
@@ -1259,6 +1420,177 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_BomLine_OneItem", "([RawMaterialId] IS NOT NULL AND [ComponentProductId] IS NULL) OR ([RawMaterialId] IS NULL AND [ComponentProductId] IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Budget", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("FinancialYearId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("FinancialYearId");
+
+                    b.ToTable("Budgets", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BudgetLine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("BudgetId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("M1")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M10")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M11")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M12")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M2")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M3")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M4")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M5")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M6")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M7")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M8")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("M9")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("BudgetId");
+
+                    b.HasIndex("CostCenterId");
+
+                    b.ToTable("BudgetLines", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Company", b =>
@@ -3375,6 +3707,9 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsGlPosted")
+                        .HasColumnType("bit");
+
                     b.Property<DateOnly>("IssuedDate")
                         .HasColumnType("date");
 
@@ -3536,6 +3871,62 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("EmployeeSkills", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ExchangeRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
+
+                    b.Property<DateOnly>("RateDate")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId", "RateDate")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ExchangeRates", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Expense", b =>
                 {
                     b.Property<long>("Id")
@@ -3691,6 +4082,97 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("ExpenseCategories", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ExportIncentiveClaim", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly>("ClaimDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("CustomerInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExportReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("IncentiveRate")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateOnly?>("ReceivedDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReceivedMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("CustomerInvoiceId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ExportIncentiveClaims", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Factory", b =>
@@ -3875,7 +4357,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("BonusYear", "BonusType");
 
                     b.HasIndex("EmployeeId", "BonusYear", "BonusType")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("FestivalBonuses", (string)null);
                 });
@@ -4623,7 +5106,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("Date");
 
                     b.HasIndex("Date", "Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Holidays", (string)null);
                 });
@@ -5183,6 +5667,82 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.ToTable("LandedCostVouchers", (string)null);
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LcFinancialEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("EventDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("LetterOfCreditId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("MarginApplied")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LetterOfCreditId");
+
+                    b.HasIndex("EventType", "EventDate");
+
+                    b.ToTable("LcFinancialEvents", (string)null);
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LeaveApplication", b =>
                 {
                     b.Property<long>("Id")
@@ -5341,7 +5901,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("Year");
 
                     b.HasIndex("EmployeeId", "LeaveTypeId", "Year")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("LeaveBalances", (string)null);
                 });
@@ -5972,6 +6533,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<decimal>("AitAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -6031,6 +6596,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<long>("SupplierInvoiceId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("VdsAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -6060,6 +6629,12 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<decimal>("Allowances")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("BasicSalary")
                         .HasPrecision(18, 2)
@@ -6188,7 +6763,8 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("Year", "Month");
 
                     b.HasIndex("EmployeeId", "Year", "Month")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Payslips", (string)null);
                 });
@@ -8048,6 +8624,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<decimal>("BankChargeAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -8071,6 +8651,10 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Property<decimal>("ExchangeRate")
                         .HasPrecision(18, 6)
                         .HasColumnType("decimal(18,6)");
+
+                    b.Property<decimal>("InterestAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -8737,6 +9321,88 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("Shifts", (string)null);
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StatutoryRemittance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ChallanNo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("PeriodMonth")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PeriodYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("RemittanceDate")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("TaxType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("TaxType", "RemittanceDate");
+
+                    b.ToTable("StatutoryRemittances", (string)null);
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.StockAdjustment", b =>
@@ -12006,6 +12672,17 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("LedgerAccount");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankFacilityEvent", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.BankFacility", "BankFacility")
+                        .WithMany("Events")
+                        .HasForeignKey("BankFacilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BankFacility");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankStatement", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.BankAccount", "BankAccount")
@@ -12069,6 +12746,43 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("ComponentProduct");
 
                     b.Navigation("RawMaterial");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Budget", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.FinancialYear", "FinancialYear")
+                        .WithMany()
+                        .HasForeignKey("FinancialYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FinancialYear");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BudgetLine", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Budget", "Budget")
+                        .WithMany("Lines")
+                        .HasForeignKey("BudgetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Budget");
+
+                    b.Navigation("CostCenter");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.CostCenter", b =>
@@ -12473,6 +13187,17 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ExchangeRate", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Expense", b =>
                 {
                     b.HasOne("BengalTex.ERP.Domain.Entities.CostCenter", "CostCenter")
@@ -12499,6 +13224,16 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("LedgerAccount");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.ExportIncentiveClaim", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.CustomerInvoice", "CustomerInvoice")
+                        .WithMany()
+                        .HasForeignKey("CustomerInvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CustomerInvoice");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Factory", b =>
@@ -12730,6 +13465,17 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("GoodsReceiptNote");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LcFinancialEvent", b =>
+                {
+                    b.HasOne("BengalTex.ERP.Domain.Entities.LetterOfCredit", "LetterOfCredit")
+                        .WithMany("Events")
+                        .HasForeignKey("LetterOfCreditId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LetterOfCredit");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LeaveApplication", b =>
@@ -13985,12 +14731,22 @@ namespace BengalTex.ERP.Infrastructure.Migrations
                     b.Navigation("Breaks");
                 });
 
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankFacility", b =>
+                {
+                    b.Navigation("Events");
+                });
+
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.BankStatement", b =>
                 {
                     b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Bom", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.Budget", b =>
                 {
                     b.Navigation("Lines");
                 });
@@ -14050,6 +14806,11 @@ namespace BengalTex.ERP.Infrastructure.Migrations
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LandedCostVoucher", b =>
                 {
                     b.Navigation("Charges");
+                });
+
+            modelBuilder.Entity("BengalTex.ERP.Domain.Entities.LetterOfCredit", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("BengalTex.ERP.Domain.Entities.OpeningStockEntry", b =>

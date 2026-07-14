@@ -24,7 +24,9 @@ public sealed record CreateReceiptCommand(
     string PaymentMethod,                // enum string
     string? ReferenceNumber,
     string? Notes,
-    decimal? ExchangeRate = null         // BDT/currency at receipt time; null → invoice's rate (no FX)
+    decimal? ExchangeRate = null,        // BDT/currency at receipt time; null → invoice's rate (no FX)
+    decimal BankChargeAmount = 0m,       // Phase A6b — FDBP bank commission (BDT → 5600)
+    decimal InterestAmount = 0m          // Phase A6b — FDBP interest/discount (BDT → 5860)
 ) : IRequest<ApiResponse<ReceiptDto>>;
 
 public sealed class CreateReceiptCommandValidator : AbstractValidator<CreateReceiptCommand>
@@ -40,6 +42,8 @@ public sealed class CreateReceiptCommandValidator : AbstractValidator<CreateRece
         RuleFor(x => x.ReferenceNumber).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(2000);
         RuleFor(x => x.ExchangeRate).GreaterThan(0).When(x => x.ExchangeRate.HasValue);
+        RuleFor(x => x.BankChargeAmount).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.InterestAmount).GreaterThanOrEqualTo(0);
     }
 }
 
@@ -104,6 +108,8 @@ internal sealed class CreateReceiptCommandHandler
             PaymentMethod = Enum.Parse<PaymentMethod>(cmd.PaymentMethod),
             Status = Domain.Entities.ReceiptStatus.Draft,   // draft — invoice untouched until Post
             ReferenceNumber = string.IsNullOrWhiteSpace(cmd.ReferenceNumber) ? null : cmd.ReferenceNumber.Trim(),
+            BankChargeAmount = Math.Round(cmd.BankChargeAmount, 2, MidpointRounding.AwayFromZero),
+            InterestAmount = Math.Round(cmd.InterestAmount, 2, MidpointRounding.AwayFromZero),
             Notes = cmd.Notes
         };
         await _repo.AddAsync(entity, cancellationToken);
