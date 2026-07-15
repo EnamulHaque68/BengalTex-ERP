@@ -131,8 +131,102 @@ internal sealed class GetDashboardSnapshotQueryHandler
                      && i.TotalAmount - i.AmountPaid > 0m)
             .SumAsync(i => (decimal?)((i.TotalAmount - i.AmountPaid) * i.ExchangeRate), ct) ?? 0m;
 
+        var overdueAr = await _arRepo.Query()
+            .Where(i => (i.Status == CustomerInvoiceStatus.Issued || i.Status == CustomerInvoiceStatus.PartiallyPaid)
+                     && i.DueDate < today && i.TotalAmount - i.AmountPaid > 0m)
+            .GroupBy(_ => 1)
+            .Select(g => new { Amt = g.Sum(x => (x.TotalAmount - x.AmountPaid) * x.ExchangeRate), Cnt = g.Count() })
+            .FirstOrDefaultAsync(ct);
+
         var hero = new HeroKpiDto(cashAndBank, thisMonthRevenue, totalStockValue,
-            activeSoCount + activePoCount, arOutstanding, apOutstanding);
+            activeSoCount + activePoCount, arOutstanding, apOutstanding,
+            rmStockValue, productStockValue, overdueAr?.Amt ?? 0m, overdueAr?.Cnt ?? 0);
+
+        // ── TODAY KPIs (financial — Owner / Accounts / Sales) ──────────────
+        TodayKpisDto? todayKpis = null;
+        if (_currentUser.HasPermission(Permissions.Dashboard.ViewOwner)
+            || _currentUser.HasPermission(Permissions.Dashboard.ViewAccounts)
+            || _currentUser.HasPermission(Permissions.Dashboard.ViewSales))
+        {
+            var spark0 = today.AddDays(-6);
+
+            var salesByDay = (await _arRepo.Query()
+                .Where(i => i.InvoiceDate >= spark0 && i.InvoiceDate <= today
+                         && i.Status != CustomerInvoiceStatus.Draft && i.Status != CustomerInvoiceStatus.Cancelled)
+                .GroupBy(i => i.InvoiceDate)
+                .Select(g => new { Day = g.Key, Amt = g.Sum(x => x.TotalAmount * x.ExchangeRate) })
+                .ToListAsync(ct)).ToDictionary(x => x.Day, x => x.Amt);
+            var purchaseByDay = (await _apRepo.Query()
+                .Where(i => i.InvoiceDate >= spark0 && i.InvoiceDate <= today
+                         && i.Status != SupplierInvoiceStatus.Draft && i.Status != SupplierInvoiceStatus.Cancelled)
+                .GroupBy(i => i.InvoiceDate)
+                .Select(g => new { Day = g.Key, Amt = g.Sum(x => x.TotalAmount * x.ExchangeRate) })
+                .ToListAsync(ct)).ToDictionary(x => x.Day, x => x.Amt);
+            var expenseByDay = (await _jLineRepo.Query()
+                .Where(l => l.JournalEntry.Status == JournalEntryStatus.Posted
+                         && l.JournalEntry.EntryDate >= spark0 && l.JournalEntry.EntryDate <= today
+                         && l.Account.AccountType == AccountType.Expense && l.Account.Code != LedgerAccounts.CostOfGoodsSold)
+                .GroupBy(l => l.JournalEntry.EntryDate)
+                .Select(g => new { Day = g.Key, Amt = g.Sum(x => x.Debit - x.Credit) })
+                .ToListAsync(ct)).ToDictionary(x => x.Day, x => x.Amt);
+
+            List<decimal> Spark(Dictionary<DateOnly, decimal> src)
+            { var l = new List<decimal>(7); for (var k = 0; k < 7; k++) l.Add(src.GetValueOrDefault(spark0.AddDays(k))); return l; }
+
+            var yesterday = today.AddDays(-1);
+            todayKpis = new TodayKpisDto(
+                salesByDay.GetValueOrDefault(today), salesByDay.GetValueOrDefault(yesterday),
+                purchaseByDay.GetValueOrDefault(today), purchaseByDay.GetValueOrDefault(yesterday),
+                expenseByDay.GetValueOrDefault(today), expenseByDay.GetValueOrDefault(yesterday),
+                Spark(salesByDay), Spark(purchaseByDay), Spark(expenseByDay));
+        }
+
+        // ── EXPENSE BREAKDOWN (this month, by expense account — Owner / Accounts) ──
+        IReadOnlyList<ExpenseBreakdownItemDto>? expenseBreakdown = null;
+        if (_currentUser.HasPermission(Permissions.Dashboard.ViewOwner)
+            || _currentUser.HasPermission(Permissions.Dashboard.ViewAccounts))
+        {
+            var expRows = await _jLineRepo.Query()
+                .Where(l => l.JournalEntry.Status == JournalEntryStatus.Posted
+                         && l.JournalEntry.VoucherType != VoucherType.Closing
+                         && l.JournalEntry.EntryDate >= monthStart && l.JournalEntry.EntryDate <= monthEnd
+                         && l.Account.AccountType == AccountType.Expense)
+                .GroupBy(l => l.Account.Name)
+                .Select(g => new { Name = g.Key, Amt = g.Sum(x => x.Debit - x.Credit) })
+                .ToListAsync(ct);
+            var ordered = expRows.Where(r => r.Amt > 0m).OrderByDescending(r => r.Amt).ToList();
+            var top = ordered.Take(6).Select(r => new ExpenseBreakdownItemDto(r.Name, Math.Round(r.Amt, 2))).ToList();
+            var otherSum = ordered.Skip(6).Sum(r => r.Amt);
+            if (otherSum > 0m) top.Add(new ExpenseBreakdownItemDto("Other", Math.Round(otherSum, 2)));
+            expenseBreakdown = top;
+        }
+
+        // ── LOW-STOCK ALERT (Production / Owner) ───────────────────────────
+        IReadOnlyList<LowStockItemDto>? lowStock = null;
+        if (_currentUser.HasPermission(Permissions.Dashboard.ViewProduction) || _currentUser.HasPermission(Permissions.Dashboard.ViewOwner))
+        {
+            var rmRows = await _stockRepo.Query().AsNoTracking().Where(s => s.RawMaterialId != null)
+                .Select(s => new { Id = s.RawMaterialId!.Value, s.Quantity, Name = s.RawMaterial!.Name, Reorder = s.RawMaterial.MinimumStockLevel, Unit = s.RawMaterial.UnitOfMeasure.Code })
+                .ToListAsync(ct);
+            var pRows = await _stockRepo.Query().AsNoTracking().Where(s => s.ProductId != null)
+                .Select(s => new { Id = s.ProductId!.Value, s.Quantity, Name = s.Product!.Name, Reorder = s.Product.ReorderLevel, Unit = s.Product.UnitOfMeasure.Code })
+                .ToListAsync(ct);
+
+            LowStockItemDto? Fold(IGrouping<object, (decimal Qty, string Name, decimal Reorder, string Unit)> g)
+            {
+                var qty = g.Sum(x => x.Qty); var r = g.First();
+                if (r.Reorder <= 0m || qty > r.Reorder) return null;
+                var status = qty <= r.Reorder * 0.5m ? "Critical" : "Warning";
+                return new LowStockItemDto(r.Name, Math.Round(qty, 2), Math.Round(r.Reorder, 2), r.Unit, status);
+            }
+            var items = rmRows.Select(x => (Key: (object)$"rm{x.Id}", V: (x.Quantity, x.Name, x.Reorder, x.Unit)))
+                .Concat(pRows.Select(x => (Key: (object)$"p{x.Id}", V: (x.Quantity, x.Name, x.Reorder, x.Unit))))
+                .GroupBy(x => x.Key, x => x.V)
+                .Select(Fold).Where(x => x is not null).Select(x => x!)
+                .OrderBy(x => x.Status == "Critical" ? 0 : 1).ThenBy(x => x.Available / (x.ReorderLevel == 0 ? 1 : x.ReorderLevel))
+                .Take(8).ToList();
+            lowStock = items;
+        }
 
         // ── REVENUE TREND (last 12 months, visible to all) ─────────────────
         var trendStart = monthStart.AddMonths(-11);
@@ -203,8 +297,30 @@ internal sealed class GetDashboardSnapshotQueryHandler
                 .CountAsync(p => p.RequiresQc && p.Status == ProductionOrderStatus.Completed && p.QcReleasedAt == null, ct);
             var machinesUnderMaint = await _maintRepo.Query()
                 .CountAsync(m => m.Status == MaintenanceStatus.InProgress, ct);
+
+            var completedQty = await _prodRepo.Query()
+                .Where(p => p.Status == ProductionOrderStatus.Completed
+                         && p.ActualEndDate != null && p.ActualEndDate >= monthStart && p.ActualEndDate <= monthEnd)
+                .SumAsync(p => (decimal?)p.Quantity, ct) ?? 0m;
+            var inProgressQty = await _prodRepo.Query()
+                .Where(p => p.Status == ProductionOrderStatus.InProgress)
+                .SumAsync(p => (decimal?)p.Quantity, ct) ?? 0m;
+            var target = completedQty + inProgressQty;
+            var overview = new ProductionOverviewDto(
+                Math.Round(target, 2), Math.Round(completedQty, 2),
+                target > 0m ? Math.Round(completedQty / target * 100m, 1) : 0m);
+
+            var recentOrders = await _prodRepo.Query().AsNoTracking()
+                .OrderByDescending(p => p.Id).Take(5)
+                .Select(p => new RecentProductionOrderDto(
+                    p.Code, p.Product.Name, p.Style != null ? p.Style.StyleName : null, p.Quantity,
+                    p.Status.ToString(),
+                    p.Status == ProductionOrderStatus.Completed ? 100m
+                        : p.Status == ProductionOrderStatus.InProgress ? 50m : 0m))
+                .ToListAsync(ct);
+
             production = new ProductionSectionDto(activeProd, openJc, inProgJc, monthlyWaste,
-                completedThisMonth, delayedProd, qcHeldProd, machinesUnderMaint);
+                completedThisMonth, delayedProd, qcHeldProd, machinesUnderMaint, overview, recentOrders);
         }
 
         HrSectionDto? hr = null;
@@ -221,7 +337,32 @@ internal sealed class GetDashboardSnapshotQueryHandler
                 .CountAsync(l => l.Status == LeaveApplicationStatus.Pending, ct);
             var activeLoans = await _loanRepo.Query()
                 .CountAsync(l => l.Status == EmployeeLoanStatus.Active, ct);
-            hr = new HrSectionDto(active, presentToday, pendingLeave, activeLoans);
+
+            var attToday = await _attRepo.Query()
+                .Where(a => a.AttendanceDate == today)
+                .GroupBy(a => a.Status).Select(g => new { Status = g.Key, Cnt = g.Count() })
+                .ToListAsync(ct);
+            int Cnt(params AttendanceStatus[] ss) => attToday.Where(x => ss.Contains(x.Status)).Sum(x => x.Cnt);
+            var presentCnt = Cnt(AttendanceStatus.Present, AttendanceStatus.HalfDay, AttendanceStatus.HolidayWork);
+            var lateCnt = Cnt(AttendanceStatus.Late);
+            var absentCnt = Cnt(AttendanceStatus.Absent);
+            var leaveCnt = Cnt(AttendanceStatus.Leave);
+            var attPct = active > 0 ? Math.Round((decimal)(presentCnt + lateCnt) / active * 100m, 0) : 0m;
+            var attendance = new AttendanceBreakdownDto(active, presentCnt, absentCnt, lateCnt, leaveCnt, attPct);
+
+            // Upcoming salary — estimated gross of active employees; salary date falls back to month-end
+            // (the project has no dedicated payroll-run date configuration).
+            var salaryGross = await _empRepo.Query()
+                .Where(e => e.IsActive && e.Status == EmployeeStatus.Active)
+                .SumAsync(e => (decimal?)(e.BasicSalary + e.HouseRentAllowance + e.MedicalAllowance
+                                          + e.TransportAllowance + e.FoodAllowance), ct) ?? 0m;
+            var remaining = monthEnd.DayNumber - today.DayNumber;
+            var salStatus = remaining < 0 ? "Overdue" : remaining == 0 ? "Due" : remaining <= 7 ? "DueSoon" : "Upcoming";
+            var upcomingSalary = new UpcomingSalaryDto(
+                today.Year, today.Month, monthStart.ToString("MMMM"), active, Math.Round(salaryGross, 2),
+                monthEnd, remaining, salStatus);
+
+            hr = new HrSectionDto(active, presentToday, pendingLeave, activeLoans, attendance, upcomingSalary);
         }
 
         AccountingSectionDto? accounting = null;
@@ -354,6 +495,6 @@ internal sealed class GetDashboardSnapshotQueryHandler
 
         return ApiResponse<DashboardSnapshotDto>.Ok(new DashboardSnapshotDto(
             _clock.UtcNow, hero, revenueTrend, sales, procurement, production, hr,
-            accounting, compliance, needs));
+            accounting, compliance, needs, todayKpis, expenseBreakdown, lowStock));
     }
 }

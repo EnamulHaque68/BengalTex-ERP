@@ -7,7 +7,43 @@ public record HeroKpiDto(
     decimal TotalStockValue,           // Σ qty × WAC across RM + Product
     int ActiveOrdersCount,             // Open + InProgress sales orders + purchase orders
     decimal OutstandingArAmount,
-    decimal OutstandingApAmount);
+    decimal OutstandingApAmount,
+    // ── Redesign additions (additive) ──
+    decimal RawMaterialStockValue = 0m,
+    decimal FinishedGoodsStockValue = 0m,
+    decimal OverdueArAmount = 0m,       // Σ outstanding on Issued/PartiallyPaid invoices past their DueDate
+    int OverdueArCount = 0);
+
+// ─── Today KPIs (financial — gated: Owner / Accounts / Sales) ───────────────
+public record TodayKpisDto(
+    decimal TodaySales, decimal PrevDaySales,
+    decimal TodayPurchase, decimal PrevDayPurchase,
+    decimal TodayExpenses, decimal PrevDayExpenses,
+    IReadOnlyList<decimal> SalesSpark,      // last 7 days daily totals (oldest → today)
+    IReadOnlyList<decimal> PurchaseSpark,
+    IReadOnlyList<decimal> ExpenseSpark);
+
+// ─── Expense breakdown (this month, by expense account) — gated: Owner / Accounts ──
+public record ExpenseBreakdownItemDto(string Name, decimal Amount);
+
+// ─── Low-stock alert — gated: Production / Owner ───────────────────────────
+public record LowStockItemDto(
+    string ItemName, decimal Available, decimal ReorderLevel, string Unit, string Status);  // Critical | Warning | Normal
+
+// ─── Production overview + recent orders (in the Production section) ────────
+public record ProductionOverviewDto(decimal Target, decimal Produced, decimal AchievementPct);
+
+public record RecentProductionOrderDto(
+    string Code, string ProductName, string? StyleName, decimal Quantity, string Status, decimal ProgressPct);
+
+// ─── Attendance breakdown (in the HR section) ──────────────────────────────
+public record AttendanceBreakdownDto(
+    int TotalActive, int Present, int Absent, int Late, int OnLeave, decimal AttendancePct);
+
+// ─── Upcoming salary (HR section; salary date falls back to month-end) ─────
+public record UpcomingSalaryDto(
+    int Year, int Month, string MonthLabel, int EligibleEmployees, decimal EstimatedAmount,
+    DateOnly SalaryDate, int RemainingDays, string Status);   // Upcoming | DueSoon | Due | Overdue
 
 // ─── Per-section snapshots ─────────────────────────────────────────────────
 public record SalesSectionDto(
@@ -31,13 +67,17 @@ public record ProductionSectionDto(
     int CompletedThisMonth = 0,
     int DelayedProductions = 0,        // InProgress past planned end date
     int QcHeldProductions = 0,         // completed + QC-held, not yet released
-    int MachinesUnderMaintenance = 0);
+    int MachinesUnderMaintenance = 0,
+    ProductionOverviewDto? Overview = null,
+    IReadOnlyList<RecentProductionOrderDto>? RecentOrders = null);
 
 public record HrSectionDto(
     int ActiveEmployees,
     int PresentToday,
     int PendingLeaveApplications,
-    int ActiveLoans);
+    int ActiveLoans,
+    AttendanceBreakdownDto? Attendance = null,
+    UpcomingSalaryDto? UpcomingSalary = null);
 
 public record AccountingSectionDto(
     decimal OutstandingArAmount,
@@ -80,4 +120,8 @@ public record DashboardSnapshotDto(
     HrSectionDto? Hr,
     AccountingSectionDto? Accounting,
     ComplianceSectionDto? Compliance,
-    IReadOnlyList<NeedsAttentionItemDto> NeedsAttention);
+    IReadOnlyList<NeedsAttentionItemDto> NeedsAttention,
+    // ── Redesign additions (additive) ──
+    TodayKpisDto? TodayKpis = null,
+    IReadOnlyList<ExpenseBreakdownItemDto>? ExpenseBreakdown = null,
+    IReadOnlyList<LowStockItemDto>? LowStock = null);

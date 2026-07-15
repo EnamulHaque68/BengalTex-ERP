@@ -24,4 +24,14 @@ public class DashboardController : ControllerBase
     [HttpGet("snapshot")]
     public async Task<IActionResult> Snapshot(CancellationToken ct)
         => Ok(await _mediator.Send(new GetDashboardSnapshotQuery(), ct));
+
+    /// <summary>Expense breakdown for a date range (drives the Expense Breakdown widget's period filter).</summary>
+    [HttpGet("expense-breakdown")]
+    public async Task<IActionResult> ExpenseBreakdown([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetDashboardExpenseBreakdownQuery(fromDate, toDate), ct));
+
+    /// <summary>Production target/produced/achievement for a date range (Production Overview period filter).</summary>
+    [HttpGet("production-overview")]
+    public async Task<IActionResult> ProductionOverview([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetDashboardProductionOverviewQuery(fromDate, toDate), ct));
 }

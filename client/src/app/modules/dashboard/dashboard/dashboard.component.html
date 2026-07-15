@@ -1,175 +1,317 @@
-<div class="page-shell">
-  <div class="page-header">
-    <div>
-      <h2 class="page-title">Factory Dashboard</h2>
-      <p class="page-subtitle">
-        Real-time snapshot of your factory
-        <span *ngIf="lastRefreshed" class="last-refresh">
-          &middot; refreshed {{ lastRefreshed | date:'shortTime' }} (auto every 60s)
-        </span>
-      </p>
+<div class="dash">
+  <!-- Header -->
+  <div class="dash-head">
+    <div class="dh-left">
+      <h2 class="dh-title">Dashboard</h2>
+      <p class="dh-sub">Welcome back, {{ userName }}! Here's what's happening in your factory today.</p>
     </div>
-    <div class="header-actions">
-      <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" [text]="true" [loading]="loading" (click)="load()" />
+    <div class="dh-right">
+      <p-select [(ngModel)]="selectedFactory" [options]="factories" optionLabel="name" optionValue="id"
+                [showClear]="true" placeholder="Factory: All" styleClass="hdr-select"
+                pTooltip="Records aren't factory-scoped yet — this filter is informational" tooltipPosition="bottom" />
+      <div class="hdr-range">
+        <i class="pi pi-calendar"></i>
+        <p-select [(ngModel)]="globalPreset" [options]="periodOptions" optionLabel="label" optionValue="value"
+                  (onChange)="onGlobalRange()" styleClass="hdr-select" />
+        <ng-container *ngIf="globalPreset === 'Custom'">
+          <input type="date" [(ngModel)]="customFrom" (change)="onGlobalRange()" class="hdr-date" aria-label="From date" />
+          <span class="rng-sep">–</span>
+          <input type="date" [(ngModel)]="customTo" (change)="onGlobalRange()" class="hdr-date" aria-label="To date" />
+        </ng-container>
+      </div>
+      <span class="dh-refreshed" *ngIf="lastRefreshed">Updated {{ lastRefreshed | date:'shortTime' }}</span>
+      <p-button label="Refresh" icon="pi pi-refresh" size="small" [outlined]="true" [loading]="loading" (click)="load()" />
+      <p-button label="Customize" icon="pi pi-sliders-h" size="small" (click)="customizeVisible = true" />
     </div>
   </div>
 
-  <ng-container *ngIf="data; else loadingTpl">
+  <!-- Global error / loading -->
+  <div class="dash-error" *ngIf="error">
+    <i class="pi pi-exclamation-triangle"></i> Could not load the dashboard.
+    <p-button label="Retry" icon="pi pi-refresh" size="small" [text]="true" (click)="load()" />
+  </div>
+  <div class="dash-skeleton" *ngIf="loading && !data">
+    <div class="sk-card" *ngFor="let x of [1,2,3,4,5,6]"></div>
+  </div>
 
-    <!-- ── HERO STRIP ── -->
-    <div class="hero-grid">
-      <div class="hero-card success">
-        <i class="pi pi-wallet hero-icon"></i>
-        <div class="hero-body">
-          <div class="hero-num">{{ formatCurrencyShort(data.hero.cashAndBankBalance) }}</div>
-          <div class="hero-label">Cash + Bank</div>
-        </div>
-      </div>
-      <div class="hero-card primary">
-        <i class="pi pi-chart-line hero-icon"></i>
-        <div class="hero-body">
-          <div class="hero-num">{{ formatCurrencyShort(data.hero.thisMonthRevenue) }}</div>
-          <div class="hero-label">This Month Revenue</div>
-        </div>
-      </div>
-      <div class="hero-card warn">
-        <i class="pi pi-box hero-icon"></i>
-        <div class="hero-body">
-          <div class="hero-num">{{ formatCurrencyShort(data.hero.totalStockValue) }}</div>
-          <div class="hero-label">Total Stock Value</div>
-        </div>
-      </div>
-      <div class="hero-card info">
-        <i class="pi pi-shopping-cart hero-icon"></i>
-        <div class="hero-body">
-          <div class="hero-num">{{ data.hero.activeOrdersCount }}</div>
-          <div class="hero-label">Active Orders (PO + SO)</div>
-        </div>
-      </div>
-      <div class="hero-card outline ar">
-        <div class="hero-body">
-          <div class="hero-num">{{ formatCurrencyShort(data.hero.outstandingArAmount) }}</div>
-          <div class="hero-label">AR Outstanding</div>
-        </div>
-      </div>
-      <div class="hero-card outline ap">
-        <div class="hero-body">
-          <div class="hero-num">{{ formatCurrencyShort(data.hero.outstandingApAmount) }}</div>
-          <div class="hero-label">AP Outstanding</div>
-        </div>
-      </div>
-    </div>
+  <div class="dash-grid" *ngIf="data as d">
+    <ng-container *ngFor="let w of widgets">
+      <section *ngIf="shows(w.id)" [class]="'widget ' + spanClass(w.id)" [ngSwitch]="w.id">
 
-    <!-- ── REVENUE TREND (last 12 months) ── -->
-    <div class="trend-panel" *ngIf="data.revenueTrend && data.revenueTrend.length">
-      <div class="trend-head">
-        <span class="trend-title"><i class="pi pi-chart-bar"></i> Revenue — last 12 months</span>
-        <span class="trend-peak">Peak {{ formatCurrencyShort(trendPeak) }}</span>
-      </div>
-      <svg class="trend-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" preserveAspectRatio="none">
-        <g *ngFor="let b of trendBars">
-          <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height"
-                rx="2" [class.bar-current]="b.current" class="trend-bar">
-            <title>{{ trendTooltip(b) }}</title>
-          </rect>
-          <text [attr.x]="b.x + b.width / 2" [attr.y]="trendLabelY" text-anchor="middle" class="trend-label">{{ b.label }}</text>
-        </g>
-      </svg>
-    </div>
-
-    <!-- ── ROLE SECTIONS ── -->
-    <div class="section-grid">
-
-      <p-card *ngIf="data.sales" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-tags"></i> Sales</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num">{{ data.sales.pendingQuotations }}</span><span class="kpi-label">Pending Quotations</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.sales.openSalesOrders }}</span><span class="kpi-label">Open SOs</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.sales.thisMonthInvoiceCount }}</span><span class="kpi-label">Invoices (month)</span></div>
-          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.sales.thisMonthRevenue) }}</span><span class="kpi-label">Revenue (month)</span></div>
-        </div>
-      </p-card>
-
-      <p-card *ngIf="data.procurement" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-shopping-cart"></i> Procurement</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num">{{ data.procurement.openPurchaseOrders }}</span><span class="kpi-label">Open POs</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.procurement.pendingGrns }}</span><span class="kpi-label">Pending GRNs</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.procurement.thisMonthPaymentCount }}</span><span class="kpi-label">Payments (month)</span></div>
-          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.procurement.thisMonthPaymentAmount) }}</span><span class="kpi-label">Paid (month)</span></div>
-        </div>
-      </p-card>
-
-      <p-card *ngIf="data.production" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-cog"></i> Production</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num">{{ data.production.activeProductionOrders }}</span><span class="kpi-label">Active Orders</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.production.completedThisMonth ?? 0 }}</span><span class="kpi-label">Completed (month)</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.production.inProgressJobCards }}</span><span class="kpi-label">In-Progress Cards</span></div>
-          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.delayedProductions ?? 0) > 0">{{ data.production.delayedProductions ?? 0 }}</span><span class="kpi-label">Delayed</span></div>
-          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.qcHeldProductions ?? 0) > 0">{{ data.production.qcHeldProductions ?? 0 }}</span><span class="kpi-label">QC Held</span></div>
-          <div class="kpi"><span class="kpi-num" [class.alert-num]="(data.production.machinesUnderMaintenance ?? 0) > 0">{{ data.production.machinesUnderMaintenance ?? 0 }}</span><span class="kpi-label">Machines Down</span></div>
-          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.production.thisMonthWastageCost) }}</span><span class="kpi-label">Wastage (month)</span></div>
-        </div>
-      </p-card>
-
-      <p-card *ngIf="data.hr" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-users"></i> Human Resources</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num">{{ data.hr.activeEmployees }}</span><span class="kpi-label">Active Employees</span></div>
-          <div class="kpi"><span class="kpi-num success">{{ data.hr.presentToday }}</span><span class="kpi-label">Present Today</span></div>
-          <div class="kpi"><span class="kpi-num warn">{{ data.hr.pendingLeaveApplications }}</span><span class="kpi-label">Pending Leaves</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.hr.activeLoans }}</span><span class="kpi-label">Active Loans</span></div>
-        </div>
-      </p-card>
-
-      <p-card *ngIf="data.accounting" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-calculator"></i> Accounting</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.accounting.outstandingArAmount) }}</span><span class="kpi-label">AR ({{ data.accounting.outstandingArInvoices }} inv)</span></div>
-          <div class="kpi"><span class="kpi-num small">{{ formatCurrencyShort(data.accounting.outstandingApAmount) }}</span><span class="kpi-label">AP ({{ data.accounting.outstandingApInvoices }} inv)</span></div>
-          <div class="kpi"><span class="kpi-num warn">{{ data.accounting.unreconciledStatements }}</span><span class="kpi-label">Unreconciled Stmts</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.accounting.thisMonthJournalEntries }}</span><span class="kpi-label">JEs (month)</span></div>
-        </div>
-      </p-card>
-
-      <p-card *ngIf="data.compliance" styleClass="section-card">
-        <ng-template pTemplate="title"><span><i class="pi pi-shield"></i> Compliance</span></ng-template>
-        <div class="kpi-row">
-          <div class="kpi"><span class="kpi-num warn">{{ data.compliance.certificatesExpiringSoon }}</span><span class="kpi-label">Expiring (60d)</span></div>
-          <div class="kpi"><span class="kpi-num danger">{{ data.compliance.certificatesExpired }}</span><span class="kpi-label">Expired Certs</span></div>
-          <div class="kpi"><span class="kpi-num">{{ data.compliance.upcomingAudits }}</span><span class="kpi-label">Upcoming Audits (30d)</span></div>
-          <div class="kpi"><span class="kpi-num warn">{{ data.compliance.openCapFindings }}</span><span class="kpi-label">Open CAP</span></div>
-          <div class="kpi"><span class="kpi-num danger">{{ data.compliance.overdueCapFindings }}</span><span class="kpi-label">Overdue CAP</span></div>
-        </div>
-      </p-card>
-
-    </div>
-
-    <!-- ── NEEDS ATTENTION ── -->
-    <p-card *ngIf="data.needsAttention.length > 0" styleClass="attention-card">
-      <ng-template pTemplate="title"><span><i class="pi pi-flag"></i> Needs Attention ({{ data.needsAttention.length }})</span></ng-template>
-      <div class="attention-list">
-        <a *ngFor="let item of data.needsAttention"
-           class="attention-row"
-           [routerLink]="routeForItem(item)"
-           [style.background]="severityBg(item.severity)">
-          <span class="sev-bar" [style.background]="severityColor(item.severity)"></span>
-          <div class="att-body">
-            <div class="att-head">
-              <strong>{{ item.title }}</strong>
-              <span class="att-ref" *ngIf="item.reference">{{ item.reference }}</span>
-              <span class="att-date" *ngIf="item.date">{{ item.date | date:'mediumDate' }}</span>
+        <!-- TODAY KPIs -->
+        <div *ngSwitchCase="'today'" class="kpi-row three">
+          <a class="kpi-card has-spark" [routerLink]="routeFor('todaySales')">
+            <div class="kpi-ic ic-purple"><i class="pi pi-shopping-cart"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Today Sales</span>
+              <span class="kpi-val">{{ formatShort(d.todayKpis!.todaySales) }}</span>
+              <span class="kpi-delta" [ngClass]="{'up': (pctChange(d.todayKpis!.todaySales, d.todayKpis!.prevDaySales)||0) >= 0, 'down': (pctChange(d.todayKpis!.todaySales, d.todayKpis!.prevDaySales)||0) < 0}">
+                <ng-container *ngIf="pctChange(d.todayKpis!.todaySales, d.todayKpis!.prevDaySales) as p; else nc">
+                  <i class="pi" [ngClass]="p >= 0 ? 'pi-arrow-up' : 'pi-arrow-down'"></i> {{ p >= 0 ? '+' : '' }}{{ p }}% vs yesterday
+                </ng-container><ng-template #nc><span class="muted">vs yesterday</span></ng-template>
+              </span>
             </div>
-            <div class="att-detail">{{ item.detail }}</div>
+            <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs><linearGradient id="sg-sales" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.26"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+              </linearGradient></defs>
+              <path [attr.d]="sparkArea(d.todayKpis!.salesSpark)" fill="url(#sg-sales)" />
+              <path [attr.d]="sparkLine(d.todayKpis!.salesSpark)" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+            </svg>
+          </a>
+          <a class="kpi-card has-spark" [routerLink]="routeFor('todayPurchase')">
+            <div class="kpi-ic ic-blue"><i class="pi pi-cart-plus"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Today Purchase</span>
+              <span class="kpi-val">{{ formatShort(d.todayKpis!.todayPurchase) }}</span>
+              <span class="kpi-delta" [ngClass]="{'up': (pctChange(d.todayKpis!.todayPurchase, d.todayKpis!.prevDayPurchase)||0) >= 0, 'down': (pctChange(d.todayKpis!.todayPurchase, d.todayKpis!.prevDayPurchase)||0) < 0}">
+                <ng-container *ngIf="pctChange(d.todayKpis!.todayPurchase, d.todayKpis!.prevDayPurchase) as p; else nc2">
+                  <i class="pi" [ngClass]="p >= 0 ? 'pi-arrow-up' : 'pi-arrow-down'"></i> {{ p >= 0 ? '+' : '' }}{{ p }}% vs yesterday
+                </ng-container><ng-template #nc2><span class="muted">vs yesterday</span></ng-template>
+              </span>
+            </div>
+            <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs><linearGradient id="sg-purchase" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.26"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+              </linearGradient></defs>
+              <path [attr.d]="sparkArea(d.todayKpis!.purchaseSpark)" fill="url(#sg-purchase)" />
+              <path [attr.d]="sparkLine(d.todayKpis!.purchaseSpark)" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+            </svg>
+          </a>
+          <a class="kpi-card has-spark" [routerLink]="routeFor('todayExpenses')">
+            <div class="kpi-ic ic-orange"><i class="pi pi-file"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Today Expenses</span>
+              <span class="kpi-val">{{ formatShort(d.todayKpis!.todayExpenses) }}</span>
+              <span class="kpi-delta" [ngClass]="{'up': (pctChange(d.todayKpis!.todayExpenses, d.todayKpis!.prevDayExpenses)||0) >= 0, 'down': (pctChange(d.todayKpis!.todayExpenses, d.todayKpis!.prevDayExpenses)||0) < 0}">
+                <ng-container *ngIf="pctChange(d.todayKpis!.todayExpenses, d.todayKpis!.prevDayExpenses) as p; else nc3">
+                  <i class="pi" [ngClass]="p >= 0 ? 'pi-arrow-up' : 'pi-arrow-down'"></i> {{ p >= 0 ? '+' : '' }}{{ p }}% vs yesterday
+                </ng-container><ng-template #nc3><span class="muted">vs yesterday</span></ng-template>
+              </span>
+            </div>
+            <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <defs><linearGradient id="sg-expense" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.26"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+              </linearGradient></defs>
+              <path [attr.d]="sparkArea(d.todayKpis!.expenseSpark)" fill="url(#sg-expense)" />
+              <path [attr.d]="sparkLine(d.todayKpis!.expenseSpark)" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+            </svg>
+          </a>
+        </div>
+
+        <!-- FINANCIALS -->
+        <div *ngSwitchCase="'financials'" class="kpi-row three">
+          <a class="kpi-card" [routerLink]="routeFor('receivable')">
+            <div class="kpi-ic ic-green"><i class="pi pi-users"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Total Receivable</span>
+              <span class="kpi-val">{{ formatShort(d.hero.outstandingArAmount) }}</span>
+              <span class="kpi-delta muted" *ngIf="d.accounting">{{ d.accounting.outstandingArInvoices }} invoices</span>
+            </div>
+          </a>
+          <a class="kpi-card" [routerLink]="routeFor('payable')">
+            <div class="kpi-ic ic-red"><i class="pi pi-user"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Total Payable</span>
+              <span class="kpi-val">{{ formatShort(d.hero.outstandingApAmount) }}</span>
+              <span class="kpi-delta muted" *ngIf="d.accounting">{{ d.accounting.outstandingApInvoices }} invoices</span>
+            </div>
+          </a>
+          <a class="kpi-card" [routerLink]="routeFor('cash')">
+            <div class="kpi-ic ic-indigo"><i class="pi pi-building-columns"></i></div>
+            <div class="kpi-body">
+              <span class="kpi-label">Cash &amp; Bank Balance</span>
+              <span class="kpi-val">{{ formatShort(d.hero.cashAndBankBalance) }}</span>
+              <span class="kpi-delta muted">Current posted balance</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- OPERATIONAL -->
+        <div *ngSwitchCase="'operational'" class="kpi-row six">
+          <div class="kpi-card mini" *ngIf="d.hr">
+            <div class="kpi-ic ic-teal sm"><i class="pi pi-users"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Active Employees</span><span class="kpi-val sm">{{ d.hr.activeEmployees }}</span></div>
           </div>
-          <p-tag *ngIf="item.severity" [value]="item.severity"
-                 [severity]="item.severity === 'Critical' ? 'danger' : item.severity === 'Warning' ? 'warn' : 'info'" />
-        </a>
-      </div>
-    </p-card>
+          <a class="kpi-card mini" [routerLink]="routeFor('rmStock')">
+            <div class="kpi-ic ic-purple sm"><i class="pi pi-database"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Raw Material Stock</span><span class="kpi-val sm">{{ formatShort(d.hero.rawMaterialStockValue) }}</span></div>
+          </a>
+          <a class="kpi-card mini" [routerLink]="routeFor('fgStock')">
+            <div class="kpi-ic ic-orange sm"><i class="pi pi-box"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Finished Goods Stock</span><span class="kpi-val sm">{{ formatShort(d.hero.finishedGoodsStockValue) }}</span></div>
+          </a>
+          <a class="kpi-card mini" [routerLink]="routeFor('production')" *ngIf="d.production">
+            <div class="kpi-ic ic-blue sm"><i class="pi pi-cog"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Running Production</span><span class="kpi-val sm">{{ d.production.activeProductionOrders }}</span>
+              <span class="kpi-delta down" *ngIf="d.production.delayedProductions">{{ d.production.delayedProductions }} delayed</span></div>
+          </a>
+          <a class="kpi-card mini" [routerLink]="routeFor('orders')" *ngIf="d.sales">
+            <div class="kpi-ic ic-amber sm"><i class="pi pi-inbox"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Pending Cust. Orders</span><span class="kpi-val sm">{{ d.sales.openSalesOrders }}</span></div>
+          </a>
+          <a class="kpi-card mini" [routerLink]="routeFor('overdue')">
+            <div class="kpi-ic ic-red sm"><i class="pi pi-clock"></i></div>
+            <div class="kpi-body"><span class="kpi-label">Overdue Payments</span><span class="kpi-val sm">{{ formatShort(d.hero.overdueArAmount) }}</span>
+              <span class="kpi-delta down" *ngIf="d.hero.overdueArCount">{{ d.hero.overdueArCount }} invoices</span></div>
+          </a>
+        </div>
 
-  </ng-container>
+        <!-- REVENUE vs EXPENSE -->
+        <div *ngSwitchCase="'revExp'" class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Monthly Revenue vs Expense</span>
+            <p-select [(ngModel)]="trendMonths" [options]="trendOptions" optionLabel="label" optionValue="value" (onChange)="reloadTrend()" styleClass="sm-select" />
+          </div>
+          <div class="chart-box" *ngIf="revExpData; else trendEmpty"><p-chart type="bar" [data]="revExpData" [options]="revExpOptions" height="200px" /></div>
+          <ng-template #trendEmpty><div class="empty-box"><i class="pi pi-chart-bar"></i> No revenue/expense data for this period.</div></ng-template>
+        </div>
 
-  <ng-template #loadingTpl><p class="loading">Loading dashboard...</p></ng-template>
+        <!-- EXPENSE DONUT -->
+        <div *ngSwitchCase="'expenseDonut'" class="panel">
+          <div class="panel-head"><span class="panel-title">Expense Breakdown</span>
+            <p-select [(ngModel)]="expensePreset" [options]="periodOptions" optionLabel="label" optionValue="value" (onChange)="onExpensePeriod()" styleClass="sm-select" /></div>
+          <div class="donut-row" *ngIf="expenseData; else expEmpty">
+            <div class="donut-wrap sm">
+              <p-chart type="doughnut" [data]="expenseData" [options]="donutOptions" height="150px" />
+              <div class="donut-center"><span class="dc-val">{{ formatShort(expenseTotal) }}</span><span class="dc-lbl">Total Expense</span></div>
+            </div>
+            <ul class="donut-legend">
+              <li *ngFor="let e of expenseItems; let i = index">
+                <span class="dot" [style.background]="expenseColors[i % expenseColors.length]"></span>
+                <span class="dl-name">{{ e.name }}</span>
+                <span class="dl-pct">{{ expensePct(e.amount) }}%</span>
+              </li>
+            </ul>
+          </div>
+          <ng-template #expEmpty><div class="empty-box"><i class="pi pi-chart-pie"></i> No expenses this month.</div></ng-template>
+        </div>
+
+        <!-- LOW STOCK -->
+        <div *ngSwitchCase="'lowStock'" class="panel">
+          <div class="panel-head"><span class="panel-title">Low Stock Alert</span>
+            <a class="panel-link" routerLink="/stock-on-hand">View All</a></div>
+          <table class="mini-table" *ngIf="d.lowStock?.length; else stockOk">
+            <thead><tr><th>Item</th><th class="num">Avail</th><th class="num">Reorder</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of d.lowStock">
+                <td class="ellip">{{ s.itemName }}</td>
+                <td class="num">{{ s.available | number:'1.0-0' }} {{ s.unit }}</td>
+                <td class="num">{{ s.reorderLevel | number:'1.0-0' }}</td>
+                <td><span class="pill" [ngClass]="s.status === 'Critical' ? 'sev-critical' : 'sev-warning'"><i class="pi pi-circle-fill"></i> {{ s.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #stockOk><div class="empty-box ok"><i class="pi pi-check-circle"></i> All stock above reorder level.</div></ng-template>
+        </div>
+
+        <!-- PRODUCTION OVERVIEW -->
+        <div *ngSwitchCase="'production'" class="panel">
+          <div class="panel-head"><span class="panel-title">Production Overview</span>
+            <p-select [(ngModel)]="prodPreset" [options]="periodOptions" optionLabel="label" optionValue="value" (onChange)="onProdPeriod()" styleClass="sm-select" /></div>
+          <div class="prod-over" *ngIf="prodOverview as ov">
+            <div class="prod-ring" [style.background]="'conic-gradient(#10b981 ' + (ov.achievementPct * 3.6) + 'deg, #e5e7eb 0deg)'">
+              <div class="ring-inner"><span class="ring-val">{{ ov.achievementPct }}%</span><span class="ring-lbl">Achieved</span></div>
+            </div>
+            <div class="prod-figs">
+              <div><span class="pf-lbl">Target</span><span class="pf-val">{{ ov.target | number:'1.0-0' }}</span></div>
+              <div><span class="pf-lbl">Produced</span><span class="pf-val">{{ ov.produced | number:'1.0-0' }}</span></div>
+            </div>
+          </div>
+          <div class="prod-stats" *ngIf="d.production as p">
+            <div class="ps"><span class="ps-v">{{ p.activeProductionOrders }}</span><span class="ps-l">Active</span></div>
+            <div class="ps"><span class="ps-v ok">{{ p.completedThisMonth }}</span><span class="ps-l">Completed</span></div>
+            <div class="ps"><span class="ps-v bad">{{ p.delayedProductions }}</span><span class="ps-l">Delayed</span></div>
+            <div class="ps"><span class="ps-v warn">{{ p.qcHeldProductions }}</span><span class="ps-l">QC Hold</span></div>
+          </div>
+        </div>
+
+        <!-- RECENT PRODUCTION ORDERS -->
+        <div *ngSwitchCase="'recentOrders'" class="panel">
+          <div class="panel-head"><span class="panel-title">Recent Production Orders</span>
+            <a class="panel-link" routerLink="/production-orders">View All</a></div>
+          <table class="mini-table" *ngIf="d.production?.recentOrders?.length; else noProd">
+            <thead><tr><th>Order</th><th>Product</th><th class="num">Qty</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let o of d.production!.recentOrders">
+                <td class="mono">{{ o.code }}</td>
+                <td class="ellip">{{ o.styleName || o.productName }}</td>
+                <td class="num">{{ o.quantity | number:'1.0-0' }}</td>
+                <td><span class="pill" [ngClass]="statusClass(o.status)">{{ o.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #noProd><div class="empty-box"><i class="pi pi-inbox"></i> No production orders.</div></ng-template>
+        </div>
+
+        <!-- UPCOMING SALARY -->
+        <div *ngSwitchCase="'upcomingSalary'" class="panel">
+          <div class="panel-head"><span class="panel-title">Upcoming Salary</span>
+            <a class="panel-link" routerLink="/payroll">View Payroll</a></div>
+          <div class="salary-box" *ngIf="d.hr?.upcomingSalary as s">
+            <div class="sal-top"><i class="pi pi-calendar"></i><div><div class="sal-month">{{ s.monthLabel }} {{ s.year }} Salary</div>
+              <div class="sal-sub">{{ s.eligibleEmployees }} employees · est. {{ formatShort(s.estimatedAmount) }}</div></div></div>
+            <div class="sal-grid">
+              <div><span class="sg-l">Salary Date</span><span class="sg-v">{{ s.salaryDate | date:'dd MMM yyyy' }}</span></div>
+              <div><span class="sg-l">Remaining</span><span class="sg-v">{{ s.remainingDays }} days</span></div>
+              <div><span class="sg-l">Status</span><span class="sg-v" [ngClass]="sevClass(s.status === 'Overdue' ? 'Critical' : (s.status === 'DueSoon' || s.status === 'Due') ? 'Warning' : 'Info')">{{ s.status }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEEDS ATTENTION -->
+        <div *ngSwitchCase="'needsAttention'" class="panel">
+          <div class="panel-head"><span class="panel-title">Needs Your Attention</span></div>
+          <ul class="attn-list" *ngIf="d.needsAttention?.length; else allClear">
+            <li *ngFor="let it of d.needsAttention" [routerLink]="routeForItem(it)">
+              <span class="attn-ic" [ngClass]="sevClass(it.severity)"><i class="pi" [ngClass]="it.severity === 'Critical' ? 'pi-exclamation-circle' : it.severity === 'Warning' ? 'pi-exclamation-triangle' : 'pi-info-circle'"></i></span>
+              <span class="attn-body"><span class="attn-title">{{ it.title }}</span><span class="attn-detail">{{ it.detail }}</span></span>
+              <span class="attn-date">{{ it.date }}</span>
+              <i class="pi pi-chevron-right attn-go"></i>
+            </li>
+          </ul>
+          <ng-template #allClear><div class="empty-box ok"><i class="pi pi-check-circle"></i> Nothing needs attention.</div></ng-template>
+        </div>
+
+        <!-- ATTENDANCE -->
+        <div *ngSwitchCase="'attendance'" class="panel">
+          <div class="panel-head"><span class="panel-title">Today Attendance</span>
+            <a class="panel-link" routerLink="/attendance">View Details</a></div>
+          <div class="att-wrap" *ngIf="d.hr?.attendance as at">
+            <div class="donut-wrap sm" *ngIf="attendanceData">
+              <p-chart type="doughnut" [data]="attendanceData" [options]="donutOptions" height="140px" />
+              <div class="donut-center"><span class="dc-val">{{ at.totalActive }}</span><span class="dc-lbl">Total</span></div>
+            </div>
+            <ul class="att-legend">
+              <li><span class="dot" style="background:#10b981"></span>Present <b>{{ at.present }}</b></li>
+              <li><span class="dot" style="background:#f59e0b"></span>Late <b>{{ at.late }}</b></li>
+              <li><span class="dot" style="background:#3b82f6"></span>On Leave <b>{{ at.onLeave }}</b></li>
+              <li><span class="dot" style="background:#ef4444"></span>Absent <b>{{ at.absent }}</b></li>
+              <li class="att-rate">Attendance Rate <b>{{ at.attendancePct }}%</b></li>
+            </ul>
+          </div>
+        </div>
+
+      </section>
+    </ng-container>
+  </div>
 </div>
+
+<!-- Customize dialog -->
+<p-dialog [(visible)]="customizeVisible" header="Customize Dashboard" [modal]="true" [style]="{ width: '460px' }" [draggable]="false">
+  <p class="cust-hint">Show/hide widgets and reorder them. Saved to this browser. Only widgets you're permitted to see appear here.</p>
+  <ul class="cust-list">
+    <li *ngFor="let w of customizableWidgets">
+      <p-checkbox [(ngModel)]="w.visible" [binary]="true" (onChange)="toggleWidget(w)" />
+      <span class="cust-label">{{ w.label }}</span>
+      <span class="cust-move">
+        <button type="button" class="mv" (click)="moveWidget(w, -1)" aria-label="Move up"><i class="pi pi-chevron-up"></i></button>
+        <button type="button" class="mv" (click)="moveWidget(w, 1)" aria-label="Move down"><i class="pi pi-chevron-down"></i></button>
+      </span>
+    </li>
+  </ul>
+  <div class="dialog-footer">
+    <p-button label="Reset to Default" icon="pi pi-replay" severity="secondary" [text]="true" (click)="resetLayout()" />
+    <p-button label="Done" icon="pi pi-check" (click)="customizeVisible = false" />
+  </div>
+</p-dialog>

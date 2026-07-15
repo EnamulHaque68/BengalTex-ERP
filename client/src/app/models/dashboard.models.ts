@@ -7,6 +7,38 @@ export interface HeroKpiDto {
   activeOrdersCount: number;
   outstandingArAmount: number;
   outstandingApAmount: number;
+  rawMaterialStockValue: number;
+  finishedGoodsStockValue: number;
+  overdueArAmount: number;
+  overdueArCount: number;
+}
+
+export interface TodayKpisDto {
+  todaySales: number; prevDaySales: number;
+  todayPurchase: number; prevDayPurchase: number;
+  todayExpenses: number; prevDayExpenses: number;
+  salesSpark: number[]; purchaseSpark: number[]; expenseSpark: number[];
+}
+
+export interface ExpenseBreakdownItemDto { name: string; amount: number; }
+
+export interface LowStockItemDto {
+  itemName: string; available: number; reorderLevel: number; unit: string; status: string;
+}
+
+export interface ProductionOverviewDto { target: number; produced: number; achievementPct: number; }
+
+export interface RecentProductionOrderDto {
+  code: string; productName: string; styleName: string | null; quantity: number; status: string; progressPct: number;
+}
+
+export interface AttendanceBreakdownDto {
+  totalActive: number; present: number; absent: number; late: number; onLeave: number; attendancePct: number;
+}
+
+export interface UpcomingSalaryDto {
+  year: number; month: number; monthLabel: string; eligibleEmployees: number; estimatedAmount: number;
+  salaryDate: string; remainingDays: number; status: string;
 }
 
 export interface SalesSectionDto {
@@ -33,6 +65,8 @@ export interface ProductionSectionDto {
   delayedProductions?: number;
   qcHeldProductions?: number;
   machinesUnderMaintenance?: number;
+  overview?: ProductionOverviewDto | null;
+  recentOrders?: RecentProductionOrderDto[] | null;
 }
 
 export interface HrSectionDto {
@@ -40,6 +74,8 @@ export interface HrSectionDto {
   presentToday: number;
   pendingLeaveApplications: number;
   activeLoans: number;
+  attendance?: AttendanceBreakdownDto | null;
+  upcomingSalary?: UpcomingSalaryDto | null;
 }
 
 export interface AccountingSectionDto {
@@ -86,4 +122,7 @@ export interface DashboardSnapshotDto {
   accounting: AccountingSectionDto | null;
   compliance: ComplianceSectionDto | null;
   needsAttention: NeedsAttentionItemDto[];
+  todayKpis?: TodayKpisDto | null;
+  expenseBreakdown?: ExpenseBreakdownItemDto[] | null;
+  lowStock?: LowStockItemDto[] | null;
 }
