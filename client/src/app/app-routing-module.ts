@@ -10,7 +10,8 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     component: LayoutComponent,   // persistent sidebar + topbar shell; children render in its outlet
     children: [
-      { path: '', loadChildren: () => import('./modules/home/home.module').then(m => m.HomeModule) },
+      // Landing page (the "Dashboard" sidebar item routes here) — the redesigned dashboard.
+      { path: '', loadChildren: () => import('./modules/dashboard/dashboard.module').then(m => m.DashboardModule) },
       { path: 'company', loadChildren: () => import('./modules/company/company.module').then(m => m.CompanyModule) },
       { path: 'factories', loadChildren: () => import('./modules/factory/factory.module').then(m => m.FactoryModule) },
       { path: 'users', loadChildren: () => import('./modules/user/user.module').then(m => m.UserModule) },
