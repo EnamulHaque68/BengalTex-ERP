@@ -1,6 +1,6 @@
 # 🏢 Bengal TEX ERP
 
-<p align="center"> <img src="./assets/banner.png" alt="Bengal TEX ERP - Garments Accessories ERP System" width="100%"> </p>
+<p align="center"> <img src="./assets/finaltex.png" alt="Bengal TEX ERP - Garments Accessories ERP System" width="100%"> </p>
 
 <p align="center"> <strong>⚙️ Enterprise Resource Planning platform for garments accessories manufacturing and trading operations.</strong> </p>
 
