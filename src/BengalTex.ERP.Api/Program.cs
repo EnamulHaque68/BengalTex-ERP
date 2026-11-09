@@ -272,6 +272,24 @@ builder.Services.AddHangfireServer();
 var app = builder.Build();
 
 // ============================================
+// DATABASE INITIALIZATION (migrate + seed)
+// ============================================
+// Run immediately on boot before middleware and Hangfire dashboard access so that
+// the database, all 156 tables, and idempotent seed data exist before background services start.
+var initializeDb = app.Configuration.GetValue<bool?>("Database:InitializeOnStartup") ?? true;
+if (initializeDb || app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (initializeDb || !await db.Database.CanConnectAsync() || (await db.Database.GetPendingMigrationsAsync()).Any())
+    {
+        await db.Database.MigrateAsync();
+    }
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+    await seeder.SeedAsync();
+}
+
+// ============================================
 // MIDDLEWARE PIPELINE (Order matters!)
 // ============================================
 
@@ -329,25 +347,6 @@ app.MapHub<SessionHub>("/hubs/session");
 // 10. Health check endpoint
 app.MapGet("/", () => "Bengal TEX ERP API is running!");
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", time = DateTimeOffset.UtcNow }));
-
-// ============================================
-// DATABASE INITIALIZATION (migrate + seed)
-// ============================================
-// Dev: seed only — migrations are applied manually via `dotnet ef database update`.
-// Container/Prod: set Database__InitializeOnStartup=true → apply EF migrations + seed on boot
-// (the seeder is idempotent — SuperAdmin, roles, permissions, base currency, numbering series).
-var initializeDb = app.Configuration.GetValue<bool>("Database:InitializeOnStartup");
-if (app.Environment.IsDevelopment() || initializeDb)
-{
-    using var scope = app.Services.CreateScope();
-    if (initializeDb)
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.MigrateAsync();
-    }
-    var seeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
-    await seeder.SeedAsync();
-}
 
 // ============================================
 // HANGFIRE RECURRING JOBS

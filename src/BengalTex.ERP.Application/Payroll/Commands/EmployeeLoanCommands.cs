@@ -75,7 +75,8 @@ public sealed class CreateEmployeeLoanCommandValidator : AbstractValidator<Creat
     {
         RuleFor(x => x.EmployeeId).GreaterThan(0);
         RuleFor(x => x.Principal).GreaterThan(0);
-        RuleFor(x => x.EmiAmount).GreaterThan(0);
+        RuleFor(x => x.EmiAmount).GreaterThan(0)
+            .LessThanOrEqualTo(x => x.Principal).WithMessage("EMI amount cannot exceed total loan principal.");
         RuleFor(x => x.TenureMonths).GreaterThan(0).LessThanOrEqualTo(120);
         RuleFor(x => x.StartYearMonth).InclusiveBetween(200001, 210012)
             .Must(ym => ym % 100 >= 1 && ym % 100 <= 12).WithMessage("StartYearMonth month part must be 01-12.");
@@ -153,7 +154,8 @@ public sealed class UpdateEmployeeLoanCommandValidator : AbstractValidator<Updat
         RuleFor(x => x.Id).GreaterThan(0);
         RuleFor(x => x.EmiAmount).GreaterThan(0);
         RuleFor(x => x.TenureMonths).GreaterThan(0).LessThanOrEqualTo(120);
-        RuleFor(x => x.StartYearMonth).InclusiveBetween(200001, 210012);
+        RuleFor(x => x.StartYearMonth).InclusiveBetween(200001, 210012)
+            .Must(ym => ym % 100 >= 1 && ym % 100 <= 12).WithMessage("StartYearMonth month part must be 01-12.");
         RuleFor(x => x.Notes).MaximumLength(1000);
     }
 }
